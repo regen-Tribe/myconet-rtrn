@@ -129,6 +129,7 @@ export default async function JoinPage() {
         existingApplication={existingApplication}
         userProfile={userProfile}
         communityValues={communityValues}
+        questions={questions}
         initialSignedValueIds={signedValueIds}
         buddyProfiles={buddyProfiles}
         isProfileComplete={isProfileComplete}

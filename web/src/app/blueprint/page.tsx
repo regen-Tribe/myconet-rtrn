@@ -2,7 +2,8 @@ import { createClient } from '@/core/lib/supabase/server'
 import BlueprintClient from '@/modules/m04-blueprint/BlueprintClient'
 import { isCircleAdmin } from '@/core/lib/roles'
 
-export default async function BlueprintPage() {
+export default async function BlueprintPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+  const { step } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -54,6 +55,7 @@ export default async function BlueprintPage() {
         initialFlags={{}}
         readOnly={false}
         canEditCircles={canEditCircles}
+        initialStep={step}
       />
     )
   }
@@ -65,6 +67,7 @@ export default async function BlueprintPage() {
       initialFlags={(communityBlueprint.flags as Record<string, boolean>) ?? {}}
       readOnly={!isAdmin}
       canEditCircles={canEditCircles}
+      initialStep={step}
     />
   )
 }

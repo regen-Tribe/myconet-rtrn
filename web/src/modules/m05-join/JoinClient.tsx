@@ -34,6 +34,8 @@ interface Props {
   existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null
   userProfile: UserProfile | null
   communityValues: CommunityValue[]
+  /** Join application questions from the Blueprint (Step 1.4), one per line there */
+  questions: string[]
   initialSignedValueIds: string[]
   buddyProfiles: BuddyProfile[]
   isProfileComplete: boolean
@@ -232,10 +234,22 @@ function ProfileSummary({ profile }: { profile: UserProfile | null }) {
 
 // ─── Step components ──────────────────────────────────────────────────────────
 
+/** Shown on a step when the community hasn't written its values or questions yet. */
+function SetupNotice({ what }: { what: string }) {
+  return (
+    <div style={{ background: 'var(--bg-2)', border: '1px dashed var(--rule)', borderRadius: 10, padding: '14px 16px', marginBottom: 20, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+      No {what} yet. An admin adds them in the Blueprint, under <strong>Step 1.4 · First Agreements</strong>.{' '}
+      <Link href="/blueprint?step=s1.4" style={{ color: M5, fontWeight: 600 }}>Open the Blueprint →</Link>
+    </div>
+  )
+}
+
+
 function Step1Values({ userId, values, signedIds, onToggle, onNext }: { userId: string; values: CommunityValue[]; signedIds: Set<string>; onToggle: (id: string, signed: boolean) => void; onNext: () => void }) {
   const signedCount = signedIds.size
   const total = values.length
-  const allSigned = total > 0 && signedCount === total
+  // With no values written yet, the step can't block anyone
+  const allSigned = signedCount >= total
   const remaining = total - signedCount
 
   return (
@@ -249,6 +263,7 @@ function Step1Values({ userId, values, signedIds, onToggle, onNext }: { userId: 
       <p style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 20, lineHeight: 1.6, maxWidth: '52ch' }}>
         These are the rules of life in this community. Tap each one to acknowledge and sign your commitment.
       </p>
+      {total === 0 && <SetupNotice what="community values" />}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
         {values.map(v => {
           const signed = signedIds.has(v.id)
@@ -317,8 +332,9 @@ function Step2Buddy({ buddies, onBack, onNext }: { buddies: BuddyProfile[]; onBa
   )
 }
 
-function Step3Submit({ userId, signedCount, totalValues, onBack, onSubmitted }: { userId: string; signedCount: number; totalValues: number; onBack: () => void; onSubmitted: () => void }) {
+function Step3Submit({ userId, questions, signedCount, totalValues, onBack, onSubmitted }: { userId: string; questions: string[]; signedCount: number; totalValues: number; onBack: () => void; onSubmitted: () => void }) {
   const supabase = createClient()
+  const [answers, setAnswers] = useState<string[]>(() => questions.map(() => ''))
   const [extra, setExtra] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -326,7 +342,10 @@ function Step3Submit({ userId, signedCount, totalValues, onBack, onSubmitted }: 
   async function handleSubmit() {
     setSubmitting(true)
     setError('')
-    const { error: err } = await supabase.from('applications').upsert({ user_id: userId, answers: { extra }, status: 'pending' }, { onConflict: 'user_id' })
+    // q0, q1… match the Blueprint's questions; _questions keeps their wording in case they're edited later
+    const payload: Record<string, unknown> = { extra, _questions: questions }
+    questions.forEach((_, i) => { payload[`q${i}`] = answers[i]?.trim() ?? '' })
+    const { error: err } = await supabase.from('applications').upsert({ user_id: userId, answers: payload, status: 'pending' }, { onConflict: 'user_id' })
     if (err) { setError(err.message); setSubmitting(false); return }
     onSubmitted()
   }
@@ -341,6 +360,12 @@ function Step3Submit({ userId, signedCount, totalValues, onBack, onSubmitted }: 
         </div>
         {signedCount < totalValues && <div style={{ fontSize: 12, color: '#f59e0b', fontFamily: 'var(--mono)' }}>Note: you haven't signed all values yet. Go back to complete step 1.</div>}
       </div>
+      {questions.length === 0 ? <SetupNotice what="application questions" /> : questions.map((q, i) => (
+        <div key={i} style={{ marginBottom: 18 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>{q}</label>
+          <textarea value={answers[i] ?? ''} onChange={e => setAnswers(a => a.map((x, j) => (j === i ? e.target.value : x)))} rows={3} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }} />
+        </div>
+      ))}
       <div style={{ marginBottom: 20 }}>
         <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>Anything else you'd like the community to know?</label>
         <textarea value={extra} onChange={e => setExtra(e.target.value)} placeholder="Optional — share any context, questions, or thoughts…" rows={4} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit' }} />
@@ -555,7 +580,7 @@ function RoleRoadmap({ currentRole, milestones, applicationStatus, onApply, onRe
 
 export default function JoinClient({
   userId, userRole, existingApplication, userProfile,
-  communityValues, initialSignedValueIds, buddyProfiles,
+  communityValues, questions, initialSignedValueIds, buddyProfiles,
   isProfileComplete, hasContribution, hasOwnProject,
 }: Props) {
   const supabase = createClient()
@@ -660,7 +685,7 @@ export default function JoinClient({
         <Step2Buddy buddies={buddyProfiles} onBack={() => setStep(0)} onNext={() => setStep(2)} />
       )}
       {step === 2 && userId && (
-        <Step3Submit userId={userId} signedCount={signedIds.size} totalValues={communityValues.length} onBack={() => setStep(1)} onSubmitted={() => setSubmitted(true)} />
+        <Step3Submit userId={userId} questions={questions} signedCount={signedIds.size} totalValues={communityValues.length} onBack={() => setStep(1)} onSubmitted={() => setSubmitted(true)} />
       )}
     </div>
   )

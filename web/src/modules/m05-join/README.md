@@ -15,6 +15,8 @@ The community onboarding flow. Guides an `explorer` through three steps — sign
 | `JoinClient.tsx` | Multi-view join page — guest journey, member role roadmap, application form, status view |
 | `JoinAdminClient.tsx` | Admin review panel — list of applications with accept/reject/notes |
 
+**Where the content comes from:** the application questions are the Blueprint's `join_application_questions` answer and the values are the `community_values` table, both edited in **Blueprint › Step 1.4 First Agreements**. The steps are the same with or without them; when either is missing, the step says so and links to `/blueprint?step=s1.4`. Answers are saved as `q0…qN`, `_questions` (the wording shown) and `extra`.
+
 ## Views rendered by `JoinClient`
 
 The component renders one of four views depending on the user's state:

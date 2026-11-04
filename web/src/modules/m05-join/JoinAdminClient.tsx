@@ -13,7 +13,7 @@ interface Application {
   id: string
   user_id: string
   status: string
-  answers: Record<string, string>
+  answers: Record<string, string | string[]>
   admin_notes: string | null
   created_at: string
   first_name: string | null
@@ -145,7 +145,8 @@ export default function JoinAdminClient({ applications: initial, questions }: Pr
                   <div style={{ borderTop: '1px solid var(--rule)', padding: '18px 20px' }}>
                     {/* Answers */}
                     <div style={{ marginBottom: 20 }}>
-                      {questions.map((q, i) => (
+                      {/* The wording the applicant saw, if saved; otherwise today's questions */}
+                      {((Array.isArray(app.answers._questions) ? app.answers._questions : questions) as string[]).map((q, i) => (
                         <div key={i} style={{ marginBottom: 14 }}>
                           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 4 }}>{q}</div>
                           <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, background: 'var(--bg-2)', borderRadius: 'var(--radius)', padding: '8px 12px', whiteSpace: 'pre-wrap' }}>
@@ -153,6 +154,12 @@ export default function JoinAdminClient({ applications: initial, questions }: Pr
                           </div>
                         </div>
                       ))}
+                      {app.answers.extra && (
+                        <div style={{ marginBottom: 14 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 4 }}>Anything else</div>
+                          <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, background: 'var(--bg-2)', borderRadius: 'var(--radius)', padding: '8px 12px', whiteSpace: 'pre-wrap' }}>{app.answers.extra}</div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Admin notes */}

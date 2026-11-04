@@ -8,6 +8,7 @@ import { computePillarScores, computeGatesPassed, computePhaseProgress, type Val
 import { communityName, FRAMEWORK_CREDIT } from '@/core/lib/instance'
 import { useCircles } from '@/core/components/CirclesProvider'
 import CirclesStep from '@/modules/m04-blueprint/CirclesStep'
+import CommunityValuesEditor from '@/modules/m04-blueprint/CommunityValuesEditor'
 import { CIRCLES_PROMPT_RULE, FOUND_CIRCLES_KEY, mergeFoundCircles, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
 
@@ -37,6 +38,8 @@ interface Props {
   initialFlags: Record<string, boolean>
   /** Admins only: the circles table is admin-write */
   canEditCircles?: boolean
+  /** Open on this step (`/blueprint?step=s1.4`), e.g. from the Join page */
+  initialStep?: string
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -976,8 +979,10 @@ function GateView({ step, phase, values, onPrev, onNext }: {
   )
 }
 
-function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onPrev, onImport }: {
+function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onPrev, onImport, extra }: {
   step: StepDef; phase: PhaseDef; values: Values;
+  /** Step-specific content shown after the fields (e.g. Step 1.4's community values) */
+  extra?: React.ReactNode;
   onField: (id: string, val: unknown) => void;
   onSlider: (id: string, val: number) => void;
   onCheck: (id: string, val: unknown) => void;
@@ -1019,6 +1024,8 @@ function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onP
           ))}
         </div>
       )}
+
+      {extra}
 
       {step.checklist && step.checklist.length > 0 && (
         <div className="section">
@@ -1621,7 +1628,7 @@ function ProjectDocumentModal({ values, onClose, onPrint }: { values: Values; on
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 
-export default function BlueprintClient({ blueprintId, initialAnswers, readOnly = false, canEditCircles = false }: Props & { readOnly?: boolean }) {
+export default function BlueprintClient({ blueprintId, initialAnswers, readOnly = false, canEditCircles = false, initialStep }: Props & { readOnly?: boolean }) {
   const D = FW_DATA
   const circles = useCircles()
 
@@ -1648,7 +1655,8 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
 
   const [values, setValues] = useState<Values>(initialAnswers)
   const [currentId, setCurrentId] = useState(() =>
-    readOnly || Object.keys(initialAnswers).length > 0 ? 'dashboard' : 'welcome'
+    initialStep && flat.some(s => s.id === initialStep) ? initialStep
+      : readOnly || Object.keys(initialAnswers).length > 0 ? 'dashboard' : 'welcome'
   )
 
   // One debounced saver per blueprint; it creates its own client so it doesn't
@@ -1880,6 +1888,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               onNext={goNext}
               onPrev={goPrev}
               onImport={openImport}
+              extra={current.id === 's1.4' ? <CommunityValuesEditor canEdit={!readOnly} /> : undefined}
             />
           )}
         </main>

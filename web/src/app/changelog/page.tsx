@@ -3,6 +3,18 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.1.0',
+    date: '2026-11-04',
+    title: 'Join: application questions and community values set in the Blueprint',
+    items: [
+      'The application form now shows each question from the Blueprint (Step 1.4 · First Agreements) with its own answer box. Admins see every answer, under the wording the applicant saw, plus the "anything else" note.',
+      'Community values are edited in the Blueprint too: Step 1.4 has a new Community values section to add, edit, reorder and remove the values members sign.',
+      'The joining steps stay the same for every community. If the values or questions haven\'t been written yet, those steps say so and link to Step 1.4 instead of showing an empty list.',
+      'Fixed: with no values, the first joining step showed "Sign 0 more to continue" and couldn\'t be passed.',
+      'The Blueprint can open on a given step: /blueprint?step=s1.4.',
+    ],
+  },
+  {
     version: 'v4.0.0',
     date: '2026-11-03',
     title: 'MyCoNet core: one codebase for every community',

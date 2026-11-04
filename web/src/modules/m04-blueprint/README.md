@@ -30,6 +30,7 @@ The wizard structure is derived from four research-backed frameworks. Each step 
 | File | Purpose |
 |------|---------|
 | `BlueprintClient.tsx` | Full wizard UI — pillar tabs, step fields, AI scan, scoring panels |
+| `CommunityValuesEditor.tsx` | Step 1.4's Community values section: the values members sign when joining (`community_values`) |
 | `CirclesStep.tsx` | Setup's last step: confirm circles found by the scan, or ask for them (templates), and save / rename / retire them. Admins only (`circles` is admin-write) |
 | `lib/circle-setup.ts` | Scan prompt rule for circles, merging found circles, templates, slug / emoji / colour pickers |
 | `lib/blueprint-compute.ts` | Pure scoring functions — readiness, gates, phase progress |
