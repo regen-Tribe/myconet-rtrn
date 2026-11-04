@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-11-04 — Core v4.1.0: Join questions + community values in the Blueprint (deployed, 5d53216b)
+
+- Applicants now see the Blueprint's join questions (Step 1.4) with an answer box each; RTRN's 5 earlier applications only had the free-text note, so their question answers show as "No answer".
+- RTRN's 5 community values (and 18 signatures) are now editable in Blueprint › Step 1.4 › Community values.
+- Join steps show a "not written yet" note instead of empty lists; step 1 no longer blocks with no values.
+
 ## 2026-11-03 — On MyCoNet core v4.0.0 (deployed, b80f431b)
 
 - Core saved as **`regen-Tribe/myconet`** (private for now), tagged `v4.0.0`. This repo has core as its `upstream` remote and merged v4.0.0; it now differs from core only in `instance/`.
