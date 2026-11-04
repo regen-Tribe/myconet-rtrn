@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-11-03 — On MyCoNet core v4.0.0 (deployed, b80f431b)
+
+- Core saved as **`regen-Tribe/myconet`** (private for now), tagged `v4.0.0`. This repo has core as its `upstream` remote and merged v4.0.0; it now differs from core only in `instance/`.
+- RTRN-only files moved into `instance/`: this log (was `log.md`), `docs/CLEANUP.md`, `supabase-archive/` (pre-baseline migrations), plus `instance/README.md` (live URL, database, people). The README, CLAUDE.md and docs are core docs now.
+- The version badge shows the core version (v4.0.0), and `/changelog` shows core release notes; RTRN's v1–v3.69 history stays in this file.
+- Core gaps closed: neutral purpose text until the Blueprint has one (RTRN shows its own, unchanged); `supabase/setup/first-admin.sql`; the new-community checklist in `instance.example/README.md`.
+- Protopia repo created from core v4.0.0: `protopia-community/myconet-protopia` (private), config started.
+
 ## 2026-11-03 — Core extraction: Blueprint Circles setup step + neighborhood circles (deployed, 4348ed23)
 
 `INSTANCES.md` §6.2 Steps A–D, finishing CORE-EXTRACTION step 7.
