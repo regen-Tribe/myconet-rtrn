@@ -2,7 +2,7 @@
 
 How we turn today's RTRN portal code into **MyCoNet core**, the master codebase that RTRN, Protopia and later communities are built from. How the instances run afterwards is in [`INSTANCES.md`](./INSTANCES.md).
 
-> Status: **plan** (2026-11-03). Nothing done yet.
+> Status (2026-11-03): **core v4.0.0 released** at `regen-Tribe/myconet`. Phase 0, Phase 1 steps 4–7 and Phase 2 step 11 are done; steps 8–10 come as later core releases.
 
 ---
 
@@ -106,7 +106,7 @@ RTRN stays live and working at every step. Steps 1–3 happen in today's repo, a
 10. **Look & feel:** colour and font tokens and the logo come from `instance/theme`.
 
 ### Phase 2 — Split the repos
-11. Create `regen-Tribe/myconet` from today's repo **with full history**. Remove RTRN's `instance/`, keep `instance.example/`, rewrite the docs as core docs, start the core changelog at **v4.0.0**, and tag `v4.0.0`.
+11. ✅ (2026-11-03) Create `regen-Tribe/myconet` from today's repo **with full history**. Remove RTRN's `instance/`, keep `instance.example/`, rewrite the docs as core docs, start the core changelog at **v4.0.0**, and tag `v4.0.0`.
 12. Bring `regen-Tribe/myconet-rtrn` (today's repo, already there) onto core v4.0.0: add core as `upstream`, keep RTRN's `instance/` (config, theme, seed, the v1–v3.69 history log), and add the sync and drift-check workflows.
 13. Deploy RTRN from `myconet-rtrn` on core v4.0.0 and check RTRN looks exactly as before.
 
