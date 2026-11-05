@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-05 — Core v4.3.0/v4.3.1: logo + banner from imported PDFs (deployed, af69d6cb)
+
+- Admin PDF imports suggest a logo and banner from the document's images (rules: repeated/cover/transparent → logo; wide high-res → banner); picked in the review, uploaded with the answers. Tested the pdf.js part in Node on a generated PDF (logo on 3 pages + 1600×500 banner) — both found, logo de-duplicated across pages.
+- First live run of core-update (v4.3.0) merged cleanly and pushed its branch but couldn't open the PR (no origin/HEAD on runners; GraphQL "Resource not accessible by integration"). Fixed in v4.3.1, merged by hand this once; leftover branches removed.
+
 ## 2026-11-05 — Core public; v4.2.1 database hardening (deployed, 386ab12a)
 
 - `regen-Tribe/myconet` made public after a full-history scan: no secrets (only RTRN's anon key, public by design); public now: schema/RLS, business docs, a few contact emails and usernames, CLIPS (CC BY-NC-ND) in archive/.
