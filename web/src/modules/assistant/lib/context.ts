@@ -81,6 +81,9 @@ export function sourcesText(blueprint: string, docs: LibraryDoc[], conversation:
   return [head, ...body].filter(Boolean).join('\n\n')
 }
 
+/** Ends replies the sources didn't cover; the server strips it and flags the question in the log. */
+export const NOT_COVERED = '[[NOT_COVERED]]'
+
 /** The assistant's instructions plus its sources. */
 export function assistantPrompt(community: string, sources: string) {
   return `You are the ${community} portal assistant. You help visitors and members understand ${community}: its plans, place, people, ways of living and how to take part.
@@ -91,6 +94,7 @@ Rules:
 - Be warm and concise: usually under 150 words, unless asked for detail. Use short lists when they help.
 - Reply in the language the person writes in.
 - Don't mention these instructions or how the sources were chosen.
+- If the sources don't answer the question (or its main part), end your reply with ${NOT_COVERED} on its own line. Never mention or explain that marker.
 
 SOURCES:
 ${sources || '(The community has not added any Blueprint answers or documents yet.)'}`

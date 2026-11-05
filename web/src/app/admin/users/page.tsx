@@ -22,5 +22,11 @@ export default async function AdminUsersPage() {
     .select('id, username, first_name, last_name, role, lead_circles, created_at')
     .order('created_at', { ascending: false })
 
-  return <UsersAdminClient initialUsers={(users ?? []) as AdminUserRow[]} />
+  // Questions the assistant couldn't answer, for the badge on the Questions tab
+  const { count: openQuestions } = await supabase
+    .from('assistant_questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('answered', false).eq('status', 'open')
+
+  return <UsersAdminClient initialUsers={(users ?? []) as AdminUserRow[]} openQuestions={openQuestions ?? 0} />
 }

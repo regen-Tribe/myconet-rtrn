@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/core/lib/supabase/server'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
-import { assistantPrompt, blueprintText, sourcesText, type LibraryDoc } from '@/modules/assistant/lib/context'
+import { NOT_COVERED, assistantPrompt, blueprintText, sourcesText, type LibraryDoc } from '@/modules/assistant/lib/context'
 
 // Portal assistant: answers from the community's Blueprint and documents (MiniMax, streamed).
 // Visitors get FREE_QUESTIONS before signing in; signed-in people a daily cap.
@@ -71,11 +71,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'The assistant is busy. Try again in a moment.' }, { status: 502 })
   }
 
-  // MiniMax sends server-sent events; pass on just the answer text
+  // MiniMax sends server-sent events; pass on just the answer text. The last few characters
+  // are held back so the NOT_COVERED marker can be removed even when split across chunks.
   const decoder = new TextDecoder()
   const encoder = new TextEncoder()
+  const HOLD = NOT_COVERED.length
   let buffer = ''
   let inThink = false
+  let held = ''
+  let full = ''
+  const question = messages[messages.length - 1].content
   const stream = upstream.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
       buffer += decoder.decode(chunk, { stream: true })
@@ -95,9 +100,26 @@ export async function POST(req: NextRequest) {
             text = text.slice(i + (inThink ? 8 : 7))
             inThink = !inThink
           }
-          if (out) controller.enqueue(encoder.encode(out))
+          full += out
+          held += out
+          // Release everything except the tail, and never past a "[[" that could start the marker
+          let cut = held.length - HOLD
+          const mark = held.indexOf('[[')
+          if (mark >= 0 && mark < cut) cut = mark
+          if (cut > 0) {
+            controller.enqueue(encoder.encode(held.slice(0, cut)))
+            held = held.slice(cut)
+          }
         } catch { /* partial or keep-alive line */ }
       }
+    },
+    async flush(controller) {
+      const rest = held.split(NOT_COVERED).join('').trimEnd()
+      if (rest) controller.enqueue(encoder.encode(rest))
+      // Log the question for admins (Admin › Questions); a failed log never affects the answer
+      const answered = !full.includes(NOT_COVERED)
+      await supabase.rpc('assistant_log_question', { p_question: question, p_answer: full.replace(NOT_COVERED, '').trim(), p_answered: answered })
+        .then(() => undefined, () => undefined)
     },
   }))
 

@@ -5,6 +5,19 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.9.0 — 2026-11-05
+
+**Migration:** `20261105000200_assistant_questions.sql` (run `supabase db push`).
+
+- **Question log** `assistant_questions` (question, answer, `answered`, `status` open/resolved/dismissed,
+  `admin_note`, `user_id` or null for visitors). Admin-only read/update; written by
+  `assistant_log_question()` from `/api/assistant` when an answer finishes.
+- **Uncovered answers:** the assistant ends replies the sources don't cover with `[[NOT_COVERED]]`; the
+  route strips it from the stream (held back across chunks) and logs `answered = false`. Tested on the
+  handbook: 5/5 correct, incl. a Spanish question.
+- **Admin › Questions** (`app/admin/questions`, `modules/admin/QuestionsAdminClient.tsx`) with
+  `AdminTabs` (Users | Questions, open-question badge) and a sidebar link.
+
 ## v4.8.0 — 2026-11-05
 
 No database changes.

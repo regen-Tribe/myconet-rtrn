@@ -14,3 +14,5 @@ from the community Blueprint's answers and the documents in its library, cites s
 **Who sees what is enforced by RLS**, not by the app: the assistant loads documents with the asker's own
 session, so visitors and members only ever get shareable documents into their answers.
 Usage counting: `assistant_count_question()` over `private.assistant_usage`.
+
+**Question log:** every question and answer is saved (`assistant_questions`, admins only); answers the sources don't cover end with a hidden `[[NOT_COVERED]]` marker, stripped from the stream and logged as `answered = false`. Admins triage them in Admin › Questions.
