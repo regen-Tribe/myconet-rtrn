@@ -5,6 +5,26 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.4.0 — 2026-11-05
+
+No database changes. Uses **MiniMax-M3** (`/api/scan`, `/api/governance/ai-check`).
+
+- **Two-pass document scan** (`modules/m04-blueprint/lib/doc-scan.ts`). Pass 1 (evidence): the
+  document is read in parts of ≤150k characters (most documents: one part); per question, up to 3
+  verbatim quotes with page numbers, plus a summary and circles. Pass 2 (answers): one request per
+  framework phase, in parallel, writing each answer from all its quotes with `confidence`
+  (high/medium/low), `pages`, `conflict` and `why`. Unanswered written questions are returned as gaps.
+  Each request is retried once; failures leave the rest of the results in place.
+- PDF text carries `[Page N]` markers; the review shows confidence, pages and conflicts per answer,
+  low-confidence answers start unticked, and a "not covered" list shows the gaps.
+- `/api/scan`: prompt limit 200k characters (was 25k, which made every full-catalog scan fail with
+  "Prompt too long"); optional `images` (≤12 small data URLs) and `maxTokens`.
+- **Images:** `aiPickBranding()` asks M3 (vision) to pick the logo and banner from the rule-ranked
+  candidates. Extraction scales images while drawing, skips raw images over 12 MP, reads at most 30 pages
+  or 60 s, and can be skipped.
+- Tested against M3: a 3-page sample (8/9 answered with pages, conflict flagged) and a 100-page,
+  148-question document (1 evidence call + 4 answer calls, 0 failures, ~4 min).
+
 ## v4.3.1 — 2026-11-04
 
 - `core-update.yml`: opens the PR against the repo's default branch (runners have no `origin/HEAD`,

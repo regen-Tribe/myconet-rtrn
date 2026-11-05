@@ -29,8 +29,12 @@ function extractJSON(content: string): string | null {
   return null
 }
 
-// Blueprint chunks are 15k chars plus the instruction template
-const MAX_PROMPT_CHARS = 25000
+// MiniMax-M3 reads ~600k characters in one request; the Blueprint scan sends parts of up to ~150k
+const SCAN_MODEL = 'MiniMax-M3'
+const MAX_PROMPT_CHARS = 200_000
+// Images (logo/banner candidates from an imported PDF) arrive as small JPEG data URLs
+const MAX_IMAGES = 12
+const MAX_IMAGE_CHARS = 400_000
 
 export async function POST(req: NextRequest) {
   // Only blueprint managers may spend AI credits here — this endpoint forwards a raw prompt
@@ -47,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'MINIMAX_API_KEY not configured.' }, { status: 500 })
   }
 
-  let body: { prompt?: string }
+  let body: { prompt?: string; images?: unknown; maxTokens?: unknown }
   try {
     body = await req.json()
   } catch {
@@ -59,16 +63,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing prompt' }, { status: 400 })
   }
   if (prompt.length > MAX_PROMPT_CHARS) {
-    return NextResponse.json({ error: 'Prompt too long.' }, { status: 413 })
+    return NextResponse.json({ error: `Prompt too long (${prompt.length.toLocaleString()} characters; the limit is ${MAX_PROMPT_CHARS.toLocaleString()}).` }, { status: 413 })
   }
+  const images = Array.isArray(body.images) ? body.images : []
+  if (images.length > MAX_IMAGES || images.some(i => typeof i !== 'string' || !i.startsWith('data:image/') || i.length > MAX_IMAGE_CHARS)) {
+    return NextResponse.json({ error: 'Images must be up to 12 small data:image URLs.' }, { status: 400 })
+  }
+  const maxTokens = typeof body.maxTokens === 'number' ? Math.min(Math.max(body.maxTokens, 512), 32_000) : 16_000
+  const messageContent = images.length
+    ? [{ type: 'text', text: prompt }, ...images.map(url => ({ type: 'image_url', image_url: { url } }))]
+    : prompt
 
   const callMiniMax = async () => fetch('https://api.minimax.io/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'MiniMax-M2.7',
-      messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 8192,
+      model: SCAN_MODEL,
+      messages: [{ role: 'user', content: messageContent }],
+      max_completion_tokens: maxTokens,
       temperature: 0.3,
     }),
   })

@@ -21,7 +21,11 @@ export interface PdfImage {
 
 export interface BrandingCandidates { logos: PdfImage[]; banners: PdfImage[] }
 
-const MAX_PAGES = 20
+const MAX_PAGES = 30
+// Big image-heavy PDFs: stop looking after this long and use what was found
+const TIME_BUDGET_MS = 60_000
+// Raw (undecoded) images bigger than this are skipped rather than copied pixel by pixel
+const MAX_RAW_PIXELS = 12_000_000
 const MAX_IMAGES = 40
 const MIN_SIDE = 48
 const MAX_UPLOAD_SIDE = 2400
@@ -41,18 +45,26 @@ function getObject(store: { get: (id: string, cb: (v: unknown) => void) => void 
   })
 }
 
-/** Draws a pdf.js image onto a canvas. Returns null for formats we skip (1-bit masks). */
+/**
+ * Draws a pdf.js image onto a canvas no bigger than MAX_UPLOAD_SIDE (big photos are
+ * scaled while drawing, never copied at full size). Returns null for formats we skip.
+ */
 function toCanvas(img: RawImage): { canvas: HTMLCanvasElement; hasAlpha: boolean } | null {
   const { width: w, height: h } = img
   if (!w || !h) return null
+  const scale = Math.min(1, MAX_UPLOAD_SIDE / Math.max(w, h))
   const canvas = document.createElement('canvas')
-  canvas.width = w; canvas.height = h
+  canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale)
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
   if (img.bitmap) {
-    ctx.drawImage(img.bitmap, 0, 0)
-  } else if (img.data && (img.kind === 2 || img.kind === 3)) {
-    const out = ctx.createImageData(w, h)
+    ctx.drawImage(img.bitmap, 0, 0, canvas.width, canvas.height)
+  } else if (img.data && (img.kind === 2 || img.kind === 3) && w * h <= MAX_RAW_PIXELS) {
+    const full = document.createElement('canvas')
+    full.width = w; full.height = h
+    const fctx = full.getContext('2d')
+    if (!fctx) return null
+    const out = fctx.createImageData(w, h)
     const src = img.data
     if (img.kind === 3) {
       out.data.set(src.subarray(0, w * h * 4))
@@ -61,15 +73,19 @@ function toCanvas(img: RawImage): { canvas: HTMLCanvasElement; hasAlpha: boolean
         out.data[i * 4] = src[j]; out.data[i * 4 + 1] = src[j + 1]; out.data[i * 4 + 2] = src[j + 2]; out.data[i * 4 + 3] = 255
       }
     }
-    ctx.putImageData(out, 0, 0)
+    fctx.putImageData(out, 0, 0)
+    ctx.drawImage(full, 0, 0, canvas.width, canvas.height)
   } else {
     return null
   }
-  // Transparent pixels hint at a logo (sample a grid rather than every pixel)
-  const px = ctx.getImageData(0, 0, w, h).data
-  const step = Math.max(1, Math.floor((w * h) / 4000))
+  // Transparent pixels hint at a logo: check a 64×64 copy rather than every pixel
+  const probe = document.createElement('canvas')
+  probe.width = 64; probe.height = 64
+  const pctx = probe.getContext('2d')!
+  pctx.drawImage(canvas, 0, 0, 64, 64)
+  const px = pctx.getImageData(0, 0, 64, 64).data
   let hasAlpha = false
-  for (let i = 0; i < w * h; i += step) { if (px[i * 4 + 3] < 250) { hasAlpha = true; break } }
+  for (let i = 3; i < px.length; i += 4) { if (px[i] < 250) { hasAlpha = true; break } }
   return { canvas, hasAlpha }
 }
 
@@ -90,21 +106,17 @@ function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Prom
   return new Promise(resolve => canvas.toBlob(resolve, type, quality))
 }
 
-/** Scales large images down and keeps the file under the upload limit. */
+/** Keeps the file under the upload limit (PNG when transparent, else JPEG). */
 async function encode(canvas: HTMLCanvasElement, hasAlpha: boolean): Promise<Blob | null> {
-  let src = canvas
-  const scale = Math.min(1, MAX_UPLOAD_SIDE / Math.max(canvas.width, canvas.height))
-  if (scale < 1) {
-    src = document.createElement('canvas')
-    src.width = Math.round(canvas.width * scale); src.height = Math.round(canvas.height * scale)
-    src.getContext('2d')!.drawImage(canvas, 0, 0, src.width, src.height)
-  }
-  const png = hasAlpha ? await toBlob(src, 'image/png') : null
+  const png = hasAlpha ? await toBlob(canvas, 'image/png') : null
   if (png && png.size <= MAX_BYTES) return png
-  return toBlob(src, 'image/jpeg', 0.88)
+  return toBlob(canvas, 'image/jpeg', 0.88)
 }
 
-export async function extractPdfImages(file: File, onProgress?: (page: number, total: number) => void): Promise<PdfImage[]> {
+/** `stop.current = true` (the Skip button) ends the search early; what was found is kept. */
+export async function extractPdfImages(file: File, onProgress?: (page: number, total: number) => void, stop?: { current: boolean }): Promise<PdfImage[]> {
+  const started = Date.now()
+  const done = () => stop?.current || Date.now() - started > TIME_BUDGET_MS
   const pdfjs = await import('pdfjs-dist')
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`
   const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise
@@ -112,13 +124,14 @@ export async function extractPdfImages(file: File, onProgress?: (page: number, t
   const IMAGE_OPS = new Set<number>([pdfjs.OPS.paintImageXObject, pdfjs.OPS.paintImageXObjectRepeat])
   const found = new Map<string, PdfImage>()
 
-  for (let p = 1; p <= pages && found.size < MAX_IMAGES; p++) {
+  for (let p = 1; p <= pages && found.size < MAX_IMAGES && !done(); p++) {
     onProgress?.(p, pages)
     const page = await pdf.getPage(p)
     const ops = await page.getOperatorList()
     const names = new Set<string>()
     ops.fnArray.forEach((fn, i) => { if (IMAGE_OPS.has(fn)) names.add(String(ops.argsArray[i][0])) })
     for (const name of names) {
+      if (done()) break
       const store = (name.startsWith('g_') ? page.commonObjs : page.objs) as unknown as Parameters<typeof getObject>[0]
       const img = await getObject(store, name)
       if (!img || img.width < MIN_SIDE || img.height < MIN_SIDE) continue
@@ -161,4 +174,40 @@ export function suggestBranding(images: PdfImage[]): BrandingCandidates {
 
 export function releasePdfImages(images: PdfImage[]) {
   images.forEach(i => URL.revokeObjectURL(i.url))
+}
+
+/**
+ * Asks MiniMax-M3 (it reads images) which candidate is the logo and which is the best
+ * banner. Returns null if the AI can't be reached; the rule-based guesses then stand.
+ */
+export async function aiPickBranding(candidates: PdfImage[]): Promise<{ logo: string | null; banner: string | null } | null> {
+  const list = candidates.slice(0, 12)
+  if (list.length === 0) return null
+  try {
+    const images = await Promise.all(list.map(async img => {
+      const bmp = await createImageBitmap(img.blob)
+      const scale = Math.min(1, 384 / Math.max(bmp.width, bmp.height))
+      const c = document.createElement('canvas')
+      c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale)
+      const ctx = c.getContext('2d')!
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height)
+      ctx.drawImage(bmp, 0, 0, c.width, c.height)
+      bmp.close()
+      return c.toDataURL('image/jpeg', 0.8)
+    }))
+    const prompt = `These ${list.length} images come from a community's planning document, in order (image 0 is the first).
+Which one is the community's LOGO (a symbol, emblem or wordmark — not a photo, chart or slide)?
+Which one is the best BANNER for the top of their website (a wide, good-looking photo of their land, place or people — not a diagram, map, table or text-heavy slide)?
+Use null when none fits. Return ONLY JSON: {"logo": <index or null>, "banner": <index or null>}`
+    const resp = await fetch(process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/scan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, images, maxTokens: 2000 }),
+    })
+    if (!resp.ok) return null
+    const parsed = JSON.parse((await resp.json() as { result: string }).result) as { logo?: unknown; banner?: unknown }
+    const at = (v: unknown) => (typeof v === 'number' && list[v] ? list[v].id : null)
+    return { logo: at(parsed.logo), banner: at(parsed.banner) }
+  } catch {
+    return null
+  }
 }

@@ -12,9 +12,10 @@ import CommunityValuesEditor from '@/modules/m04-blueprint/CommunityValuesEditor
 import BrandingStep from '@/modules/m04-blueprint/BrandingStep'
 import { useBranding } from '@/core/components/BrandingProvider'
 import { useRouter } from 'next/navigation'
-import { extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
+import { aiPickBranding, extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
+import { scanDocument, type AnswerMeta } from '@/modules/m04-blueprint/lib/doc-scan'
 import { setBrandingImage } from '@/modules/m04-blueprint/lib/branding-upload'
-import { CIRCLES_PROMPT_RULE, FOUND_CIRCLES_KEY, mergeFoundCircles, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
+import { FOUND_CIRCLES_KEY, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
 
 async function extractPdfText(file: File, onProgress?: (page: number, total: number) => void): Promise<string> {
@@ -27,7 +28,9 @@ async function extractPdfText(file: File, onProgress?: (page: number, total: num
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
     const pageText = content.items.map((item: any) => item.str).join(' ')
-    parts.push(pageText)
+    // Page markers let the scan cite where each answer came from
+    parts.push(`[Page ${i}]\n${pageText}`)
+    page.cleanup()
     onProgress?.(i, pdf.numPages)
   }
   return parts.join('\n\n')
@@ -154,13 +157,19 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [pdfImages, setPdfImages] = useState<PdfImage[]>([])
   const [pick, setPick] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
   const [applying, setApplying] = useState(false)
+  const [aiPicked, setAiPicked] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
+  const stopImages = useRef(false)
+  const [lookingForImages, setLookingForImages] = useState(false)
   const [applyError, setApplyError] = useState('')
   const suggestions = useMemo(() => suggestBranding(pdfImages), [pdfImages])
   // Object URLs for the thumbnails are freed when the images change or the modal closes
   useEffect(() => () => releasePdfImages(pdfImages), [pdfImages])
 
   const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
-  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0 })
+  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0, label: '' })
+  const [answerMeta, setAnswerMeta] = useState<Record<string, AnswerMeta>>({})
+  const [gaps, setGaps] = useState<string[]>([])
+  const [failedParts, setFailedParts] = useState(0)
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 })
   const [docText, setDocText] = useState('')
   const [fileName, setFileName] = useState('')
@@ -184,15 +193,26 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
         if (canSetBranding && !scope) {
           setExtractLabel('Looking for a logo and banner image…')
           setPdfProgress({ current: 0, total: 0 })
+          stopImages.current = false
+          setLookingForImages(true)
           try {
-            const images = await extractPdfImages(file, (page, total) => setPdfProgress({ current: page, total }))
+            const images = await extractPdfImages(file, (page, total) => setPdfProgress({ current: page, total }), stopImages)
             const { logos, banners } = suggestBranding(images)
+            let logo = logos[0]?.id ?? null
+            let banner = banners[0]?.id ?? null
+            const candidates = [...new Map([...logos, ...banners].map(i => [i.id, i])).values()]
+            if (candidates.length && !stopImages.current) {
+              setExtractLabel('Choosing the logo and banner…')
+              const ai = await aiPickBranding(candidates)
+              if (ai) { logo = ai.logo ?? logo; banner = ai.banner ?? banner; setAiPicked(ai) }
+            }
             setPdfImages(images)
             // Preselect the best guesses only where the community has none yet
-            setPick({ logo: branding.logo_url ? null : logos[0]?.id ?? null, banner: branding.banner_url ? null : banners[0]?.id ?? null })
+            setPick({ logo: branding.logo_url ? null : logo, banner: branding.banner_url ? null : banner })
           } catch {
             // Images are a bonus: the text import goes ahead without them
           }
+          setLookingForImages(false)
         }
         setStage('upload')
       } catch (e) {
@@ -212,121 +232,28 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     setStage('scanning'); setErrorMsg('')
 
     const catalog = buildFieldCatalog(scope)
-    const fieldsByStep: Record<string, FieldCatalogEntry[]> = {}
-    catalog.forEach(f => { const k = `${f.phase} — ${f.step}`; if (!fieldsByStep[k]) fieldsByStep[k] = []; fieldsByStep[k].push(f) })
-    const fieldList = Object.entries(fieldsByStep).map(([s, fields]) =>
-      `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"`).join('\n')
-    ).join('\n\n')
-    const scopeHint = scope?.circles ? '\n\nIMPORTANT: Only look for circles. Return just the "circles" array and "_summary".'
-      : scope?.step ? `\n\nIMPORTANT: Focus only on the "${scope.step.title}" step${scope.section ? ' (' + scope.section + ' section)' : ''}. Only return fields listed below.` : ''
-    // Step-scoped imports fill fields only; full scans and the Circles step also look for circles
-    const circlesRule = scope?.step ? '' : `\n${CIRCLES_PROMPT_RULE}`
-
-    const existingAnswers = catalog
-      .filter(f => { const v = currentValues[f.id]; return v != null && v !== '' && String(v).length > 0 })
-      .map(f => {
-        const v = currentValues[f.id]
-        const display = f.kind === 'slider' ? `${v}/10` : f.kind === 'check' ? (v ? 'Yes' : 'No') : String(v)
-        return `- ${f.id} (${f.kind}): "${f.label}" → EXISTING: ${display}`
-      }).join('\n')
-    const existingBlock = existingAnswers ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n` : ''
-
-    const CHUNK_SIZE = 15000
-    const CONCURRENCY = 2
-    const MAX_CHUNKS = 30
-    const allChunks: string[] = []
-    for (let i = 0; i < docText.length; i += CHUNK_SIZE) allChunks.push(docText.slice(i, i + CHUNK_SIZE))
-    const truncated = allChunks.length > MAX_CHUNKS
-    const chunks = allChunks.slice(0, MAX_CHUNKS)
-    setChunkProgress({ current: 0, total: chunks.length })
-
-    const buildPrompt = (chunkText: string, chunkNum: number, totalChunks: number) => {
-      const chunkNote = totalChunks > 1 ? `\n\nNote: This is chunk ${chunkNum} of ${totalChunks} of the full document. Extract what you can from this portion.` : ''
-      return `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document.
-
-Below is the user's document, followed by the catalog of wizard fields. Extract any information from the document that maps to these fields. Return a JSON object with field IDs as keys.
-
-Rules:
-- For text fields: return a string with extracted/synthesized content (1-3 sentences). If nothing relevant, omit the key.
-- For slider fields: return an integer 0-10 reflecting confidence/maturity in that area based on document evidence. If unclear, omit.
-- For check fields (id without "_note" suffix): return true only if the document clearly indicates this is in place. Otherwise omit.
-- For checklist note fields (id ending in "_note"): if the doc has relevant info, write a 1-2 sentence note. Be concrete.
-- Only include fields where you have actual evidence from the document. Omit anything you'd be guessing.
-- Also include a "_summary" key with a 2-sentence summary of what the document is about.
-- Also include "_extracted_count" with the number of fields you populated.${circlesRule}${scopeHint}${chunkNote}
-
-DOCUMENT:
-"""
-${chunkText}
-"""
-
-WIZARD FIELDS:
-${fieldList || '(none for this scan)'}
-
-Return ONLY valid JSON, no markdown fences, no commentary.`
-    }
-
-    const scanChunk = async (chunkText: string, chunkNum: number, totalChunks: number): Promise<Record<string, unknown>> => {
-      const prompt = buildPrompt(chunkText, chunkNum, totalChunks)
-      const aiUrl = process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/scan'
-      const resp = await fetch(aiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({})) as { error?: string }
-        throw new Error(err.error ?? `Request failed (${resp.status})`)
-      }
-      const { result } = await resp.json() as { result: string }
-      let cleaned = result.trim()
-      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '')
-      const start = cleaned.indexOf('{'); const end = cleaned.lastIndexOf('}')
-      if (start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1)
-      return JSON.parse(cleaned) as Record<string, unknown>
-    }
-
-    const mergeResults = (results: Record<string, unknown>[]): Record<string, unknown> => {
-      const merged: Record<string, unknown> = {}
-      const circleLists: unknown[] = []
-      results.forEach(r => {
-        Object.entries(r).forEach(([k, v]) => {
-          if (k === 'circles') { circleLists.push(v); return }
-          if (k.startsWith('_')) { if (!merged[k]) merged[k] = v; return }
-          const existing = merged[k]
-          if (existing == null) { merged[k] = v; return }
-          if (typeof v === 'string' && typeof existing === 'string') {
-            if (v.length > (existing as string).length) merged[k] = v
-          } else if (typeof v === 'number' && typeof existing === 'number') {
-            merged[k] = Math.round(((existing as number) + v) / 2)
-          } else if (typeof v === 'boolean') {
-            merged[k] = (existing as boolean) || v
-          }
-        })
-      })
-      const circles = mergeFoundCircles(circleLists)
-      if (circles.length) merged.circles = circles
-      return merged
-    }
-
+    setChunkProgress({ current: 0, total: 0, label: 'Reading the document' })
     try {
-      const allResults: Record<string, unknown>[] = new Array(chunks.length)
-      let completed = 0
-      for (let batchStart = 0; batchStart < chunks.length; batchStart += CONCURRENCY) {
-        const batch = chunks.slice(batchStart, batchStart + CONCURRENCY)
-        await Promise.all(batch.map(async (chunk, batchIdx) => {
-          const i = batchStart + batchIdx
-          const result = await scanChunk(chunk, i + 1, chunks.length)
-          allResults[i] = result
-          completed++
-          setChunkProgress({ current: completed, total: chunks.length })
-        }))
-      }
-      const merged = mergeResults(allResults)
+      const result = await scanDocument({
+        docText,
+        fields: catalog,
+        current: currentValues,
+        // Step-scoped imports fill fields only; full scans and the Circles step also look for circles
+        wantCircles: !scope?.step,
+        onProgress: p => setChunkProgress({ current: p.done, total: p.total, label: p.label }),
+      })
+      const merged: Record<string, unknown> = { ...result.values, _summary: result.summary }
+      if (result.circles.length) merged.circles = result.circles
       setExtracted(merged)
-      setWasTruncated(truncated)
+      setAnswerMeta(result.meta)
+      setGaps(scope?.circles ? [] : result.gaps)
+      setFailedParts(result.failed)
+      setWasTruncated(result.truncated)
+      // New answers start ticked unless the AI wasn't sure; existing answers are kept unless you choose the new one
       const accepted: Record<string, boolean> = {}
-      // Default: accept new fields; for conflicts (existing answer present) default to keeping current
-      Object.keys(merged).forEach(k => {
-        if (k.startsWith('_') || k === 'circles') return
+      Object.keys(result.values).forEach(k => {
         const hasExisting = currentValues[k] != null && currentValues[k] !== ''
-        accepted[k] = !hasExisting
+        accepted[k] = !hasExisting && result.meta[k]?.confidence !== 'low'
       })
       setAcceptedKeys(accepted)
       setExpandedKeys({})
@@ -382,6 +309,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                   border: `2px solid ${on ? 'var(--accent)' : 'var(--rule)'}`, boxShadow: on ? '0 0 0 2px var(--accent-soft)' : 'none' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img.url} alt="" style={{ display: 'block', height: kind === 'logo' ? 56 : 72, width: kind === 'logo' ? 'auto' : 160, maxWidth: 160, objectFit: kind === 'logo' ? 'contain' : 'cover', borderRadius: 4 }} />
+                {aiPicked[kind] === img.id && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', marginTop: 3 }}>✨ AI pick</div>}
               </button>
             )
           })}
@@ -396,6 +324,21 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
 
   const foundList = (extracted?.circles ?? []) as FoundCircle[]
   const catalog = buildFieldCatalog(scope)
+  // Confidence, pages and conflicts from the scan, shown on each proposed answer
+  const answerInfo = (key: string) => {
+    const m = answerMeta[key]
+    if (!m) return null
+    const colour = m.confidence === 'high' ? '#15803d' : m.confidence === 'medium' ? '#b45309' : '#b91c1c'
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 6, fontSize: 11 }}>
+        <span style={{ fontWeight: 700, color: colour, border: `1px solid ${colour}55`, borderRadius: 20, padding: '0 7px' }}>{m.confidence} confidence</span>
+        {m.pages.length > 0 && <span style={{ color: 'var(--ink-3)' }}>p. {m.pages.slice(0, 6).join(', ')}</span>}
+        {m.why && <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>{m.why}</span>}
+        {m.conflict && <span style={{ flexBasis: '100%', color: '#b45309' }}>⚠ {m.conflict}</span>}
+      </div>
+    )
+  }
+
   const fieldMeta = (id: string) => catalog.find(f => f.id === id) ?? { label: id, kind: 'text' as const, step: '', phase: '', help: '' }
 
   return (
@@ -423,12 +366,12 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               {docText && (
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.08em' }}>
                   {docText.length.toLocaleString()} CHARS
-                  {docText.length > 5000 ? ` · will scan in ${Math.ceil(docText.length / 5000)} chunks` : ' · full document will be scanned'}
+                  {docText.length > 150000 ? ` · read in ${Math.ceil(docText.length / 150000)} parts` : ' · read in one pass'}
                 </div>
               )}
             </div>
             <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
-              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M2.7 reads your document and proposes answers for fields it finds evidence for. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Works with PDF, .txt, and .md files.
+              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M3 reads the whole document and collects quotes for each Blueprint question, then writes each answer from all the quotes, with how sure it is and the pages it used. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Works with PDF, .txt and .md files; PDFs give page references.
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
@@ -441,6 +384,11 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
           <div style={{ padding: '40px 0', textAlign: 'center' }}>
             <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
             <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>{extractLabel}</div>
+            {lookingForImages && (
+              <button className="btn btn-ghost" style={{ marginTop: 10, fontSize: 12 }} onClick={() => { stopImages.current = true }}>
+                Skip the images
+              </button>
+            )}
             {pdfProgress.total > 0 && (
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
@@ -457,18 +405,20 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
         {stage === 'scanning' && (
           <div style={{ padding: '40px 0', textAlign: 'center' }}>
             <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>Reading your document…</div>
+            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>{chunkProgress.label || 'Reading the document'}…</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 6 }}>
+              {chunkProgress.label === 'Writing answers' ? 'Step 2 of 2: one answer per question, from every quote in the document' : 'Step 1 of 2: collecting quotes for each Blueprint question'}
+            </div>
             {chunkProgress.total > 1 && (
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
-                  Chunk {chunkProgress.current} of {chunkProgress.total}
+                  {chunkProgress.label === 'Writing answers' ? 'Phase' : 'Part'} {chunkProgress.current} of {chunkProgress.total}
                 </div>
                 <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
                   <div style={{ height: '100%', width: `${(chunkProgress.current / chunkProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 300ms' }} />
                 </div>
               </div>
             )}
-            {chunkProgress.total <= 1 && <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8, fontStyle: 'italic' }}>Mapping content to RNF · Alchemy · RCOS · CLIPS fields</div>}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
               {(['rnf', 'alchemy', 'rcos', 'clips'] as const).map((k, i) => (
                 <div key={k} style={{ width: 10, height: 10, borderRadius: '50%', background: `var(--${k})`, animation: `pulse 1s ${i * 150}ms infinite` }} />
@@ -488,8 +438,21 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               </div>
               {wasTruncated && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
-                  ⚠ Large document — scanned the first 450,000 characters. If key content appears later in the file, consider splitting it into smaller uploads.
+                  ⚠ Large document — read the first 1,200,000 characters (about 400 pages). If key content comes later, import the rest separately.
                 </div>
+              )}
+              {failedParts > 0 && (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                  ⚠ {failedParts} part{failedParts === 1 ? '' : 's'} of the scan didn&rsquo;t come back, so some answers may be missing. You can run the import again later; it only proposes, nothing is overwritten.
+                </div>
+              )}
+              {gaps.length > 0 && (
+                <details style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-2)' }}>
+                  <summary style={{ cursor: 'pointer' }}>{gaps.length} question{gaps.length === 1 ? '' : 's'} the document doesn&rsquo;t cover (still to write)</summary>
+                  <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
+                    {gaps.map(id => { const m = fieldMeta(id); return <li key={id}><span style={{ color: 'var(--ink-3)' }}>{m.step}:</span> {m.label}</li> })}
+                  </ul>
+                </details>
               )}
             </div>
 
@@ -497,7 +460,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               <div style={{ marginBottom: 20, padding: '12px 14px', border: '1px solid var(--rule)', borderRadius: 'var(--radius)' }}>
                 <div style={{ fontFamily: 'var(--display)', fontSize: 16, marginBottom: 4 }}>Logo &amp; banner from your document</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>
-                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. Our best guesses are selected; click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
+                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. {aiPicked.logo || aiPicked.banner ? 'The AI looked at them and its picks are marked ✨.' : 'Our best guesses are marked.'} Click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
                 </div>
                 {imagePicker('logo', 'Logo', suggestions.logos, branding.logo_url)}
                 {imagePicker('banner', 'Banner image', suggestions.banners, branding.banner_url)}
@@ -575,6 +538,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                             <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
                               <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>AI proposed</div>
                               <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>{renderVal(val)}</div>
+                              {answerInfo(key)}
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 8 }}>
@@ -605,6 +569,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-3)', letterSpacing: '0.1em', marginBottom: 3 }}>{meta.step.toUpperCase()}</div>
                         <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>{meta.label}</div>
                         <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>{renderVal(val)}</div>
+                        {answerInfo(key)}
                       </div>
                     </div>
                   </div>

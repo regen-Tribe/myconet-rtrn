@@ -66,7 +66,7 @@ These functions are also imported by `m00-dashboard` and `modules/home` to displ
 
 ## AI scanning
 
-The blueprint integrates with `/api/scan` to scan uploaded documents and suggest answers. The API route calls MiniMax M2.7 via the Cloudflare Worker.
+The blueprint integrates with `/api/scan` to scan uploaded documents and suggest answers. The API route calls MiniMax M3 (`lib/doc-scan.ts` runs the two-pass scan: evidence with page quotes, then answers per phase with confidence and sources).
 
 Full scans (and the Circles step's own scan) also ask for a `circles` array, following `INSTANCES.md` §6.2: standing groups only, each with a `source` quote; any without one is dropped. They are not saved as circles. They wait in the answers under `_circles_found` until an admin confirms them in the Circles step.
 

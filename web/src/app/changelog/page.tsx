@@ -3,6 +3,19 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.4.0',
+    date: '2026-11-05',
+    title: 'Blueprint import: reads the whole document, answers with sources',
+    items: [
+      'The document import now uses MiniMax M3. It reads up to about 400 pages, in one go for most documents (it used to cut documents into many small pieces, and big files failed with "Prompt too long").',
+      'It works in two steps: first it collects quotes for every Blueprint question from the whole document, then it writes each answer from all of them. Answers that combine several pages come out as one answer instead of fragments.',
+      'Each proposed answer shows how sure the AI is, the pages it came from, and a warning when the document contradicts itself or your current answer. Answers the AI isn\'t sure about start unticked.',
+      'The review lists the questions the document doesn\'t cover, so you know what\'s left to write.',
+      'Logo and banner: the AI now looks at the images from your PDF and marks its picks. Big image-heavy PDFs are handled safely, with a Skip button.',
+      'If part of the scan fails, the rest of the answers are kept and the review says what was missing.',
+    ],
+  },
+  {
     version: 'v4.3.0',
     date: '2026-11-04',
     title: 'Blueprint import finds your logo and banner',
