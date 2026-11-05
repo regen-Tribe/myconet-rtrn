@@ -14,27 +14,13 @@ import { useBranding } from '@/core/components/BrandingProvider'
 import { useRouter } from 'next/navigation'
 import { aiPickBranding, extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
 import { scanDocument, type AnswerMeta, type ScanProgress } from '@/modules/m04-blueprint/lib/doc-scan'
+import { extractPdfText } from '@/modules/m04-blueprint/lib/pdf-text'
+import DocumentsStep from '@/modules/m04-blueprint/DocumentsStep'
+import DocumentKindPicker from '@/modules/assistant/DocumentKindPicker'
+import { addToLibrary, titleFromFile, type DocKind } from '@/modules/assistant/lib/library'
 import { setBrandingImage } from '@/modules/m04-blueprint/lib/branding-upload'
 import { FOUND_CIRCLES_KEY, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
-
-async function extractPdfText(file: File, onProgress?: (page: number, total: number) => void): Promise<string> {
-  const pdfjs = await import('pdfjs-dist')
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
-  const parts: string[] = []
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const content = await page.getTextContent()
-    const pageText = content.items.map((item: any) => item.str).join(' ')
-    // Page markers let the scan cite where each answer came from
-    parts.push(`[Page ${i}]\n${pageText}`)
-    page.cleanup()
-    onProgress?.(i, pdf.numPages)
-  }
-  return parts.join('\n\n')
-}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -122,22 +108,22 @@ function buildFieldCatalog(scope?: ImportScope): FieldCatalogEntry[] {
 
 // ── FileDropzone ──────────────────────────────────────────────────────────────
 
-function FileDropzone({ onFile, fileName }: { onFile: (f: File) => void; fileName: string }) {
+function FileDropzone({ onFile, fileName, disabled = false }: { onFile: (f: File) => void; fileName: string; disabled?: boolean }) {
   const [dragOver, setDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   return (
     <div
       className="dropzone"
-      style={{ border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--rule)'}`, borderRadius: 4, padding: '28px 20px', textAlign: 'center', background: dragOver ? 'var(--accent-soft)' : 'var(--bg-2)', cursor: 'pointer', transition: 'all 120ms' }}
-      onClick={() => inputRef.current?.click()}
-      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      style={{ border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--rule)'}`, borderRadius: 4, padding: '28px 20px', textAlign: 'center', background: dragOver ? 'var(--accent-soft)' : 'var(--bg-2)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, transition: 'all 120ms' }}
+      onClick={() => { if (!disabled) inputRef.current?.click() }}
+      onDragOver={e => { e.preventDefault(); if (!disabled) setDragOver(true) }}
       onDragLeave={() => setDragOver(false)}
-      onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f) }}
+      onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f && !disabled) onFile(f) }}
     >
       <input ref={inputRef} type="file" accept=".pdf,.txt,.md,.markdown,.json,text/*,application/pdf" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) onFile(e.target.files[0]) }} />
       <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
       <div style={{ fontFamily: 'var(--display)', fontSize: 18 }}>
-        {fileName ? <span>Loaded: <strong>{fileName}</strong></span> : 'Drop a document, or click to browse'}
+        {disabled ? 'Choose what kind of document it is first' : fileName ? <span>Loaded: <strong>{fileName}</strong></span> : 'Drop a document, or click to browse'}
       </div>
       <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.1em' }}>.PDF · .TXT · .MD · .JSON · plain text</div>
     </div>
@@ -167,6 +153,9 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 
   const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null)
+  // Asked before every upload: shareable, sensitive, or not added to the assistant's library
+  const [docKind, setDocKind] = useState<DocKind | 'skip' | null>(null)
+  const [libraryStatus, setLibraryStatus] = useState<'' | 'saving' | 'saved' | string>('')
   const [finishingImages, setFinishingImages] = useState(false)
   // Elapsed time on the progress screen, so a long scan never looks stuck
   const [startedAt, setStartedAt] = useState<number | null>(null)
@@ -213,10 +202,21 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     setLookingForImages(false)
   }
 
+  const saveToLibrary = async (text: string, fileName: string, visibility: DocKind) => {
+    setLibraryStatus('saving')
+    try {
+      await addToLibrary({ title: titleFromFile(fileName), fileName, visibility, content: text })
+      setLibraryStatus('saved')
+    } catch (e) {
+      setLibraryStatus(`Couldn't add it to the library: ${(e as Error).message}`)
+    }
+  }
+
   // Dropping a file starts everything: no separate "Scan" click
   const handleFile = async (file: File) => {
     setFileName(file.name)
     setPdfImages([])
+    setLibraryStatus('')
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
     let text = ''
     try {
@@ -237,10 +237,12 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     }
     setDocText(text)
     const images = isPdf && canSetBranding && !scope ? findImages(file) : null
-    await handleScan(text, images)
+    // Save to the assistant's library alongside the scan (never blocks or fails the import)
+    const library = docKind && docKind !== 'skip' ? saveToLibrary(text, file.name, docKind) : null
+    await handleScan(text, images, library)
   }
 
-  const handleScan = async (text: string = docText, images: Promise<void> | null = null) => {
+  const handleScan = async (text: string = docText, images: Promise<void> | null = null, library: Promise<void> | null = null) => {
     if (!text.trim()) { setErrorMsg('Paste some text or upload a file first.'); setStage('upload'); return }
     setStage('scanning'); setErrorMsg('')
 
@@ -274,6 +276,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
       setExpandedKeys({})
       // The review shows the images too, so wait for the image search if it's still going
       if (images) { setFinishingImages(true); await images }
+      if (library) await library
       setStartedAt(null)
       setStage('review')
     } catch (e) {
@@ -377,7 +380,10 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 
         {stage === 'upload' && (
           <div>
-            <FileDropzone onFile={handleFile} fileName={fileName} />
+            <div style={{ marginBottom: 14 }}>
+              <DocumentKindPicker value={docKind} onChange={setDocKind} allowSkip />
+            </div>
+            <FileDropzone onFile={handleFile} fileName={fileName} disabled={!docKind} />
             <div style={{ marginTop: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--ink-2)' }}>Or paste document text</div>
               <textarea className="textarea" rows={8} placeholder="Paste your project charter, vision document, business plan, meeting notes…" value={docText} onChange={e => setDocText(e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
@@ -393,7 +399,10 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-              <button className="btn btn-primary" onClick={() => handleScan()} disabled={!docText.trim()}>Scan with AI →</button>
+              <button className="btn btn-primary" disabled={!docText.trim() || !docKind}
+                onClick={() => { setStartedAt(Date.now()); setLibraryStatus(''); handleScan(docText, null, docKind && docKind !== 'skip' ? saveToLibrary(docText, 'Pasted text.txt', docKind) : null) }}>
+                Scan with AI →
+              </button>
             </div>
           </div>
         )}
@@ -423,6 +432,12 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               detail: p?.step === 'answers' ? `${phaseLine(p.finished)}${p.found ? ` · ${p.found} answers so far` : ''}` : 'One answer per question, with pages and how sure we are',
             },
           ]
+          if (libraryStatus) rows.push({
+            status: libraryStatus === 'saving' ? 'active' : 'done',
+            title: `Adding it to the library (${docKind === 'leads' ? 'sensitive' : 'shareable'})`,
+            detail: libraryStatus === 'saving' ? 'So the portal assistant can answer questions from it'
+              : libraryStatus === 'saved' ? 'Added: Ask the assistant about it any time' : libraryStatus,
+          })
           if (lookingForImages || finishingImages) rows.push({
             status: lookingForImages ? 'active' : 'done',
             title: 'Looking for your logo and banner',
@@ -1749,6 +1764,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
     D.phases.forEach(p => p.steps.forEach(s => arr.push({ ...s, phaseRef: p })))
     // Setup's last step (INSTANCES.md §6.2)
     arr.push({ id: 'branding', kind: 'branding' })
+    arr.push({ id: 'documents', kind: 'documents' })
     arr.push({ id: 'circles', kind: 'circles' })
     arr.push({ id: 'dashboard', kind: 'dashboard' })
     return arr
@@ -1940,6 +1956,14 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               <div>🎨 Look &amp; feel</div>
             </li>
 
+            <li className={`step${currentId === 'documents' ? ' active' : ''}`}
+              data-step-id="documents"
+              style={{ paddingLeft: 0, marginTop: 8 }}
+              onClick={() => jumpTo('documents')}>
+              <div className="step-dot"></div>
+              <div>📚 Documents</div>
+            </li>
+
             <li className={`step${currentId === 'circles' ? ' active' : ''}${circles.list.length ? ' complete' : ''}`}
               data-step-id="circles"
               style={{ paddingLeft: 0, marginTop: 8 }}
@@ -1984,6 +2008,9 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               ...(!branding.logo_url ? [{ id: 'branding', label: 'Add your logo' }] : []),
               ...(!branding.banner_url ? [{ id: 'branding', label: 'Add a banner image' }] : []),
             ]} />
+          )}
+          {current.kind === 'documents' && (
+            <DocumentsStep canEdit={!readOnly} onPrev={goPrev} onNext={goNext} />
           )}
           {current.kind === 'branding' && (
             <BrandingStep canEdit={isAdmin && !readOnly} onPrev={goPrev} onNext={goNext} />

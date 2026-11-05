@@ -5,6 +5,7 @@ import AppTopBar from '@/core/components/shell/AppTopBar'
 import AppSideNav from '@/core/components/shell/AppSideNav'
 import AppFooter from '@/core/components/shell/AppFooter'
 import { ProfileCompletionProvider } from '@/core/contexts/ProfileCompletion'
+import AssistantChat from '@/modules/assistant/AssistantChat'
 
 export default function AppShell({ children, role, isLoggedIn = false }: { children: React.ReactNode; role: string; isLoggedIn?: boolean }) {
   const pathname = usePathname()
@@ -32,6 +33,8 @@ export default function AppShell({ children, role, isLoggedIn = false }: { child
           <AppFooter />
         </main>
       </div>
+
+      <AssistantChat isLoggedIn={isLoggedIn} />
 
       {mobileNavOpen && (
         <div

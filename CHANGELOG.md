@@ -5,6 +5,21 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.6.0 — 2026-11-05
+
+**Migration:** `20261105000000_portal_assistant.sql` (run `supabase db push`).
+
+- **Portal assistant** (`modules/assistant/`, `app/api/assistant`): streamed answers from the Blueprint
+  and the document library via MiniMax-M3.1-Flash (low reasoning); cites sources; 2 questions for
+  visitors (per hashed IP, 30 days), 200/day signed in. See `modules/assistant/README.md`.
+- **Document library** `community_documents` (`everyone` | `leads`; RLS: leads = admins + circle
+  leads read/write all, others read `everyone`). `private.assistant_usage` + `assistant_count_question()`.
+- **Every upload asks** "What kind of document is this?" (Shareable / Sensitive / for the Blueprint
+  import also "Don't add it"); Blueprint › 📚 Documents to manage the library.
+- `extractPdfText` moved to `m04-blueprint/lib/pdf-text.ts`.
+- Tested: RLS (visitor and member see shareable only, circle lead sees both; counter 1/2/3) and answers
+  on the Protopia handbook (first words in 1–2 s, page-cited, answers in Spanish, declines off-topic).
+
 ## v4.5.0 — 2026-11-05
 
 No database changes.
