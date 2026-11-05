@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-05 — Core v4.7.0 via PR #2 (deployed, 66ddfe01)
+
+- Portal assistant ("Ask Regen Hood 0"), document library (Shareable/Sensitive), bigger top bar, link previews. Migrations applied earlier via MCP.
+- v4.8.0 (working top bar search) is in PR #3, waiting to be merged.
+
 ## 2026-11-05 — Core v4.5.0 via update PR #1 (deployed, 436df1b8)
 
 - Blueprint import rebuilt (v4.4.0 + v4.5.0): two-pass scan (M3.1-Flash quotes, M3 answers), confidence/pages/conflicts/gaps, auto-start, live progress checklist, AI logo/banner pick.
