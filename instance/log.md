@@ -5,7 +5,7 @@
 ## 2026-11-05 — Core v4.7.0 via PR #2 (deployed, 66ddfe01)
 
 - Portal assistant ("Ask Regen Hood 0"), document library (Shareable/Sensitive), bigger top bar, link previews. Migrations applied earlier via MCP.
-- v4.8.0 (working top bar search) is in PR #3, waiting to be merged.
+- v4.8.0 (working top bar search) merged via PR #3 and deployed (6fb126e9).
 
 ## 2026-11-05 — Core v4.5.0 via update PR #1 (deployed, 436df1b8)
 
