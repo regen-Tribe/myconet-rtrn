@@ -180,6 +180,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Link href="/auth/login" style={{ color: 'var(--accent-color)' }}>Sign in</Link> to keep asking.
           </div>
         )}
+        <div style={{ fontSize: 10.5, color: 'var(--ink-4)', margin: '0 2px 6px' }}>Questions are saved so the community can improve its answers.</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input value={input} onChange={e => setInput(e.target.value)} placeholder="Ask a question…" maxLength={2000} disabled={busy || needLogin}
             style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--rule)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 14, outline: 'none' }} />

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import AdminTabs from '@/modules/admin/AdminTabs'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
@@ -31,7 +32,7 @@ function userDisplayName(u: AdminUserRow): string {
   return fl || u.username || 'Unnamed user'
 }
 
-export default function UsersAdminClient({ initialUsers }: { initialUsers: AdminUserRow[] }) {
+export default function UsersAdminClient({ initialUsers, openQuestions = 0 }: { initialUsers: AdminUserRow[]; openQuestions?: number }) {
   const circles = useCircles()
   const supabase = createClient()
   const [users, setUsers] = useState<AdminUserRow[]>(initialUsers)
@@ -97,6 +98,8 @@ export default function UsersAdminClient({ initialUsers }: { initialUsers: Admin
           Edit role and lead circles for any user. {users.length} total.
         </p>
       </div>
+
+      <AdminTabs active="users" openQuestions={openQuestions} />
 
       {/* Search */}
       <input

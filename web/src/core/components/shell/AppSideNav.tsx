@@ -246,6 +246,26 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
               <span>Users</span>
             </div>
           </Link>
+          <Link
+            href="/admin/questions"
+            onClick={onClose}
+            style={{ textDecoration: 'none', display: 'block' }}
+            className="sh-nav-item"
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 10px', borderRadius: 7,
+              fontSize: 13,
+              color: isActive('/admin/questions') ? 'var(--ink)' : 'var(--ink-2)',
+              fontWeight: isActive('/admin/questions') ? 600 : 400,
+              background: isActive('/admin/questions') ? 'color-mix(in srgb, #dc2626 10%, var(--surface))' : 'transparent',
+              border: isActive('/admin/questions') ? '1px solid color-mix(in srgb, #dc2626 25%, var(--rule))' : '1px solid transparent',
+            }}>
+              <span style={{ width: 2, height: 16, borderRadius: 2, background: '#dc2626', flexShrink: 0, opacity: isActive('/admin/questions') ? 1 : 0.5 }} />
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, width: 22, color: isActive('/admin/questions') ? '#dc2626' : 'var(--ink-4)' }}>?</span>
+              <span>Questions</span>
+            </div>
+          </Link>
         </>
       )}
 

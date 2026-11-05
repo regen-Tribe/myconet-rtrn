@@ -3,6 +3,17 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.9.0',
+    date: '2026-11-05',
+    title: 'Admin › Questions: what people ask the assistant',
+    items: [
+      'Every question asked to the community assistant is saved with its answer, who asked (or "Visitor") and when.',
+      'Questions the community\'s material couldn\'t answer are flagged "No answer", in any language, so admins can see what to add to the Blueprint or the documents.',
+      'New Admin › Questions tab next to Users: "Needs an answer" first, filters for All / Resolved / Dismissed, search, the full answer, notes, and Mark resolved / Dismiss / Reopen. The tab shows how many questions are waiting.',
+      'The chat now says that questions are saved to improve the community\'s answers.',
+    ],
+  },
+  {
     version: 'v4.8.0',
     date: '2026-11-05',
     title: 'The search bar works',
