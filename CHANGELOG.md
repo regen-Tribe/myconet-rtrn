@@ -5,6 +5,25 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.3.1 — 2026-11-04
+
+- `core-update.yml`: opens the PR against the repo's default branch (runners have no `origin/HEAD`,
+  so v4.3.0's run pushed its branch but couldn't open the PR), and retries reuse a leftover branch
+  instead of assuming the PR exists.
+
+## v4.3.0 — 2026-11-04
+
+No database changes.
+
+- **Logo and banner from imported PDFs.** Full Blueprint imports by admins run `lib/pdf-images.ts`
+  after the text: pdf.js image objects from the first 20 pages (up to 40 images, 48 px minimum),
+  de-duplicated by an 8×8 average hash, scaled to 2400 px max and kept under the upload limit.
+  `suggestBranding()` ranks banners (≥ 800 px wide, aspect ≥ 1.3, by size) and logos (repeated across
+  pages, on the cover, transparent; large single photos penalised). The review shows up to six of each;
+  best guesses are preselected only where the community has no logo/banner yet.
+- `lib/branding-upload.ts` (`setBrandingImage`, `clearBrandingImage`) is shared by the Look & feel step
+  and the import.
+
 ## v4.2.1 — 2026-11-04
 
 **Migration:** `20261104000600_function_hardening.sql` (run `supabase db push`).

@@ -11,6 +11,9 @@ import CirclesStep from '@/modules/m04-blueprint/CirclesStep'
 import CommunityValuesEditor from '@/modules/m04-blueprint/CommunityValuesEditor'
 import BrandingStep from '@/modules/m04-blueprint/BrandingStep'
 import { useBranding } from '@/core/components/BrandingProvider'
+import { useRouter } from 'next/navigation'
+import { extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
+import { setBrandingImage } from '@/modules/m04-blueprint/lib/branding-upload'
 import { CIRCLES_PROMPT_RULE, FOUND_CIRCLES_KEY, mergeFoundCircles, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
 
@@ -140,9 +143,22 @@ function FileDropzone({ onFile, fileName }: { onFile: (f: File) => void; fileNam
 
 // ── ImportModal ───────────────────────────────────────────────────────────────
 
-function ImportModal({ onClose, onApply, currentValues, scope }: {
+function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = false }: {
   onClose: () => void; onApply: (vals: Values) => void; currentValues: Values; scope?: ImportScope
+  /** Admins: full PDF imports also suggest a logo and banner from the document's images */
+  canSetBranding?: boolean
 }) {
+  const router = useRouter()
+  const branding = useBranding()
+  const [extractLabel, setExtractLabel] = useState('Extracting text from PDF…')
+  const [pdfImages, setPdfImages] = useState<PdfImage[]>([])
+  const [pick, setPick] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
+  const [applying, setApplying] = useState(false)
+  const [applyError, setApplyError] = useState('')
+  const suggestions = useMemo(() => suggestBranding(pdfImages), [pdfImages])
+  // Object URLs for the thumbnails are freed when the images change or the modal closes
+  useEffect(() => () => releasePdfImages(pdfImages), [pdfImages])
+
   const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
   const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0 })
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 })
@@ -159,10 +175,25 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
     if (isPdf) {
       setStage('extracting')
+      setExtractLabel('Extracting text from PDF…')
       setPdfProgress({ current: 0, total: 0 })
+      setPdfImages([])
       try {
         const text = await extractPdfText(file, (page, total) => setPdfProgress({ current: page, total }))
         setDocText(text)
+        if (canSetBranding && !scope) {
+          setExtractLabel('Looking for a logo and banner image…')
+          setPdfProgress({ current: 0, total: 0 })
+          try {
+            const images = await extractPdfImages(file, (page, total) => setPdfProgress({ current: page, total }))
+            const { logos, banners } = suggestBranding(images)
+            setPdfImages(images)
+            // Preselect the best guesses only where the community has none yet
+            setPick({ logo: branding.logo_url ? null : logos[0]?.id ?? null, banner: branding.banner_url ? null : banners[0]?.id ?? null })
+          } catch {
+            // Images are a bonus: the text import goes ahead without them
+          }
+        }
         setStage('upload')
       } catch (e) {
         setErrorMsg(`Could not read PDF: ${(e as Error).message}`)
@@ -306,14 +337,62 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
     }
   }
 
-  const handleApply = () => {
+  const pickedImage = (kind: 'logo' | 'banner') => pdfImages.find(i => i.id === pick[kind]) ?? null
+  const brandingCount = (pickedImage('logo') ? 1 : 0) + (pickedImage('banner') ? 1 : 0)
+
+  const handleApply = async () => {
     if (!extracted) return
     const toApply: Values = {}
     Object.entries(extracted).forEach(([k, v]) => { if (!k.startsWith('_') && k !== 'circles' && acceptedKeys[k]) toApply[k] = v })
     // Found circles wait in the answers until an admin confirms them in the Circles step
     if (foundList.length) toApply[FOUND_CIRCLES_KEY] = foundList
+    if (brandingCount) {
+      setApplying(true); setApplyError('')
+      try {
+        for (const kind of ['logo', 'banner'] as const) {
+          const img = pickedImage(kind)
+          if (img) await setBrandingImage(kind, img.blob, branding[`${kind}_url`])
+        }
+        router.refresh()
+      } catch (e) {
+        setApplying(false)
+        setApplyError(`Nothing was applied: an image upload failed (${(e as Error).message}). Try again, or set the images to None.`)
+        return
+      }
+    }
     onApply(toApply); onClose()
   }
+
+  // A render helper, not a component (a component defined here would remount every render)
+  const imagePicker = (kind: 'logo' | 'banner', label: string, list: PdfImage[], current: string | null) => (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>
+        {label}{current && <span style={{ fontWeight: 400, color: 'var(--ink-3)' }}> · you already have one; pick only to replace it</span>}
+      </div>
+      {list.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No good {kind} candidates in this document.</div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'stretch' }}>
+          {list.map(img => {
+            const on = pick[kind] === img.id
+            return (
+              <button key={img.id} type="button" onClick={() => setPick(p => ({ ...p, [kind]: on ? null : img.id }))}
+                title={`${img.width}×${img.height} · page ${img.pages.join(', ')}`}
+                style={{ padding: 4, borderRadius: 8, cursor: 'pointer', background: kind === 'logo' ? 'repeating-conic-gradient(var(--bg-2) 0 25%, var(--surface) 0 50%) 0 0 / 12px 12px' : 'var(--surface)',
+                  border: `2px solid ${on ? 'var(--accent)' : 'var(--rule)'}`, boxShadow: on ? '0 0 0 2px var(--accent-soft)' : 'none' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.url} alt="" style={{ display: 'block', height: kind === 'logo' ? 56 : 72, width: kind === 'logo' ? 'auto' : 160, maxWidth: 160, objectFit: kind === 'logo' ? 'contain' : 'cover', borderRadius: 4 }} />
+              </button>
+            )
+          })}
+          <button type="button" onClick={() => setPick(p => ({ ...p, [kind]: null }))}
+            style={{ padding: '0 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: 'var(--ink-3)', background: 'var(--surface)', border: `2px solid ${pick[kind] === null ? 'var(--accent)' : 'var(--rule)'}` }}>
+            None
+          </button>
+        </div>
+      )}
+    </div>
+  )
 
   const foundList = (extracted?.circles ?? []) as FoundCircle[]
   const catalog = buildFieldCatalog(scope)
@@ -361,7 +440,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
         {stage === 'extracting' && (
           <div style={{ padding: '40px 0', textAlign: 'center' }}>
             <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>Extracting text from PDF…</div>
+            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>{extractLabel}</div>
             {pdfProgress.total > 0 && (
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
@@ -413,6 +492,17 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                 </div>
               )}
             </div>
+
+            {canSetBranding && !scope && pdfImages.length > 0 && (
+              <div style={{ marginBottom: 20, padding: '12px 14px', border: '1px solid var(--rule)', borderRadius: 'var(--radius)' }}>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 16, marginBottom: 4 }}>Logo &amp; banner from your document</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>
+                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. Our best guesses are selected; click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
+                </div>
+                {imagePicker('logo', 'Logo', suggestions.logos, branding.logo_url)}
+                {imagePicker('banner', 'Banner image', suggestions.banners, branding.banner_url)}
+              </div>
+            )}
 
             {(scope?.circles || foundList.length > 0) && (
               <div style={{ marginBottom: 20, padding: '12px 14px', border: '1px solid var(--rule)', borderRadius: 'var(--radius)' }}>
@@ -523,6 +613,10 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
             </div>
             </>}
 
+            {applyError && (
+              <div style={{ fontSize: 13, color: '#b91c1c', background: '#b91c1c12', border: '1px solid #b91c1c40', borderRadius: 'var(--radius)', padding: '8px 12px', marginBottom: 12 }}>{applyError}</div>
+            )}
+
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
               <button className="btn btn-ghost" onClick={() => setStage('upload')}>← Back</button>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -532,8 +626,10 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                   Object.keys(extracted).forEach(k => { if (!k.startsWith('_') && k !== 'circles') all[k] = allNew })
                   setAcceptedKeys(all)
                 }}>Toggle all</button>}
-                <button className="btn btn-primary" onClick={handleApply}>
-                  {scope?.circles ? (foundList.length ? 'Review in Circles step →' : 'Close') : `Apply ${Object.values(acceptedKeys).filter(Boolean).length} answers →`}
+                <button className="btn btn-primary" onClick={handleApply} disabled={applying}>
+                  {scope?.circles ? (foundList.length ? 'Review in Circles step →' : 'Close')
+                    : applying ? 'Saving…'
+                    : `Apply ${Object.values(acceptedKeys).filter(Boolean).length} answers${brandingCount ? ` + ${brandingCount} image${brandingCount === 1 ? '' : 's'}` : ''} →`}
                 </button>
               </div>
             </div>
@@ -1974,6 +2070,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
           onClose={() => { setShowImport(false); setImportScope(undefined) }}
           currentValues={values}
           scope={importScope}
+          canSetBranding={isAdmin && !readOnly}
           onApply={extracted => setValues(v => ({ ...v, ...extracted }))}
         />
       )}

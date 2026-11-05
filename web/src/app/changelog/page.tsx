@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.3.0',
+    date: '2026-11-04',
+    title: 'Blueprint import finds your logo and banner',
+    items: [
+      'When an admin imports a PDF into the Blueprint, the wizard also looks through its images and suggests a logo (an image repeated across pages, or a small one on the cover) and a banner (a wide, high-resolution photo).',
+      'The review screen shows them as thumbnails next to the proposed answers, with the best guesses selected where the community has none yet. Pick another, or None; they are saved together with the answers.',
+    ],
+  },
+  {
     version: 'v4.2.1',
     date: '2026-11-04',
     title: 'Database hardening',

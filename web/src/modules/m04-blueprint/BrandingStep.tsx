@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/core/lib/supabase/client'
+import { clearBrandingImage, setBrandingImage, type BrandingKind } from '@/modules/m04-blueprint/lib/branding-upload'
 import { useBranding } from '@/core/components/BrandingProvider'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
 
@@ -12,16 +12,13 @@ import { COMMUNITY_NAME } from '@/core/lib/instance'
  * their URLs to `community_settings`. Admins only; everyone else sees a preview.
  */
 
-type Kind = 'logo' | 'banner'
+type Kind = BrandingKind
 
 const LIMITS: Record<Kind, { bytes: number; hint: string }> = {
   logo: { bytes: 1024 * 1024, hint: 'Square or wide, PNG or SVG with a transparent background works best. Shown about 32px tall. Up to 1 MB.' },
   banner: { bytes: 5 * 1024 * 1024, hint: 'A wide photo of the land, the people or the place, at least 1600 × 500. It is cropped to fit. Up to 5 MB.' },
 }
 const TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif']
-
-/** "…/storage/v1/object/public/branding/logo-123.png" → "logo-123.png" */
-const pathOf = (url: string | null) => url?.split('/object/public/branding/')[1]?.split('?')[0] ?? null
 
 export default function BrandingStep({ canEdit, onPrev, onNext }: {
   canEdit: boolean; onPrev: () => void; onNext: () => void
@@ -31,12 +28,6 @@ export default function BrandingStep({ canEdit, onPrev, onNext }: {
   const [busy, setBusy] = useState<Kind | null>(null)
   const [error, setError] = useState('')
 
-  const save = async (kind: Kind, url: string | null) => {
-    const { error: err } = await createClient().from('community_settings')
-      .upsert({ id: true, [`${kind}_url`]: url }, { onConflict: 'id' })
-    if (err) throw new Error(err.message)
-  }
-
   const upload = async (kind: Kind, file: File | undefined) => {
     if (!file) return
     setError('')
@@ -44,16 +35,7 @@ export default function BrandingStep({ canEdit, onPrev, onNext }: {
     if (file.size > LIMITS[kind].bytes) { setError(`That file is too big (${(file.size / 1024 / 1024).toFixed(1)} MB). ${LIMITS[kind].hint}`); return }
     setBusy(kind)
     try {
-      const supabase = createClient()
-      const ext = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
-      // A new name each time, so browsers don't keep showing the old image
-      const path = `${kind}-${Date.now()}.${ext}`
-      const { error: upErr } = await supabase.storage.from('branding').upload(path, file, { contentType: file.type })
-      if (upErr) throw new Error(upErr.message)
-      const { data } = supabase.storage.from('branding').getPublicUrl(path)
-      const old = pathOf(branding[`${kind}_url`])
-      await save(kind, data.publicUrl)
-      if (old) await supabase.storage.from('branding').remove([old])
+      await setBrandingImage(kind, file, branding[`${kind}_url`])
       router.refresh()
     } catch (e) {
       setError((e as Error).message)
@@ -64,9 +46,7 @@ export default function BrandingStep({ canEdit, onPrev, onNext }: {
   const remove = async (kind: Kind) => {
     setError(''); setBusy(kind)
     try {
-      const old = pathOf(branding[`${kind}_url`])
-      await save(kind, null)
-      if (old) await createClient().storage.from('branding').remove([old])
+      await clearBrandingImage(kind, branding[`${kind}_url`])
       router.refresh()
     } catch (e) {
       setError((e as Error).message)

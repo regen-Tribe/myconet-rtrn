@@ -31,6 +31,8 @@ The wizard structure is derived from four research-backed frameworks. Each step 
 |------|---------|
 | `BlueprintClient.tsx` | Full wizard UI — pillar tabs, step fields, AI scan, scoring panels |
 | `BrandingStep.tsx` | Setup step "Look & feel": logo and banner image (`community_settings`, `branding` bucket). Admins only |
+| `lib/pdf-images.ts` | Pulls images out of an imported PDF and suggests a logo and banner (rules, not AI) |
+| `lib/branding-upload.ts` | Uploads/clears the logo or banner (`branding` bucket + `community_settings`) |
 | `CommunityValuesEditor.tsx` | Step 1.4's Community values section: the values members sign when joining (`community_values`) |
 | `CirclesStep.tsx` | Setup's last step: confirm circles found by the scan, or ask for them (templates), and save / rename / retire them. Admins only (`circles` is admin-write) |
 | `lib/circle-setup.ts` | Scan prompt rule for circles, merging found circles, templates, slug / emoji / colour pickers |

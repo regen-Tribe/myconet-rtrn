@@ -47,10 +47,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           LATEST: ${{ steps.tags.outputs.latest }}
           CURRENT: ${{ steps.tags.outputs.current }}
+          BASE: ${{ github.event.repository.default_branch }}
         run: |
           branch="core-update/${LATEST}"
-          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
-            echo "A pull request for $LATEST already exists"; exit 0
+          if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            echo "A pull request for $LATEST is already open"; exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -62,9 +63,9 @@ jobs:
           # Core never ships an instance/: keep ours
           git checkout HEAD -- instance 2>/dev/null || true
           git commit -m "Update MyCoNet core to ${LATEST}"
-          git push origin "$branch"
+          # --force: a branch left by an earlier run that couldn't open its PR
+          git push --force origin "$branch"
           notes=$(git show "${LATEST}:CHANGELOG.md" | awk -v cur="## ${CURRENT} " 'index($0, cur) == 1 {exit} {print}' | tail -n +2)
-          base=$(git rev-parse --abbrev-ref origin/HEAD | sed 's#origin/##')
-          gh pr create --base "$base" --head "$branch" \
+          gh pr create --base "$BASE" --head "$branch" \
             --title "Update MyCoNet core to ${LATEST}" \
             --body "$(printf 'MyCoNet core %s → %s. Your `instance/` folder is unchanged.\n\nAfter merging: run any new database migrations (`supabase db push`) and deploy.\n\n### Release notes\n%s' "$CURRENT" "$LATEST" "$notes")"
