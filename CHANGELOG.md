@@ -5,6 +5,43 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.5.0 — 2026-11-05
+
+No database changes.
+
+- **Two models.** `/api/scan` takes `mode`: `fast` = MiniMax-M3.1-Flash with `reasoning_effort: 'low'`
+  (quote gathering), default `full` = MiniMax-M3 (answers, image choice). With full reasoning, M3 and
+  Flash both spent the whole 24k-token reply thinking on a 70-page, 110k-character handbook and never
+  produced the JSON; Flash at low reasoning returned 42 questions' evidence, 9 circles and a summary
+  in 19 s. M3 ignores `reasoning_effort`.
+- **Evidence per framework phase** (parts × phases, in parallel), so one reply never carries quotes for
+  all ~150 questions. The first phase's request also writes the summary and finds circles.
+- **Smoother import.** Choosing a file starts the scan; the PDF image search runs alongside it.
+  `scanDocument` reports `{ step, done, total, finished, found }`; the modal shows a live checklist
+  (read → quotes → answers → logo & banner) with an elapsed timer.
+- **Answers in groups of ≤20 questions**, requests pooled (6 in flight). Handbook dry run (70 pages,
+  148 questions): 136 s, 96 answered (83 high / 13 medium confidence), 26 gaps, 8 circles, 0 failures.
+
+## v4.4.0 — 2026-11-05
+
+No database changes. Uses **MiniMax-M3** (`/api/scan`, `/api/governance/ai-check`).
+
+- **Two-pass document scan** (`modules/m04-blueprint/lib/doc-scan.ts`). Pass 1 (evidence): the
+  document is read in parts of ≤150k characters (most documents: one part); per question, up to 3
+  verbatim quotes with page numbers, plus a summary and circles. Pass 2 (answers): one request per
+  framework phase, in parallel, writing each answer from all its quotes with `confidence`
+  (high/medium/low), `pages`, `conflict` and `why`. Unanswered written questions are returned as gaps.
+  Each request is retried once; failures leave the rest of the results in place.
+- PDF text carries `[Page N]` markers; the review shows confidence, pages and conflicts per answer,
+  low-confidence answers start unticked, and a "not covered" list shows the gaps.
+- `/api/scan`: prompt limit 200k characters (was 25k, which made every full-catalog scan fail with
+  "Prompt too long"); optional `images` (≤12 small data URLs) and `maxTokens`.
+- **Images:** `aiPickBranding()` asks M3 (vision) to pick the logo and banner from the rule-ranked
+  candidates. Extraction scales images while drawing, skips raw images over 12 MP, reads at most 30 pages
+  or 60 s, and can be skipped.
+- Tested against M3: a 3-page sample (8/9 answered with pages, conflict flagged) and a 100-page,
+  148-question document (1 evidence call + 4 answer calls, 0 failures, ~4 min).
+
 ## v4.3.1 — 2026-11-04
 
 - `core-update.yml`: opens the PR against the repo's default branch (runners have no `origin/HEAD`,

@@ -12,9 +12,10 @@ import CommunityValuesEditor from '@/modules/m04-blueprint/CommunityValuesEditor
 import BrandingStep from '@/modules/m04-blueprint/BrandingStep'
 import { useBranding } from '@/core/components/BrandingProvider'
 import { useRouter } from 'next/navigation'
-import { extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
+import { aiPickBranding, extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
+import { scanDocument, type AnswerMeta, type ScanProgress } from '@/modules/m04-blueprint/lib/doc-scan'
 import { setBrandingImage } from '@/modules/m04-blueprint/lib/branding-upload'
-import { CIRCLES_PROMPT_RULE, FOUND_CIRCLES_KEY, mergeFoundCircles, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
+import { FOUND_CIRCLES_KEY, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
 
 async function extractPdfText(file: File, onProgress?: (page: number, total: number) => void): Promise<string> {
@@ -27,7 +28,9 @@ async function extractPdfText(file: File, onProgress?: (page: number, total: num
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
     const pageText = content.items.map((item: any) => item.str).join(' ')
-    parts.push(pageText)
+    // Page markers let the scan cite where each answer came from
+    parts.push(`[Page ${i}]\n${pageText}`)
+    page.cleanup()
     onProgress?.(i, pdf.numPages)
   }
   return parts.join('\n\n')
@@ -150,17 +153,32 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 }) {
   const router = useRouter()
   const branding = useBranding()
-  const [extractLabel, setExtractLabel] = useState('Extracting text from PDF…')
   const [pdfImages, setPdfImages] = useState<PdfImage[]>([])
   const [pick, setPick] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
   const [applying, setApplying] = useState(false)
+  const [aiPicked, setAiPicked] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
+  const stopImages = useRef(false)
+  const [lookingForImages, setLookingForImages] = useState(false)
+  const [imageStatus, setImageStatus] = useState('')
   const [applyError, setApplyError] = useState('')
   const suggestions = useMemo(() => suggestBranding(pdfImages), [pdfImages])
   // Object URLs for the thumbnails are freed when the images change or the modal closes
   useEffect(() => () => releasePdfImages(pdfImages), [pdfImages])
 
   const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
-  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0 })
+  const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null)
+  const [finishingImages, setFinishingImages] = useState(false)
+  // Elapsed time on the progress screen, so a long scan never looks stuck
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (stage !== 'extracting' && stage !== 'scanning') return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [stage])
+  const [answerMeta, setAnswerMeta] = useState<Record<string, AnswerMeta>>({})
+  const [gaps, setGaps] = useState<string[]>([])
+  const [failedParts, setFailedParts] = useState(0)
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 })
   const [docText, setDocText] = useState('')
   const [fileName, setFileName] = useState('')
@@ -170,166 +188,93 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [wasTruncated, setWasTruncated] = useState(false)
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({})
 
-  const handleFile = async (file: File) => {
-    setFileName(file.name)
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-    if (isPdf) {
-      setStage('extracting')
-      setExtractLabel('Extracting text from PDF…')
-      setPdfProgress({ current: 0, total: 0 })
-      setPdfImages([])
-      try {
-        const text = await extractPdfText(file, (page, total) => setPdfProgress({ current: page, total }))
-        setDocText(text)
-        if (canSetBranding && !scope) {
-          setExtractLabel('Looking for a logo and banner image…')
-          setPdfProgress({ current: 0, total: 0 })
-          try {
-            const images = await extractPdfImages(file, (page, total) => setPdfProgress({ current: page, total }))
-            const { logos, banners } = suggestBranding(images)
-            setPdfImages(images)
-            // Preselect the best guesses only where the community has none yet
-            setPick({ logo: branding.logo_url ? null : logos[0]?.id ?? null, banner: branding.banner_url ? null : banners[0]?.id ?? null })
-          } catch {
-            // Images are a bonus: the text import goes ahead without them
-          }
-        }
-        setStage('upload')
-      } catch (e) {
-        setErrorMsg(`Could not read PDF: ${(e as Error).message}`)
-        setStage('error')
+  // Logo and banner from a PDF's images; runs alongside the text scan. Never fails the import.
+  const findImages = async (file: File) => {
+    stopImages.current = false
+    setLookingForImages(true)
+    setImageStatus('Looking for a logo and banner image…')
+    try {
+      const images = await extractPdfImages(file, (page, total) => setImageStatus(`Looking for a logo and banner image… page ${page} of ${total}`), stopImages)
+      const { logos, banners } = suggestBranding(images)
+      let logo = logos[0]?.id ?? null
+      let banner = banners[0]?.id ?? null
+      const candidates = [...new Map([...logos, ...banners].map(i => [i.id, i])).values()]
+      if (candidates.length && !stopImages.current) {
+        setImageStatus('Choosing the logo and banner…')
+        const ai = await aiPickBranding(candidates)
+        if (ai) { logo = ai.logo ?? logo; banner = ai.banner ?? banner; setAiPicked(ai) }
       }
-      return
+      setPdfImages(images)
+      // Preselect the best guesses only where the community has none yet
+      setPick({ logo: branding.logo_url ? null : logo, banner: branding.banner_url ? null : banner })
+    } catch {
+      // Images are a bonus: the text import goes ahead without them
     }
-    const text = await new Promise<string>((resolve, reject) => {
-      const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsText(file)
-    })
-    setDocText(text)
+    setLookingForImages(false)
   }
 
-  const handleScan = async () => {
-    if (!docText.trim()) { setErrorMsg('Paste some text or upload a file first.'); return }
+  // Dropping a file starts everything: no separate "Scan" click
+  const handleFile = async (file: File) => {
+    setFileName(file.name)
+    setPdfImages([])
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    let text = ''
+    try {
+      setStartedAt(Date.now())
+      if (isPdf) {
+        setStage('extracting')
+        setPdfProgress({ current: 0, total: 0 })
+        text = await extractPdfText(file, (page, total) => setPdfProgress({ current: page, total }))
+      } else {
+        text = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsText(file)
+        })
+      }
+    } catch (e) {
+      setErrorMsg(`Could not read ${isPdf ? 'the PDF' : 'the file'}: ${(e as Error).message}`)
+      setStage('error')
+      return
+    }
+    setDocText(text)
+    const images = isPdf && canSetBranding && !scope ? findImages(file) : null
+    await handleScan(text, images)
+  }
+
+  const handleScan = async (text: string = docText, images: Promise<void> | null = null) => {
+    if (!text.trim()) { setErrorMsg('Paste some text or upload a file first.'); setStage('upload'); return }
     setStage('scanning'); setErrorMsg('')
 
     const catalog = buildFieldCatalog(scope)
-    const fieldsByStep: Record<string, FieldCatalogEntry[]> = {}
-    catalog.forEach(f => { const k = `${f.phase} — ${f.step}`; if (!fieldsByStep[k]) fieldsByStep[k] = []; fieldsByStep[k].push(f) })
-    const fieldList = Object.entries(fieldsByStep).map(([s, fields]) =>
-      `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"`).join('\n')
-    ).join('\n\n')
-    const scopeHint = scope?.circles ? '\n\nIMPORTANT: Only look for circles. Return just the "circles" array and "_summary".'
-      : scope?.step ? `\n\nIMPORTANT: Focus only on the "${scope.step.title}" step${scope.section ? ' (' + scope.section + ' section)' : ''}. Only return fields listed below.` : ''
-    // Step-scoped imports fill fields only; full scans and the Circles step also look for circles
-    const circlesRule = scope?.step ? '' : `\n${CIRCLES_PROMPT_RULE}`
-
-    const existingAnswers = catalog
-      .filter(f => { const v = currentValues[f.id]; return v != null && v !== '' && String(v).length > 0 })
-      .map(f => {
-        const v = currentValues[f.id]
-        const display = f.kind === 'slider' ? `${v}/10` : f.kind === 'check' ? (v ? 'Yes' : 'No') : String(v)
-        return `- ${f.id} (${f.kind}): "${f.label}" → EXISTING: ${display}`
-      }).join('\n')
-    const existingBlock = existingAnswers ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n` : ''
-
-    const CHUNK_SIZE = 15000
-    const CONCURRENCY = 2
-    const MAX_CHUNKS = 30
-    const allChunks: string[] = []
-    for (let i = 0; i < docText.length; i += CHUNK_SIZE) allChunks.push(docText.slice(i, i + CHUNK_SIZE))
-    const truncated = allChunks.length > MAX_CHUNKS
-    const chunks = allChunks.slice(0, MAX_CHUNKS)
-    setChunkProgress({ current: 0, total: chunks.length })
-
-    const buildPrompt = (chunkText: string, chunkNum: number, totalChunks: number) => {
-      const chunkNote = totalChunks > 1 ? `\n\nNote: This is chunk ${chunkNum} of ${totalChunks} of the full document. Extract what you can from this portion.` : ''
-      return `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document.
-
-Below is the user's document, followed by the catalog of wizard fields. Extract any information from the document that maps to these fields. Return a JSON object with field IDs as keys.
-
-Rules:
-- For text fields: return a string with extracted/synthesized content (1-3 sentences). If nothing relevant, omit the key.
-- For slider fields: return an integer 0-10 reflecting confidence/maturity in that area based on document evidence. If unclear, omit.
-- For check fields (id without "_note" suffix): return true only if the document clearly indicates this is in place. Otherwise omit.
-- For checklist note fields (id ending in "_note"): if the doc has relevant info, write a 1-2 sentence note. Be concrete.
-- Only include fields where you have actual evidence from the document. Omit anything you'd be guessing.
-- Also include a "_summary" key with a 2-sentence summary of what the document is about.
-- Also include "_extracted_count" with the number of fields you populated.${circlesRule}${scopeHint}${chunkNote}
-
-DOCUMENT:
-"""
-${chunkText}
-"""
-
-WIZARD FIELDS:
-${fieldList || '(none for this scan)'}
-
-Return ONLY valid JSON, no markdown fences, no commentary.`
-    }
-
-    const scanChunk = async (chunkText: string, chunkNum: number, totalChunks: number): Promise<Record<string, unknown>> => {
-      const prompt = buildPrompt(chunkText, chunkNum, totalChunks)
-      const aiUrl = process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/scan'
-      const resp = await fetch(aiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({})) as { error?: string }
-        throw new Error(err.error ?? `Request failed (${resp.status})`)
-      }
-      const { result } = await resp.json() as { result: string }
-      let cleaned = result.trim()
-      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '')
-      const start = cleaned.indexOf('{'); const end = cleaned.lastIndexOf('}')
-      if (start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1)
-      return JSON.parse(cleaned) as Record<string, unknown>
-    }
-
-    const mergeResults = (results: Record<string, unknown>[]): Record<string, unknown> => {
-      const merged: Record<string, unknown> = {}
-      const circleLists: unknown[] = []
-      results.forEach(r => {
-        Object.entries(r).forEach(([k, v]) => {
-          if (k === 'circles') { circleLists.push(v); return }
-          if (k.startsWith('_')) { if (!merged[k]) merged[k] = v; return }
-          const existing = merged[k]
-          if (existing == null) { merged[k] = v; return }
-          if (typeof v === 'string' && typeof existing === 'string') {
-            if (v.length > (existing as string).length) merged[k] = v
-          } else if (typeof v === 'number' && typeof existing === 'number') {
-            merged[k] = Math.round(((existing as number) + v) / 2)
-          } else if (typeof v === 'boolean') {
-            merged[k] = (existing as boolean) || v
-          }
-        })
-      })
-      const circles = mergeFoundCircles(circleLists)
-      if (circles.length) merged.circles = circles
-      return merged
-    }
-
+    setScanProgress(null)
+    setFinishingImages(false)
+    setStartedAt(t => t ?? Date.now())
     try {
-      const allResults: Record<string, unknown>[] = new Array(chunks.length)
-      let completed = 0
-      for (let batchStart = 0; batchStart < chunks.length; batchStart += CONCURRENCY) {
-        const batch = chunks.slice(batchStart, batchStart + CONCURRENCY)
-        await Promise.all(batch.map(async (chunk, batchIdx) => {
-          const i = batchStart + batchIdx
-          const result = await scanChunk(chunk, i + 1, chunks.length)
-          allResults[i] = result
-          completed++
-          setChunkProgress({ current: completed, total: chunks.length })
-        }))
-      }
-      const merged = mergeResults(allResults)
+      const result = await scanDocument({
+        docText: text,
+        fields: catalog,
+        current: currentValues,
+        // Step-scoped imports fill fields only; full scans and the Circles step also look for circles
+        wantCircles: !scope?.step,
+        onProgress: setScanProgress,
+      })
+      const merged: Record<string, unknown> = { ...result.values, _summary: result.summary }
+      if (result.circles.length) merged.circles = result.circles
       setExtracted(merged)
-      setWasTruncated(truncated)
+      setAnswerMeta(result.meta)
+      setGaps(scope?.circles ? [] : result.gaps)
+      setFailedParts(result.failed)
+      setWasTruncated(result.truncated)
+      // New answers start ticked unless the AI wasn't sure; existing answers are kept unless you choose the new one
       const accepted: Record<string, boolean> = {}
-      // Default: accept new fields; for conflicts (existing answer present) default to keeping current
-      Object.keys(merged).forEach(k => {
-        if (k.startsWith('_') || k === 'circles') return
+      Object.keys(result.values).forEach(k => {
         const hasExisting = currentValues[k] != null && currentValues[k] !== ''
-        accepted[k] = !hasExisting
+        accepted[k] = !hasExisting && result.meta[k]?.confidence !== 'low'
       })
       setAcceptedKeys(accepted)
       setExpandedKeys({})
+      // The review shows the images too, so wait for the image search if it's still going
+      if (images) { setFinishingImages(true); await images }
+      setStartedAt(null)
       setStage('review')
     } catch (e) {
       setErrorMsg((e as Error).message ?? 'Scan failed.')
@@ -382,6 +327,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                   border: `2px solid ${on ? 'var(--accent)' : 'var(--rule)'}`, boxShadow: on ? '0 0 0 2px var(--accent-soft)' : 'none' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img.url} alt="" style={{ display: 'block', height: kind === 'logo' ? 56 : 72, width: kind === 'logo' ? 'auto' : 160, maxWidth: 160, objectFit: kind === 'logo' ? 'contain' : 'cover', borderRadius: 4 }} />
+                {aiPicked[kind] === img.id && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', marginTop: 3 }}>✨ AI pick</div>}
               </button>
             )
           })}
@@ -396,6 +342,21 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
 
   const foundList = (extracted?.circles ?? []) as FoundCircle[]
   const catalog = buildFieldCatalog(scope)
+  // Confidence, pages and conflicts from the scan, shown on each proposed answer
+  const answerInfo = (key: string) => {
+    const m = answerMeta[key]
+    if (!m) return null
+    const colour = m.confidence === 'high' ? '#15803d' : m.confidence === 'medium' ? '#b45309' : '#b91c1c'
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 6, fontSize: 11 }}>
+        <span style={{ fontWeight: 700, color: colour, border: `1px solid ${colour}55`, borderRadius: 20, padding: '0 7px' }}>{m.confidence} confidence</span>
+        {m.pages.length > 0 && <span style={{ color: 'var(--ink-3)' }}>p. {m.pages.slice(0, 6).join(', ')}</span>}
+        {m.why && <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>{m.why}</span>}
+        {m.conflict && <span style={{ flexBasis: '100%', color: '#b45309' }}>⚠ {m.conflict}</span>}
+      </div>
+    )
+  }
+
   const fieldMeta = (id: string) => catalog.find(f => f.id === id) ?? { label: id, kind: 'text' as const, step: '', phase: '', help: '' }
 
   return (
@@ -423,59 +384,77 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               {docText && (
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.08em' }}>
                   {docText.length.toLocaleString()} CHARS
-                  {docText.length > 5000 ? ` · will scan in ${Math.ceil(docText.length / 5000)} chunks` : ' · full document will be scanned'}
+                  {docText.length > 150000 ? ` · read in ${Math.ceil(docText.length / 150000)} parts` : ' · read in one pass'}
                 </div>
               )}
             </div>
             <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
-              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M2.7 reads your document and proposes answers for fields it finds evidence for. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Works with PDF, .txt, and .md files.
+              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M3 reads the whole document and collects quotes for each Blueprint question, then writes each answer from all the quotes, with how sure it is and the pages it used. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Works with PDF, .txt and .md files; PDFs give page references.
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleScan} disabled={!docText.trim()}>Scan with AI →</button>
+              <button className="btn btn-primary" onClick={() => handleScan()} disabled={!docText.trim()}>Scan with AI →</button>
             </div>
           </div>
         )}
 
-        {stage === 'extracting' && (
-          <div style={{ padding: '40px 0', textAlign: 'center' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>{extractLabel}</div>
-            {pdfProgress.total > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
-                  Page {pdfProgress.current} of {pdfProgress.total}
-                </div>
-                <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
-                  <div style={{ height: '100%', width: `${(pdfProgress.current / pdfProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 200ms' }} />
-                </div>
+        {(stage === 'extracting' || stage === 'scanning') && (() => {
+          // One checklist for the whole import, so people can see what's happening and that it's moving
+          const p = scanProgress
+          const PHASES = ['Spark', 'Prove', 'Build', 'Live']
+          const phaseLine = (finished: string[]) => PHASES.map(ph => (finished.some(f => f.startsWith(ph)) ? `${ph} ✓` : ph)).join(' · ')
+          type Status = 'done' | 'active' | 'pending'
+          const rows: { status: Status; title: string; detail: string }[] = [
+            {
+              status: stage === 'extracting' ? 'active' : 'done',
+              title: fileName.toLowerCase().endsWith('.pdf') ? 'Reading the PDF' : 'Reading the document',
+              detail: stage === 'extracting'
+                ? (pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
+                : `${docText.length.toLocaleString()} characters${pdfProgress.total ? ` from ${pdfProgress.total} pages` : ''}`,
+            },
+            {
+              status: stage === 'extracting' ? 'pending' : !p || p.step === 'quotes' ? (p && p.done === p.total ? 'done' : 'active') : 'done',
+              title: 'Finding what the document says about each question',
+              detail: !p ? (stage === 'scanning' ? 'Starting…' : '') : `${phaseLine(p.step === 'quotes' ? p.finished : PHASES)}${p.step === 'quotes' && p.found ? ` · evidence for ${p.found} questions so far` : ''}`,
+            },
+            {
+              status: p?.step === 'answers' ? (p.done === p.total ? 'done' : 'active') : 'pending',
+              title: 'Writing your answers',
+              detail: p?.step === 'answers' ? `${phaseLine(p.finished)}${p.found ? ` · ${p.found} answers so far` : ''}` : 'One answer per question, with pages and how sure we are',
+            },
+          ]
+          if (lookingForImages || finishingImages) rows.push({
+            status: lookingForImages ? 'active' : 'done',
+            title: 'Looking for your logo and banner',
+            detail: lookingForImages ? imageStatus : 'Done',
+          })
+          const secs = startedAt ? Math.max(0, Math.round((now - startedAt) / 1000)) : 0
+          const icon = (st: Status) => st === 'done' ? '✓' : st === 'active' ? '◐' : '○'
+          return (
+            <div style={{ padding: '8px 0 4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 20 }}>Importing {fileName || 'your text'}</div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-3)' }}>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}</div>
               </div>
-            )}
-          </div>
-        )}
-
-        {stage === 'scanning' && (
-          <div style={{ padding: '40px 0', textAlign: 'center' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>Reading your document…</div>
-            {chunkProgress.total > 1 && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
-                  Chunk {chunkProgress.current} of {chunkProgress.total}
+              {rows.map(r => (
+                <div key={r.title} style={{ display: 'flex', gap: 12, padding: '10px 0', borderTop: '1px solid var(--rule-soft)', opacity: r.status === 'pending' ? 0.55 : 1 }}>
+                  <span style={{ width: 20, textAlign: 'center', fontSize: 15, color: r.status === 'done' ? 'var(--accent)' : 'var(--ink-2)', animation: r.status === 'active' ? 'pulse 1.2s infinite' : undefined }}>{icon(r.status)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: r.status === 'active' ? 700 : 500 }}>{r.title}</div>
+                    {r.detail && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.detail}</div>}
+                  </div>
+                  {r.title === 'Looking for your logo and banner' && lookingForImages && (
+                    <button className="btn btn-ghost" style={{ fontSize: 11, padding: '2px 8px', alignSelf: 'center' }} onClick={() => { stopImages.current = true }}>Skip</button>
+                  )}
                 </div>
-                <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
-                  <div style={{ height: '100%', width: `${(chunkProgress.current / chunkProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 300ms' }} />
-                </div>
-              </div>
-            )}
-            {chunkProgress.total <= 1 && <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8, fontStyle: 'italic' }}>Mapping content to RNF · Alchemy · RCOS · CLIPS fields</div>}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
-              {(['rnf', 'alchemy', 'rcos', 'clips'] as const).map((k, i) => (
-                <div key={k} style={{ width: 10, height: 10, borderRadius: '50%', background: `var(--${k})`, animation: `pulse 1s ${i * 150}ms infinite` }} />
               ))}
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, lineHeight: 1.5 }}>
+                {secs < 150 ? 'This usually takes 1 to 3 minutes for a long document. You can keep this window open while it works.'
+                  : 'Still working: big, detailed documents take longer. Nothing is saved until you review the answers.'}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {stage === 'review' && extracted && (
           <div>
@@ -488,8 +467,21 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               </div>
               {wasTruncated && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
-                  ⚠ Large document — scanned the first 450,000 characters. If key content appears later in the file, consider splitting it into smaller uploads.
+                  ⚠ Large document — read the first 1,200,000 characters (about 400 pages). If key content comes later, import the rest separately.
                 </div>
+              )}
+              {failedParts > 0 && (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                  ⚠ {failedParts} part{failedParts === 1 ? '' : 's'} of the scan didn&rsquo;t come back, so some answers may be missing. You can run the import again later; it only proposes, nothing is overwritten.
+                </div>
+              )}
+              {gaps.length > 0 && (
+                <details style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-2)' }}>
+                  <summary style={{ cursor: 'pointer' }}>{gaps.length} question{gaps.length === 1 ? '' : 's'} the document doesn&rsquo;t cover (still to write)</summary>
+                  <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
+                    {gaps.map(id => { const m = fieldMeta(id); return <li key={id}><span style={{ color: 'var(--ink-3)' }}>{m.step}:</span> {m.label}</li> })}
+                  </ul>
+                </details>
               )}
             </div>
 
@@ -497,7 +489,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               <div style={{ marginBottom: 20, padding: '12px 14px', border: '1px solid var(--rule)', borderRadius: 'var(--radius)' }}>
                 <div style={{ fontFamily: 'var(--display)', fontSize: 16, marginBottom: 4 }}>Logo &amp; banner from your document</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>
-                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. Our best guesses are selected; click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
+                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. {aiPicked.logo || aiPicked.banner ? 'The AI looked at them and its picks are marked ✨.' : 'Our best guesses are marked.'} Click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
                 </div>
                 {imagePicker('logo', 'Logo', suggestions.logos, branding.logo_url)}
                 {imagePicker('banner', 'Banner image', suggestions.banners, branding.banner_url)}
@@ -575,6 +567,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                             <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
                               <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>AI proposed</div>
                               <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>{renderVal(val)}</div>
+                              {answerInfo(key)}
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 8 }}>
@@ -605,6 +598,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-3)', letterSpacing: '0.1em', marginBottom: 3 }}>{meta.step.toUpperCase()}</div>
                         <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>{meta.label}</div>
                         <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>{renderVal(val)}</div>
+                        {answerInfo(key)}
                       </div>
                     </div>
                   </div>

@@ -6,7 +6,7 @@ Four-layer community decision-making. Members submit proposals; the system evalu
 
 - **Proposal list** — all open proposals with proposer, closing date, and live vote summary per layer
 - **Layer vote panels** — each proposal expands to show four layers with vote buttons gated by role
-- **AI check** — clicking a proposal auto-runs an MiniMax M2.7 alignment check against the community blueprint; shows a confidence score and reasoning
+- **AI check** — clicking a proposal auto-runs an MiniMax M3 alignment check against the community blueprint; shows a confidence score and reasoning
 - **New proposal form** — any Member+ can submit a proposal with title, description, and decision mode
 
 ## Routes

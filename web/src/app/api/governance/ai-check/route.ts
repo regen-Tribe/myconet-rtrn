@@ -56,7 +56,7 @@ If uncertain or blueprint is sparse, set confidence 65-79.`
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'MiniMax-M2.7',
+        model: 'MiniMax-M3',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 512,
         temperature: 0.2,
