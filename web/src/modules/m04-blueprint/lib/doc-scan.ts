@@ -1,11 +1,11 @@
 /**
  * Reads a community's document and answers the Blueprint's questions, in two passes:
  *
- * 1. Evidence: the document is read in parts (~150k characters each; most documents
- *    are one part). For every question a part says something about, the AI collects
+ * 1. Evidence (fast model): the document is read in parts (~150k characters each; most
+ *    documents are one part), one request per framework phase, in parallel. For every question a part says something about, the AI collects
  *    short verbatim quotes with page numbers — no answers yet. The same pass collects
  *    circles and a summary.
- * 2. Answers: one request per framework phase, in parallel. Each question gets ALL the
+ * 2. Answers (full model): one request per framework phase, in parallel. Each question gets ALL the
  *    evidence from the whole document plus the current answer, and comes back with a
  *    combined answer, a confidence, page sources and any conflict.
  *
@@ -36,7 +36,15 @@ export interface ScanResult {
   truncated: boolean
 }
 
-export interface ScanProgress { label: string; done: number; total: number }
+export interface ScanProgress {
+  step: 'quotes' | 'answers'
+  done: number
+  total: number
+  /** Framework phases finished in this step so far (e.g. ["Spark", "Prove"]) */
+  finished: string[]
+  /** Questions with evidence so far (quotes step) or answered so far (answers step) */
+  found: number
+}
 
 interface Quote { q: string; p: number | null }
 
@@ -44,17 +52,18 @@ interface Quote { q: string; p: number | null }
 const PROMPT_LIMIT = 195_000
 const PART_CHARS = 150_000
 const MAX_DOC_CHARS = 1_200_000
-// Four framework phases → all answer requests run at once
-const CONCURRENCY = 4
+// Requests in flight at once (quotes: one per phase; answers: up to ANSWER_GROUP questions each)
+const CONCURRENCY = 6
+const ANSWER_GROUP = 20
 const MAX_QUOTES = 6
 const MAX_QUOTE_CHARS = 400
 
-async function callAI(prompt: string, maxTokens: number): Promise<Record<string, unknown>> {
+async function callAI(prompt: string, maxTokens: number, mode: 'fast' | 'full'): Promise<Record<string, unknown>> {
   const url = process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/scan'
   let lastError: Error | null = null
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, maxTokens }) })
+      const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, maxTokens, mode }) })
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({})) as { error?: string }
         throw new Error(err.error ?? `Request failed (${resp.status})`)
@@ -70,14 +79,18 @@ async function callAI(prompt: string, maxTokens: number): Promise<Record<string,
   throw lastError ?? new Error('Scan failed')
 }
 
+/** Runs fn over items with up to CONCURRENCY in flight; the next starts as soon as one finishes. */
 async function inBatches<T, R>(items: T[], fn: (item: T, i: number) => Promise<R>, onDone: () => void): Promise<(R | null)[]> {
   const out: (R | null)[] = new Array(items.length).fill(null)
-  for (let start = 0; start < items.length; start += CONCURRENCY) {
-    await Promise.all(items.slice(start, start + CONCURRENCY).map(async (item, j) => {
-      try { out[start + j] = await fn(item, start + j) } catch { out[start + j] = null }
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++
+      try { out[i] = await fn(items[i], i) } catch { out[i] = null }
       onDone()
-    }))
+    }
   }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, items.length) }, worker))
   return out
 }
 
@@ -98,17 +111,16 @@ function splitDocument(text: string, size: number): string[] {
 
 const fieldLine = (f: ScanField) => `- ${f.id} (${f.kind}): ${f.label}${f.help ? ` — ${f.help}` : ''}`
 
-function evidencePrompt(part: string, n: number, total: number, fields: ScanField[], wantCircles: boolean) {
+export function evidencePrompt(part: string, n: number, total: number, fields: ScanField[], wantCircles: boolean, withSummary: boolean) {
   return `You are reading a community's planning document to fill in their Regenerative Neighborhood Framework Blueprint.${total > 1 ? ` This is part ${n} of ${total}.` : ''}
 
 Do NOT write answers yet. Collect evidence.
 - For each question below that this text says something about, collect up to 3 short VERBATIM quotes (at most 200 characters each). Prefer the most specific ones.
 - Give each quote the page number from the nearest [Page N] marker before it, or null if there are no markers.
-- Skip questions the text says nothing about. Never invent or paraphrase inside a quote.
-- Also write "summary": 2-3 sentences on what this text covers (who, where, what stage).${wantCircles ? `\n${CIRCLES_PROMPT_RULE}` : ''}
+- Skip questions the text says nothing about. Never invent or paraphrase inside a quote.${withSummary ? '\n- Also write "summary": 2-3 sentences on what this text covers (who, where, what stage).' : ''}${wantCircles ? `\n${CIRCLES_PROMPT_RULE}` : ''}
 
 Return ONLY JSON:
-{"summary": "...", "evidence": {"<question id>": [{"q": "quote", "p": 12}]}${wantCircles ? ', "circles": [...]' : ''}}
+{${withSummary ? '"summary": "...", ' : ''}"evidence": {"<question id>": [{"q": "quote", "p": 12}]}${wantCircles ? ', "circles": [...]' : ''}}
 
 QUESTIONS:
 ${fields.length ? fields.map(fieldLine).join('\n') : '(none: only the summary' + (wantCircles ? ' and circles' : '') + ')'}
@@ -167,16 +179,31 @@ export async function scanDocument({ docText, fields, current, wantCircles, onPr
 }): Promise<ScanResult> {
   const truncated = docText.length > MAX_DOC_CHARS
   const text = docText.slice(0, MAX_DOC_CHARS)
-  const template = evidencePrompt('', 1, 2, fields, wantCircles).length
+  // Evidence is gathered per framework phase as well as per part: a detailed document
+  // can have so many quotes for all ~150 questions that one reply hits the length limit.
+  // The first phase's request also writes the summary and finds circles.
+  const phaseNames = [...new Set(fields.map(f => f.phase))]
+  const groups: ScanField[][] = phaseNames.length ? phaseNames.map(ph => fields.filter(f => f.phase === ph)) : [[]]
+  const template = Math.max(...groups.map((g, gi) => evidencePrompt('', 1, 2, g, wantCircles && gi === 0, gi === 0).length))
   const parts = splitDocument(text, Math.min(PART_CHARS, PROMPT_LIMIT - template))
+  const evJobs = parts.flatMap((part, i) => groups.map((g, gi) => ({ part, i, g, lead: gi === 0 })))
 
   // Pass 1: evidence
   let done = 0
-  onProgress({ label: 'Reading the document', done, total: parts.length })
-  const evidenceResults = await inBatches(parts,
-    // Many questions × quotes can make a long reply: allow plenty of room
-    (part, i) => callAI(evidencePrompt(part, i + 1, parts.length, fields, wantCircles), 32_000),
-    () => onProgress({ label: 'Reading the document', done: ++done, total: parts.length }))
+  const finishedQuotes: string[] = []
+  const withEvidence = new Set<string>()
+  const groupName = (g: ScanField[]) => g[0]?.phase ?? 'Circles'
+  onProgress({ step: 'quotes', done, total: evJobs.length, finished: [], found: 0 })
+  const evidenceResults = await inBatches(evJobs,
+    // Gathering quotes is mechanical: the fast model with low reasoning (full reasoning over
+    // a long document thinks until it runs out of room)
+    async job => {
+      const r = await callAI(evidencePrompt(job.part, job.i + 1, parts.length, job.g, wantCircles && job.lead, job.lead), 24_000, 'fast')
+      Object.keys((r.evidence ?? {}) as object).forEach(id => withEvidence.add(id))
+      finishedQuotes.push(groupName(job.g) + (parts.length > 1 ? ` (part ${job.i + 1})` : ''))
+      return r
+    },
+    () => onProgress({ step: 'quotes', done: ++done, total: evJobs.length, finished: [...finishedQuotes], found: withEvidence.size }))
 
   const okParts = evidenceResults.filter((r): r is Record<string, unknown> => r != null)
   if (okParts.length === 0) throw new Error("The document couldn't be read. Try again in a moment.")
@@ -198,17 +225,32 @@ export async function scanDocument({ docText, fields, current, wantCircles, onPr
 
   // Pass 2: answers, one request per phase
   const phases = [...new Set(fields.map(f => f.phase))]
-  const jobs = phases.map(phase => ({
-    phase,
-    items: fields.filter(f => f.phase === phase && evidence[f.id]?.length)
-      .map(f => ({ f, quotes: evidence[f.id], existing: display(f, current[f.id]) })),
-  })).filter(j => j.items.length > 0)
+  // At most ANSWER_GROUP questions per request: smaller replies come back faster and
+  // never run into the reply length limit (a 40-question phase took 2 minutes and ~21k tokens)
+  const jobs = phases.flatMap(phase => {
+    const items = fields.filter(f => f.phase === phase && evidence[f.id]?.length)
+      .map(f => ({ f, quotes: evidence[f.id], existing: display(f, current[f.id]) }))
+    const groups: (typeof items)[] = []
+    for (let k = 0; k < items.length; k += ANSWER_GROUP) groups.push(items.slice(k, k + ANSWER_GROUP))
+    return groups.map(g => ({ phase, items: g }))
+  })
 
   done = 0
-  onProgress({ label: 'Writing answers', done, total: jobs.length })
+  const finishedAnswers: string[] = []
+  const groupsLeft: Record<string, number> = {}
+  jobs.forEach(j => { groupsLeft[j.phase] = (groupsLeft[j.phase] ?? 0) + 1 })
+  let answered = 0
+  onProgress({ step: 'answers', done, total: jobs.length, finished: [], found: 0 })
   const answerResults = await inBatches(jobs,
-    job => callAI(answerPrompt(job.phase, summary, job.items), 24_000),
-    () => onProgress({ label: 'Writing answers', done: ++done, total: jobs.length }))
+    // Writing answers is judgement (combining pages, conflicts, scores): the full model
+    async job => {
+      const r = await callAI(answerPrompt(job.phase, summary, job.items), 24_000, 'full')
+      answered += Object.keys(r).length
+      // A phase counts as finished when its last group is back
+      if (--groupsLeft[job.phase] === 0) finishedAnswers.push(job.phase)
+      return r
+    },
+    () => onProgress({ step: 'answers', done: ++done, total: jobs.length, finished: [...finishedAnswers], found: answered }))
 
   const values: Record<string, unknown> = {}
   const meta: Record<string, AnswerMeta> = {}
@@ -239,8 +281,8 @@ export async function scanDocument({ docText, fields, current, wantCircles, onPr
   return {
     values, meta, gaps, summary,
     circles: mergeFoundCircles(circleLists),
-    failed: (parts.length - okParts.length) + answerResults.filter(r => r == null).length,
-    attempted: parts.length + jobs.length,
+    failed: (evJobs.length - okParts.length) + answerResults.filter(r => r == null).length,
+    attempted: evJobs.length + jobs.length,
     truncated,
   }
 }

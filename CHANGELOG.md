@@ -5,6 +5,23 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.5.0 — 2026-11-05
+
+No database changes.
+
+- **Two models.** `/api/scan` takes `mode`: `fast` = MiniMax-M3.1-Flash with `reasoning_effort: 'low'`
+  (quote gathering), default `full` = MiniMax-M3 (answers, image choice). With full reasoning, M3 and
+  Flash both spent the whole 24k-token reply thinking on a 70-page, 110k-character handbook and never
+  produced the JSON; Flash at low reasoning returned 42 questions' evidence, 9 circles and a summary
+  in 19 s. M3 ignores `reasoning_effort`.
+- **Evidence per framework phase** (parts × phases, in parallel), so one reply never carries quotes for
+  all ~150 questions. The first phase's request also writes the summary and finds circles.
+- **Smoother import.** Choosing a file starts the scan; the PDF image search runs alongside it.
+  `scanDocument` reports `{ step, done, total, finished, found }`; the modal shows a live checklist
+  (read → quotes → answers → logo & banner) with an elapsed timer.
+- **Answers in groups of ≤20 questions**, requests pooled (6 in flight). Handbook dry run (70 pages,
+  148 questions): 136 s, 96 answered (83 high / 13 medium confidence), 26 gaps, 8 circles, 0 failures.
+
 ## v4.4.0 — 2026-11-05
 
 No database changes. Uses **MiniMax-M3** (`/api/scan`, `/api/governance/ai-check`).

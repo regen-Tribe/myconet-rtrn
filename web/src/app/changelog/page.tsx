@@ -3,6 +3,17 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.5.0',
+    date: '2026-11-05',
+    title: 'Blueprint import: faster, starts on its own, shows its progress',
+    items: [
+      'Dropping a document starts the import straight away: no separate "Scan" button.',
+      'A live checklist shows what is happening: reading the PDF (page by page), finding what the document says about each question (per framework phase, with a running count), writing your answers, and looking for the logo and banner, with a timer.',
+      'Much faster and more reliable on long, detailed documents: a fast model gathers the quotes, and the full model writes the answers. Before, a detailed 70-page handbook could take 30 minutes or fail.',
+      'The logo and banner search runs at the same time as the text, and can be skipped.',
+    ],
+  },
+  {
     version: 'v4.4.0',
     date: '2026-11-05',
     title: 'Blueprint import: reads the whole document, answers with sources',

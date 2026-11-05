@@ -13,7 +13,7 @@ import BrandingStep from '@/modules/m04-blueprint/BrandingStep'
 import { useBranding } from '@/core/components/BrandingProvider'
 import { useRouter } from 'next/navigation'
 import { aiPickBranding, extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
-import { scanDocument, type AnswerMeta } from '@/modules/m04-blueprint/lib/doc-scan'
+import { scanDocument, type AnswerMeta, type ScanProgress } from '@/modules/m04-blueprint/lib/doc-scan'
 import { setBrandingImage } from '@/modules/m04-blueprint/lib/branding-upload'
 import { FOUND_CIRCLES_KEY, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
@@ -153,20 +153,29 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 }) {
   const router = useRouter()
   const branding = useBranding()
-  const [extractLabel, setExtractLabel] = useState('Extracting text from PDF…')
   const [pdfImages, setPdfImages] = useState<PdfImage[]>([])
   const [pick, setPick] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
   const [applying, setApplying] = useState(false)
   const [aiPicked, setAiPicked] = useState<{ logo: string | null; banner: string | null }>({ logo: null, banner: null })
   const stopImages = useRef(false)
   const [lookingForImages, setLookingForImages] = useState(false)
+  const [imageStatus, setImageStatus] = useState('')
   const [applyError, setApplyError] = useState('')
   const suggestions = useMemo(() => suggestBranding(pdfImages), [pdfImages])
   // Object URLs for the thumbnails are freed when the images change or the modal closes
   useEffect(() => () => releasePdfImages(pdfImages), [pdfImages])
 
   const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
-  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0, label: '' })
+  const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null)
+  const [finishingImages, setFinishingImages] = useState(false)
+  // Elapsed time on the progress screen, so a long scan never looks stuck
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (stage !== 'extracting' && stage !== 'scanning') return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [stage])
   const [answerMeta, setAnswerMeta] = useState<Record<string, AnswerMeta>>({})
   const [gaps, setGaps] = useState<string[]>([])
   const [failedParts, setFailedParts] = useState(0)
@@ -179,68 +188,74 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [wasTruncated, setWasTruncated] = useState(false)
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({})
 
-  const handleFile = async (file: File) => {
-    setFileName(file.name)
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-    if (isPdf) {
-      setStage('extracting')
-      setExtractLabel('Extracting text from PDF…')
-      setPdfProgress({ current: 0, total: 0 })
-      setPdfImages([])
-      try {
-        const text = await extractPdfText(file, (page, total) => setPdfProgress({ current: page, total }))
-        setDocText(text)
-        if (canSetBranding && !scope) {
-          setExtractLabel('Looking for a logo and banner image…')
-          setPdfProgress({ current: 0, total: 0 })
-          stopImages.current = false
-          setLookingForImages(true)
-          try {
-            const images = await extractPdfImages(file, (page, total) => setPdfProgress({ current: page, total }), stopImages)
-            const { logos, banners } = suggestBranding(images)
-            let logo = logos[0]?.id ?? null
-            let banner = banners[0]?.id ?? null
-            const candidates = [...new Map([...logos, ...banners].map(i => [i.id, i])).values()]
-            if (candidates.length && !stopImages.current) {
-              setExtractLabel('Choosing the logo and banner…')
-              const ai = await aiPickBranding(candidates)
-              if (ai) { logo = ai.logo ?? logo; banner = ai.banner ?? banner; setAiPicked(ai) }
-            }
-            setPdfImages(images)
-            // Preselect the best guesses only where the community has none yet
-            setPick({ logo: branding.logo_url ? null : logo, banner: branding.banner_url ? null : banner })
-          } catch {
-            // Images are a bonus: the text import goes ahead without them
-          }
-          setLookingForImages(false)
-        }
-        setStage('upload')
-      } catch (e) {
-        setErrorMsg(`Could not read PDF: ${(e as Error).message}`)
-        setStage('error')
+  // Logo and banner from a PDF's images; runs alongside the text scan. Never fails the import.
+  const findImages = async (file: File) => {
+    stopImages.current = false
+    setLookingForImages(true)
+    setImageStatus('Looking for a logo and banner image…')
+    try {
+      const images = await extractPdfImages(file, (page, total) => setImageStatus(`Looking for a logo and banner image… page ${page} of ${total}`), stopImages)
+      const { logos, banners } = suggestBranding(images)
+      let logo = logos[0]?.id ?? null
+      let banner = banners[0]?.id ?? null
+      const candidates = [...new Map([...logos, ...banners].map(i => [i.id, i])).values()]
+      if (candidates.length && !stopImages.current) {
+        setImageStatus('Choosing the logo and banner…')
+        const ai = await aiPickBranding(candidates)
+        if (ai) { logo = ai.logo ?? logo; banner = ai.banner ?? banner; setAiPicked(ai) }
       }
-      return
+      setPdfImages(images)
+      // Preselect the best guesses only where the community has none yet
+      setPick({ logo: branding.logo_url ? null : logo, banner: branding.banner_url ? null : banner })
+    } catch {
+      // Images are a bonus: the text import goes ahead without them
     }
-    const text = await new Promise<string>((resolve, reject) => {
-      const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsText(file)
-    })
-    setDocText(text)
+    setLookingForImages(false)
   }
 
-  const handleScan = async () => {
-    if (!docText.trim()) { setErrorMsg('Paste some text or upload a file first.'); return }
+  // Dropping a file starts everything: no separate "Scan" click
+  const handleFile = async (file: File) => {
+    setFileName(file.name)
+    setPdfImages([])
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    let text = ''
+    try {
+      setStartedAt(Date.now())
+      if (isPdf) {
+        setStage('extracting')
+        setPdfProgress({ current: 0, total: 0 })
+        text = await extractPdfText(file, (page, total) => setPdfProgress({ current: page, total }))
+      } else {
+        text = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsText(file)
+        })
+      }
+    } catch (e) {
+      setErrorMsg(`Could not read ${isPdf ? 'the PDF' : 'the file'}: ${(e as Error).message}`)
+      setStage('error')
+      return
+    }
+    setDocText(text)
+    const images = isPdf && canSetBranding && !scope ? findImages(file) : null
+    await handleScan(text, images)
+  }
+
+  const handleScan = async (text: string = docText, images: Promise<void> | null = null) => {
+    if (!text.trim()) { setErrorMsg('Paste some text or upload a file first.'); setStage('upload'); return }
     setStage('scanning'); setErrorMsg('')
 
     const catalog = buildFieldCatalog(scope)
-    setChunkProgress({ current: 0, total: 0, label: 'Reading the document' })
+    setScanProgress(null)
+    setFinishingImages(false)
+    setStartedAt(t => t ?? Date.now())
     try {
       const result = await scanDocument({
-        docText,
+        docText: text,
         fields: catalog,
         current: currentValues,
         // Step-scoped imports fill fields only; full scans and the Circles step also look for circles
         wantCircles: !scope?.step,
-        onProgress: p => setChunkProgress({ current: p.done, total: p.total, label: p.label }),
+        onProgress: setScanProgress,
       })
       const merged: Record<string, unknown> = { ...result.values, _summary: result.summary }
       if (result.circles.length) merged.circles = result.circles
@@ -257,6 +272,9 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
       })
       setAcceptedKeys(accepted)
       setExpandedKeys({})
+      // The review shows the images too, so wait for the image search if it's still going
+      if (images) { setFinishingImages(true); await images }
+      setStartedAt(null)
       setStage('review')
     } catch (e) {
       setErrorMsg((e as Error).message ?? 'Scan failed.')
@@ -375,57 +393,68 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleScan} disabled={!docText.trim()}>Scan with AI →</button>
+              <button className="btn btn-primary" onClick={() => handleScan()} disabled={!docText.trim()}>Scan with AI →</button>
             </div>
           </div>
         )}
 
-        {stage === 'extracting' && (
-          <div style={{ padding: '40px 0', textAlign: 'center' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>{extractLabel}</div>
-            {lookingForImages && (
-              <button className="btn btn-ghost" style={{ marginTop: 10, fontSize: 12 }} onClick={() => { stopImages.current = true }}>
-                Skip the images
-              </button>
-            )}
-            {pdfProgress.total > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
-                  Page {pdfProgress.current} of {pdfProgress.total}
-                </div>
-                <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
-                  <div style={{ height: '100%', width: `${(pdfProgress.current / pdfProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 200ms' }} />
-                </div>
+        {(stage === 'extracting' || stage === 'scanning') && (() => {
+          // One checklist for the whole import, so people can see what's happening and that it's moving
+          const p = scanProgress
+          const PHASES = ['Spark', 'Prove', 'Build', 'Live']
+          const phaseLine = (finished: string[]) => PHASES.map(ph => (finished.some(f => f.startsWith(ph)) ? `${ph} ✓` : ph)).join(' · ')
+          type Status = 'done' | 'active' | 'pending'
+          const rows: { status: Status; title: string; detail: string }[] = [
+            {
+              status: stage === 'extracting' ? 'active' : 'done',
+              title: fileName.toLowerCase().endsWith('.pdf') ? 'Reading the PDF' : 'Reading the document',
+              detail: stage === 'extracting'
+                ? (pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
+                : `${docText.length.toLocaleString()} characters${pdfProgress.total ? ` from ${pdfProgress.total} pages` : ''}`,
+            },
+            {
+              status: stage === 'extracting' ? 'pending' : !p || p.step === 'quotes' ? (p && p.done === p.total ? 'done' : 'active') : 'done',
+              title: 'Finding what the document says about each question',
+              detail: !p ? (stage === 'scanning' ? 'Starting…' : '') : `${phaseLine(p.step === 'quotes' ? p.finished : PHASES)}${p.step === 'quotes' && p.found ? ` · evidence for ${p.found} questions so far` : ''}`,
+            },
+            {
+              status: p?.step === 'answers' ? (p.done === p.total ? 'done' : 'active') : 'pending',
+              title: 'Writing your answers',
+              detail: p?.step === 'answers' ? `${phaseLine(p.finished)}${p.found ? ` · ${p.found} answers so far` : ''}` : 'One answer per question, with pages and how sure we are',
+            },
+          ]
+          if (lookingForImages || finishingImages) rows.push({
+            status: lookingForImages ? 'active' : 'done',
+            title: 'Looking for your logo and banner',
+            detail: lookingForImages ? imageStatus : 'Done',
+          })
+          const secs = startedAt ? Math.max(0, Math.round((now - startedAt) / 1000)) : 0
+          const icon = (st: Status) => st === 'done' ? '✓' : st === 'active' ? '◐' : '○'
+          return (
+            <div style={{ padding: '8px 0 4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 20 }}>Importing {fileName || 'your text'}</div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-3)' }}>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}</div>
               </div>
-            )}
-          </div>
-        )}
-
-        {stage === 'scanning' && (
-          <div style={{ padding: '40px 0', textAlign: 'center' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>{chunkProgress.label || 'Reading the document'}…</div>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 6 }}>
-              {chunkProgress.label === 'Writing answers' ? 'Step 2 of 2: one answer per question, from every quote in the document' : 'Step 1 of 2: collecting quotes for each Blueprint question'}
-            </div>
-            {chunkProgress.total > 1 && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
-                  {chunkProgress.label === 'Writing answers' ? 'Phase' : 'Part'} {chunkProgress.current} of {chunkProgress.total}
+              {rows.map(r => (
+                <div key={r.title} style={{ display: 'flex', gap: 12, padding: '10px 0', borderTop: '1px solid var(--rule-soft)', opacity: r.status === 'pending' ? 0.55 : 1 }}>
+                  <span style={{ width: 20, textAlign: 'center', fontSize: 15, color: r.status === 'done' ? 'var(--accent)' : 'var(--ink-2)', animation: r.status === 'active' ? 'pulse 1.2s infinite' : undefined }}>{icon(r.status)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: r.status === 'active' ? 700 : 500 }}>{r.title}</div>
+                    {r.detail && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.detail}</div>}
+                  </div>
+                  {r.title === 'Looking for your logo and banner' && lookingForImages && (
+                    <button className="btn btn-ghost" style={{ fontSize: 11, padding: '2px 8px', alignSelf: 'center' }} onClick={() => { stopImages.current = true }}>Skip</button>
+                  )}
                 </div>
-                <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
-                  <div style={{ height: '100%', width: `${(chunkProgress.current / chunkProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 300ms' }} />
-                </div>
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
-              {(['rnf', 'alchemy', 'rcos', 'clips'] as const).map((k, i) => (
-                <div key={k} style={{ width: 10, height: 10, borderRadius: '50%', background: `var(--${k})`, animation: `pulse 1s ${i * 150}ms infinite` }} />
               ))}
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, lineHeight: 1.5 }}>
+                {secs < 150 ? 'This usually takes 1 to 3 minutes for a long document. You can keep this window open while it works.'
+                  : 'Still working: big, detailed documents take longer. Nothing is saved until you review the answers.'}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {stage === 'review' && extracted && (
           <div>
