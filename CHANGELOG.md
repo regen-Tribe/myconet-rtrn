@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.2.1 — 2026-11-04
+
+**Migration:** `20261104000600_function_hardening.sql` (run `supabase db push`).
+
+- Supabase security advisor fixes: `search_path` pinned on six functions; `handle_new_user()` and
+  `rls_auto_enable()` no longer executable by `anon`/`authenticated` (they run as triggers).
+- Left callable on purpose: `is_admin()` (used by RLS policies) and `promote_to_member_if_eligible()`
+  (called by the app). Also recommended per community: Auth › Leaked password protection (paid plans).
+
 ## v4.2.0 — 2026-11-04
 
 **Migration:** `20261104000500_community_branding.sql` (run `supabase db push`).

@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.2.1',
+    date: '2026-11-04',
+    title: 'Database hardening',
+    items: [
+      'Two internal database functions (the signup hook and the automatic security switch for new tables) can no longer be called from outside, and six functions now use a fixed search path. Nothing changes for members.',
+    ],
+  },
+  {
     version: 'v4.2.0',
     date: '2026-11-04',
     title: "Each community's own look, and core updates by pull request",
