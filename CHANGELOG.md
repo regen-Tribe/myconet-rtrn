@@ -5,6 +5,16 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.8.0 — 2026-11-05
+
+No database changes.
+
+- **Top bar search** (`core/components/shell/TopBarSearch.tsx`), replacing a placeholder that did nothing:
+  pages (`core/lib/nav.ts`) and circles match instantly; members (username, first name, headline),
+  projects, proposals and events are queried with the viewer's session (RLS) after 200 ms. The last item
+  sends the text to the assistant (`ASK_EVENT` in `modules/assistant/AssistantChat.tsx`). ⌘K/Ctrl+K,
+  arrows, Enter, Esc.
+
 ## v4.7.0 — 2026-11-05
 
 **Migration:** `20261105000100_share_image.sql` (run `supabase db push`).

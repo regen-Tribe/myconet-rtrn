@@ -12,6 +12,9 @@ import { COMMUNITY_NAME } from '@/core/lib/instance'
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
+/** Other parts of the portal (e.g. the top bar search) open the chat with a question: window.dispatchEvent(new CustomEvent(ASK_EVENT, { detail: question })) */
+export const ASK_EVENT = 'myconet:ask'
+
 const STORE_KEY = 'myconet-assistant'
 const SUGGESTIONS = [
   `What is ${COMMUNITY_NAME} about?`,
@@ -63,6 +66,9 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
   }, [messages])
 
+  // The latest ask(), for the ASK_EVENT listener below
+  const askRef = useRef<(q: string) => void>(() => {})
+
   const ask = async (question: string) => {
     const q = question.trim()
     if (!q || busy) return
@@ -98,6 +104,13 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
     }
     setBusy(false)
   }
+
+  askRef.current = ask
+  useEffect(() => {
+    const onAsk = (e: Event) => { setOpen(true); askRef.current(String((e as CustomEvent).detail ?? '')) }
+    window.addEventListener(ASK_EVENT, onAsk)
+    return () => window.removeEventListener(ASK_EVENT, onAsk)
+  }, [])
 
   if (!open) {
     return (
