@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.8.0',
+    date: '2026-11-05',
+    title: 'The search bar works',
+    items: [
+      'Type in the top bar to find pages, members, projects, proposals, calendar events and circles. You only see what you are allowed to see.',
+      'The last suggestion always asks the community assistant your question, so a search that finds nothing still gets an answer.',
+      '⌘K (Ctrl+K on Windows) jumps to the search from anywhere; arrow keys and Enter pick a result.',
+    ],
+  },
+  {
     version: 'v4.7.0',
     date: '2026-11-05',
     title: 'Bigger top bar, and a picture when the link is shared',

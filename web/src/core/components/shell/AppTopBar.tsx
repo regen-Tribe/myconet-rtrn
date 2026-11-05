@@ -8,6 +8,7 @@ import { useProfileCompletion } from '@/core/contexts/ProfileCompletion'
 import { VERSION } from '@/core/lib/version'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { useBranding } from '@/core/components/BrandingProvider'
+import TopBarSearch from '@/core/components/shell/TopBarSearch'
 
 function computeCompletion(
   p: { first_name?: string | null; avatar_url?: string | null; headline?: string | null; city?: string | null; user_types?: string[] | null } | null,
@@ -211,32 +212,8 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="topbar-search" style={{
-        flex: 1,
-        maxWidth: 360,
-        marginLeft: 16,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '7px 12px',
-        border: '1px solid var(--rule)',
-        borderRadius: 999,
-        background: 'var(--bg-2)',
-        color: 'var(--ink-3)',
-        fontSize: 12.5,
-        cursor: 'text',
-        userSelect: 'none',
-      }}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" style={{ flexShrink: 0 }}>
-          <circle cx="11" cy="11" r="7" />
-          <line x1="20" y1="20" x2="16.6" y2="16.6" />
-        </svg>
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          Search members, projects, proposals…
-        </span>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)', padding: '1px 5px', border: '1px solid var(--rule)', borderRadius: 4, flexShrink: 0 }}>⌘K</span>
-      </div>
+      {/* Search: pages, people, projects, events… or ask the assistant */}
+      <TopBarSearch />
 
       {/* Right */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto', flexShrink: 0 }}>
