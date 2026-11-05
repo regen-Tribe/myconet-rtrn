@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-05 — Core v4.8.0 + v4.9.0 via PR #3, #4 (deployed, 0cf9aea8)
+
+- Working top bar search; Admin › Questions (assistant question log, unanswered flagged). Migration applied earlier via MCP.
+
 ## 2026-11-05 — Core v4.7.0 via PR #2 (deployed, 66ddfe01)
 
 - Portal assistant ("Ask Regen Hood 0"), document library (Shareable/Sensitive), bigger top bar, link previews. Migrations applied earlier via MCP.
