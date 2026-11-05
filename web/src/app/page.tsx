@@ -38,6 +38,7 @@ export default async function LandingPage() {
     supabase.from('proposals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     loadModulePreviews(supabase),
   ])
+  const { data: values } = await supabase.from('community_values').select('title, description').order('sort_order')
   const stats = {
     members: members.count ?? 0,
     activeProjects: projects.count ?? 0,
@@ -45,5 +46,5 @@ export default async function LandingPage() {
     openProposals: proposals.count ?? 0,
   }
 
-  return <LandingClient firstName={null} communityPurpose={communityPurpose} upcomingEvents={(eventRows ?? []).map(toEvent)} stats={stats} communityName={communityName} glance={glance} previews={previews} />
+  return <LandingClient firstName={null} communityPurpose={communityPurpose} upcomingEvents={(eventRows ?? []).map(toEvent)} stats={stats} communityName={communityName} glance={glance} previews={previews} values={values ?? []} />
 }
