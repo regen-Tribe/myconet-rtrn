@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-11-05 — Core public; v4.2.1 database hardening (deployed, 386ab12a)
+
+- `regen-Tribe/myconet` made public after a full-history scan: no secrets (only RTRN's anon key, public by design); public now: schema/RLS, business docs, a few contact emails and usernames, CLIPS (CC BY-NC-ND) in archive/.
+- Drift check and core-update workflow now run green ("On core v4.2.0; newest is v4.2.0"). Opening update PRs still needs the org Actions setting (user).
+- v4.2.1 `function_hardening` applied via MCP; rolled-back test: signup still creates a profile, updated_at triggers run, is_admin works; handle_new_user / rls_auto_enable no longer callable. Advisors left: is_admin + promote_to_member_if_eligible (intentional), leaked-password protection (plan setting).
+
 ## 2026-11-04 — Core v4.2.0: own look + core update automation (deployed, 6135ce50)
 
 - Top bar "MyCoNet · Regen Hood 0"; tab title "Regen Hood 0 · MyCoNet"; name on sign-in, landing, Home, footer. Logo and banner: Blueprint › 🎨 Look & feel (none uploaded yet; admins see a banner prompt).
