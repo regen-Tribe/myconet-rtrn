@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-05 — Core v4.10.0 via PR #5 (deployed, 45924c90)
+
+- Home pages: every module at a glance + Ask section; demo panels use the community name, Join demo uses RTRN's real values.
+
 ## 2026-11-05 — Core v4.8.0 + v4.9.0 via PR #3, #4 (deployed, 0cf9aea8)
 
 - Working top bar search; Admin › Questions (assistant question log, unanswered flagged). Migration applied earlier via MCP.
