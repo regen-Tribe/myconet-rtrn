@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-11-04 — Core v4.2.0: own look + core update automation (deployed, 6135ce50)
+
+- Top bar "MyCoNet · Regen Hood 0"; tab title "Regen Hood 0 · MyCoNet"; name on sign-in, landing, Home, footer. Logo and banner: Blueprint › 🎨 Look & feel (none uploaded yet; admins see a banner prompt).
+- Migration `community_branding` applied via MCP (rolled-back test: explorer blocked, admin upsert works, public read).
+- `.github/workflows/core-update.yml` + `core-drift.yml` now in this repo. First drift run failed: core is private and there's no CORE_REPO_TOKEN. Actions permissions still read-only / can't open PRs.
+
 ## 2026-11-04 — Core v4.1.0: Join questions + community values in the Blueprint (deployed, 5d53216b)
 
 - Applicants now see the Blueprint's join questions (Step 1.4) with an answer box each; RTRN's 5 earlier applications only had the free-text note, so their question answers show as "No answer".
