@@ -3,6 +3,25 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.7.0',
+    date: '2026-11-05',
+    title: 'Bigger top bar, and a picture when the link is shared',
+    items: [
+      'The top bar is taller across the whole portal, with a bigger logo and community name.',
+      'Sharing the portal\'s link (WhatsApp, Telegram, Slack, email, social media) now shows a preview picture, title and description. Admins set the picture in Blueprint › Look & feel (a screenshot of the home page works well); until then the banner is used. The logo also becomes the browser tab icon.',
+    ],
+  },
+  {
+    version: 'v4.6.0',
+    date: '2026-11-05',
+    title: 'Ask the community: a portal assistant',
+    items: [
+      'An "Ask <community>" button on every page opens a chat that answers questions from the community\'s Blueprint and documents, quoting where each answer comes from (for example "Handbook p. 12"). It answers in the language you write in, and says so when the material doesn\'t cover a question.',
+      'Visitors can ask 2 questions before signing in; everyone signed in can keep asking.',
+      'New Blueprint step, Documents: the community\'s library. Every upload asks what kind of document it is: Shareable (the assistant may use it for anyone) or Sensitive (only admins and circle leads get answers from it). The Blueprint import asks too, and adds the document.',
+    ],
+  },
+  {
     version: 'v4.5.0',
     date: '2026-11-05',
     title: 'Blueprint import: faster, starts on its own, shows its progress',

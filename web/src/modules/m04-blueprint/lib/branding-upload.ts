@@ -5,7 +5,7 @@ import { createClient } from '@/core/lib/supabase/client'
  * `branding` bucket, stores its URL in `community_settings` and removes the old
  * file. Admins only (RLS). Used by the Look & feel step and the document import.
  */
-export type BrandingKind = 'logo' | 'banner'
+export type BrandingKind = 'logo' | 'banner' | 'share_image'
 
 const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/gif': 'gif' }
 

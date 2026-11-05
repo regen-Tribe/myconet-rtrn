@@ -179,20 +179,20 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
         {logo_url ? (
           <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{ display: 'flex', flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 32, width: 'auto', maxWidth: 96, objectFit: 'contain', borderRadius: 6 }} />
+            <img src={logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 44, width: 'auto', maxWidth: 140, objectFit: 'contain', borderRadius: 8 }} />
           </Link>
         ) : (
           <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{
-            width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+            width: 34, height: 34, borderRadius: 9, flexShrink: 0,
             background: 'radial-gradient(circle at 30% 30%, var(--accent-color), color-mix(in srgb, var(--accent-color) 60%, #000))',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,.3)',
           }} />
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <span className="topbar-brand-sub" style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-3)' }}>MyCoNet</span>
-            <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 14 }}>·</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{COMMUNITY_NAME}</span>
+            <span className="topbar-brand-sub" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-3)' }}>MyCoNet</span>
+            <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 15 }}>·</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{COMMUNITY_NAME}</span>
           </Link>
           <Link href="/changelog" style={{ textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.querySelector('span')!.style.background = 'color-mix(in srgb, var(--accent-color) 18%, var(--bg-2))')}
