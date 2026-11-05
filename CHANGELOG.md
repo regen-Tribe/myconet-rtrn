@@ -5,6 +5,18 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.10.0 — 2026-11-05
+
+No database changes.
+
+- **Module overview** (`modules/home/ModuleOverview.tsx`, data in `modules/home/lib/module-guide.ts`) on
+  the landing page and Home: every module with a one-line explanation, "See it ↓" (scrolls to its
+  preview section) and "Open →"; plus an "Ask <community>" card.
+- **Ask section** (`modules/home/AskSection.tsx`) with example questions that open the assistant.
+- Fixed core leftovers from RTRN: demo panels said "Greenhollow Commons" (now the community name), and
+  the landing Join preview always showed RTRN's values (now the community's `community_values`, else
+  labelled examples).
+
 ## v4.9.0 — 2026-11-05
 
 **Migration:** `20261105000200_assistant_questions.sql` (run `supabase db push`).

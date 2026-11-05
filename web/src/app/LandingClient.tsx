@@ -9,6 +9,8 @@ import { CirclesPreview, ResourcesPreview, StaysPreview, type CirclesPreviewData
 import { CLUBHOUSE, MEMBER_MODULES } from '@/core/lib/nav'
 import { COMMUNITY_NAME, DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
 import BannerImage from '@/core/components/BannerImage'
+import ModuleOverview from '@/modules/home/ModuleOverview'
+import AskSection from '@/modules/home/AskSection'
 import type { GlanceTile } from '@/modules/home/lib/at-a-glance'
 import './landing.css'
 
@@ -16,6 +18,8 @@ interface Props {
   firstName: string | null; communityPurpose?: string | null; upcomingEvents?: CalendarEvent[]; stats: LandingStats
   communityName: string; glance: GlanceTile[]
   previews: { items: PreviewItem[]; circles: CirclesPreviewData }
+  /** The community's own values (Blueprint Step 1.4); example values are shown until there are some */
+  values?: { title: string; description: string | null }[]
 }
 
 /* ── Tiny SVG icons ── */
@@ -218,7 +222,7 @@ function ClubhousePreview({ name, stats }: { name: string | null; stats: Landing
           <main className="lp-ch-main">
             <h3 className="lp-ch-greet">Good morning, {displayName}.</h3>
             <p className="lp-ch-sub">
-              You&apos;re an <strong>Explorer</strong> at Greenhollow Commons. Read, browse, and meet
+              You&apos;re an <strong>Explorer</strong> at {COMMUNITY_NAME}. Read, browse, and meet
               people — sign the values to unlock the full community.
             </p>
             <div className="lp-ch-grid">
@@ -322,7 +326,7 @@ function BlueprintSection() {
           <div className="lp-demo-head">
             <div className="lp-demo-title">
               <span className="lp-mod-pill" style={{ background: 'var(--m4)' }}>M04</span>
-              <strong>Blueprint · Greenhollow Commons</strong>
+              <strong>Blueprint · {COMMUNITY_NAME}</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>v3.2 · Living doc</span>
           </div>
@@ -375,8 +379,10 @@ function BlueprintSection() {
 }
 
 /* ── M05 Join ── */
-function JoinSection() {
-  const [checked, setChecked] = useState([false, false, false, false, false])
+function JoinSection({ values }: { values: { title: string; description: string | null }[] }) {
+  // The community's real values when it has written them, else examples (labelled as such)
+  const shown = values.length ? values.map(v => ({ t: v.title, d: v.description ?? '' })) : VALUES
+  const [checked, setChecked] = useState(() => shown.map(() => false))
   const toggle = (i: number) => setChecked(c => c.map((v, j) => j === i ? !v : v))
   const allChecked = checked.every(Boolean)
   const count = checked.filter(Boolean).length
@@ -406,14 +412,14 @@ function JoinSection() {
           <div className="lp-demo-head">
             <div className="lp-demo-title">
               <span className="lp-mod-pill" style={{ background: 'var(--m5)' }}>M05</span>
-              <strong>Step 3 of 4 · Values &amp; best practices</strong>
+              <strong>{values.length ? `${COMMUNITY_NAME}'s values` : 'Example values'}</strong>
             </div>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: count === 5 ? 'var(--m5)' : 'var(--ink-3)' }}>
-              {count}/5 signed
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: allChecked ? 'var(--m5)' : 'var(--ink-3)' }}>
+              {count}/{shown.length} signed
             </span>
           </div>
           <div className="lp-values">
-            {VALUES.map((v, i) => (
+            {shown.map((v, i) => (
               <div key={i}
                 className={`lp-value-row${checked[i] ? ' checked' : ''}`}
                 onClick={() => toggle(i)}
@@ -430,7 +436,7 @@ function JoinSection() {
             ))}
           </div>
           <button className="lp-value-cta" disabled={!allChecked}>
-            {allChecked ? 'Submit application →' : `Sign ${5 - count} more to continue`}
+            {allChecked ? 'Submit application →' : `Sign ${shown.length - count} more to continue`}
           </button>
         </div>
       </div>
@@ -547,7 +553,7 @@ function OpsSection() {
           <div className="lp-demo-head">
             <div className="lp-demo-title">
               <span className="lp-mod-pill" style={{ background: 'var(--m7)' }}>M07</span>
-              <strong>Greenhollow Commons · This sprint</strong>
+              <strong>{COMMUNITY_NAME} · This sprint</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>Sprint 12 · May→Jun</span>
           </div>
@@ -774,7 +780,7 @@ function Closing({ name }: { name: string | null }) {
 }
 
 /* ── Root ── */
-export default function LandingClient({ firstName, communityPurpose, upcomingEvents = [], stats, communityName, glance, previews }: Props) {
+export default function LandingClient({ firstName, communityPurpose, upcomingEvents = [], stats, communityName, glance, previews, values = [] }: Props) {
   return (
     <div className="lp">
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 28px 0' }}><BannerImage height={260} /></div>
@@ -784,12 +790,15 @@ export default function LandingClient({ firstName, communityPurpose, upcomingEve
           <CommunityGlance name={communityName} tiles={glance} />
         </section>
       )}
+      <section className="lp-section" id="all-modules" style={{ paddingTop: 64 }}>
+        <ModuleOverview />
+      </section>
       <ClubhousePreview name={firstName} stats={stats} />
       {/* Module sections follow the sidebar order */}
       <MeetSection />
       <EventsSection events={upcomingEvents} />
       <BlueprintSection />
-      <JoinSection />
+      <JoinSection values={values} />
       <PreviewSection id="stays" mod="15" label="Accommodation" color="var(--m15)"
         h="Come stay with us."
         lead="Guest rooms, cabins and tent sites for visits, work weeks and trial stays. Joining members book by the night; some stays are approved by a lead first.">
@@ -811,6 +820,7 @@ export default function LandingClient({ firstName, communityPurpose, upcomingEve
       <OpsSection />
       <ContributionsSection />
       <GovernanceSection />
+      <AskSection />
       <Closing name={firstName} />
       <footer className="lp-footer">
         {FRAMEWORK_CREDIT}

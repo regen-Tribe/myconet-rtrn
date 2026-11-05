@@ -9,6 +9,8 @@ import { CirclesPreview, ResourcesPreview, StaysPreview, type CirclesPreviewData
 import { CLUBHOUSE, MEMBER_MODULES } from '@/core/lib/nav'
 import { COMMUNITY_NAME, DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
 import BannerImage from '@/core/components/BannerImage'
+import ModuleOverview from '@/modules/home/ModuleOverview'
+import AskSection from '@/modules/home/AskSection'
 import type { GlanceTile } from './lib/at-a-glance'
 
 type PhaseP = { id: string; name: string; answered: number; total: number; ratio: number }
@@ -478,6 +480,10 @@ export default function HomeClient({
       )}
 
       {/* ── Dashboard label ─────────────────────────────────── */}
+      <section className={sectionCls} id="all-modules" style={{ maxWidth: 1100, margin: '64px auto 0', padding: '0 28px' }}>
+        <ModuleOverview />
+      </section>
+
       <div id="clubhouse" className="home-clubhouse-section" style={{ maxWidth: 1100, margin: '60px auto 0', padding: '0 28px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap', marginBottom: 28 }}>
           <div>
@@ -895,7 +901,7 @@ export default function HomeClient({
             ]}
           />
           <DemoCard>
-            <DemoHead color="var(--m5)" modLabel="M05" title="Values & best practices" meta={`${signedCount}/${communityValues.length || 5} signed`} href="/join" />
+            <DemoHead color="var(--m5)" modLabel="M05" title={communityValues.length ? `${COMMUNITY_NAME}'s values` : 'Example values'} meta={`${signedCount}/${communityValues.length || 5} signed`} href="/join" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {(communityValues.length > 0 ? communityValues : [
                 { id: '1', title: 'Care for the land before yield.', description: 'Decisions are tested against ecological impact first, profit second.', sort_order: 1 },
@@ -1443,6 +1449,8 @@ export default function HomeClient({
           </div>
         </div>
       </section>
+
+      <AskSection />
 
       {/* ── Closing CTA ─────────────────────────────────────── */}
       <section style={{ maxWidth: 880, margin: '80px auto 0', padding: '0 28px' }}>

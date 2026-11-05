@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.10.0',
+    date: '2026-11-05',
+    title: 'Home page: every module at a glance',
+    items: [
+      'The landing page and Home now open with "The portal at a glance": a card for every module with a one-line explanation, a jump to its preview further down, and a link to open it.',
+      'A new section introduces the community assistant, with example questions that open the chat.',
+      'The demo panels show the community\'s own name, and the Join preview shows the community\'s real values once they are written (until then, clearly labelled examples).',
+    ],
+  },
+  {
     version: 'v4.9.0',
     date: '2026-11-05',
     title: 'Admin › Questions: what people ask the assistant',
