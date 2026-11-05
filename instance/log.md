@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-05 — Core v4.5.0 via update PR #1 (deployed, 436df1b8)
+
+- Blueprint import rebuilt (v4.4.0 + v4.5.0): two-pass scan (M3.1-Flash quotes, M3 answers), confidence/pages/conflicts/gaps, auto-start, live progress checklist, AI logo/banner pick.
+- First update delivered as a pull request (opened by hand; the org doesn't yet let Actions open PRs), merged at the user's request.
+
 ## 2026-11-05 — Core v4.3.0/v4.3.1: logo + banner from imported PDFs (deployed, af69d6cb)
 
 - Admin PDF imports suggest a logo and banner from the document's images (rules: repeated/cover/transparent → logo; wide high-res → banner); picked in the review, uploaded with the answers. Tested the pdf.js part in Node on a generated PDF (logo on 3 pages + 1600×500 banner) — both found, logo de-duplicated across pages.
