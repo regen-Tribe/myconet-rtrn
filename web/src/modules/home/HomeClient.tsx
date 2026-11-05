@@ -7,7 +7,8 @@ import type { CalendarEvent } from '@/modules/m14-events/types'
 import { CommunityGlance } from './CommunityGlance'
 import { CirclesPreview, ResourcesPreview, StaysPreview, type CirclesPreviewData, type PreviewItem } from './ModulePreviews'
 import { CLUBHOUSE, MEMBER_MODULES } from '@/core/lib/nav'
-import { DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
+import BannerImage from '@/core/components/BannerImage'
 import type { GlanceTile } from './lib/at-a-glance'
 
 type PhaseP = { id: string; name: string; answered: number; total: number; ratio: number }
@@ -264,6 +265,7 @@ export default function HomeClient({
 
   return (
     <div style={{ paddingBottom: 80, overflowX: 'hidden' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 28px 0' }}><BannerImage height={240} isAdmin={role === 'admin'} /></div>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <section className={sectionCls} style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 28px 0' }} id="welcome">
@@ -293,7 +295,7 @@ export default function HomeClient({
           }}>
             portal
           </span>
-          {' '}for our <span className="keep-together">regenerative neighborhood</span> being formed — <span style={{ color: 'var(--accent-color)' }}>together</span>.
+          {' '}for {COMMUNITY_NAME}, our <span className="keep-together">regenerative neighborhood</span> being formed — <span style={{ color: 'var(--accent-color)' }}>together</span>.
         </h1>
         <p style={{
           fontSize: 17, color: 'var(--ink-2)', lineHeight: 1.75,
@@ -305,7 +307,7 @@ export default function HomeClient({
         </p>
         {/* Module pills */}
         <div style={{ fontSize: 12, color: 'var(--ink-4)', fontFamily: 'var(--mono)', letterSpacing: '0.04em', marginBottom: 10 }}>
-          Scroll to explore what you can do with MyCoNet ↓
+          Scroll to explore what you can do in the {COMMUNITY_NAME} portal ↓
         </div>
         <div className="home-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
           {[

@@ -7,7 +7,8 @@ import type { CalendarEvent } from '@/modules/m14-events/types'
 import { CommunityGlance } from '@/modules/home/CommunityGlance'
 import { CirclesPreview, ResourcesPreview, StaysPreview, type CirclesPreviewData, type PreviewItem } from '@/modules/home/ModulePreviews'
 import { CLUBHOUSE, MEMBER_MODULES } from '@/core/lib/nav'
-import { DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
+import BannerImage from '@/core/components/BannerImage'
 import type { GlanceTile } from '@/modules/home/lib/at-a-glance'
 import './landing.css'
 
@@ -126,10 +127,10 @@ function Hero({ name, communityPurpose }: { name: string | null; communityPurpos
   const displayName = name ?? 'you'
   return (
     <section className="lp-hero" id="welcome">
-      <span className="lp-pill">MyCoNet · Member portal</span>
+      <span className="lp-pill">{COMMUNITY_NAME} · Member portal</span>
       <h1>
         Welcome, {displayName}.<br />
-        This is the <span className="underline">portal</span> for a{' '}
+        This is the <span className="underline">portal</span> for {COMMUNITY_NAME}, a{' '}
         <span className="keep-together">regenerative neighborhood</span> being formed — <span className="accent">together</span>.
       </h1>
       <p className="lp-lead">
@@ -766,7 +767,7 @@ function Closing({ name }: { name: string | null }) {
           <Link className="lp-btn lp-btn-primary" href="/auth/signup">Begin joining → <Arrow /></Link>
           <Link className="lp-btn lp-btn-secondary" href="/network">Just browse first</Link>
         </div>
-        <div className="lp-footnote">MyCoNet · MyCommunityNetwork · RNF · {VERSION}</div>
+        <div className="lp-footnote">{COMMUNITY_NAME} · MyCoNet · RNF · {VERSION}</div>
       </div>
     </section>
   )
@@ -776,6 +777,7 @@ function Closing({ name }: { name: string | null }) {
 export default function LandingClient({ firstName, communityPurpose, upcomingEvents = [], stats, communityName, glance, previews }: Props) {
   return (
     <div className="lp">
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 28px 0' }}><BannerImage height={260} /></div>
       <Hero name={firstName} communityPurpose={communityPurpose ?? null} />
       {glance.length > 0 && (
         <section className="lp-section" id="at-a-glance" style={{ paddingTop: 64 }}>

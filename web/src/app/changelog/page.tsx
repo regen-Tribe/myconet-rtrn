@@ -3,6 +3,17 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.2.0',
+    date: '2026-11-04',
+    title: "Each community's own look, and core updates by pull request",
+    items: [
+      'The top bar now reads "MyCoNet · <community name>", with the community\'s logo. The name also appears in the browser tab, the sign-in page, the landing page, Home and the footer.',
+      'A banner image can run across the top of the landing page, Home and the Dashboard.',
+      'New Blueprint setup step, "Look & feel": admins upload the logo and banner. Until they do, the Blueprint dashboard lists them as open setup items and admins see a prompt where the banner goes.',
+      'For each community repo: a daily check opens a pull request when MyCoNet core has a new release, a drift check flags changes to core files, and `npm run upstream` sends an improvement back to core.',
+    ],
+  },
+  {
     version: 'v4.1.0',
     date: '2026-11-04',
     title: 'Join: application questions and community values set in the Blueprint',

@@ -1,6 +1,7 @@
 'use client'
 import { Suspense, useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
+import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/core/components/ui/card'
 import { Button } from '@/core/components/ui/button'
@@ -103,7 +104,8 @@ export default function ResetPasswordPage() {
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <Sprout className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">MyCoNet</span>
+            <span className="text-2xl font-bold">{COMMUNITY_NAME}</span>
+            <span className="text-sm text-muted-foreground">· MyCoNet</span>
           </div>
           <CardTitle className="text-2xl">Set new password</CardTitle>
           <CardDescription>Choose a strong password for your account.</CardDescription>

@@ -3,10 +3,12 @@ import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { useBranding } from '@/core/components/BrandingProvider'
 
 type Mode = 'login' | 'register' | 'forgot'
 
 export default function AuthPage() {
+  const { logo_url } = useBranding()
   const [mode, setMode] = useState<Mode>('login')
   const supabase = createClient()
   const router = useRouter()
@@ -89,8 +91,11 @@ export default function AuthPage() {
 
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="auth-logo-wrap">
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--ink)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>🌱</div>
-            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>MyCoNet</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {logo_url ? <img src={logo_url} alt="" style={{ height: 36, width: 'auto', maxWidth: 120, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />
+              : <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--ink)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>🌱</div>}
+            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>{COMMUNITY_NAME}</span>
+            <span style={{ fontSize: 13, color: 'var(--ink-4)' }}>· MyCoNet</span>
           </div>
 
           {mode === 'login' && (

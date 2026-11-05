@@ -9,6 +9,8 @@ import { communityName, FRAMEWORK_CREDIT } from '@/core/lib/instance'
 import { useCircles } from '@/core/components/CirclesProvider'
 import CirclesStep from '@/modules/m04-blueprint/CirclesStep'
 import CommunityValuesEditor from '@/modules/m04-blueprint/CommunityValuesEditor'
+import BrandingStep from '@/modules/m04-blueprint/BrandingStep'
+import { useBranding } from '@/core/components/BrandingProvider'
 import { CIRCLES_PROMPT_RULE, FOUND_CIRCLES_KEY, mergeFoundCircles, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
 import '@/modules/m04-blueprint/wizard.css'
 
@@ -36,8 +38,8 @@ interface Props {
   blueprintId: string
   initialAnswers: Values
   initialFlags: Record<string, boolean>
-  /** Admins only: the circles table is admin-write */
-  canEditCircles?: boolean
+  /** Admins only: circles and the logo/banner are admin-write */
+  isAdmin?: boolean
   /** Open on this step (`/blueprint?step=s1.4`), e.g. from the Join page */
   initialStep?: string
 }
@@ -1174,8 +1176,10 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport, readOn
   )
 }
 
-function DashboardView({ values, onJump, onPrint, noCircles }: {
-  values: Values; onJump: (id: string) => void; onPrint: () => void; noCircles: boolean
+function DashboardView({ values, onJump, onPrint, setupTodo }: {
+  values: Values; onJump: (id: string) => void; onPrint: () => void
+  /** Setup steps still open: shown as a checklist until they're done */
+  setupTodo: { id: string; label: string; required?: boolean }[]
 }) {
   const pillarScores = computePillarScores(values)
   const overall = Object.values(pillarScores).reduce((a, b) => a + b, 0) / 5
@@ -1203,10 +1207,15 @@ function DashboardView({ values, onJump, onPrint, noCircles }: {
       <h1 className="step-title">{communityName(values)} — Plan</h1>
       <p className="step-lede">A live diagnostic across pillars, phases, and frameworks.</p>
 
-      {noCircles && (
-        <div className="card" style={{ background: 'var(--warn-soft)', padding: '12px 16px', borderRadius: 'var(--radius)', fontSize: 13, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span>Setup isn&rsquo;t finished: your community has no circles yet.</span>
-          <button className="btn btn-primary" onClick={() => onJump('circles')}>Set up circles →</button>
+      {setupTodo.length > 0 && (
+        <div className="card" style={{ background: 'var(--warn-soft)', padding: '12px 16px', borderRadius: 'var(--radius)', fontSize: 13, marginBottom: 20 }}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Setup isn&rsquo;t finished yet</div>
+          {setupTodo.map(t => (
+            <div key={t.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '4px 0' }}>
+              <span>☐ {t.label}{t.required ? '' : <span style={{ color: 'var(--ink-3)' }}> (optional)</span>}</span>
+              <button className="btn" style={{ fontSize: 12 }} onClick={() => onJump(t.id)}>Go →</button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -1628,9 +1637,10 @@ function ProjectDocumentModal({ values, onClose, onPrint }: { values: Values; on
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 
-export default function BlueprintClient({ blueprintId, initialAnswers, readOnly = false, canEditCircles = false, initialStep }: Props & { readOnly?: boolean }) {
+export default function BlueprintClient({ blueprintId, initialAnswers, readOnly = false, isAdmin = false, initialStep }: Props & { readOnly?: boolean }) {
   const D = FW_DATA
   const circles = useCircles()
+  const branding = useBranding()
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   useEffect(() => {
@@ -1648,6 +1658,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
     ]
     D.phases.forEach(p => p.steps.forEach(s => arr.push({ ...s, phaseRef: p })))
     // Setup's last step (INSTANCES.md §6.2)
+    arr.push({ id: 'branding', kind: 'branding' })
     arr.push({ id: 'circles', kind: 'circles' })
     arr.push({ id: 'dashboard', kind: 'dashboard' })
     return arr
@@ -1831,9 +1842,17 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               </li>
             ))}
 
+            <li className={`step${currentId === 'branding' ? ' active' : ''}${branding.logo_url && branding.banner_url ? ' complete' : ''}`}
+              data-step-id="branding"
+              style={{ paddingLeft: 0, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--rule-soft)' }}
+              onClick={() => jumpTo('branding')}>
+              <div className="step-dot"></div>
+              <div>🎨 Look &amp; feel</div>
+            </li>
+
             <li className={`step${currentId === 'circles' ? ' active' : ''}${circles.list.length ? ' complete' : ''}`}
               data-step-id="circles"
-              style={{ paddingLeft: 0, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--rule-soft)' }}
+              style={{ paddingLeft: 0, marginTop: 8 }}
               onClick={() => jumpTo('circles')}>
               <div className="step-dot"></div>
               <div>◯ Circles</div>
@@ -1870,10 +1889,17 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               onImport={() => openImport()} readOnly={readOnly} />
           )}
           {current.kind === 'dashboard' && (
-            <DashboardView values={values} onJump={jumpTo} onPrint={() => setShowDoc(true)} noCircles={circles.list.length === 0} />
+            <DashboardView values={values} onJump={jumpTo} onPrint={() => setShowDoc(true)} setupTodo={[
+              ...(circles.list.length === 0 ? [{ id: 'circles', label: 'Set up your circles', required: true }] : []),
+              ...(!branding.logo_url ? [{ id: 'branding', label: 'Add your logo' }] : []),
+              ...(!branding.banner_url ? [{ id: 'branding', label: 'Add a banner image' }] : []),
+            ]} />
+          )}
+          {current.kind === 'branding' && (
+            <BrandingStep canEdit={isAdmin && !readOnly} onPrev={goPrev} onNext={goNext} />
           )}
           {current.kind === 'circles' && (
-            <CirclesStep values={values} canEdit={canEditCircles && !readOnly}
+            <CirclesStep values={values} canEdit={isAdmin && !readOnly}
               onImport={openCirclesImport} onClearFound={clearFoundCircles}
               onPrev={goPrev} onNext={goNext} />
           )}

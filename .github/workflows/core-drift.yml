@@ -1,0 +1,42 @@
+# Community repos only: a community changes its own instance/ folder, never core
+# files, so it can always take core updates. This fails when a core file differs
+# from the core release the branch is on. To change core, send the change upstream
+# (`cd web && npm run upstream`) or move it into instance/.
+name: Core drift check
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+env:
+  CORE_REPO: regen-Tribe/myconet
+
+jobs:
+  drift:
+    if: github.repository != 'regen-Tribe/myconet'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare core files with the core release
+        env:
+          CORE_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+        run: |
+          if [ -n "$CORE_TOKEN" ]; then url="https://x-access-token:${CORE_TOKEN}@github.com/${CORE_REPO}.git"; else url="https://github.com/${CORE_REPO}.git"; fi
+          git remote add upstream "$url"
+          git fetch --quiet --tags upstream
+          base=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD)
+          changed=$(git diff --name-only "$base" HEAD -- . ':(exclude)instance/**')
+          if [ -n "$changed" ]; then
+            echo "::error::These core files differ from MyCoNet core $base:"
+            echo "$changed" | sed 's/^/  /'
+            echo "Move the change into instance/, or send it to core with: cd web && npm run upstream"
+            exit 1
+          fi
+          echo "Only instance/ differs from core $base."

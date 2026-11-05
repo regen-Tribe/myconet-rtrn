@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { ROLE_LABELS, roleAtLeast } from '@/core/lib/roles'
 import { LinkedEventsList } from '@/modules/m14-events/LinkedEventsList'
+import BannerImage from '@/core/components/BannerImage'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/modules/m04-blueprint/lib/blueprint-compute'
 
@@ -242,6 +243,8 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 28px 80px' }}>
+
+      <BannerImage height={200} isAdmin={role === 'admin'} style={{ marginBottom: 22 }} />
 
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>

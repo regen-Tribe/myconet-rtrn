@@ -8,7 +8,7 @@ export default async function BlueprintPage({ searchParams }: { searchParams: Pr
   const { data: { user } } = await supabase.auth.getUser()
 
   let isAdmin = false
-  let canEditCircles = false
+  let isAdminRole = false
   if (user) {
     const { data: profile } = await supabase
       .from('user_profiles')
@@ -16,7 +16,7 @@ export default async function BlueprintPage({ searchParams }: { searchParams: Pr
       .eq('id', user.id)
       .maybeSingle()
     isAdmin = isCircleAdmin(profile?.role ?? '')
-    canEditCircles = profile?.role === 'admin'
+    isAdminRole = profile?.role === 'admin'
   }
 
   const { data: communityBlueprint } = await supabase
@@ -54,7 +54,7 @@ export default async function BlueprintPage({ searchParams }: { searchParams: Pr
         initialAnswers={{}}
         initialFlags={{}}
         readOnly={false}
-        canEditCircles={canEditCircles}
+        isAdmin={isAdminRole}
         initialStep={step}
       />
     )
@@ -66,7 +66,7 @@ export default async function BlueprintPage({ searchParams }: { searchParams: Pr
       initialAnswers={(communityBlueprint.answers as Record<string, unknown>) ?? {}}
       initialFlags={(communityBlueprint.flags as Record<string, boolean>) ?? {}}
       readOnly={!isAdmin}
-      canEditCircles={canEditCircles}
+      isAdmin={isAdminRole}
       initialStep={step}
     />
   )

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { VERSION } from '@/core/lib/version'
+import { COMMUNITY_NAME } from '@/core/lib/instance'
 
 export default function AppFooter() {
   return (
@@ -14,7 +15,7 @@ export default function AppFooter() {
       flexShrink: 0,
     }}>
       <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)' }}>
-        MyCoNet · MyCommunityNetwork
+        {COMMUNITY_NAME} · MyCoNet
       </span>
       <Link href="/changelog" style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,

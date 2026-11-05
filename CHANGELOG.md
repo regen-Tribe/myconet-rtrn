@@ -5,6 +5,26 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.2.0 — 2026-11-04
+
+**Migration:** `20261104000500_community_branding.sql` (run `supabase db push`).
+
+- **Community look.** `community_settings` (one row: `logo_url`, `banner_url`; public read, admin
+  write) and a public `branding` storage bucket (admin upload, 5 MB, images only). Loaded once per
+  request (`loadBranding`) and provided to client code (`useBranding()`).
+- **Name and logo in the shell.** Top bar "MyCoNet · {displayName}" with the logo; the name in the page
+  title, footer, sign-in and reset-password pages, landing hero and Home.
+- **Banner image** (`BannerImage`) on the landing page, Home and the Dashboard; admins see a prompt
+  while there is none.
+- **Blueprint › Look & feel** setup step (`BrandingStep`) for the logo and banner. The Blueprint
+  dashboard's setup notice is now a checklist (circles required; logo and banner optional).
+  `BlueprintClient`'s `canEditCircles` prop is now `isAdmin`.
+- **Core updates for community repos** (`.github/workflows/`, skipped in core itself):
+  `core-update.yml` opens "Update MyCoNet core to vX" PRs (keeps `instance/`); `core-drift.yml` fails
+  when a core file differs from the core release. `cd web && npm run upstream` sends a branch's core
+  changes to core as a PR. See `instance.example/README.md` for the repo settings they need.
+- `.gitignore`: `supabase/.temp/`.
+
 ## v4.1.0 — 2026-11-04
 
 Join setup lives in the Blueprint. No database changes.

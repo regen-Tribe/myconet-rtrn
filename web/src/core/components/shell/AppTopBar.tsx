@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useProfileCompletion } from '@/core/contexts/ProfileCompletion'
 import { VERSION } from '@/core/lib/version'
+import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { useBranding } from '@/core/components/BrandingProvider'
 
 function computeCompletion(
   p: { first_name?: string | null; avatar_url?: string | null; headline?: string | null; city?: string | null; user_types?: string[] | null } | null,
@@ -34,6 +36,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
   mobileNavOpen?: boolean
 }) {
   const router = useRouter()
+  const { logo_url } = useBranding()
   const [user, setUser] = useState<User | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -173,18 +176,23 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
 
       {/* Brand — logo/name and the version badge are sibling links (links can't nest) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <Link href="/home" aria-label="MyCoNet home" style={{
-          width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-          background: 'radial-gradient(circle at 30% 30%, var(--accent-color), color-mix(in srgb, var(--accent-color) 60%, #000))',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,.3)',
-        }} />
+        {logo_url ? (
+          <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{ display: 'flex', flexShrink: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 32, width: 'auto', maxWidth: 96, objectFit: 'contain', borderRadius: 6 }} />
+          </Link>
+        ) : (
+          <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{
+            width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+            background: 'radial-gradient(circle at 30% 30%, var(--accent-color), color-mix(in srgb, var(--accent-color) 60%, #000))',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.3)',
+          }} />
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>MyCoNet</span>
-            <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 14 }}>/</span>
-            <span className="topbar-brand-sub" style={{ fontFamily: 'var(--mono)', fontSize: 11.5, fontWeight: 500, color: 'var(--ink-3)' }}>
-              MyCommunityNetwork
-            </span>
+            <span className="topbar-brand-sub" style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-3)' }}>MyCoNet</span>
+            <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 14 }}>·</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{COMMUNITY_NAME}</span>
           </Link>
           <Link href="/changelog" style={{ textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.querySelector('span')!.style.background = 'color-mix(in srgb, var(--accent-color) 18%, var(--bg-2))')}

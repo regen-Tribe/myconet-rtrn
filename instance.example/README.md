@@ -42,8 +42,18 @@ project and Cloudflare account; nothing is shared with other communities.
 - The first admin signs up on the portal, then run `supabase/setup/first-admin.sql`
   with their email.
 
-**6. Setup in the portal** (`INSTANCES.md` §6), as that admin
+**6. GitHub** (the community repo)
+- Settings › Actions › General › Workflow permissions: **Read and write**, and tick **Allow GitHub
+  Actions to create and approve pull requests**. Then `core-update.yml` opens a pull request whenever core
+  releases, and `core-drift.yml` checks that only `instance/` differs from core.
+- While the core repo is private, add a `CORE_REPO_TOKEN` Actions secret: a fine-grained token with
+  read access to `regen-Tribe/myconet`. Not needed once core is public.
+- After merging a core update: `supabase db push` if it has migrations, then deploy.
+
+**7. Setup in the portal** (`INSTANCES.md` §6), as that admin
 - Blueprint: upload the community's documents (✨ Import from document), review the answers.
+- Blueprint › Look & feel: upload the logo and banner image.
+- Blueprint › Step 1.4: join questions and community values.
 - Blueprint › Circles: confirm the circles the scan found, or start from a template.
   Setup isn't finished without at least one circle.
 - Join questions, then invite the first members; assign circle leads in Admin › Users.

@@ -1,0 +1,70 @@
+# Community repos only: when MyCoNet core tags a new release, open a pull request
+# "Update MyCoNet core to vX.Y.Z" that merges it while keeping this repo's instance/.
+# The community merges it when it's ready, then deploys.
+#
+# Needs: Settings › Actions › General › "Allow GitHub Actions to create and approve
+# pull requests". While core is private, also a CORE_REPO_TOKEN secret that can read it.
+name: Core update
+
+on:
+  schedule:
+    - cron: '17 6 * * *'   # daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  CORE_REPO: regen-Tribe/myconet
+
+jobs:
+  update:
+    if: github.repository != 'regen-Tribe/myconet'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find the newest core release
+        id: tags
+        env:
+          CORE_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+        run: |
+          if [ -n "$CORE_TOKEN" ]; then url="https://x-access-token:${CORE_TOKEN}@github.com/${CORE_REPO}.git"; else url="https://github.com/${CORE_REPO}.git"; fi
+          git remote add upstream "$url"
+          git fetch --quiet --tags upstream
+          current=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD)
+          latest=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "On core $current; newest is $latest"
+
+      - name: Open the update pull request
+        if: steps.tags.outputs.latest != steps.tags.outputs.current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST: ${{ steps.tags.outputs.latest }}
+          CURRENT: ${{ steps.tags.outputs.current }}
+        run: |
+          branch="core-update/${LATEST}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "A pull request for $LATEST already exists"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          if ! git merge --no-ff --no-commit "$LATEST"; then
+            echo "::error::Core $LATEST doesn't merge cleanly: a core file was changed in this repo. Merge it by hand."
+            exit 1
+          fi
+          # Core never ships an instance/: keep ours
+          git checkout HEAD -- instance 2>/dev/null || true
+          git commit -m "Update MyCoNet core to ${LATEST}"
+          git push origin "$branch"
+          notes=$(git show "${LATEST}:CHANGELOG.md" | awk -v cur="## ${CURRENT} " 'index($0, cur) == 1 {exit} {print}' | tail -n +2)
+          base=$(git rev-parse --abbrev-ref origin/HEAD | sed 's#origin/##')
+          gh pr create --base "$base" --head "$branch" \
+            --title "Update MyCoNet core to ${LATEST}" \
+            --body "$(printf 'MyCoNet core %s → %s. Your `instance/` folder is unchanged.\n\nAfter merging: run any new database migrations (`supabase db push`) and deploy.\n\n### Release notes\n%s' "$CURRENT" "$LATEST" "$notes")"

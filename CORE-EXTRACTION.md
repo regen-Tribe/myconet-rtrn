@@ -63,7 +63,7 @@ How we turn today's RTRN portal code into **MyCoNet core**, the master codebase 
 
 - **Creating a community repo:** copy core with full history, add core as the `upstream` remote, and replace `instance.example/` with that community's `instance/`.
 - **Releasing core:** merge to core `main`, then tag `v4.x.y`. Semver: patch = fixes, minor = new features (off by default if they change behaviour), major = something communities must act on, with upgrade notes.
-- **Updating a community:** a GitHub Action in each community repo notices the new tag and opens a PR, "Update MyCoNet core to v4.x.y". The community merges it when ready, and CI migrates and deploys.
+- **Updating a community:** a GitHub Action in each community repo notices the new tag and opens a PR, "Update MyCoNet core to v4.x.y". The community merges it when ready, then runs any new migrations and deploys (automatic deploys from CI come later: they need each community's Cloudflare token in its repo). ✅ Built in v4.2.0: `.github/workflows/core-update.yml`, `core-drift.yml`, `web/scripts/upstream.mjs`.
 - **Merges stay clean because** community repos only touch `instance/`. CI in each community repo **blocks merging to `main` if a core file differs from the core tag it's on** (feature branches are free to change core files; see upstreaming below). That stops the slow drift that turns forks into separate products.
 - **Moving a community feature into core:** move the code from `instance/` into core behind a switch, release it, then delete the copy from the community repo when it pulls that release.
 - **Building a feature in a community repo, then sending it to core ("upstreaming"):** encouraged. This is the normal way new features will arrive.
@@ -103,7 +103,7 @@ RTRN stays live and working at every step. Steps 1–3 happen in today's repo, a
    - **Still to do:** a "Manage circles" entry on the Circles page (`/org`) for admins. The Blueprint step already does it, so this may only need a link.
 8. **Modules on/off:** the sidebar (`core/lib/nav.ts`), routes and landing sections respect `config.modules`. A disabled module's routes return 404.
 9. **Role labels:** `ROLE_LABELS` gets defaults in core and renames from config. The ladder and the permissions don't change.
-10. **Look & feel:** colour and font tokens and the logo come from `instance/theme`.
+10. **Look & feel:** ✅ logo, banner image and community name done in v4.2.0 (set by admins in the Blueprint, stored in the database rather than `instance/theme`). Still to do: colour and font tokens.
 
 ### Phase 2 — Split the repos
 11. ✅ (2026-11-03) Create `regen-Tribe/myconet` from today's repo **with full history**. Remove RTRN's `instance/`, keep `instance.example/`, rewrite the docs as core docs, start the core changelog at **v4.0.0**, and tag `v4.0.0`.
