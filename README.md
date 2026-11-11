@@ -19,6 +19,24 @@ core releases and changes nothing outside `instance/`. How it works: [`INSTANCES
 and [`CORE-EXTRACTION.md`](./CORE-EXTRACTION.md). **Starting a new community:**
 [`instance.example/README.md`](./instance.example/README.md).
 
+## Working on the code (people and AI coding agents)
+
+**Never commit or push to `main` / `master`.** Every change goes on its own branch and in
+a pull request that a maintainer reviews and merges. On a free private repo GitHub can't
+enforce this, so it's up to you, and to your coding agent.
+
+1. `git checkout main && git pull`, then `git checkout -b <your-name>/<short-description>`
+2. Make the change; check it with `cd web && npm run lint && npx tsc --noEmit` and `npm run dev`
+3. Commit, `git push -u origin <branch>`, and open a PR (`gh pr create --fill`) saying what
+   changed, how you tested it, and a screenshot for anything visible
+4. Stop there. A maintainer merges and deploys; don't merge your own PR, deploy, or run
+   migrations against a live database unless a maintainer asks you to
+
+In a **community repo**, change only `instance/` there. Anything else is a core change: build
+it on your branch, then send it to core with `cd web && npm run upstream` (the **Core drift
+check** fails a PR that edits core files). A community's own notes for contributors are in
+its `instance/CONTRIBUTING.md`. Never commit keys, tokens, passwords or `.env*` files.
+
 ## The docs
 
 | Document | What it's for |
@@ -27,7 +45,7 @@ and [`CORE-EXTRACTION.md`](./CORE-EXTRACTION.md). **Starting a new community:**
 | `EXECUTIVE-SUMMARY.md` | Platform overview: modules, agents, user journey, service model. |
 | `ARCHITECTURE.md` | Implementation blueprint: module specs, schema, agent architecture, deployment. |
 | [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) | Visual language: tokens, components, composition rules. |
-| `CLAUDE.md` | Agent / new-engineer context: what's built, how to deploy, what not to do. |
+| `CLAUDE.md`, `AGENTS.md` | Agent / new-engineer context: what's built, how to deploy, what not to do. |
 | `INSTANCES.md`, `CORE-EXTRACTION.md` | Running several communities from one core. |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Core release notes, from v4.0.0. A community's own history is its `instance/log.md`. |
 | `instance/README.md` | This community: live URL, accounts, people. (Not in the core repo.) |

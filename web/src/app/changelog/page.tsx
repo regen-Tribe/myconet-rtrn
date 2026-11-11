@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.10.1',
+    date: '2026-11-11',
+    title: 'Working rules for contributors',
+    items: [
+      'The code now spells out how to contribute: every change goes on its own branch and in a pull request for review, never straight to the live version. The same rules are written for AI coding assistants.',
+    ],
+  },
+  {
     version: 'v4.10.0',
     date: '2026-11-05',
     title: 'Home page: every module at a glance',

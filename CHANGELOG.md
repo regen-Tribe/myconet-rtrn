@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.10.1 — 2026-11-11
+
+No database changes.
+
+- **Working rules for contributors and AI coding agents**: a "Working on the code" section in
+  `README.md`, a rules block at the top of `CLAUDE.md`, and a new `AGENTS.md`. Work on a branch,
+  open a pull request, never push to `main`; agents don't merge, deploy or run live migrations
+  unless asked; community repos change only `instance/`.
+
 ## v4.10.0 — 2026-11-05
 
 No database changes.
