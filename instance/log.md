@@ -675,3 +675,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 - Created project folder `tribesplatform-v2/`
 - Created README with project overview
+
+### 2026-11-11 — core v4.11.0 deployed
+- Linked calendars. Migration applied, CALENDAR_SYNC_SECRET set (hash in private.calendar_sync_key).
