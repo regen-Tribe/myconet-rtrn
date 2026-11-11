@@ -46,7 +46,7 @@ Migrations: `supabase/migrations/20261101_m14_events.sql`, `20261102_m14_event_t
 | Table | Access |
 |-------|--------|
 | `events` | Read: public events for everyone, all events for joining+. Insert: community = joining+, core and task = full member+. Update/delete: host, admin, or circle lead of the event's circle |
-| `calendar_feeds` | Linked calendars (`url` may be a secret link). Admins only |
+| `calendar_feeds` | Linked calendars (`url` may be a secret link; `rules` sort events by title into a kind and category). Admins only |
 | `event_rsvps` | One row per (event, user), status `going`/`maybe`. Signed-in users read; each user writes only their own |
 
 Feed events have `feed_id` + `external_uid` (unique together; the UID plus the occurrence's original
@@ -60,6 +60,7 @@ Policies use `private.my_role()` / `private.my_lead_circles()` (security definer
 
 - Dates render in the viewer's time zone, so the calendar waits for mount; the server renders in UTC.
 - The page loads events from the last 365 days onward. Older events need a fetch on navigation if that ever matters.
+- Kinds: `daily` (rhythm: meals, movement, focus), `core`, `community`, `task`. `category` is free text within a kind; `categoryColor()` gives known ones fixed colours.
 - Linked calendars: the next 90 days are kept in sync; past occurrences stay. Sync runs after someone
   opens `/events` and the last sync is over an hour old (no cron), or on "Sync now". All-day dates are
   stored at noon UTC so they land on the same day everywhere. Feed events can't be edited here (the

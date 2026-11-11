@@ -9,7 +9,7 @@ import type { CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, Lin
 import { addDays, fmtMonthTitle, fmtWeekTitle, isPast, startOfDay } from './lib/calendar'
 import { canCreateKind, canEditEvent, EVENT_KINDS, KIND_META } from './lib/permissions'
 import { EVENT_SELECT, toEvent } from './lib/queries'
-import { ListView, MonthView, WeekView } from './CalendarViews'
+import { categoryColor, ListView, MonthView, WeekView } from './CalendarViews'
 import { EventDetailModal } from './EventDetailModal'
 import { EventFormModal, type EventDraft, type EventPayload } from './EventFormModal'
 import { CalendarFeedsModal } from './CalendarFeedsModal'
@@ -47,6 +47,7 @@ export default function EventsClient({
   const [tab, setTab] = useState<EventKind>(initialTab)
   const [view, setView] = useState<EventsView>(initialView)
   const [circleFilter, setCircleFilter] = useState<CircleSlug | ''>('')
+  const [category, setCategory] = useState<string>('')
   const [showPast, setShowPast] = useState(false)
   const [openId, setOpenId] = useState<string | null>(initialEventId)
   const [form, setForm] = useState<{ existing: CalendarEvent | null; draft: EventDraft } | null>(
@@ -84,7 +85,9 @@ export default function EventsClient({
     EVENT_KINDS.map(k => [k, now ? events.filter(e => e.kind === k && !isPast(e, now)).length : 0]),
   ) as Record<EventKind, number>, [events, now])
 
-  const visible = events.filter(e => e.kind === tab && (!circleFilter || e.circle === circleFilter))
+  // Categories ("Food", "Movement"…) used in this tab, for the filter chips
+  const categories = useMemo(() => [...new Set(events.filter(e => e.kind === tab && e.category).map(e => e.category as string))].sort(), [events, tab])
+  const visible = events.filter(e => e.kind === tab && (!circleFilter || e.circle === circleFilter) && (!category || e.category === category))
   const openEvent = openId ? events.find(e => e.id === openId) ?? null : null
   const canPostCommunity = canCreateKind('community', role)
 
@@ -181,7 +184,7 @@ export default function EventsClient({
             Community calendar
           </h1>
           <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
-            {counts.core} core · {counts.community} community hosted · {counts.task} task{counts.task === 1 ? '' : 's'} · upcoming
+            {EVENT_KINDS.map(k => `${counts[k]} ${KIND_META[k].short.toLowerCase()}`).join(' · ')} · upcoming
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -215,13 +218,29 @@ export default function EventsClient({
       {/* ── Kind tabs ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--rule)', marginBottom: 8, overflowX: 'auto' }}>
         {EVENT_KINDS.map(k => (
-          <button key={k} onClick={() => setTab(k)} style={tabStyle(tab === k)}>
+          <button key={k} onClick={() => { setTab(k); setCategory('') }} style={tabStyle(tab === k)}>
             {KIND_META[k].label}
             {counts[k] > 0 && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: 'var(--m14)' }}>{counts[k]}</span>}
           </button>
         ))}
       </div>
-      <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 16px' }}>{KIND_META[tab].blurb}</p>
+      <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: categories.length ? '0 0 10px' : '0 0 16px' }}>{KIND_META[tab].blurb}</p>
+      {categories.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+          {['', ...categories].map(c => {
+            const active = category === c
+            const color = c ? categoryColor(c) : 'var(--m14)'
+            return (
+              <button key={c || 'all'} onClick={() => setCategory(c)} style={{
+                fontSize: 12.5, fontWeight: active ? 700 : 500, padding: '5px 12px', borderRadius: 999, cursor: 'pointer',
+                border: `1px solid ${active ? color : 'var(--rule)'}`, color: active ? '#fff' : 'var(--ink-2)', background: active ? color : 'var(--surface)',
+              }}>
+                {c ? <><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 2, background: active ? '#fff' : color, marginRight: 6 }} />{c}</> : 'All'}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── Toolbar ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>

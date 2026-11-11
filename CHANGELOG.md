@@ -5,6 +5,18 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.12.0 — 2026-11-12
+
+**Database:** `20261112000000_event_categories.sql` (kind `daily`, `events.category`, `calendar_feeds.rules`;
+`calendar_feeds_claim` recreated, `calendar_feed_apply` replaced).
+
+- **Daily events**: a new calendar tab, first in the list, for the community's rhythm (meals, movement,
+  focus hours). Posted by the same people as core events.
+- **Categories** ("Food", "Movement", "Focus hours"…) on any event: filter chips in each tab, a colour per
+  category, a badge on the event, and a field on the form for daily events.
+- **Sorting rules** for linked calendars: "titles containing breakfast, lunch, dinner → Daily events, Food".
+  The first matching rule wins; everything else uses the feed's own calendar.
+
 ## v4.11.0 — 2026-11-11
 
 **Database:** `20261111000000_calendar_feeds.sql` (new `calendar_feeds` table; `events.feed_id`,

@@ -10,7 +10,19 @@ import {
 } from './lib/calendar'
 
 export function eventColor(e: CalendarEvent, circles: CircleSet): string {
-  return circles.has(e.circle) ? circles.meta(e.circle).color : 'var(--m14)'
+  if (circles.has(e.circle)) return circles.meta(e.circle).color
+  return e.category ? categoryColor(e.category) : 'var(--m14)'
+}
+
+/** A steady colour per category name ("Food" is always the same colour) */
+const CATEGORY_COLORS = ['#d97706', '#0d9488', '#7c3aed', '#db2777', '#2563eb', '#65a30d', '#dc2626', '#0891b2']
+export function categoryColor(category: string): string {
+  const known: Record<string, string> = { food: '#d97706', movement: '#0d9488', 'focus hours': '#7c3aed', focus: '#7c3aed' }
+  const key = category.trim().toLowerCase()
+  if (known[key]) return known[key]
+  let h = 0
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return CATEGORY_COLORS[h % CATEGORY_COLORS.length]
 }
 
 function EventChip({ event, onOpen, showTime = true }: { event: CalendarEvent; onOpen: (id: string) => void; showTime?: boolean }) {

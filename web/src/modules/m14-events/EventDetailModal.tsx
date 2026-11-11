@@ -6,7 +6,7 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import type { CalendarEvent, EventRsvp, RsvpStatus } from './types'
 import { fmtEventWhen } from './lib/calendar'
 import { KIND_META } from './lib/permissions'
-import { eventColor } from './CalendarViews'
+import { categoryColor, eventColor } from './CalendarViews'
 import { ModalShell } from '@/core/components/ModalShell'
 
 const sectionLabel: React.CSSProperties = {
@@ -92,6 +92,11 @@ export function EventDetailModal({
           <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'var(--m14)', borderRadius: 20, padding: '2px 9px' }}>
             {KIND_META[event.kind].short}
           </span>
+          {event.category && (
+            <span style={{ fontSize: 11, fontWeight: 700, color: categoryColor(event.category), background: `color-mix(in srgb, ${categoryColor(event.category)} 12%, var(--surface))`, borderRadius: 20, padding: '2px 9px' }}>
+              {event.category}
+            </span>
+          )}
           {circles.has(event.circle) && (
             <span style={{ fontSize: 11, fontWeight: 700, color, background: `color-mix(in srgb, ${color} 12%, var(--surface))`, borderRadius: 20, padding: '2px 9px' }}>
               {circles.meta(event.circle).emoji} {circles.meta(event.circle).label}

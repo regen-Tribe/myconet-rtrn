@@ -7,6 +7,7 @@ import { ROLE_LABELS } from '@/core/lib/roles'
 import type { CalendarEvent, EventKind, LinkOption } from './types'
 import { toLocalDateInput, toLocalInput } from './lib/calendar'
 import { canCreateKind, EVENT_KINDS, KIND_META } from './lib/permissions'
+import { DAILY_CATEGORIES } from './lib/feed-url'
 import { ModalShell } from '@/core/components/ModalShell'
 
 /** Columns written to `events` on create/update. */
@@ -21,6 +22,7 @@ export interface EventPayload {
   kind: EventKind
   is_public: boolean
   circle: CircleSlug | null
+  category: string | null
   project_id: string | null
   proposal_id: string | null
 }
@@ -77,6 +79,7 @@ export function EventFormModal({
   const [projectId, setProjectId] = useState(existing?.project_id ?? draft.project_id ?? '')
   const [proposalId, setProposalId] = useState(existing?.proposal_id ?? draft.proposal_id ?? '')
   const [isPublic, setIsPublic] = useState(existing?.is_public ?? true)
+  const [category, setCategory] = useState(existing?.category ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [kindNote, setKindNote] = useState<string | null>(null)
@@ -128,6 +131,7 @@ export function EventFormModal({
       kind,
       is_public: isPublic,
       circle: circle || null,
+      category: category.trim() || null,
       project_id: projectId || null,
       proposal_id: proposalId || null,
     })
@@ -169,6 +173,14 @@ export function EventFormModal({
           </div>
           {kindNote && <div style={{ fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', marginTop: 8, lineHeight: 1.5 }}>🔒 {kindNote}</div>}
         </div>
+
+        {(kind === 'daily' || category) && (
+          <div>
+            <label style={labelStyle} htmlFor="ev-category">Category <span style={{ fontWeight: 400, color: 'var(--ink-4)' }}>(optional)</span></label>
+            <input id="ev-category" list="ev-categories" value={category} maxLength={40} onChange={e => setCategory(e.target.value)} style={inputStyle} placeholder="Food, Movement, Focus hours…" />
+            <datalist id="ev-categories">{DAILY_CATEGORIES.map(c => <option key={c} value={c} />)}</datalist>
+          </div>
+        )}
 
         <div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-2)', marginBottom: 10, cursor: 'pointer' }}>
