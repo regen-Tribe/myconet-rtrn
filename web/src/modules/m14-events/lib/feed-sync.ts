@@ -5,6 +5,8 @@
  */
 import { createClient as createSupabase, type SupabaseClient } from '@supabase/supabase-js'
 import { FEED_DAYS_AHEAD, parseFeed } from './feeds'
+import { classifyTitle } from './feed-url'
+import type { EventKind, FeedRule } from '../types'
 
 export interface FeedSyncResult { id: string; count?: number; error?: string }
 
@@ -48,9 +50,10 @@ export async function syncCalendarFeeds(opts: { supabase?: SupabaseClient; feedI
   const to = new Date(from.getTime() + FEED_DAYS_AHEAD * 86400000)
 
   const results: FeedSyncResult[] = []
-  for (const feed of feeds as { id: string; url: string; match_circles: boolean }[]) {
+  for (const feed of feeds as { id: string; url: string; match_circles: boolean; kind: EventKind; rules: FeedRule[] | null }[]) {
     try {
       const occurrences = parseFeed(await fetchFeed(feed.url), from, to, feed.match_circles ? circleRows ?? [] : null)
+        .map(o => ({ ...o, ...classifyTitle(o.title, feed.rules ?? [], feed.kind) }))
       const { data: count, error: applyError } = await supabase.rpc('calendar_feed_apply', {
         p_secret: secret, p_feed_id: feed.id, p_events: occurrences, p_from: from.toISOString(), p_to: to.toISOString(),
       })

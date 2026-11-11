@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { ModalShell } from '@/core/components/ModalShell'
-import type { CalendarFeed, EventKind } from './types'
+import type { CalendarFeed, EventKind, FeedRule } from './types'
 import { EVENT_KINDS, KIND_META } from './lib/permissions'
 import { FEED_SELECT } from './lib/queries'
-import { FEED_DAYS_AHEAD, normalizeFeedUrl } from './lib/feed-url'
+import { DAILY_CATEGORIES, FEED_DAYS_AHEAD, normalizeFeedUrl } from './lib/feed-url'
 
 /**
  * Admins link outside calendars (Google Calendar or any iCal feed). Their events show on
@@ -60,7 +60,7 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
     await sync(data.id)
   }
 
-  const update = async (id: string, patch: Partial<Pick<CalendarFeed, 'is_public' | 'kind' | 'enabled' | 'match_circles'>>) => {
+  const update = async (id: string, patch: Partial<Pick<CalendarFeed, 'is_public' | 'kind' | 'enabled' | 'match_circles' | 'rules'>>) => {
     setError('')
     const { error: err } = await supabase.from('calendar_feeds').update(patch).eq('id', id)
     if (err) return setError(err.message)
@@ -115,7 +115,7 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, fontSize: 12.5, color: 'var(--ink-2)', alignItems: 'center' }}>
               <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                Shows as
+                {f.rules.length ? 'Everything else shows as' : 'Shows as'}
                 <select value={f.kind} disabled={!!busy} onChange={e => update(f.id, { kind: e.target.value as EventKind })} style={{ fontSize: 12.5, padding: '3px 6px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}>
                   {EVENT_KINDS.map(k => <option key={k} value={k}>{KIND_META[k].label}</option>)}
                 </select>
@@ -130,6 +130,7 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
                 <input type="checkbox" checked={f.enabled} disabled={!!busy} onChange={e => update(f.id, { enabled: e.target.checked })} /> Keep syncing
               </label>
             </div>
+            <RulesEditor feed={f} busy={!!busy} onSave={rules => update(f.id, { rules })} />
           </div>
         ))}
       </div>
@@ -169,5 +170,47 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
         <button style={{ ...small, marginTop: 14 }} onClick={() => setAdding(true)}>+ Link a calendar</button>
       )}
     </ModalShell>
+  )
+}
+
+/** "Titles containing … go to … as …": sorts a linked calendar's events into calendars and categories */
+function RulesEditor({ feed, busy, onSave }: { feed: CalendarFeed; busy: boolean; onSave: (rules: FeedRule[]) => void }) {
+  const [open, setOpen] = useState(false)
+  const [rules, setRules] = useState<FeedRule[]>(feed.rules)
+  const dirty = JSON.stringify(rules) !== JSON.stringify(feed.rules)
+  const set = (i: number, patch: Partial<FeedRule>) => setRules(rs => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)))
+  const field: React.CSSProperties = { fontSize: 12.5, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--bg)', color: 'var(--ink)', minWidth: 0 }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ marginTop: 10, background: 'none', border: 'none', padding: 0, fontSize: 12.5, color: 'var(--m14)', fontWeight: 600, cursor: 'pointer' }}>
+        {feed.rules.length ? `Sorting rules (${feed.rules.length}) ▾` : '+ Sort events into calendars and categories ▾'}
+      </button>
+    )
+  }
+  return (
+    <div style={{ marginTop: 10, borderTop: '1px solid var(--rule)', paddingTop: 10 }}>
+      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8, lineHeight: 1.5 }}>
+        Events whose title contains one of the words go to that calendar and category. The first matching rule wins; everything else uses the setting above.
+      </div>
+      <datalist id={`cats-${feed.id}`}>{DAILY_CATEGORIES.map(c => <option key={c} value={c} />)}</datalist>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {rules.map((r, i) => (
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) auto', gap: 6, alignItems: 'center' }}>
+            <input style={field} value={r.words} maxLength={300} placeholder="breakfast, lunch, dinner" aria-label="Words in the title" onChange={e => set(i, { words: e.target.value })} />
+            <select style={field} value={r.kind} aria-label="Calendar" onChange={e => set(i, { kind: e.target.value as EventKind })}>
+              {EVENT_KINDS.map(k => <option key={k} value={k}>{KIND_META[k].label}</option>)}
+            </select>
+            <input style={field} list={`cats-${feed.id}`} value={r.category ?? ''} maxLength={40} placeholder="Category" aria-label="Category" onChange={e => set(i, { category: e.target.value || null })} />
+            <button onClick={() => setRules(rs => rs.filter((_, j) => j !== i))} aria-label="Remove rule" style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 16 }}>×</button>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+        <button disabled={rules.length >= 50} onClick={() => setRules(rs => [...rs, { words: '', kind: 'daily', category: null }])} style={{ fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>+ Rule</button>
+        <button disabled={busy || !dirty} onClick={() => onSave(rules.filter(r => r.words.trim()))} style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 8, border: 'none', background: dirty ? 'var(--m14)' : 'var(--bg-2)', color: dirty ? '#fff' : 'var(--ink-4)', cursor: dirty ? 'pointer' : 'default' }}>Save and sync</button>
+        <button onClick={() => { setRules(feed.rules); setOpen(false) }} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 8, border: 'none', background: 'none', color: 'var(--ink-3)', cursor: 'pointer' }}>Close</button>
+      </div>
+    </div>
   )
 }

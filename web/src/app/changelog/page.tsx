@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.12.0',
+    date: '2026-11-12',
+    title: 'Daily events and categories',
+    items: [
+      'A new "Daily events" calendar for the community\'s rhythm, such as meals, movement and focus hours, alongside Core events, Community hosted and Tasks.',
+      'Events can have a category ("Food", "Movement"…), with filter buttons and a colour for each.',
+      'Linked calendars can sort their events: for example, everything titled Breakfast, Lunch or Dinner goes to Daily events › Food.',
+    ],
+  },
+  {
     version: 'v4.11.0',
     date: '2026-11-11',
     title: 'Linked calendars',

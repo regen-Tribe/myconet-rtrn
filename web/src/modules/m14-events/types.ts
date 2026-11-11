@@ -1,4 +1,4 @@
-export type EventKind = 'core' | 'community' | 'task'
+export type EventKind = 'daily' | 'core' | 'community' | 'task'
 export type RsvpStatus = 'going' | 'maybe'
 
 export interface PersonLite {
@@ -18,6 +18,8 @@ export interface CalendarEvent {
   kind: EventKind
   is_public: boolean
   circle: string | null
+  /** e.g. "Food", "Movement": groups events within a calendar */
+  category: string | null
   project_id: string | null
   proposal_id: string | null
   created_by: string
@@ -28,6 +30,13 @@ export interface CalendarEvent {
   proposal: { id: string; title: string } | null
 }
 
+/** A linked calendar's sorting rule: titles containing any of `words` go to `kind`, in `category` */
+export interface FeedRule {
+  words: string
+  kind: EventKind
+  category: string | null
+}
+
 /** A linked iCal calendar (admins only) */
 export interface CalendarFeed {
   id: string
@@ -36,6 +45,8 @@ export interface CalendarFeed {
   kind: EventKind
   is_public: boolean
   match_circles: boolean
+  /** Sort events by title; see FeedRule */
+  rules: FeedRule[]
   enabled: boolean
   last_synced_at: string | null
   last_count: number | null
