@@ -31,10 +31,14 @@ project and Cloudflare account; nothing is shared with other communities.
   through the SQL editor). Only `supabase/migrations/`; nothing else.
 - Supabase › Authentication › URL Configuration: Site URL = `appUrl`, and add
   `<appUrl>/**` to the redirect URLs.
+- Supabase › Authentication › Emails › SMTP: set up a mail provider (Resend with the community's
+  domain, or a Gmail app password). The built-in mailer sends only about 2 emails an hour, so
+  sign-ups stall. Then raise Authentication › Rate Limits › emails per hour (e.g. 60).
 
 **4. Deploy**
 - `cd web && npm ci`
 - `CLOUDFLARE_API_TOKEN=… npx wrangler secret put MINIMAX_API_KEY`
+- Calendar sync key: `CALENDAR_SYNC_SECRET` and its hash, see `supabase/setup/calendar-sync-key.sql`
 - `CLOUDFLARE_API_TOKEN=… npm run deploy`
 - Check `/`, `/auth/login` and signup load, and that a signup gets the confirmation email.
 
@@ -57,3 +61,4 @@ project and Cloudflare account; nothing is shared with other communities.
 - Blueprint › Circles: confirm the circles the scan found, or start from a template.
   Setup isn't finished without at least one circle.
 - Join questions, then invite the first members; assign circle leads in Admin › Users.
+- Calendar › 🔗 Linked calendars: link the community's Google Calendar (or any iCal feed), if it has one.

@@ -3,6 +3,24 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.11.0',
+    date: '2026-11-11',
+    title: 'Linked calendars',
+    items: [
+      'Admins can link the community\'s Google Calendar (or any calendar with an iCal link) from the Calendar page. Its events appear on the community calendar for the next three months and stay up to date: repeating events, changes and cancellations follow the original calendar.',
+      'Events named after a circle, like "Farming Circle", are placed in that circle automatically.',
+      'Linked events are marked as such and are edited in the original calendar.',
+    ],
+  },
+  {
+    version: 'v4.10.1',
+    date: '2026-11-11',
+    title: 'Working rules for contributors',
+    items: [
+      'The code now spells out how to contribute: every change goes on its own branch and in a pull request for review, never straight to the live version. The same rules are written for AI coding assistants.',
+    ],
+  },
+  {
     version: 'v4.10.0',
     date: '2026-11-05',
     title: 'Home page: every module at a glance',

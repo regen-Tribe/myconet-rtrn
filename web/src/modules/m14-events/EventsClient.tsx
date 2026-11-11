@@ -5,13 +5,14 @@ import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
-import type { CalendarEvent, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
+import type { CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
 import { addDays, fmtMonthTitle, fmtWeekTitle, isPast, startOfDay } from './lib/calendar'
 import { canCreateKind, canEditEvent, EVENT_KINDS, KIND_META } from './lib/permissions'
 import { EVENT_SELECT, toEvent } from './lib/queries'
 import { ListView, MonthView, WeekView } from './CalendarViews'
 import { EventDetailModal } from './EventDetailModal'
 import { EventFormModal, type EventDraft, type EventPayload } from './EventFormModal'
+import { CalendarFeedsModal } from './CalendarFeedsModal'
 
 const VIEWS: { id: EventsView; label: string }[] = [
   { id: 'month', label: 'Month' },
@@ -21,7 +22,7 @@ const VIEWS: { id: EventsView; label: string }[] = [
 
 export default function EventsClient({
   initialEvents, initialRsvps, userId, me, role, leadCircles, projects, proposals,
-  initialTab, initialView, initialEventId, initialDraft,
+  initialTab, initialView, initialEventId, initialDraft, initialFeeds,
 }: {
   initialEvents: CalendarEvent[]
   initialRsvps: EventRsvp[]
@@ -36,6 +37,8 @@ export default function EventsClient({
   initialEventId: string | null
   /** Set when arriving from "+ Add event" on a project or proposal. */
   initialDraft: EventDraft | null
+  /** Linked calendars; set for admins only */
+  initialFeeds: CalendarFeed[] | null
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -50,6 +53,7 @@ export default function EventsClient({
     initialDraft ? { existing: null, draft: initialDraft } : null,
   )
   const [toast, setToast] = useState<string | null>(null)
+  const [showFeeds, setShowFeeds] = useState(false)
 
   // Dates depend on the viewer's time zone, so the calendar renders after mount
   const [now, setNow] = useState<Date | null>(null)
@@ -181,6 +185,11 @@ export default function EventsClient({
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {initialFeeds && (
+            <button onClick={() => setShowFeeds(true)} title="Show events from Google Calendar or another calendar" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>
+              🔗 Linked calendars{initialFeeds.length > 0 ? ` (${initialFeeds.length})` : ''}
+            </button>
+          )}
           {canPostCommunity ? (
             <button onClick={() => openNew()} style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--m14)', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer' }}>
               + New event or task
@@ -287,12 +296,16 @@ export default function EventsClient({
           event={openEvent}
           rsvps={rsvps.filter(r => r.event_id === openEvent.id)}
           userId={userId}
-          canEdit={canEditEvent(openEvent, userId, role, leadCircles)}
+          canEdit={!openEvent.feed_id && canEditEvent(openEvent, userId, role, leadCircles)}
           onClose={() => setOpenId(null)}
           onRsvp={status => rsvp(openEvent.id, status)}
           onEdit={() => setForm({ existing: openEvent, draft: {} })}
           onDelete={() => deleteEvent(openEvent.id)}
         />
+      )}
+
+      {showFeeds && initialFeeds && (
+        <CalendarFeedsModal initial={initialFeeds} onClose={() => setShowFeeds(false)} />
       )}
 
       {form && (

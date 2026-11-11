@@ -21,9 +21,25 @@ export interface CalendarEvent {
   project_id: string | null
   proposal_id: string | null
   created_by: string
+  /** Set when the event comes from a linked calendar (edit it there, not here) */
+  feed_id: string | null
   creator: PersonLite | null
   project: { id: string; title: string } | null
   proposal: { id: string; title: string } | null
+}
+
+/** A linked iCal calendar (admins only) */
+export interface CalendarFeed {
+  id: string
+  name: string
+  url: string
+  kind: EventKind
+  is_public: boolean
+  match_circles: boolean
+  enabled: boolean
+  last_synced_at: string | null
+  last_count: number | null
+  last_error: string | null
 }
 
 export interface EventRsvp {

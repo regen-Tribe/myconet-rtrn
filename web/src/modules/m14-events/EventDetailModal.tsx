@@ -146,12 +146,16 @@ export function EventDetailModal({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderTop: '1px solid var(--rule)', paddingTop: 14 }}>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-            Hosted by{' '}
-            {event.creator?.username
-              ? <Link href={`/u/${event.creator.username}`} style={{ color: 'var(--ink-2)', fontWeight: 600 }}>{creatorName}</Link>
-              : creatorName}
-          </div>
+          {event.feed_id ? (
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>🔗 From a linked calendar. Changes there show up here within the hour.</div>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+              Hosted by{' '}
+              {event.creator?.username
+                ? <Link href={`/u/${event.creator.username}`} style={{ color: 'var(--ink-2)', fontWeight: 600 }}>{creatorName}</Link>
+                : creatorName}
+            </div>
+          )}
           {canEdit && (
             <div style={{ display: 'flex', gap: 8 }}>
               {confirmDelete ? (
