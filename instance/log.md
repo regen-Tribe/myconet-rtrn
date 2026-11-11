@@ -678,3 +678,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ### 2026-11-11 — core v4.11.0 deployed
 - Linked calendars. Migration applied, CALENDAR_SYNC_SECRET set (hash in private.calendar_sync_key).
+
+### 2026-11-12 — core v4.12.0 deployed
+- Daily events, categories, linked-calendar sorting rules.
