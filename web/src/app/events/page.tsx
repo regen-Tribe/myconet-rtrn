@@ -1,11 +1,13 @@
+import { after } from 'next/server'
 import { createClient } from '@/core/lib/supabase/server'
 import EventsClient from '@/modules/m14-events/EventsClient'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { loadCircles } from '@/core/lib/circles-server'
 import { isEventKind } from '@/modules/m14-events/lib/permissions'
-import { EVENT_SELECT, RSVP_SELECT, toEvent, toRsvp } from '@/modules/m14-events/lib/queries'
+import { EVENT_SELECT, FEED_SELECT, RSVP_SELECT, toEvent, toRsvp } from '@/modules/m14-events/lib/queries'
+import { syncCalendarFeeds } from '@/modules/m14-events/lib/feed-sync'
 import type { EventDraft } from '@/modules/m14-events/EventFormModal'
-import type { EventsView, LinkOption } from '@/modules/m14-events/types'
+import type { CalendarFeed, EventsView, LinkOption } from '@/modules/m14-events/types'
 
 const VIEWS: EventsView[] = ['month', 'week', 'list']
 
@@ -13,6 +15,8 @@ export default async function EventsPage({ searchParams }: {
   searchParams: Promise<{ tab?: string; view?: string; event?: string; new?: string; project?: string; proposal?: string; circle?: string }>
 }) {
   const sp = await searchParams
+  // Linked calendars (Google etc.) refresh at most hourly, after this page is sent
+  after(() => syncCalendarFeeds().catch(() => {}))
   const supabase = await createClient()
   const [{ data: { user } }, circles] = await Promise.all([supabase.auth.getUser(), loadCircles(supabase)])
 
@@ -57,6 +61,12 @@ export default async function EventsPage({ searchParams }: {
     proposals = (propRes.data ?? []) as LinkOption[]
   }
 
+  // Admins manage linked calendars from this page
+  const { data: feedRows } = role === 'admin'
+    ? await supabase.from('calendar_feeds').select(FEED_SELECT).order('created_at')
+    : { data: null }
+  const feeds = (feedRows ?? []) as CalendarFeed[]
+
   const linked = sp.event ? events.find(e => e.id === sp.event) : undefined
   const initialTab = linked?.kind ?? (isEventKind(sp.tab) ? sp.tab : 'core')
   const initialView = VIEWS.find(v => v === sp.view) ?? 'month'
@@ -85,6 +95,7 @@ export default async function EventsPage({ searchParams }: {
       initialView={initialView}
       initialEventId={linked?.id ?? null}
       initialDraft={initialDraft}
+      initialFeeds={role === 'admin' ? feeds : null}
     />
   )
 }

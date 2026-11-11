@@ -5,6 +5,29 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.11.0 — 2026-11-11
+
+**Database:** `20261111000000_calendar_feeds.sql` (new `calendar_feeds` table; `events.feed_id`,
+`events.external_uid`; sync functions). **Setup:** optional `CALENDAR_SYNC_SECRET` Worker secret and
+`supabase/setup/calendar-sync-key.sql` for hourly refresh; without it, admins sync with "Sync now".
+
+- **Linked calendars** (Calendar › 🔗 Linked calendars, admins): link a Google Calendar or any iCal
+  feed and its events show on the community calendar for the next 90 days. Repeating events,
+  time zones, one-off changes and cancellations follow the source; events named like a circle
+  ("Farming Circle") go in that circle. Choose which calendar tab they show in and whether
+  visitors can see them. Refreshes about hourly when someone opens the calendar, or on "Sync now".
+  Linked events can't be edited in MyCoNet; change them in the source calendar.
+- Setup checklist: set up custom SMTP, since Supabase's built-in mailer sends only ~2 emails an hour.
+
+## v4.10.1 — 2026-11-11
+
+No database changes.
+
+- **Working rules for contributors and AI coding agents**: a "Working on the code" section in
+  `README.md`, a rules block at the top of `CLAUDE.md`, and a new `AGENTS.md`. Work on a branch,
+  open a pull request, never push to `main`; agents don't merge, deploy or run live migrations
+  unless asked; community repos change only `instance/`.
+
 ## v4.10.0 — 2026-11-05
 
 No database changes.

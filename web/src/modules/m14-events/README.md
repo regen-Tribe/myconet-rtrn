@@ -33,7 +33,11 @@ Query params: `tab=core|community|task`, `view=month|week|list`, `event=<id>` (o
 | `LinkedEventsList.tsx` | Upcoming events for another module's page (used on `/ops/[id]`) |
 | `lib/calendar.ts` | Local-time date math and formatting — call after mount only |
 | `lib/permissions.ts` | `canCreateKind`, `canEditEvent` — mirror the RLS policies |
-| `lib/queries.ts` | `EVENT_SELECT`, `RSVP_SELECT`, row normalizers |
+| `lib/queries.ts` | `EVENT_SELECT`, `RSVP_SELECT`, `FEED_SELECT`, row normalizers |
+| `CalendarFeedsModal.tsx` | Admins: link, sync and remove outside calendars (🔗 Linked calendars) |
+| `lib/feeds.ts` | `parseFeed()`: iCal → occurrences (repeats expanded, time zones, one-off changes, cancellations), `matchCircle()`. Server only (uses `ical.js`) |
+| `lib/feed-url.ts` | Browser-safe: `normalizeFeedUrl()` (Google share/embed link → iCal address), `FEED_DAYS_AHEAD` |
+| `lib/feed-sync.ts` | `syncCalendarFeeds()`: claims due feeds, fetches, parses, applies. Called after `/events` renders and by `/api/calendar/sync` |
 
 ## Database tables
 
@@ -42,7 +46,13 @@ Migrations: `supabase/migrations/20261101_m14_events.sql`, `20261102_m14_event_t
 | Table | Access |
 |-------|--------|
 | `events` | Read: public events for everyone, all events for joining+. Insert: community = joining+, core and task = full member+. Update/delete: host, admin, or circle lead of the event's circle |
+| `calendar_feeds` | Linked calendars (`url` may be a secret link). Admins only |
 | `event_rsvps` | One row per (event, user), status `going`/`maybe`. Signed-in users read; each user writes only their own |
+
+Feed events have `feed_id` + `external_uid` (unique together; the UID plus the occurrence's original
+start for repeats), so a sync updates rather than duplicates and RSVPs survive. Writes go through
+`calendar_feeds_claim()` / `calendar_feed_apply()` (security definer), allowed for an admin or a caller
+with `CALENDAR_SYNC_SECRET` (hash in `private.calendar_sync_key`, set with `supabase/setup/calendar-sync-key.sql`).
 
 Policies use `private.my_role()` / `private.my_lead_circles()` (security definer, not exposed over the API).
 
@@ -50,4 +60,8 @@ Policies use `private.my_role()` / `private.my_lead_circles()` (security definer
 
 - Dates render in the viewer's time zone, so the calendar waits for mount; the server renders in UTC.
 - The page loads events from the last 365 days onward. Older events need a fetch on navigation if that ever matters.
-- Not in v1: recurring events, .ics export, an events section on the proposal cards in M09.
+- Linked calendars: the next 90 days are kept in sync; past occurrences stay. Sync runs after someone
+  opens `/events` and the last sync is over an hour old (no cron), or on "Sync now". All-day dates are
+  stored at noon UTC so they land on the same day everywhere. Feed events can't be edited here (the
+  next sync would undo it): change them in the source calendar.
+- Not yet: recurring events made in MyCoNet itself, .ics export, an events section on the proposal cards in M09.
