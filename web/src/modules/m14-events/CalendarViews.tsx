@@ -1,7 +1,6 @@
 'use client'
 
 import { useCircles } from '@/core/components/CirclesProvider'
-import type { CircleSet } from '@/core/lib/circles'
 import type { CalendarEvent, EventRsvp } from './types'
 import { KIND_META } from './lib/permissions'
 import {
@@ -9,15 +8,15 @@ import {
   monthGrid, sameDay, startOfDay, weekDays,
 } from './lib/calendar'
 
-export function eventColor(e: CalendarEvent, circles: CircleSet): string {
-  if (circles.has(e.circle)) return circles.meta(e.circle).color
-  return e.category ? categoryColor(e.category) : 'var(--m14)'
+/** An event takes its calendar's colour (Daily, Core, Community, Tasks); categories show as a dot */
+export function eventColor(e: CalendarEvent): string {
+  return KIND_META[e.kind]?.color ?? 'var(--m14)'
 }
 
-/** A steady colour per category name ("Food" is always the same colour) */
-const CATEGORY_COLORS = ['#d97706', '#0d9488', '#7c3aed', '#db2777', '#2563eb', '#65a30d', '#dc2626', '#0891b2']
+/** A steady colour per category name ("Food" is always the same colour); none clash with the calendars' */
+const CATEGORY_COLORS = ['#d97706', '#0284c7', '#7c3aed', '#ca8a04', '#0d9488', '#9333ea']
 export function categoryColor(category: string): string {
-  const known: Record<string, string> = { food: '#d97706', movement: '#0d9488', 'focus hours': '#7c3aed', focus: '#7c3aed' }
+  const known: Record<string, string> = { food: '#d97706', movement: '#0284c7', 'focus hours': '#7c3aed', focus: '#7c3aed' }
   const key = category.trim().toLowerCase()
   if (known[key]) return known[key]
   let h = 0
@@ -26,8 +25,7 @@ export function categoryColor(category: string): string {
 }
 
 function EventChip({ event, onOpen, showTime = true }: { event: CalendarEvent; onOpen: (id: string) => void; showTime?: boolean }) {
-  const circles = useCircles()
-  const color = eventColor(event, circles)
+  const color = eventColor(event)
   return (
     <button
       onClick={ev => { ev.stopPropagation(); onOpen(event.id) }}
@@ -41,6 +39,7 @@ function EventChip({ event, onOpen, showTime = true }: { event: CalendarEvent; o
         padding: '2px 5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}
     >
+      {event.category && <span aria-hidden style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: categoryColor(event.category), marginRight: 4, verticalAlign: 1 }} />}
       {showTime && !event.all_day && <span style={{ fontWeight: 500, opacity: 0.8 }}>{fmtTime(event.starts_at)} </span>}
       {event.title}
     </button>
@@ -55,7 +54,6 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
   /** Clicking a day's empty space or "+N more" jumps to that day's week. */
   onPickDay: (d: Date) => void
 }) {
-  const circles = useCircles()
   const days = monthGrid(anchor)
   const byDay = groupByDay(events)
   const MAX = 3
@@ -104,7 +102,7 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
               {list.length > 0 && (
                 <div className="ev-dots" style={{ gap: 3, flexWrap: 'wrap' }}>
                   {list.slice(0, 4).map(e => (
-                    <span key={e.id} style={{ width: 6, height: 6, borderRadius: '50%', background: eventColor(e, circles), opacity: isPast(e, now) ? 0.5 : 1 }} />
+                    <span key={e.id} style={{ width: 6, height: 6, borderRadius: '50%', background: eventColor(e), opacity: isPast(e, now) ? 0.5 : 1 }} />
                   ))}
                 </div>
               )}
@@ -121,7 +119,6 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
 export function WeekView({ anchor, events, now, onOpen }: {
   anchor: Date; events: CalendarEvent[]; now: Date; onOpen: (id: string) => void
 }) {
-  const circles = useCircles()
   const days = weekDays(anchor)
   const byDay = groupByDay(events)
 
@@ -145,7 +142,7 @@ export function WeekView({ anchor, events, now, onOpen }: {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {list.length === 0 && <div style={{ fontSize: 11, color: 'var(--ink-4)' }}>—</div>}
               {list.map(e => {
-                const color = eventColor(e, circles)
+                const color = eventColor(e)
                 return (
                   <button
                     key={e.id}
@@ -209,7 +206,7 @@ export function ListView({ events, rsvps, userId, now, showPast, onOpen }: {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {g.items.map(e => {
-              const color = eventColor(e, circles)
+              const color = eventColor(e)
               const going = rsvps.filter(r => r.event_id === e.id && r.status === 'going').length
               const mine = userId ? rsvps.find(r => r.event_id === e.id && r.user_id === userId) : null
               return (

@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.13.2 — 2026-11-12
+
+- **A colour per calendar** (`KIND_META[kind].color`): Daily `#059669`, Core `#4f46e5`, Community
+  `#db2777`, Tasks `#ea580c`, on chips, week/list cards, checkboxes, the pop-up badge and the legend.
+  Categories become a dot on the chip (palette chosen not to clash: Food amber, Movement sky, Focus violet).
+  Circles no longer colour events; they still show as a badge in the pop-up and in list view.
+
 ## v4.13.1 — 2026-11-12
 
 - Comments and linked-event descriptions are for **full members** (member and above) only; v4.13.0 let

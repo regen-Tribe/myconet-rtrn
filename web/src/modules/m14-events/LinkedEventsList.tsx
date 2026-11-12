@@ -6,7 +6,6 @@ import type { CalendarEvent } from './types'
 import { fmtEventWhen, isPast } from './lib/calendar'
 import { KIND_META } from './lib/permissions'
 import { eventColor } from './CalendarViews'
-import { useCircles } from '@/core/components/CirclesProvider'
 
 /**
  * Upcoming events for other modules' pages — a project's events on /ops/[id],
@@ -26,7 +25,6 @@ export function LinkedEventsList({
   emptyText?: string
   hideWhenEmpty?: boolean
 }) {
-  const circles = useCircles()
   // Times are formatted in the viewer's zone, so wait for mount
   const [now, setNow] = useState<Date | null>(null)
   useEffect(() => setNow(new Date()), [])
@@ -61,7 +59,7 @@ export function LinkedEventsList({
               href={`/events?event=${e.id}`}
               style={{
                 display: 'block', textDecoration: 'none', background: 'var(--surface)',
-                border: '1px solid var(--rule)', borderLeft: `3px solid ${eventColor(e, circles)}`, borderRadius: 8, padding: '10px 12px',
+                border: '1px solid var(--rule)', borderLeft: `3px solid ${eventColor(e)}`, borderRadius: 8, padding: '10px 12px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>

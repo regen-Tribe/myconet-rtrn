@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.13.2',
+    date: '2026-11-12',
+    title: 'A colour for each calendar',
+    items: [
+      'Daily events are green, Core events indigo, Community hosted pink and Tasks orange, on the calendar, the checkboxes and the legend. Categories like Food and Movement show as a small dot on each event.',
+    ],
+  },
+  {
     version: 'v4.13.1',
     date: '2026-11-12',
     title: 'Event descriptions and comments',
