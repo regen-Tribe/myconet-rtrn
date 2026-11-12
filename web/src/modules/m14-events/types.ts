@@ -25,6 +25,10 @@ export interface CalendarEvent {
   created_by: string
   /** Set when the event comes from a linked calendar (edit it there, not here) */
   feed_id: string | null
+  /** Members' own description of a linked event (calendar syncs leave it alone) */
+  notes: string | null
+  notes_at: string | null
+  notes_author: PersonLite | null
   creator: PersonLite | null
   project: { id: string; title: string } | null
   proposal: { id: string; title: string } | null
@@ -68,3 +72,13 @@ export interface LinkOption {
 }
 
 export type EventsView = 'month' | 'week' | 'list'
+
+/** A comment under an event */
+export interface EventComment {
+  id: string
+  event_id: string
+  user_id: string
+  body: string
+  created_at: string
+  author: PersonLite | null
+}
