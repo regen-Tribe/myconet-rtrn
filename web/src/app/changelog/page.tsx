@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.12.1',
+    date: '2026-11-12',
+    title: 'Show several calendars at once',
+    items: [
+      'The calendar\'s Daily events, Core events, Community hosted and Tasks are now checkboxes, so you can see any mix of them together. Categories like Food and Movement are checkboxes too.',
+    ],
+  },
+  {
     version: 'v4.12.0',
     date: '2026-11-12',
     title: 'Daily events and categories',
