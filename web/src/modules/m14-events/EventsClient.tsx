@@ -8,6 +8,7 @@ import type { CircleSlug } from '@/core/lib/circles'
 import type { CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
 import { addDays, fmtMonthTitle, fmtWeekTitle, isPast, startOfDay } from './lib/calendar'
 import { canCreateKind, canEditEvent, EVENT_KINDS, KIND_META } from './lib/permissions'
+import { isJoiningOrAbove } from '@/core/lib/roles'
 import { EVENT_SELECT, toEvent } from './lib/queries'
 import { categoryColor, ListView, MonthView, WeekView } from './CalendarViews'
 import { EventDetailModal } from './EventDetailModal'
@@ -151,6 +152,14 @@ export default function EventsClient({
       setRsvps(prev)
       setToast('Your RSVP didn’t save. Try again.')
     }
+  }
+
+  async function saveNotes(eventId: string, notes: string): Promise<string | null> {
+    const { error } = await supabase.rpc('event_set_notes', { p_event_id: eventId, p_notes: notes })
+    if (error) return error.code === '42501' ? 'You can’t add a description to this kind of event.' : error.message
+    const { data } = await supabase.from('events').select(EVENT_SELECT).eq('id', eventId).single()
+    if (data) { const saved = toEvent(data); setEvents(list => list.map(e => (e.id === saved.id ? saved : e))) }
+    return null
   }
 
   async function deleteEvent(eventId: string) {
@@ -324,6 +333,10 @@ export default function EventsClient({
           rsvps={rsvps.filter(r => r.event_id === openEvent.id)}
           userId={userId}
           canEdit={!openEvent.feed_id && canEditEvent(openEvent, userId, role, leadCircles)}
+          canAddNotes={!!userId && !!openEvent.feed_id && canCreateKind(openEvent.kind, role)}
+          canComment={!!userId && isJoiningOrAbove(role)}
+          isAdmin={role === 'admin'}
+          onSaveNotes={notes => saveNotes(openEvent.id, notes)}
           onClose={() => setOpenId(null)}
           onRsvp={status => rsvp(openEvent.id, status)}
           onEdit={() => setForm({ existing: openEvent, draft: {} })}

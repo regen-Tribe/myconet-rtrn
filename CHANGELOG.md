@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.13.0 — 2026-11-12
+
+**Database:** `20261114000000_event_notes_comments.sql` (`events.notes/notes_by/notes_at`,
+`event_set_notes()`, new `event_comments` table with RLS).
+
+- **Comments** on every event: signed-in people who can see the event read them; joining members and
+  above write; authors and admins delete.
+- **Descriptions on linked events**: `events.notes`, set through `event_set_notes()` by anyone who could
+  post that kind of event (joining+ for community, full members+ for core/daily). Feed syncs never touch it.
+  Events created here keep using their own description field.
+
 ## v4.12.2 — 2026-11-12
 
 **Database:** `20261113000000_auth_email_log.sql` (new `auth_email_log`, admin-read; written by the

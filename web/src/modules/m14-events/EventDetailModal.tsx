@@ -8,6 +8,7 @@ import { fmtEventWhen } from './lib/calendar'
 import { KIND_META } from './lib/permissions'
 import { categoryColor, eventColor } from './CalendarViews'
 import { ModalShell } from '@/core/components/ModalShell'
+import { EventComments } from './EventComments'
 
 const sectionLabel: React.CSSProperties = {
   fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -34,20 +35,28 @@ function PeopleChips({ people }: { people: EventRsvp[] }) {
 }
 
 export function EventDetailModal({
-  event, rsvps, userId, canEdit, onClose, onRsvp, onEdit, onDelete,
+  event, rsvps, userId, canEdit, canAddNotes, canComment, isAdmin, onClose, onRsvp, onEdit, onDelete, onSaveNotes,
 }: {
   event: CalendarEvent
   rsvps: EventRsvp[]
   userId: string | null
   canEdit: boolean
+  /** A linked event, and the viewer may post this kind of event */
+  canAddNotes: boolean
+  canComment: boolean
+  isAdmin: boolean
   onClose: () => void
   onRsvp: (status: RsvpStatus | null) => Promise<void>
   onEdit: () => void
   onDelete: () => Promise<void>
+  /** Returns an error message, or null when saved */
+  onSaveNotes: (notes: string) => Promise<string | null>
 }) {
   const circles = useCircles()
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [notesDraft, setNotesDraft] = useState<string | null>(null)
+  const [notesError, setNotesError] = useState('')
   const color = eventColor(event, circles)
   const kindMeta = KIND_META[event.kind]
   const going = rsvps.filter(r => r.status === 'going')
@@ -59,6 +68,15 @@ export function EventDetailModal({
     setBusy(true)
     await onRsvp(mine === status ? null : status)
     setBusy(false)
+  }
+
+  async function saveNotes() {
+    if (notesDraft === null) return
+    setBusy(true)
+    const err = await onSaveNotes(notesDraft)
+    setBusy(false)
+    if (err) setNotesError(err)
+    else { setNotesDraft(null); setNotesError('') }
   }
 
   async function remove() {
@@ -121,6 +139,39 @@ export function EventDetailModal({
           <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{event.description}</p>
         )}
 
+        {event.feed_id && (event.notes || canAddNotes) && (
+          <div>
+            <div style={sectionLabel}>Description{event.notes_author ? ` · added by ${event.notes_author.first_name ?? event.notes_author.username ?? 'a member'}` : ''}</div>
+            {notesDraft !== null ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <textarea
+                  value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={4} maxLength={5000} autoFocus
+                  placeholder="What to expect, what to bring, who's hosting…" aria-label="Event description"
+                  style={{ fontSize: 14, fontFamily: 'inherit', lineHeight: 1.55, padding: '8px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', resize: 'vertical' }}
+                />
+                {notesError && <div style={{ fontSize: 12.5, color: '#dc2626' }}>{notesError}</div>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={saveNotes} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 'var(--radius)', border: 'none', background: 'var(--m14)', color: '#fff', cursor: busy ? 'wait' : 'pointer' }}>
+                    {busy ? 'Saving…' : 'Save'}
+                  </button>
+                  <button onClick={() => { setNotesDraft(null); setNotesError('') }} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {event.notes && <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 8px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{event.notes}</p>}
+                {canAddNotes && (
+                  <button onClick={() => setNotesDraft(event.notes ?? '')} style={{ fontSize: 12, fontWeight: 600, padding: '5px 11px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>
+                    {event.notes ? 'Edit description' : '+ Add a description'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {(event.project || event.proposal) && (
           <div>
             <div style={sectionLabel}>Linked to</div>
@@ -149,6 +200,8 @@ export function EventDetailModal({
             </div>
           )}
         </div>
+
+        <EventComments eventId={event.id} userId={userId} canComment={canComment} isAdmin={isAdmin} labelStyle={sectionLabel} />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderTop: '1px solid var(--rule)', paddingTop: 14 }}>
           {event.feed_id ? (
