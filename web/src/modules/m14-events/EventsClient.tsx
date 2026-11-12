@@ -234,10 +234,11 @@ export default function EventsClient({
         {EVENT_KINDS.map(k => {
           const on = kinds.includes(k)
           return (
-            <label key={k} title={KIND_META[k].blurb} style={checkStyle(on, 'var(--m14)')}>
-              <input type="checkbox" checked={on} onChange={() => setKinds(list => toggle(list, k))} style={{ margin: 0, accentColor: 'var(--m14)' }} />
+            <label key={k} title={KIND_META[k].blurb} style={checkStyle(on, KIND_META[k].color)}>
+              <input type="checkbox" checked={on} onChange={() => setKinds(list => toggle(list, k))} style={{ margin: 0, accentColor: KIND_META[k].color }} />
+              <span aria-hidden style={{ width: 9, height: 9, borderRadius: 2, background: KIND_META[k].color }} />
               {KIND_META[k].label}
-              {counts[k] > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--m14)' }}>{counts[k]}</span>}
+              {counts[k] > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: KIND_META[k].color }}>{counts[k]}</span>}
             </label>
           )
         })}
@@ -317,14 +318,16 @@ export default function EventsClient({
 
       {/* Legend */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 14, fontSize: 11.5, color: 'var(--ink-3)' }}>
-        {circles.slugs.map(p => (
-          <span key={p} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: circles.meta(p).color }} />{circles.meta(p).label}
+        {EVENT_KINDS.map(k => (
+          <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: KIND_META[k].color }} />{KIND_META[k].label}
           </span>
         ))}
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--m14)' }} />No circle
-        </span>
+        {categories.map(c => (
+          <span key={c} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: categoryColor(c) }} />{c}
+          </span>
+        ))}
       </div>
 
       {openEvent && !form && (

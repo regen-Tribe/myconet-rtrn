@@ -57,7 +57,7 @@ export function EventDetailModal({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [notesDraft, setNotesDraft] = useState<string | null>(null)
   const [notesError, setNotesError] = useState('')
-  const color = eventColor(event, circles)
+  const color = eventColor(event)
   const kindMeta = KIND_META[event.kind]
   const going = rsvps.filter(r => r.status === 'going')
   const maybe = rsvps.filter(r => r.status === 'maybe')
@@ -107,7 +107,7 @@ export function EventDetailModal({
     <ModalShell title={event.title} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'var(--m14)', borderRadius: 20, padding: '2px 9px' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: color, borderRadius: 20, padding: '2px 9px' }}>
             {KIND_META[event.kind].short}
           </span>
           {event.category && (
@@ -116,7 +116,7 @@ export function EventDetailModal({
             </span>
           )}
           {circles.has(event.circle) && (
-            <span style={{ fontSize: 11, fontWeight: 700, color, background: `color-mix(in srgb, ${color} 12%, var(--surface))`, borderRadius: 20, padding: '2px 9px' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: circles.meta(event.circle).color, background: `color-mix(in srgb, ${circles.meta(event.circle).color} 12%, var(--surface))`, borderRadius: 20, padding: '2px 9px' }}>
               {circles.meta(event.circle).emoji} {circles.meta(event.circle).label}
             </span>
           )}
