@@ -127,6 +127,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
   const menuItems = [
     username ? { label: 'View my profile', href: `/u/${username}`, icon: '👤' } : null,
     { label: 'Edit profile', href: '/profile/edit', icon: '✏️' },
+    { label: 'Change password', href: '/account/password', icon: '🔒' },
     { label: 'Dashboard', href: '/dashboard', icon: '⊞' },
     { label: 'Network', href: '/network', icon: '🌐' },
     { label: 'Circles', href: '/org', icon: '🧭' },

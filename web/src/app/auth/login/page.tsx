@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
@@ -10,6 +10,10 @@ type Mode = 'login' | 'register' | 'forgot'
 export default function AuthPage() {
   const { logo_url } = useBranding()
   const [mode, setMode] = useState<Mode>('login')
+  // "Request a new link" from the reset page opens the forgot form
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'forgot') setMode('forgot')
+  }, [])
   const supabase = createClient()
   const router = useRouter()
 
@@ -64,8 +68,15 @@ export default function AuthPage() {
     e.preventDefault()
     setForgotError('')
     setForgotLoading(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, { redirectTo: `${location.origin}/auth/reset-password` })
-    if (error) { setForgotError(error.message) } else { setForgotSent(true) }
+    // Through the portal's server, which records the request for admins (auth_email_log)
+    try {
+      const resp = await fetch('/api/auth/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: forgotEmail }) })
+      const data = await resp.json().catch(() => ({})) as { error?: string }
+      if (!resp.ok) setForgotError(data.error || 'The reset email couldn’t be sent. Try again in a minute.')
+      else setForgotSent(true)
+    } catch {
+      setForgotError('Couldn’t reach the portal. Check your connection and try again.')
+    }
     setForgotLoading(false)
   }
 
@@ -199,7 +210,10 @@ export default function AuthPage() {
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
               <h2 style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>Check your inbox</h2>
-              <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6 }}>We sent a reset link to <strong style={{ color: 'var(--ink-2)' }}>{forgotEmail}</strong>.</p>
+              <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6 }}>If <strong style={{ color: 'var(--ink-2)' }}>{forgotEmail}</strong> has an account, a reset link is on its way.</p>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-4)', lineHeight: 1.6, margin: '12px auto 0', maxWidth: 340 }}>
+                Nothing after a few minutes? Check spam, and that this is exactly the address you signed up with (for Gmail, dots count here). Open the link in this same browser.
+              </p>
               <button onClick={() => { setForgotSent(false); setMode('login') }} style={{ marginTop: 24, padding: '10px 24px', borderRadius: 9, fontSize: 13, fontWeight: 600, border: '1px solid var(--rule)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer' }}>
                 Back to sign in
               </button>
