@@ -3,7 +3,7 @@ import { createClient } from '@/core/lib/supabase/server'
 import EventsClient from '@/modules/m14-events/EventsClient'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { loadCircles } from '@/core/lib/circles-server'
-import { isEventKind } from '@/modules/m14-events/lib/permissions'
+import { EVENT_KINDS, isEventKind } from '@/modules/m14-events/lib/permissions'
 import { EVENT_SELECT, FEED_SELECT, RSVP_SELECT, toEvent, toRsvp } from '@/modules/m14-events/lib/queries'
 import { syncCalendarFeeds } from '@/modules/m14-events/lib/feed-sync'
 import type { EventDraft } from '@/modules/m14-events/EventFormModal'
@@ -12,7 +12,7 @@ import type { CalendarFeed, EventsView, LinkOption } from '@/modules/m14-events/
 const VIEWS: EventsView[] = ['month', 'week', 'list']
 
 export default async function EventsPage({ searchParams }: {
-  searchParams: Promise<{ tab?: string; view?: string; event?: string; new?: string; project?: string; proposal?: string; circle?: string }>
+  searchParams: Promise<{ show?: string; tab?: string; view?: string; event?: string; new?: string; project?: string; proposal?: string; circle?: string }>
 }) {
   const sp = await searchParams
   // Linked calendars (Google etc.) refresh at most hourly, after this page is sent
@@ -68,11 +68,15 @@ export default async function EventsPage({ searchParams }: {
   const feeds = (feedRows ?? []) as CalendarFeed[]
 
   const linked = sp.event ? events.find(e => e.id === sp.event) : undefined
-  const initialTab = linked?.kind ?? (isEventKind(sp.tab) ? sp.tab : 'core')
+  // Which kinds are ticked: ?show=daily,core (older links use ?tab=core); everything by default
+  const asked = (sp.show ?? sp.tab ?? '').split(',').filter(isEventKind)
+  const initialKinds = asked.length ? asked : [...EVENT_KINDS]
+  if (linked && !initialKinds.includes(linked.kind)) initialKinds.push(linked.kind)
+  const draftKind = isEventKind(sp.tab) ? sp.tab : asked[0] ?? 'core'
   const initialView = VIEWS.find(v => v === sp.view) ?? 'month'
   const initialDraft: EventDraft | null = sp.new && isJoiningOrAbove(role)
     ? {
-        kind: initialTab,
+        kind: draftKind,
         project_id: projects.some(p => p.id === sp.project) ? sp.project! : null,
         proposal_id: proposals.some(p => p.id === sp.proposal) ? sp.proposal! : null,
         circle: circles.has(sp.circle)
@@ -91,7 +95,7 @@ export default async function EventsPage({ searchParams }: {
       leadCircles={leadCircles}
       projects={projects}
       proposals={proposals}
-      initialTab={initialTab}
+      initialKinds={initialKinds}
       initialView={initialView}
       initialEventId={linked?.id ?? null}
       initialDraft={initialDraft}

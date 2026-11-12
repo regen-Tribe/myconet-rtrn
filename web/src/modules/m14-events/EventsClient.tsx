@@ -22,7 +22,7 @@ const VIEWS: { id: EventsView; label: string }[] = [
 
 export default function EventsClient({
   initialEvents, initialRsvps, userId, me, role, leadCircles, projects, proposals,
-  initialTab, initialView, initialEventId, initialDraft, initialFeeds,
+  initialKinds, initialView, initialEventId, initialDraft, initialFeeds,
 }: {
   initialEvents: CalendarEvent[]
   initialRsvps: EventRsvp[]
@@ -32,7 +32,8 @@ export default function EventsClient({
   leadCircles: string[]
   projects: LinkOption[]
   proposals: LinkOption[]
-  initialTab: EventKind
+  /** The kinds ticked on arrival */
+  initialKinds: EventKind[]
   initialView: EventsView
   initialEventId: string | null
   /** Set when arriving from "+ Add event" on a project or proposal. */
@@ -44,10 +45,11 @@ export default function EventsClient({
   const supabase = createClient()
   const [events, setEvents] = useState(initialEvents)
   const [rsvps, setRsvps] = useState(initialRsvps)
-  const [tab, setTab] = useState<EventKind>(initialTab)
+  const [kinds, setKinds] = useState<EventKind[]>(initialKinds)
   const [view, setView] = useState<EventsView>(initialView)
   const [circleFilter, setCircleFilter] = useState<CircleSlug | ''>('')
-  const [category, setCategory] = useState<string>('')
+  // Categories the viewer has unticked ("Food"…); everything else shows
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([])
   const [showPast, setShowPast] = useState(false)
   const [openId, setOpenId] = useState<string | null>(initialEventId)
   const [form, setForm] = useState<{ existing: CalendarEvent | null; draft: EventDraft } | null>(
@@ -69,11 +71,11 @@ export default function EventsClient({
   // Keep the URL shareable without a navigation
   useEffect(() => {
     const params = new URLSearchParams()
-    params.set('tab', tab)
+    params.set('show', kinds.join(','))
     params.set('view', view)
     if (openId) params.set('event', openId)
     window.history.replaceState(null, '', `/events?${params.toString()}`)
-  }, [tab, view, openId])
+  }, [kinds, view, openId])
 
   useEffect(() => {
     if (!toast) return
@@ -85,9 +87,9 @@ export default function EventsClient({
     EVENT_KINDS.map(k => [k, now ? events.filter(e => e.kind === k && !isPast(e, now)).length : 0]),
   ) as Record<EventKind, number>, [events, now])
 
-  // Categories ("Food", "Movement"…) used in this tab, for the filter chips
-  const categories = useMemo(() => [...new Set(events.filter(e => e.kind === tab && e.category).map(e => e.category as string))].sort(), [events, tab])
-  const visible = events.filter(e => e.kind === tab && (!circleFilter || e.circle === circleFilter) && (!category || e.category === category))
+  // Categories ("Food", "Movement"…) used by the ticked kinds, for the checkboxes
+  const categories = useMemo(() => [...new Set(events.filter(e => kinds.includes(e.kind) && e.category).map(e => e.category as string))].sort(), [events, kinds])
+  const visible = events.filter(e => kinds.includes(e.kind) && (!circleFilter || e.circle === circleFilter) && !(e.category && hiddenCategories.includes(e.category)))
   const openEvent = openId ? events.find(e => e.id === openId) ?? null : null
   const canPostCommunity = canCreateKind('community', role)
 
@@ -98,7 +100,8 @@ export default function EventsClient({
   }
 
   function openNew(draft: EventDraft = {}) {
-    setForm({ existing: null, draft: { kind: tab, circle: circleFilter || null, ...draft } })
+    const kind = EVENT_KINDS.find(k => kinds.includes(k) && canCreateKind(k, role)) ?? 'community'
+    setForm({ existing: null, draft: { kind, circle: circleFilter || null, ...draft } })
   }
 
   async function saveEvent(payload: EventPayload): Promise<string | null> {
@@ -126,7 +129,8 @@ export default function EventsClient({
     const saved = toEvent(data)
     setEvents(list => [...list, saved])
     setForm(null)
-    setTab(saved.kind)
+    setKinds(list => (list.includes(saved.kind) ? list : [...list, saved.kind]))
+    if (saved.category) setHiddenCategories(list => list.filter(c => c !== saved.category))
     setAnchor(startOfDay(new Date(saved.starts_at)))
     setOpenId(saved.id)
     setToast('Event posted')
@@ -161,11 +165,12 @@ export default function EventsClient({
     setToast('Event deleted')
   }
 
-  const tabStyle = (active: boolean): React.CSSProperties => ({
-    fontSize: 13, fontWeight: active ? 600 : 400, color: active ? 'var(--ink)' : 'var(--ink-3)',
-    padding: '8px 14px', background: 'none', border: 'none',
-    borderBottom: active ? '2px solid var(--m14)' : '2px solid transparent',
-    cursor: 'pointer', marginBottom: -1, outline: 'none', whiteSpace: 'nowrap',
+  const toggle = <T,>(list: T[], item: T) => (list.includes(item) ? list.filter(x => x !== item) : [...list, item])
+  const checkStyle = (on: boolean, color: string): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none',
+    fontSize: 13, fontWeight: on ? 600 : 400, color: on ? 'var(--ink)' : 'var(--ink-3)',
+    padding: '6px 12px', borderRadius: 999, background: 'var(--surface)',
+    border: `1px solid ${on ? color : 'var(--rule)'}`,
   })
   const navBtn: React.CSSProperties = {
     fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', background: 'var(--surface)',
@@ -215,32 +220,35 @@ export default function EventsClient({
         </div>
       )}
 
-      {/* ── Kind tabs ─────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--rule)', marginBottom: 8, overflowX: 'auto' }}>
-        {EVENT_KINDS.map(k => (
-          <button key={k} onClick={() => { setTab(k); setCategory('') }} style={tabStyle(tab === k)}>
-            {KIND_META[k].label}
-            {counts[k] > 0 && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: 'var(--m14)' }}>{counts[k]}</span>}
-          </button>
-        ))}
+      {/* ── What to show: kinds and categories, any mix ───────────────── */}
+      <div role="group" aria-label="Show these events" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+        {EVENT_KINDS.map(k => {
+          const on = kinds.includes(k)
+          return (
+            <label key={k} title={KIND_META[k].blurb} style={checkStyle(on, 'var(--m14)')}>
+              <input type="checkbox" checked={on} onChange={() => setKinds(list => toggle(list, k))} style={{ margin: 0, accentColor: 'var(--m14)' }} />
+              {KIND_META[k].label}
+              {counts[k] > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--m14)' }}>{counts[k]}</span>}
+            </label>
+          )
+        })}
       </div>
-      <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: categories.length ? '0 0 10px' : '0 0 16px' }}>{KIND_META[tab].blurb}</p>
       {categories.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-          {['', ...categories].map(c => {
-            const active = category === c
-            const color = c ? categoryColor(c) : 'var(--m14)'
+        <div role="group" aria-label="Categories" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+          {categories.map(c => {
+            const on = !hiddenCategories.includes(c)
+            const color = categoryColor(c)
             return (
-              <button key={c || 'all'} onClick={() => setCategory(c)} style={{
-                fontSize: 12.5, fontWeight: active ? 700 : 500, padding: '5px 12px', borderRadius: 999, cursor: 'pointer',
-                border: `1px solid ${active ? color : 'var(--rule)'}`, color: active ? '#fff' : 'var(--ink-2)', background: active ? color : 'var(--surface)',
-              }}>
-                {c ? <><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 2, background: active ? '#fff' : color, marginRight: 6 }} />{c}</> : 'All'}
-              </button>
+              <label key={c} style={{ ...checkStyle(on, color), fontSize: 12.5, padding: '4px 10px' }}>
+                <input type="checkbox" checked={on} onChange={() => setHiddenCategories(list => toggle(list, c))} style={{ margin: 0, accentColor: color }} />
+                <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 2, background: color }} />{c}
+              </label>
             )
           })}
         </div>
       )}
+      {kinds.length === 0 && <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 10px' }}>Tick at least one kind of event to see the calendar.</p>}
+      <div style={{ marginBottom: 6 }} />
 
       {/* ── Toolbar ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>

@@ -5,6 +5,12 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.12.1 — 2026-11-12
+
+- **Calendar filters are checkboxes**: tick any mix of Daily events, Core events, Community hosted and
+  Tasks, and untick categories ("Food"…) to hide them. Everything is ticked by default. The URL is now
+  `?show=daily,core`; old `?tab=core` links still work.
+
 ## v4.12.0 — 2026-11-12
 
 **Database:** `20261112000000_event_categories.sql` (kind `daily`, `events.category`, `calendar_feeds.rules`;

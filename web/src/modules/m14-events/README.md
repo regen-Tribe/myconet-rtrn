@@ -20,13 +20,13 @@ The community calendar (labelled "Calendar" in the UI; route `/events`, with `/c
 |-------|------|
 | `/events` | `app/events/page.tsx` → `EventsClient` |
 
-Query params: `tab=core|community|task`, `view=month|week|list`, `event=<id>` (opens the pop-up), `new=1&project=<id>&proposal=<id>&circle=<pillar>` (opens a pre-filled form).
+Query params: `show=daily,core,community,task` (the ticked kinds, any mix; default all; `tab=<kind>` still works), `view=month|week|list`, `event=<id>` (opens the pop-up), `new=1&project=<id>&proposal=<id>&circle=<pillar>` (opens a pre-filled form).
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `EventsClient.tsx` | Page: tabs, toolbar, view switching, save/RSVP/delete |
+| `EventsClient.tsx` | Page: kind and category checkboxes, toolbar, view switching, save/RSVP/delete |
 | `CalendarViews.tsx` | `MonthView`, `WeekView`, `ListView`, `eventColor()` |
 | `EventDetailModal.tsx` | Event pop-up + shared `ModalShell` |
 | `EventFormModal.tsx` | Create/edit form |
