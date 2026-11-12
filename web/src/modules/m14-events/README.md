@@ -27,6 +27,7 @@ Query params: `show=daily,core,community,task` (the ticked kinds, any mix; defau
 | File | Purpose |
 |------|---------|
 | `EventsClient.tsx` | Page: kind and category checkboxes, toolbar, view switching, save/RSVP/delete |
+| `EventComments.tsx` | Comment thread in the event pop-up (`event_comments`) |
 | `CalendarViews.tsx` | `MonthView`, `WeekView`, `ListView`, `eventColor()` |
 | `EventDetailModal.tsx` | Event pop-up + shared `ModalShell` |
 | `EventFormModal.tsx` | Create/edit form |

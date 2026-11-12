@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.13.1',
+    date: '2026-11-12',
+    title: 'Event descriptions and comments',
+    items: [
+      'Every event has a comment thread. Everyone signed in can read it; full members can comment and delete their own comments, and admins can delete any.',
+      'Full members can add a description to events from a linked Google calendar (+ Add a description in the event). Updates from Google never overwrite it.',
+    ],
+  },
+  {
     version: 'v4.12.2',
     date: '2026-11-12',
     title: 'Passwords',
