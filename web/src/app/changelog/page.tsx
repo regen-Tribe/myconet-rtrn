@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.12.2',
+    date: '2026-11-12',
+    title: 'Passwords',
+    items: [
+      'Change your password any time from the menu › Change password, without an email.',
+      'Password reset links work whichever way they were sent, and an expired link explains what to do next.',
+      'If a reset email doesn\'t arrive, admins can now see why: every request is recorded for 30 days, including addresses typed slightly differently from the account (like a Gmail address without its dot).',
+    ],
+  },
+  {
     version: 'v4.12.1',
     date: '2026-11-12',
     title: 'Show several calendars at once',

@@ -22,15 +22,27 @@ function ResetPasswordForm() {
   const [done, setDone] = useState(false)
 
   useEffect(() => {
+    // Links arrive as ?code= (asked for on this site) or #access_token= (sent by an
+    // admin or from Supabase); a failed link carries error_description instead
+    const hash = new URLSearchParams(window.location.hash.slice(1))
     const code = searchParams.get('code')
-    if (!code) { setError('Invalid or expired reset link.'); return }
+    const failed = hash.get('error_description') ?? searchParams.get('error_description')
+    const expired = 'This reset link has expired or was already used. Links work once, for an hour, in the same browser you asked from. Request a new one below.'
 
+    if (failed) { setError(expired); return }
+    if (hash.get('access_token') && hash.get('refresh_token')) {
+      supabase.auth.setSession({ access_token: hash.get('access_token')!, refresh_token: hash.get('refresh_token')! })
+        .then(({ error }) => {
+          window.history.replaceState(null, '', window.location.pathname)
+          if (error) setError(expired)
+          else setReady(true)
+        })
+      return
+    }
+    if (!code) { setError('This page needs the link from your reset email. Request a new one below.'); return }
     supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
-        setError('This reset link has expired or already been used. Please request a new one.')
-      } else {
-        setReady(true)
-      }
+      if (error) setError(expired)
+      else setReady(true)
     })
   }, [])
 
@@ -61,8 +73,8 @@ function ResetPasswordForm() {
   if (error && !ready) return (
     <div className="space-y-4">
       <p className="text-sm text-destructive">{error}</p>
-      <Button variant="outline" className="w-full" onClick={() => router.push('/auth/login')}>
-        Back to sign in
+      <Button variant="outline" className="w-full" onClick={() => router.push('/auth/login?mode=forgot')}>
+        Request a new link
       </Button>
     </div>
   )

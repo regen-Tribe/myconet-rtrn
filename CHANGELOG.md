@@ -5,6 +5,18 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.12.2 — 2026-11-12
+
+**Database:** `20261113000000_auth_email_log.sql` (new `auth_email_log`, admin-read; written by the
+portal's server with `CALENDAR_SYNC_SECRET`; without that secret resets still work, unlogged).
+
+- **Change password** (`/account/password`, in the user menu) while signed in; asks for an emailed code
+  only when Supabase requires a fresh sign-in.
+- **Reset page** accepts `?code=` (PKCE, from the site) and `#access_token=` links (admin or dashboard
+  resets), and explains expired or used links (once, one hour, same browser).
+- **"Forgot password?"** goes through `/api/auth/forgot`, which records each request: what was typed,
+  exact account match, a Gmail-spelling near-match (dots, +tags, googlemail), and any error.
+
 ## v4.12.1 — 2026-11-12
 
 - **Calendar filters are checkboxes**: tick any mix of Daily events, Core events, Community hosted and
