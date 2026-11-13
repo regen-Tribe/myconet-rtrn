@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.6 — 2026-11-13
+
+- **Calendar Day view, the default**: `EventsView` gains `day`; `/events` opens on it (today) unless
+  `?view=` says otherwise. `DayView` (CalendarViews.tsx) lists the day's events with the List view's row,
+  now a shared `EventRow`; past events are dimmed; an empty day links to the next day with events.
+  ‹ › step one day; Month's day click opens Day (was Week). View order: Day, Week, Month, List.
+
 ## v4.15.5 — 2026-11-13
 
 - **Avatar cropper** (Sonia Wendorff, from protopia-community/myconet-protopia#22): picking a profile

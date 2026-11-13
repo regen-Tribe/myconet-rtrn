@@ -9,7 +9,7 @@ import { syncCalendarFeeds } from '@/modules/m14-events/lib/feed-sync'
 import type { EventDraft } from '@/modules/m14-events/EventFormModal'
 import type { CalendarFeed, EventsView, LinkOption } from '@/modules/m14-events/types'
 
-const VIEWS: EventsView[] = ['month', 'week', 'list']
+const VIEWS: EventsView[] = ['day', 'week', 'month', 'list']
 
 export default async function EventsPage({ searchParams }: {
   searchParams: Promise<{ show?: string; tab?: string; view?: string; event?: string; new?: string; project?: string; proposal?: string; circle?: string }>
@@ -73,7 +73,7 @@ export default async function EventsPage({ searchParams }: {
   const initialKinds = asked.length ? asked : [...EVENT_KINDS]
   if (linked && !initialKinds.includes(linked.kind)) initialKinds.push(linked.kind)
   const draftKind = isEventKind(sp.tab) ? sp.tab : asked[0] ?? 'core'
-  const initialView = VIEWS.find(v => v === sp.view) ?? 'month'
+  const initialView = VIEWS.find(v => v === sp.view) ?? 'day'
   const initialDraft: EventDraft | null = sp.new && isJoiningOrAbove(role)
     ? {
         kind: draftKind,

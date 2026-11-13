@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.15.6',
+    date: '2026-11-13',
+    title: 'The calendar opens on today',
+    items: [
+      'A new Day view shows one day’s events in full, and the calendar now opens on it, on today. Use ‹ › to move a day at a time, or pick Week, Month or List.',
+      'Tapping a day in Month opens that day. On a day with nothing on, it links to the next day that has something.',
+    ],
+  },
+  {
     version: 'v4.15.5',
     date: '2026-11-13',
     title: 'Position your profile photo',

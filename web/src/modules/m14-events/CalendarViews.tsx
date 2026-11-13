@@ -4,7 +4,7 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import type { CalendarEvent, EventRsvp } from './types'
 import { KIND_META } from './lib/permissions'
 import {
-  DAY_LABELS, dayKey, fmtDayLong, fmtEventWhen, fmtTime, groupByDay, isPast,
+  DAY_LABELS, addDays, dayKey, fmtDayLong, fmtEventWhen, fmtTime, groupByDay, isPast,
   monthGrid, sameDay, startOfDay, weekDays,
 } from './lib/calendar'
 
@@ -169,13 +169,86 @@ export function WeekView({ anchor, events, now, onOpen }: {
   )
 }
 
+/** One event as a row with its time, place, circle and RSVPs (List and Day views) */
+function EventRow({ event: e, rsvps, userId, onOpen, dim = false }: {
+  event: CalendarEvent; rsvps: EventRsvp[]; userId: string | null; onOpen: (id: string) => void
+  /** Already over (Day view) */
+  dim?: boolean
+}) {
+  const circles = useCircles()
+  const color = eventColor(e)
+  const going = rsvps.filter(r => r.event_id === e.id && r.status === 'going').length
+  const mine = userId ? rsvps.find(r => r.event_id === e.id && r.user_id === userId) : null
+  return (
+    <button
+      onClick={() => onOpen(e.id)}
+      style={{
+        display: 'flex', gap: 14, alignItems: 'flex-start', textAlign: 'left', cursor: 'pointer',
+        background: 'var(--surface)', border: '1px solid var(--rule)', borderLeft: `3px solid ${color}`,
+        borderRadius: 10, padding: '12px 14px', width: '100%', opacity: dim ? 0.6 : 1,
+      }}
+    >
+      <div style={{ width: 64, flexShrink: 0, fontSize: 12, fontWeight: 600, color }}>
+        {e.all_day ? 'All day' : fmtTime(e.starts_at)}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{e.title}</div>
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, display: 'flex', flexWrap: 'wrap', gap: '2px 10px' }}>
+          {e.location && <span>📍 {e.location}</span>}
+          {e.online_url && <span>💻 Online</span>}
+          {circles.has(e.circle) && <span style={{ color }}>{circles.meta(e.circle).emoji} {circles.meta(e.circle).label}</span>}
+          {e.project && <span>⚙️ {e.project.title}</span>}
+          {e.is_public && <span>🌍 Public</span>}
+        </div>
+      </div>
+      <div style={{ flexShrink: 0, textAlign: 'right', fontSize: 11, color: 'var(--ink-3)' }}>
+        {going > 0 && <div>{going} {KIND_META[e.kind].goingCount}</div>}
+        {mine && <div style={{ fontWeight: 700, color: 'var(--m14)' }}>{mine.status === 'going' ? KIND_META[e.kind].youGoing : 'Maybe'}</div>}
+      </div>
+    </button>
+  )
+}
+
+// ─── Day ─────────────────────────────────────────────────────────────────────
+
+/** One day's events in full; the calendar opens here, on today */
+export function DayView({ anchor, events, rsvps, userId, now, onOpen, onPickDay }: {
+  anchor: Date; events: CalendarEvent[]; rsvps: EventRsvp[]; userId: string | null; now: Date
+  onOpen: (id: string) => void; onPickDay: (d: Date) => void
+}) {
+  const list = groupByDay(events).get(dayKey(anchor)) ?? []
+  if (list.length) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {list.map(e => <EventRow key={e.id} event={e} rsvps={rsvps} userId={userId} onOpen={onOpen} dim={isPast(e, now)} />)}
+      </div>
+    )
+  }
+  // Nothing today: point at the next day that has something
+  const dayEnd = addDays(anchor, 1).getTime()
+  const next = events
+    .filter(e => new Date(e.starts_at).getTime() >= dayEnd)
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0]
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px dashed var(--rule)', borderRadius: 10, padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--ink-3)' }}>
+      {sameDay(anchor, now) ? 'Nothing on today.' : 'Nothing on this day.'}
+      {next && (
+        <div style={{ marginTop: 10 }}>
+          <button onClick={() => onPickDay(startOfDay(new Date(next.starts_at)))} style={{ fontSize: 13, fontWeight: 600, color: 'var(--m14)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            Next: {next.title} · {fmtDayLong(startOfDay(new Date(next.starts_at)))} →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── List ────────────────────────────────────────────────────────────────────
 
 export function ListView({ events, rsvps, userId, now, showPast, onOpen }: {
   events: CalendarEvent[]; rsvps: EventRsvp[]; userId: string | null; now: Date
   showPast: boolean; onOpen: (id: string) => void
 }) {
-  const circles = useCircles()
   const visible = events
     .filter(e => showPast ? isPast(e, now) : !isPast(e, now))
     .sort((a, b) => (showPast ? -1 : 1) * (new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()))
@@ -205,40 +278,7 @@ export function ListView({ events, rsvps, userId, now, showPast, onOpen }: {
             {sameDay(g.day, now) ? 'Today · ' : ''}{fmtDayLong(g.day)}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {g.items.map(e => {
-              const color = eventColor(e)
-              const going = rsvps.filter(r => r.event_id === e.id && r.status === 'going').length
-              const mine = userId ? rsvps.find(r => r.event_id === e.id && r.user_id === userId) : null
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => onOpen(e.id)}
-                  style={{
-                    display: 'flex', gap: 14, alignItems: 'flex-start', textAlign: 'left', cursor: 'pointer',
-                    background: 'var(--surface)', border: '1px solid var(--rule)', borderLeft: `3px solid ${color}`,
-                    borderRadius: 10, padding: '12px 14px', width: '100%',
-                  }}
-                >
-                  <div style={{ width: 64, flexShrink: 0, fontSize: 12, fontWeight: 600, color }}>
-                    {e.all_day ? 'All day' : fmtTime(e.starts_at)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{e.title}</div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, display: 'flex', flexWrap: 'wrap', gap: '2px 10px' }}>
-                      {e.location && <span>📍 {e.location}</span>}
-                      {e.online_url && <span>💻 Online</span>}
-                      {circles.has(e.circle) && <span style={{ color }}>{circles.meta(e.circle).emoji} {circles.meta(e.circle).label}</span>}
-                      {e.project && <span>⚙️ {e.project.title}</span>}
-                      {e.is_public && <span>🌍 Public</span>}
-                    </div>
-                  </div>
-                  <div style={{ flexShrink: 0, textAlign: 'right', fontSize: 11, color: 'var(--ink-3)' }}>
-                    {going > 0 && <div>{going} {KIND_META[e.kind].goingCount}</div>}
-                    {mine && <div style={{ fontWeight: 700, color: 'var(--m14)' }}>{mine.status === 'going' ? KIND_META[e.kind].youGoing : 'Maybe'}</div>}
-                  </div>
-                </button>
-              )
-            })}
+            {g.items.map(e => <EventRow key={e.id} event={e} rsvps={rsvps} userId={userId} onOpen={onOpen} />)}
           </div>
         </div>
       ))}
