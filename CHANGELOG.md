@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.5 — 2026-11-13
+
+- **Avatar cropper** (Sonia Wendorff, from protopia-community/myconet-protopia#22): picking a profile
+  photo opens `core/components/AvatarCropper.tsx` (drag, zoom; no new dependencies); the chosen square is
+  saved as a 512×512 JPEG at `avatars/<uid>/avatar.jpg` through `core/lib/avatar.ts`
+  (`uploadAvatarBlob`). Used by Profile › Edit and the M01 profile page. Added in core: a message
+  when the browser can't decode the file (HEIC outside Safari) instead of a spinner, and the wheel zooms
+  without scrolling the page. No database change.
+
 ## v4.15.4 — 2026-11-13
 
 - Mobile top bar keeps the full-size logo (44px); the bar grows to fit it instead. Replaces v4.15.3's

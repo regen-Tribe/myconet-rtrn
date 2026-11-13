@@ -7,6 +7,8 @@ import {
   Pencil, MapPin, User, Heart, Brain, Star,
   Target, Gift, HelpCircle, Plane, Briefcase, Camera, Loader2,
 } from 'lucide-react'
+import { AvatarCropper } from '@/core/components/AvatarCropper'
+import { uploadAvatarBlob } from '@/core/lib/avatar'
 
 const OCEAN_LABELS = [
   { key: 'openness',          label: 'Openness' },
@@ -94,6 +96,7 @@ export default function NetworkProfilePage() {
   const [seeks, setSeeks] = useState<any[]>([])
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
   const [tab, setTab] = useState('about')
 
   useEffect(() => {
@@ -150,24 +153,23 @@ export default function NetworkProfilePage() {
     )
   }
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !profile?.id) return
+    if (file) setPendingPhoto(file)
+    e.target.value = ''
+  }
+
+  async function handleAvatarCropped(blob: Blob) {
+    if (!profile?.id) return
     setAvatarUploading(true)
     try {
-      const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
-      const path = `${profile.id}/avatar.${ext}`
-      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
-      if (upErr) throw upErr
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      const { error: dbErr } = await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', profile.id)
-      if (dbErr) throw dbErr
-      setAvatarUrl(publicUrl + '?t=' + Date.now())
+      const url = await uploadAvatarBlob(supabase, profile.id, blob)
+      setAvatarUrl(url)
+      setPendingPhoto(null)
     } catch (err: any) {
       alert('Photo upload failed: ' + (err?.message ?? String(err)))
     } finally {
       setAvatarUploading(false)
-      e.target.value = ''
     }
   }
 
@@ -180,6 +182,14 @@ export default function NetworkProfilePage() {
 
   return (
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
+      {pendingPhoto && (
+        <AvatarCropper
+          file={pendingPhoto}
+          busy={avatarUploading}
+          onCancel={() => setPendingPhoto(null)}
+          onCropped={handleAvatarCropped}
+        />
+      )}
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
           M01 · My Profile
@@ -214,7 +224,7 @@ export default function NetworkProfilePage() {
                 ? <Loader2 style={{ width: 18, height: 18, color: '#fff' }} className="animate-spin" />
                 : <Camera style={{ width: 18, height: 18, color: '#fff' }} />}
             </div>
-            <input id="avatar-upload-profile" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+            <input id="avatar-upload-profile" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarPick} />
           </label>
 
           <div style={{ flex: 1, minWidth: 0 }}>
