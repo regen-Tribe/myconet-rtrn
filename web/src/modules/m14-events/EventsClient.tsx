@@ -6,18 +6,19 @@ import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
 import type { CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
-import { addDays, fmtMonthTitle, fmtWeekTitle, isPast, startOfDay } from './lib/calendar'
+import { addDays, fmtDayLong, fmtMonthTitle, fmtWeekTitle, isPast, sameDay, startOfDay } from './lib/calendar'
 import { canCreateKind, canEditEvent, EVENT_KINDS, KIND_META } from './lib/permissions'
 import { isFullMember } from '@/core/lib/roles'
 import { EVENT_SELECT, toEvent } from './lib/queries'
-import { categoryColor, ListView, MonthView, WeekView } from './CalendarViews'
+import { categoryColor, DayView, ListView, MonthView, WeekView } from './CalendarViews'
 import { EventDetailModal } from './EventDetailModal'
 import { EventFormModal, type EventDraft, type EventPayload } from './EventFormModal'
 import { CalendarFeedsModal } from './CalendarFeedsModal'
 
 const VIEWS: { id: EventsView; label: string }[] = [
-  { id: 'month', label: 'Month' },
+  { id: 'day', label: 'Day' },
   { id: 'week', label: 'Week' },
+  { id: 'month', label: 'Month' },
   { id: 'list', label: 'List' },
 ]
 
@@ -97,7 +98,7 @@ export default function EventsClient({
   function step(dir: -1 | 1) {
     if (!anchor) return
     if (view === 'month') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1))
-    else setAnchor(addDays(anchor, 7 * dir))
+    else setAnchor(addDays(anchor, (view === 'day' ? 1 : 7) * dir))
   }
 
   function openNew(draft: EventDraft = {}) {
@@ -269,7 +270,8 @@ export default function EventsClient({
               <button onClick={() => now && setAnchor(startOfDay(now))} style={navBtn}>Today</button>
               <button onClick={() => step(1)} style={navBtn} aria-label="Next">›</button>
               <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', marginLeft: 6 }}>
-                {anchor ? (view === 'month' ? fmtMonthTitle(anchor) : fmtWeekTitle(anchor)) : ''}
+                {!anchor ? '' : view === 'month' ? fmtMonthTitle(anchor) : view === 'week' ? fmtWeekTitle(anchor)
+                  : `${now && sameDay(anchor, now) ? 'Today · ' : ''}${fmtDayLong(anchor)}`}
               </span>
             </>
           ) : (
@@ -305,10 +307,15 @@ export default function EventsClient({
       {/* ── Calendar ──────────────────────────────────────────────────── */}
       {!now || !anchor ? (
         <div style={{ height: 420, borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--rule)' }} />
+      ) : view === 'day' ? (
+        <DayView
+          anchor={anchor} events={visible} rsvps={rsvps} userId={userId} now={now} onOpen={setOpenId}
+          onPickDay={setAnchor}
+        />
       ) : view === 'month' ? (
         <MonthView
           anchor={anchor} events={visible} now={now} onOpen={setOpenId}
-          onPickDay={d => { setAnchor(d); setView('week') }}
+          onPickDay={d => { setAnchor(d); setView('day') }}
         />
       ) : view === 'week' ? (
         <WeekView anchor={anchor} events={visible} now={now} onOpen={setOpenId} />

@@ -71,7 +71,7 @@ export interface LinkOption {
   circle?: string | null
 }
 
-export type EventsView = 'month' | 'week' | 'list'
+export type EventsView = 'day' | 'week' | 'month' | 'list'
 
 /** A comment under an event */
 export interface EventComment {

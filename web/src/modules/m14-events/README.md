@@ -20,7 +20,7 @@ The community calendar (labelled "Calendar" in the UI; route `/events`, with `/c
 |-------|------|
 | `/events` | `app/events/page.tsx` → `EventsClient` |
 
-Query params: `show=daily,core,community,task` (the ticked kinds, any mix; default all; `tab=<kind>` still works), `view=month|week|list`, `event=<id>` (opens the pop-up), `new=1&project=<id>&proposal=<id>&circle=<pillar>` (opens a pre-filled form).
+Query params: `show=daily,core,community,task` (the ticked kinds, any mix; default all; `tab=<kind>` still works), `view=day|week|month|list` (default `day`: today), `event=<id>` (opens the pop-up), `new=1&project=<id>&proposal=<id>&circle=<pillar>` (opens a pre-filled form).
 
 ## Files
 
