@@ -45,6 +45,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isDark, setIsDark] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { pct: profilePct, setPct: setProfilePct } = useProfileCompletion()
 
@@ -96,6 +97,17 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
     return () => subscription.unsubscribe()
   }, [])
 
+  // The bar grows on small screens (logo, completion bar); the mobile drawer and its
+  // backdrop open under it via --topbar-h. The CSS value stays as the fallback.
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const root = document.documentElement
+    const ro = new ResizeObserver(() => root.style.setProperty('--topbar-h', `${el.offsetHeight}px`))
+    ro.observe(el)
+    return () => { ro.disconnect(); root.style.removeProperty('--topbar-h') }
+  }, [])
+
   function toggleTheme() {
     const next = isDark ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
@@ -143,7 +155,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
   ].filter(Boolean) as (string | { label: string; href?: string; action?: () => void; icon: string; danger?: boolean })[]
 
   return (
-    <header style={{
+    <header ref={headerRef} className="topbar" style={{
       gridColumn: '1 / -1',
       display: 'flex',
       flexDirection: 'column',
@@ -152,7 +164,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
       zIndex: 10,
       flexShrink: 0,
     }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', flex: 1 }}>
+    <div className="topbar-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', flex: 1, minWidth: 0 }}>
       {/* Mobile modules toggle */}
       <button
         className="topbar-modules-btn"
@@ -173,15 +185,15 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
           <rect x="1" y="10" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.5"/>
           <rect x="9" y="10" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.3"/>
         </svg>
-        <span>Modules</span>
+        <span className="topbar-modules-label">Modules</span>
       </button>
 
       {/* Brand — logo/name and the version badge are sibling links (links can't nest) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <div className="topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         {logo_url ? (
           <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{ display: 'flex', flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 44, width: 'auto', maxWidth: 140, objectFit: 'contain', borderRadius: 8 }} />
+            <img className="topbar-logo" src={logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 44, width: 'auto', maxWidth: 140, objectFit: 'contain', borderRadius: 8 }} />
           </Link>
         ) : (
           <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{
@@ -190,11 +202,11 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,.3)',
           }} />
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+          <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', minWidth: 0 }}>
             <span className="topbar-brand-sub" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-3)' }}>MyCoNet</span>
             <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 15 }}>·</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{COMMUNITY_NAME}</span>
+            <span className="topbar-name" style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{COMMUNITY_NAME}</span>
           </Link>
           <Link href="/changelog" style={{ textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.querySelector('span')!.style.background = 'color-mix(in srgb, var(--accent-color) 18%, var(--bg-2))')}
@@ -217,7 +229,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
       <TopBarSearch />
 
       {/* Right */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto', flexShrink: 0 }}>
+      <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto', flexShrink: 0 }}>
         {/* Bell */}
         <div style={{
           width: 32, height: 32, borderRadius: '50%',
@@ -261,7 +273,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
                   ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : initials}
               </div>
-              <span>{displayName || 'Member'}</span>
+              <span className="topbar-user-name">{displayName || 'Member'}</span>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 2, opacity: 0.5, transition: 'transform 150ms', transform: menuOpen ? 'rotate(180deg)' : 'none' }}>
                 <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
