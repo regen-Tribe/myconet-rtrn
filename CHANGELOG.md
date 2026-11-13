@@ -5,6 +5,19 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.4 — 2026-11-13
+
+- Mobile top bar keeps the full-size logo (44px); the bar grows to fit it instead. Replaces v4.15.3's
+  smaller phone logo; its app changelog entry is now listed under v4.15.4.
+
+## v4.15.3 — 2026-11-13
+
+- **Mobile top bar**: at ≤768px the shell's first grid row is `auto` instead of a fixed 60px, so the bar
+  (Modules button, logo, name + version, profile-completion bar) no longer overflows its white
+  background. `AppTopBar` measures the header into `--topbar-h` (ResizeObserver; the CSS value stays the
+  fallback) so the mobile drawer opens right under it. Smaller logo and padding on phones; the user pill
+  shows the avatar only at ≤640px.
+
 ## v4.15.2 — 2026-11-13
 
 - **Core update check fixed**: `.github/workflows/core-update.yml` passes `--repo "$GITHUB_REPOSITORY"` to
