@@ -3,6 +3,25 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.16.0',
+    date: '2026-11-13',
+    title: 'Fill the Blueprint from your website',
+    items: [
+      'Blueprint › Import now takes a website address too. It reads the page and up to 7 pages it links to (about, mission, governance…) and suggests answers, the same way it does for documents. Answers show which page they came from.',
+      'Imports no longer overwrite what you have written. Where a question already has an answer, the new text is added after it; you can still choose Keep current or Replace it for each one.',
+      'Every document or website you import is now saved in Setup › Documents, as shareable or sensitive, so the portal assistant can answer from it.',
+    ],
+  },
+  {
+    version: 'v4.15.8',
+    date: '2026-11-13',
+    title: 'Only admins and circle leads change the blueprint',
+    items: [
+      'The Blueprint can now be changed by any admin or circle lead, and only by them. Before, only the person who first set it up could save; other admins and circle leads could type in it but their changes were lost.',
+      'If a change can’t be saved, the Blueprint now says so instead of losing it quietly.',
+    ],
+  },
+  {
     version: 'v4.15.7',
     date: '2026-11-13',
     title: 'Find your personality type',

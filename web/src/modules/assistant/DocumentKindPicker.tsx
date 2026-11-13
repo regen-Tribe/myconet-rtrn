@@ -3,15 +3,12 @@ import { DOC_KINDS, type DocKind } from '@/modules/assistant/lib/library'
 
 /**
  * Asked whenever someone uploads a document: is it shareable, or sensitive (admins and
- * circle leads only)? `allowSkip` adds "don't add it to the library" (Blueprint import).
+ * circle leads only)? Every document goes into the library.
  */
-export default function DocumentKindPicker({ value, onChange, allowSkip = false }: {
-  value: DocKind | 'skip' | null; onChange: (v: DocKind | 'skip') => void; allowSkip?: boolean
+export default function DocumentKindPicker({ value, onChange }: {
+  value: DocKind | null; onChange: (v: DocKind) => void
 }) {
-  const options: { id: DocKind | 'skip'; label: string; help: string }[] = [
-    ...DOC_KINDS,
-    ...(allowSkip ? [{ id: 'skip' as const, label: "Don't add it", help: 'Use it for the Blueprint only; the assistant never sees it.' }] : []),
-  ]
+  const options = DOC_KINDS
   return (
     <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
       <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>What kind of document is this?</legend>
