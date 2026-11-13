@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.15.5',
+    date: '2026-11-13',
+    title: 'Position your profile photo',
+    items: [
+      'When you choose a profile photo, you can drag and zoom it inside a circle. That exact crop is saved, so your photo looks the same everywhere. Thanks to Sonia.',
+      'If a photo’s format can’t be opened (often iPhone HEIC photos), it tells you to use a JPG or PNG instead.',
+    ],
+  },
+  {
     version: 'v4.15.4',
     date: '2026-11-13',
     title: 'Top bar fits on phones',

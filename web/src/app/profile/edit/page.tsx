@@ -12,6 +12,8 @@ import { Label } from '@/core/components/ui/label'
 import { Progress } from '@/core/components/ui/progress'
 import { Slider } from '@/core/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
+import { AvatarCropper } from '@/core/components/AvatarCropper'
+import { uploadAvatarBlob } from '@/core/lib/avatar'
 import {
   ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
   Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
@@ -254,6 +256,7 @@ export default function ProfileWizard() {
   const [saving, setSaving] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
   const [achievementEarned, setAchievementEarned] = useState(false)
 
   useEffect(() => {
@@ -351,24 +354,23 @@ export default function ProfileWizard() {
     }
   }
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !userId) return
+    if (file) setPendingPhoto(file)
+    e.target.value = ''
+  }
+
+  async function handleAvatarCropped(blob: Blob) {
+    if (!userId) return
     setAvatarUploading(true)
     try {
-      const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
-      const path = `${userId}/avatar.${ext}`
-      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
-      if (upErr) throw upErr
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      const { error: dbErr } = await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', userId)
-      if (dbErr) throw dbErr
-      setAvatarUrl(publicUrl + '?t=' + Date.now())
+      const url = await uploadAvatarBlob(supabase, userId, blob)
+      setAvatarUrl(url)
+      setPendingPhoto(null)
     } catch (err: any) {
       alert('Photo upload failed: ' + (err?.message ?? String(err)))
     } finally {
       setAvatarUploading(false)
-      e.target.value = ''
     }
   }
 
@@ -478,6 +480,15 @@ export default function ProfileWizard() {
   return (
     <div className="p-3 sm:p-6 max-w-4xl mx-auto">
 
+      {pendingPhoto && (
+        <AvatarCropper
+          file={pendingPhoto}
+          busy={avatarUploading}
+          onCancel={() => setPendingPhoto(null)}
+          onCropped={handleAvatarCropped}
+        />
+      )}
+
       {/* Achievement banner */}
       {achievementEarned && (
         <div style={{
@@ -567,7 +578,7 @@ export default function ProfileWizard() {
                     </div>
                   </div>
                 </label>
-                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
                 <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Click photo to change</span>
               </div>
 
