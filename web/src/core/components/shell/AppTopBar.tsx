@@ -203,8 +203,8 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
           }} />
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
-          <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', minWidth: 0 }}>
-            <span className="topbar-brand-sub" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-3)' }}>MyCoNet</span>
+          <Link href="/home" className="topbar-brand-names" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', minWidth: 0 }}>
+            <span className="topbar-brand-myconet" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-3)' }}>MyCoNet</span>
             <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 15 }}>·</span>
             <span className="topbar-name" style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{COMMUNITY_NAME}</span>
           </Link>
