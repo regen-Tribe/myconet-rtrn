@@ -323,7 +323,13 @@ a { color: inherit; text-decoration: none; }
   box-shadow: none !important;
 }
 @media (max-width: 768px) {
-  .app-shell-layout { grid-template-columns: 1fr; }
+  /* The top bar sizes to its content on phones (AppTopBar measures it into --topbar-h) */
+  .app-shell-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .topbar-row { padding: 8px 12px !important; gap: 10px !important; min-height: 56px; }
+  .topbar-brand { flex-shrink: 1 !important; min-width: 0; gap: 8px !important; }
+  .topbar-logo { height: 34px !important; max-width: 96px !important; }
+  .topbar-right { gap: 8px !important; }
+  .topbar-modules-btn { padding: 4px 7px !important; font-size: 9.5px !important; gap: 2px !important; }
 
   /* Sidenav becomes a slide-in drawer on mobile */
   .app-shell-sidenav {
@@ -395,6 +401,8 @@ a { color: inherit; text-decoration: none; }
   /* AppTopBar — hide verbose brand text and search bar on mobile */
   .topbar-brand-sub { display: none !important; }
   .topbar-search { display: none !important; }
+  .topbar-name { font-size: 15px !important; }
+  .topbar-user-name { display: none; }
 
   /* Home page section spacing reduction */
   .home-section { padding-top: 40px !important; padding-left: 16px !important; padding-right: 16px !important; }
