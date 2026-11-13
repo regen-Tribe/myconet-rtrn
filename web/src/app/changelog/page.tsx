@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.15.0',
+    date: '2026-11-13',
+    title: 'Circle leads and the steward circle',
+    items: [
+      'Each circle on the org chart shows its lead’s name, even if they aren’t on the portal yet. Admins type or change it right on the card.',
+      'A community can mark one circle as its stewards, the circle that looks after every circle. It sits at the top of the org chart, with the admins.',
+    ],
+  },
+  {
     version: 'v4.14.1',
     date: '2026-11-13',
     title: 'You choose who sees your fears and healing journey',

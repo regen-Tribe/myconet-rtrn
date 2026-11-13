@@ -17,7 +17,7 @@ import {
 
 interface CircleRow {
   slug: string; name: string; emoji: string; color: string; sort_order: number
-  archived_at: string | null; leads_to_assign: string | null
+  archived_at: string | null; leads_to_assign: string | null; is_steward: boolean
 }
 
 interface Draft {
@@ -27,7 +27,7 @@ interface Draft {
   roles?: CircleRole[]
 }
 
-interface Edit { slug: string; name: string; purpose: string; leads: string; emoji: string; color: string }
+interface Edit { slug: string; name: string; purpose: string; leads: string; emoji: string; color: string; steward: boolean }
 
 let draftSeq = 0
 const draftKey = () => `d${++draftSeq}`
@@ -57,7 +57,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
   const load = useCallback(async () => {
     const supabase = createClient()
     const [{ data: circles }, { data: units }] = await Promise.all([
-      supabase.from('circles').select('slug, name, emoji, color, sort_order, archived_at, leads_to_assign').order('sort_order'),
+      supabase.from('circles').select('slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward').order('sort_order'),
       supabase.from('org_units').select('circle, description').eq('kind', 'circle'),
     ])
     setRows((circles ?? []) as CircleRow[])
@@ -136,8 +136,10 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
     if (!edit.name.trim()) { setError('A circle needs a name.'); return }
     setBusy(true)
     const supabase = createClient()
+    // Only one circle can be the stewards: clear the others first
+    if (edit.steward) await supabase.from('circles').update({ is_steward: false }).neq('slug', edit.slug).eq('is_steward', true)
     const { error: upErr } = await supabase.from('circles')
-      .update({ name: edit.name.trim(), emoji: edit.emoji, color: edit.color, leads_to_assign: edit.leads.trim() || null })
+      .update({ name: edit.name.trim(), emoji: edit.emoji, color: edit.color, leads_to_assign: edit.leads.trim() || null, is_steward: edit.steward })
       .eq('slug', edit.slug)
     if (!upErr) {
       await supabase.from('org_units').update({ description: edit.purpose.trim() || null }).eq('kind', 'circle').eq('circle', edit.slug)
@@ -192,8 +194,12 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
                 <div><div style={label}>Name</div><input className="input" value={edit.name} maxLength={60} onChange={e => setEdit({ ...edit, name: e.target.value })} /></div>
                 <div><div style={label}>Purpose</div><input className="input" value={edit.purpose} onChange={e => setEdit({ ...edit, purpose: e.target.value })} /></div>
               </div>
-              <div style={label}>Leads to assign (a note; assign real leads in Admin › Users)</div>
+              <div style={label}>Lead’s name (shown on the org chart; give portal members the circle lead role in Admin › Users)</div>
               <input className="input" value={edit.leads} maxLength={300} onChange={e => setEdit({ ...edit, leads: e.target.value })} style={{ marginBottom: 10 }} />
+              <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: 'var(--ink-2)', marginBottom: 10, cursor: 'pointer' }}>
+                <input type="checkbox" checked={edit.steward} onChange={e => setEdit({ ...edit, steward: e.target.checked })} style={{ marginTop: 3 }} />
+                <span><strong>Community stewards:</strong> this circle looks after every circle. It goes at the top of the org chart. Only one circle can be the stewards.</span>
+              </label>
               <div style={label}>Emoji</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
                 {CIRCLE_EMOJIS.map(em => (
@@ -217,14 +223,14 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
             <div key={r.slug} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', marginBottom: 8, border: '1px solid var(--rule)', borderLeft: `4px solid ${r.color}`, borderRadius: 6, background: 'var(--surface)' }}>
               <span style={{ fontSize: 20, lineHeight: 1.2 }}>{r.emoji}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}{r.is_steward && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: 'var(--ink-3)' }}>· Community stewards</span>}</div>
                 <div style={{ fontSize: 12.5, color: purposes[r.slug] ? 'var(--ink-2)' : 'var(--ink-4)', lineHeight: 1.45, marginTop: 2 }}>{purposes[r.slug] || 'No purpose written yet.'}</div>
-                {r.leads_to_assign && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>Leads to assign: {r.leads_to_assign}</div>}
+                {r.leads_to_assign && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>Lead: {r.leads_to_assign}</div>}
               </div>
               {canEdit && (
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy}
-                    onClick={() => setEdit({ slug: r.slug, name: r.name, purpose: purposes[r.slug] ?? '', leads: r.leads_to_assign ?? '', emoji: r.emoji, color: r.color })}>Edit</button>
+                    onClick={() => setEdit({ slug: r.slug, name: r.name, purpose: purposes[r.slug] ?? '', leads: r.leads_to_assign ?? '', emoji: r.emoji, color: r.color, steward: r.is_steward })}>Edit</button>
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy} onClick={() => setArchived(r.slug, true)}
                     title="Hide it from pickers; its projects and events keep it">Retire</button>
                 </div>
