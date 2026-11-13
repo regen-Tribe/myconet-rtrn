@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.15.1',
+    date: '2026-11-13',
+    title: 'One list of circle leads',
+    items: [
+      'The org chart, Ops › Circles and Blueprint › Circles now show the same lead for each circle. Change it in any of them and the others update straight away.',
+      'Ops › Circles and the Blueprint also show the circle leads who have an account, and Ops marks the steward circle.',
+    ],
+  },
+  {
     version: 'v4.15.0',
     date: '2026-11-13',
     title: 'Circle leads and the steward circle',

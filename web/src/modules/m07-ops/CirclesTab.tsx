@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
+import { CircleLeadName } from '@/core/components/CircleLeadName'
 import { isActiveProject } from '@/core/lib/project-status'
 import { ROLE_LABELS } from '@/core/lib/roles'
 import { type CircleDirectory, type PersonRef } from '@/core/lib/ops-permissions'
@@ -38,6 +39,7 @@ export function CirclesTab({
 }) {
   const circles = useCircles()
   const isAdmin = userRole === 'admin'
+  const steward = circles.list.find(c => c.is_steward) ?? null
   const myLeadCircles = circles.slugs.filter(c => userRole === 'circle_lead' && leadCircles.includes(c))
   const myInvolvedCircles = circles.slugs.filter(c => projects.some(p => p.circle === c && involvedProjectIds.has(p.id)))
 
@@ -83,16 +85,21 @@ export function CirclesTab({
           return (
             <div key={c} style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderLeft: `3px solid ${meta.color}`, borderRadius: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: meta.color }}>{meta.emoji} {meta.label}</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: meta.color }}>{meta.emoji} {meta.label}</div>
+                  {steward?.slug === c && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>Community stewards · look after every circle</div>}
+                </div>
                 {iLead && (
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: meta.color, borderRadius: 20, padding: '2px 8px' }}>You lead this</span>
                 )}
               </div>
 
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Leads</div>
-              {leads.length
-                ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>{leads.map(p => <PersonChip key={p.id} person={p} isMe={p.id === userId} />)}</div>
-                : <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>No lead yet — admins look after this circle.</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                <CircleLeadName slug={c} canEdit={isAdmin} color={meta.color} />
+                {leads.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{leads.map(p => <PersonChip key={p.id} person={p} isMe={p.id === userId} />)}</div>}
+                {!leads.length && !circles.get(c)?.leads_to_assign && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No lead yet — {steward && steward.slug !== c ? `${steward.name} looks after it` : 'admins look after this circle'}.</div>}
+              </div>
 
               <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
                 {circleProjects.length} project{circleProjects.length === 1 ? '' : 's'} · {active} active

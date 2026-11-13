@@ -12,7 +12,7 @@ Who does what: the community stewards (admins), the community's circles, the tea
 | Circle lead | Their circles' purpose and members; add, edit and delete teams in those circles |
 | Team lead | Their own team's name, description and people (including making others leads) |
 
-Circle **leads** are not edited here: they come from `user_profiles.lead_circles` with role `circle_lead`, set by admins at `/admin/users` (that's what drives permissions everywhere). The chart links there for admins.
+Each circle has two kinds of lead. The **lead name** (`circles.leads_to_assign`) is a typed name, possibly someone not on the portal; admins edit it with `CircleLeadName` (`core/components/`), the same component Ops › Circles and Blueprint › Circles use, so all three always agree. **Account leads** come from `user_profiles.lead_circles` with role `circle_lead`, set by admins at `/admin/users` (that's what drives permissions everywhere). The chart links there for admins.
 
 ## Files
 

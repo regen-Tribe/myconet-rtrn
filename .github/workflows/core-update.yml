@@ -50,7 +50,8 @@ jobs:
           BASE: ${{ github.event.repository.default_branch }}
         run: |
           branch="core-update/${LATEST}"
-          if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+          # --repo: with the upstream remote added above, gh would otherwise pick core as the repo
+          if [ -n "$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[].number')" ]; then
             echo "A pull request for $LATEST is already open"; exit 0
           fi
           git config user.name "github-actions[bot]"
@@ -66,6 +67,6 @@ jobs:
           # --force: a branch left by an earlier run that couldn't open its PR
           git push --force origin "$branch"
           notes=$(git show "${LATEST}:CHANGELOG.md" | awk -v cur="## ${CURRENT} " 'index($0, cur) == 1 {exit} {print}' | tail -n +2)
-          gh pr create --base "$BASE" --head "$branch" \
+          gh pr create --repo "$GITHUB_REPOSITORY" --base "$BASE" --head "$branch" \
             --title "Update MyCoNet core to ${LATEST}" \
             --body "$(printf 'MyCoNet core %s → %s. Your `instance/` folder is unchanged.\n\nAfter merging: run any new database migrations (`supabase db push`) and deploy.\n\n### Release notes\n%s' "$CURRENT" "$LATEST" "$notes")"

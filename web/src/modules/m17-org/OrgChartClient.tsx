@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
+import { CircleLeadName } from '@/core/components/CircleLeadName'
 import type { CircleSlug } from '@/core/lib/circles'
 import type { CircleDirectory, PersonRef } from '@/core/lib/ops-permissions'
 import type { OrgMember, OrgPerson, OrgUnit } from './types'
@@ -50,16 +50,10 @@ export default function OrgChartClient({
   leadCircles: string[]
 }) {
   const circles = useCircles()
-  const router = useRouter()
   const supabase = createClient()
   // The circle that looks after every circle sits at the top; the rest are columns
   const steward = circles.list.find(c => c.is_steward) ?? null
   const columnSlugs = circles.slugs.filter(c => c !== steward?.slug)
-  // Typed lead names (circles.leads_to_assign), editable here by admins
-  const [leadNames, setLeadNames] = useState<Record<string, string | null>>(
-    () => Object.fromEntries(circles.list.map(c => [c.slug, c.leads_to_assign])),
-  )
-  const [leadDraft, setLeadDraft] = useState<{ slug: CircleSlug; value: string } | null>(null)
   const [units, setUnits] = useState(initialUnits)
   const [members, setMembers] = useState(initialMembers)
   const [editing, setEditing] = useState<{ unit: OrgUnit | null; circle: CircleSlug } | null>(null)
@@ -128,42 +122,6 @@ export default function OrgChartClient({
     return null
   }
 
-  async function saveLeadName(slug: CircleSlug, value: string) {
-    const name = value.trim() || null
-    const { data, error } = await supabase.from('circles').update({ leads_to_assign: name }).eq('slug', slug).select('slug')
-    if (error || !data?.length) { setToast('Only admins can change a circle’s lead name.'); return }
-    setLeadNames(m => ({ ...m, [slug]: name }))
-    setLeadDraft(null)
-    setToast('Lead saved')
-    router.refresh()
-  }
-
-  /** "Lead: Marcos" with an admin's Edit; the typed name may be someone not on the portal */
-  const leadNameRow = (slug: CircleSlug, color: string) => {
-    const name = leadNames[slug]
-    if (leadDraft?.slug === slug) {
-      return (
-        <form onSubmit={e => { e.preventDefault(); saveLeadName(slug, leadDraft.value) }} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
-            value={leadDraft.value} onChange={e => setLeadDraft({ slug, value: e.target.value })} maxLength={300} autoFocus
-            placeholder="Lead’s name, e.g. Marcos" aria-label="Lead’s name"
-            style={{ flex: '1 1 140px', minWidth: 0, fontSize: 13, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}
-          />
-          <button type="submit" style={{ ...editBtn, color: '#fff', background: color, borderColor: color }}>Save</button>
-          <button type="button" onClick={() => setLeadDraft(null)} style={editBtn}>Cancel</button>
-        </form>
-      )
-    }
-    if (!name && role !== 'admin') return null
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13, color: 'var(--ink-2)' }}>
-        {name ? <span><span style={{ color: 'var(--ink-3)' }}>Lead:</span> <strong style={{ color }}>{name}</strong></span>
-              : <span style={{ fontSize: 12, color: 'var(--ink-4)', fontStyle: 'italic' }}>No lead name yet.</span>}
-        {role === 'admin' && <button onClick={() => setLeadDraft({ slug, value: name ?? '' })} style={editBtn}>{name ? 'Edit' : '+ Lead name'}</button>}
-      </div>
-    )
-  }
-
   async function deleteUnit(): Promise<string | null> {
     const unit = editing?.unit
     if (!unit) return null
@@ -218,7 +176,7 @@ export default function OrgChartClient({
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{sm ? 'Community stewards · look after every circle' : 'Admins · look after every circle'}</div>
               {su?.description && <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap', maxWidth: '60ch' }}>{su.description}</p>}
-              {steward && leadNameRow(steward.slug, accent)}
+              {steward && <CircleLeadName slug={steward.slug} canEdit={role === 'admin'} color={accent} />}
               {sLeads.length > 0 && <div style={{ display: 'flex', justifyContent: 'center' }}>{peopleRow(sLeads, accent)}</div>}
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {steward && directory.admins.length > 0 && <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Admins</span>}
@@ -258,9 +216,9 @@ export default function OrgChartClient({
                   {role === 'admin' && <Link href="/admin/users" style={{ color: 'var(--m17)', textDecoration: 'none', letterSpacing: 0, textTransform: 'none', fontFamily: 'inherit', fontWeight: 600 }}>Manage →</Link>}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {leadNameRow(c, meta.color)}
+                  <CircleLeadName slug={c} canEdit={role === 'admin'} color={meta.color} />
                   {leads.length > 0 && peopleRow(leads, meta.color)}
-                  {!leads.length && !leadNames[c] && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No lead yet. {steward ? `${circles.meta(steward.slug).label} looks after it.` : 'Stewards look after it.'}</div>}
+                  {!leads.length && !circles.get(c)?.leads_to_assign && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No lead yet. {steward ? `${circles.meta(steward.slug).label} looks after it.` : 'Stewards look after it.'}</div>}
                 </div>
               </div>
 

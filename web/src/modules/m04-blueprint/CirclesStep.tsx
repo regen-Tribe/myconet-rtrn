@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
+import { CircleLeadName } from '@/core/components/CircleLeadName'
 import {
   CIRCLE_COLORS, CIRCLE_EMOJIS, CIRCLE_TEMPLATES, emojiFor, foundCircles, roleDescription, slugFor,
   type CircleRole, type FoundCircle,
@@ -49,6 +51,8 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
   const router = useRouter()
   const [rows, setRows] = useState<CircleRow[] | null>(null)
   const [purposes, setPurposes] = useState<Record<string, string>>({})
+  // People with an account who lead each circle (role circle_lead), as on the org chart
+  const [portalLeads, setPortalLeads] = useState<Record<string, { id: string; name: string; username: string | null }[]>>({})
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [edit, setEdit] = useState<Edit | null>(null)
   const [busy, setBusy] = useState(false)
@@ -56,12 +60,19 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
 
   const load = useCallback(async () => {
     const supabase = createClient()
-    const [{ data: circles }, { data: units }] = await Promise.all([
+    const [{ data: circles }, { data: units }, { data: directory }] = await Promise.all([
       supabase.from('circles').select('slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward').order('sort_order'),
       supabase.from('org_units').select('circle, description').eq('kind', 'circle'),
+      supabase.rpc('public_circle_directory'),
     ])
     setRows((circles ?? []) as CircleRow[])
     setPurposes(Object.fromEntries((units ?? []).map(u => [u.circle as string, (u.description as string | null) ?? ''])))
+    const leads: Record<string, { id: string; name: string; username: string | null }[]> = {}
+    for (const p of directory ?? []) {
+      if (p.role !== 'circle_lead') continue
+      for (const c of (p.lead_circles ?? []) as string[]) (leads[c] ??= []).push({ id: p.id, name: p.first_name ?? p.username ?? 'Member', username: p.username ?? null })
+    }
+    setPortalLeads(leads)
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -225,7 +236,18 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}{r.is_steward && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: 'var(--ink-3)' }}>· Community stewards</span>}</div>
                 <div style={{ fontSize: 12.5, color: purposes[r.slug] ? 'var(--ink-2)' : 'var(--ink-4)', lineHeight: 1.45, marginTop: 2 }}>{purposes[r.slug] || 'No purpose written yet.'}</div>
-                {r.leads_to_assign && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>Lead: {r.leads_to_assign}</div>}
+                <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <CircleLeadName slug={r.slug} canEdit={canEdit} color={r.color}
+                    onSaved={name => setRows(list => (list ?? []).map(x => (x.slug === r.slug ? { ...x, leads_to_assign: name } : x)))} />
+                  {(portalLeads[r.slug] ?? []).length > 0 && (
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                      On the portal:{' '}
+                      {portalLeads[r.slug].map((p, i) => (
+                        <span key={p.id}>{i > 0 && ', '}{p.username ? <Link href={`/u/${p.username}`} style={{ color: r.color, fontWeight: 600, textDecoration: 'none' }}>{p.name}</Link> : p.name}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               {canEdit && (
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
