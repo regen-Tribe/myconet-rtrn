@@ -28,6 +28,8 @@ export interface CircleSet {
   slugs: CircleSlug[]
   /** True for any known circle, including retired ones (old projects keep theirs). */
   has(slug: unknown): slug is CircleSlug
+  /** The full row, including retired circles. */
+  get(slug: CircleSlug): Circle | undefined
   meta(slug: CircleSlug): CircleMeta
   /** "🌱 Ecology" */
   label(slug: CircleSlug): string
@@ -49,6 +51,7 @@ export function circleSet(rows: Circle[]): CircleSet {
     list,
     slugs: list.map(c => c.slug),
     has: (slug): slug is CircleSlug => typeof slug === 'string' && bySlug.has(slug),
+    get: slug => bySlug.get(slug),
     meta,
     label: slug => { const m = meta(slug); return `${m.emoji} ${m.label}` },
   }
