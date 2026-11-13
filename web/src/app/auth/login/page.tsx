@@ -10,9 +10,10 @@ type Mode = 'login' | 'register' | 'forgot'
 export default function AuthPage() {
   const { logo_url } = useBranding()
   const [mode, setMode] = useState<Mode>('login')
-  // "Request a new link" from the reset page opens the forgot form
+  // ?mode=forgot (from the reset page) or ?mode=register (from a public profile)
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('mode') === 'forgot') setMode('forgot')
+    const m = new URLSearchParams(window.location.search).get('mode')
+    if (m === 'forgot' || m === 'register') setMode(m)
   }, [])
   const supabase = createClient()
   const router = useRouter()

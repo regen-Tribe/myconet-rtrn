@@ -31,7 +31,10 @@ export function matchCircle(title: string, circles: { slug: string; name: string
   const firstWord = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').trim().split(/\s+/)[0] ?? ''
   const word = firstWord(title)
   if (word.length < 3) return null
-  return circles.find(c => firstWord(c.name) === word)?.slug ?? null
+  // "Clean Circle" finds the "Cleaning" circle: one first word may start the other
+  return circles.find(c => firstWord(c.name) === word)?.slug
+    ?? circles.find(c => { const w = firstWord(c.name); return w.length >= 4 && word.length >= 4 && (w.startsWith(word) || word.startsWith(w)) })?.slug
+    ?? null
 }
 
 /** Google sends descriptions as light HTML */

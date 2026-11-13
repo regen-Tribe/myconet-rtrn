@@ -102,11 +102,7 @@ export function circleChangeBlock(
 
 export async function fetchCircleDirectory(supabase: SupabaseClient): Promise<CircleDirectory> {
   const [{ data }, circles] = await Promise.all([
-    supabase
-      .from('user_profiles')
-      .select('id, first_name, username, role, lead_circles')
-      .in('role', ['admin', 'circle_lead'])
-      .order('first_name'),
+    supabase.rpc('public_circle_directory'),
     loadCircles(supabase),
   ])
 

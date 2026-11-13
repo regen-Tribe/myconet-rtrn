@@ -1,4 +1,5 @@
 import { createClient } from '@/core/lib/supabase/server'
+import { profileColumns } from '@/core/lib/public-profile'
 import DiscoverClient from '@/modules/m01-network/DiscoverClient'
 
 export default async function DiscoverPage() {
@@ -7,14 +8,16 @@ export default async function DiscoverPage() {
 
   let profilesQuery = supabase
     .from('user_profiles')
-    .select('id, username, first_name, last_name, headline, city, country, avatar_url, user_types')
+    .select(profileColumns(!!user, 'id, username, first_name, last_name, headline, city, country, avatar_url, user_types'))
     .order('created_at', { ascending: false })
 
   if (user) profilesQuery = profilesQuery.neq('id', user.id)
 
   const [profilesRes, biosRes, myBioRes] = await Promise.all([
     profilesQuery,
-    supabase.from('user_bio').select('*'),
+    user
+      ? supabase.from('user_bio').select('*')
+      : Promise.resolve({ data: [] }),
     user
       ? supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
