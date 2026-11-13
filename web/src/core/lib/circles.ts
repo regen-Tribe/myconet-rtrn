@@ -11,6 +11,10 @@ export interface Circle {
   color: string
   sort_order: number
   archived_at: string | null
+  /** A lead's name typed in setup or on the org chart (they may not be on the portal) */
+  leads_to_assign: string | null
+  /** The circle that looks after every circle (shown at the top of the org chart) */
+  is_steward: boolean
 }
 
 export type CircleSlug = string
@@ -29,7 +33,7 @@ export interface CircleSet {
   label(slug: CircleSlug): string
 }
 
-export const CIRCLE_SELECT = 'slug, name, emoji, color, sort_order, archived_at'
+export const CIRCLE_SELECT = 'slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward'
 
 const UNKNOWN: Omit<CircleMeta, 'label'> = { color: '#64748b', emoji: '◯' }
 

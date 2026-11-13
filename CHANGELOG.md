@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.0 — 2026-11-13
+
+**Database:** `20261116000000_steward_circle.sql` (`circles.is_steward`, at most one active).
+
+- **Lead names on the org chart**: `circles.leads_to_assign` (typed in setup) shows as "Lead: …" on each
+  circle card; admins add or edit it inline. Account leads (circle_lead role) still show as chips.
+- **Steward circle**: Blueprint › Circles › Edit › "Community stewards" marks the circle that looks after
+  every circle. `/org` puts it at the top (name, purpose, lead, leads, admins) instead of the plain
+  "Community stewards" box, and leaves it out of the columns. `CIRCLE_SELECT` now includes
+  `leads_to_assign` and `is_steward`.
+
 ## v4.14.1 — 2026-11-13
 
 **Database:** `20261115000200_growth_privacy.sql` (new `user_growth`; `user_bio.fears` and `traumas`
