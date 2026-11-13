@@ -5,6 +5,14 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.1 — 2026-11-13
+
+- **One lead per circle everywhere**: new `core/components/CircleLeadName.tsx` shows and (for admins)
+  edits `circles.leads_to_assign`, used by `/org`, Ops › Circles and Blueprint › Circles. `CirclesProvider`
+  now keeps the rows in state and exposes `usePatchCircle()`, so a save on one screen shows on the others
+  without a reload; `CircleSet.get(slug)` returns the full row. Ops › Circles and the Blueprint list also
+  show account leads (circle_lead + `lead_circles`), and Ops labels the steward circle. No database change.
+
 ## v4.15.0 — 2026-11-13
 
 **Database:** `20261116000000_steward_circle.sql` (`circles.is_steward`, at most one active).
