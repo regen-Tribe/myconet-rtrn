@@ -110,6 +110,8 @@ type TravelPlan = { location: string; startDate: string; endDate: string; notes:
 interface FormData {
   // Step 1 – Basic
   first_name: string; last_name: string; headline: string
+  // Public card (visitors see these)
+  public_bio: string; website_url: string; instagram: string; linkedin: string; twitter: string
   country: string; city: string; user_types: string[]
   skills: string[]; interests: string[]
   // Step 2 – Values
@@ -122,6 +124,8 @@ interface FormData {
   humanDesign: string; geneKey: string; mayan: string
   // Step 5 – Goals
   goals: string; fears: string; traumas: string
+  /** Who sees fears and traumas (user_growth.visibility) */
+  growthVisibility: GrowthVisibility
   // Step 6 – Offers
   offers: Offer[]
   // Step 7 – Requests
@@ -130,15 +134,32 @@ interface FormData {
   placesTraveling: TravelPlan[]
 }
 
+type GrowthVisibility = 'anyone' | 'explorers' | 'joining' | 'full_members' | 'only_me'
+const GROWTH_VISIBILITY: { id: GrowthVisibility; label: string; description: string }[] = [
+  { id: 'only_me',      label: 'Only me',                 description: 'Nobody else sees it. Useful as notes for yourself.' },
+  { id: 'full_members', label: 'Full members',            description: 'Members, circle and project leads, advisors and admins.' },
+  { id: 'joining',      label: 'Joining members and up',  description: 'Also people who are on their way to becoming members.' },
+  { id: 'explorers',    label: 'Everyone signed up',      description: 'Anyone with an account, including explorers.' },
+  { id: 'anyone',       label: 'Anyone',                  description: 'Public, including visitors who aren’t signed in.' },
+]
+
+/** "yoursite.com" → "https://yoursite.com"; the database only accepts http(s) links */
+function websiteUrl(v: string): string | null {
+  const t = v.trim()
+  if (!t) return null
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`
+}
+
 const DEFAULT: FormData = {
   first_name: '', last_name: '', headline: '', country: '', city: '',
+  public_bio: '', website_url: '', instagram: '', linkedin: '', twitter: '',
   user_types: [], skills: [], interests: [],
   values_principles: '', what_creating: '',
   myersBriggs: '',
   ocean: { openness: 50, conscientiousness: 50, extraversion: 50, agreeableness: 50, neuroticism: 50 },
   astrologySun: '', astrologyMoon: '', astrologyRising: '',
   humanDesign: '', geneKey: '', mayan: '',
-  goals: '', fears: '', traumas: '',
+  goals: '', fears: '', traumas: '', growthVisibility: 'full_members',
   offers: [], requests: [], placesTraveling: [],
 }
 
@@ -252,11 +273,12 @@ export default function ProfileWizard() {
       if (!user) { router.push('/auth/login'); return }
       setUserId(user.id)
 
-      const [profileRes, bioRes, offersRes, requestsRes] = await Promise.all([
+      const [profileRes, bioRes, offersRes, requestsRes, growthRes] = await Promise.all([
         supabase.from('user_profiles').select('*').eq('id', user.id).single(),
         supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('user_offers').select('*').eq('user_id', user.id).order('created_at'),
         supabase.from('user_requests').select('*').eq('user_id', user.id).order('created_at'),
+        supabase.from('user_growth').select('fears, traumas, visibility').eq('user_id', user.id).maybeSingle(),
       ])
 
       const p = profileRes.data
@@ -270,6 +292,11 @@ export default function ProfileWizard() {
         first_name: p?.first_name ?? '',
         last_name:  p?.last_name ?? '',
         headline:   p?.headline ?? '',
+        public_bio:  p?.public_bio ?? '',
+        website_url: p?.website_url ?? '',
+        instagram:   p?.instagram ?? '',
+        linkedin:    p?.linkedin ?? '',
+        twitter:     p?.twitter ?? '',
         country:    p?.country ?? '',
         city:       p?.city ?? '',
         user_types: p?.user_types ?? [],
@@ -292,8 +319,9 @@ export default function ProfileWizard() {
         geneKey:        arc?.geneKey    ?? '',
         mayan:          arc?.mayan      ?? '',
         goals:   b?.goals  ?? '',
-        fears:   b?.fears  ?? '',
-        traumas: b?.traumas ?? '',
+        fears:   growthRes.data?.fears ?? '',
+        traumas: growthRes.data?.traumas ?? '',
+        growthVisibility: (growthRes.data?.visibility as GrowthVisibility | undefined) ?? 'full_members',
         offers: (offersRes.data ?? []).map((o: any) => ({
           id: o.id, title: o.title, description: o.description ?? '',
           category: o.category ?? '', compensation_model: o.compensation_model ?? 'Other', price: o.price ?? '',
@@ -353,6 +381,11 @@ export default function ProfileWizard() {
         first_name: form.first_name || null,
         last_name:  form.last_name  || null,
         headline:   form.headline   || null,
+        public_bio:  form.public_bio.trim() || null,
+        website_url: websiteUrl(form.website_url),
+        instagram:   form.instagram.trim() || null,
+        linkedin:    form.linkedin.trim() || null,
+        twitter:     form.twitter.trim() || null,
         country:    form.country    || null,
         city:       form.city       || null,
         user_types: form.user_types,
@@ -378,11 +411,18 @@ export default function ProfileWizard() {
           mayan:       form.mayan       || null,
         },
         goals:   form.goals   || null,
-        fears:   form.fears   || null,
-        traumas: form.traumas || null,
         skills:   form.skills,
         interests: form.interests,
         places_traveling: form.placesTraveling.filter(t => t.location.trim()),
+      }, { onConflict: 'user_id' })
+
+      // Fears and traumas live apart, shared only with the people chosen
+      await supabase.from('user_growth').upsert({
+        user_id: userId,
+        fears:   form.fears.trim()   || null,
+        traumas: form.traumas.trim() || null,
+        visibility: form.growthVisibility,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
 
       // Sync offers: delete all then re-insert
@@ -546,6 +586,30 @@ export default function ProfileWizard() {
                 <Input value={form.headline} onChange={e => update('headline', e.target.value)}
                   placeholder="e.g., Permaculture Designer & Community Builder" />
                 <p className="text-xs text-muted-foreground">A short description that appears under your name</p>
+              </div>
+              <div className="space-y-2">
+                <Label>About you</Label>
+                <Textarea value={form.public_bio} onChange={e => update('public_bio', e.target.value)} rows={3} maxLength={1000}
+                  placeholder="A few sentences about you, your work and what brings you here" />
+                <p className="text-xs text-muted-foreground">Public: anyone can see your name, headline, this and your links. The rest of your profile is only for people who have signed up.</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Website</Label>
+                  <Input value={form.website_url} onChange={e => update('website_url', e.target.value)} placeholder="yoursite.com" inputMode="url" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Instagram</Label>
+                  <Input value={form.instagram} onChange={e => update('instagram', e.target.value)} placeholder="@yourname" />
+                </div>
+                <div className="space-y-2">
+                  <Label>LinkedIn</Label>
+                  <Input value={form.linkedin} onChange={e => update('linkedin', e.target.value)} placeholder="yourname or profile link" />
+                </div>
+                <div className="space-y-2">
+                  <Label>X / Twitter</Label>
+                  <Input value={form.twitter} onChange={e => update('twitter', e.target.value)} placeholder="@yourname" />
+                </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -739,6 +803,23 @@ export default function ProfileWizard() {
                   placeholder="What healing work are you doing? What have you overcome?"
                   className="min-h-[100px]" />
                 <p className="text-xs text-muted-foreground">Optional – share only what feels comfortable</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Who can see your fears and healing journey?</Label>
+                <div className="flex flex-col gap-2" role="radiogroup" aria-label="Who can see your fears and healing journey">
+                  {GROWTH_VISIBILITY.map(o => {
+                    const on = form.growthVisibility === o.id
+                    return (
+                      <label key={o.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${on ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'}`}>
+                        <input type="radio" name="growth-visibility" checked={on} onChange={() => update('growthVisibility', o.id)} className="mt-1" />
+                        <span>
+                          <span className={`block text-sm font-medium ${on ? 'text-primary' : ''}`}>{o.label}</span>
+                          <span className="block text-xs text-muted-foreground mt-0.5">{o.description}</span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
             </>
           )}

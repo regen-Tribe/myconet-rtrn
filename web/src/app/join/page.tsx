@@ -42,7 +42,7 @@ export default async function JoinPage() {
 
   const buddiesQuery = user
     ? supabase.from('user_profiles').select('id, first_name, headline, city').neq('id', user.id).limit(3)
-    : supabase.from('user_profiles').select('id, first_name, headline, city').limit(3)
+    : supabase.from('user_profiles').select('id, first_name, headline').limit(3)
   const { data: buddiesData } = await buddiesQuery
   const buddyProfiles = (buddiesData ?? []) as any
 

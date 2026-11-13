@@ -1,4 +1,5 @@
 import { createClient } from '@/core/lib/supabase/server'
+import { profileColumns } from '@/core/lib/public-profile'
 import Link from 'next/link'
 import MemberList from '@/modules/m01-network/MemberList'
 import { computeMatch, type Bio, type MatchResult } from '@/modules/m01-network/lib/match-score'
@@ -10,7 +11,8 @@ export default async function NetworkDashboard() {
   const [memberCountRes, recentRes, recentJoinsRes, recentOffersRes, recentSeeksRes] = await Promise.all([
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
     supabase.from('user_profiles')
-      .select('id, username, first_name, last_name, avatar_url, user_types, city, country')
+      // Visitors get the public columns; the hidden ones (location, user types) are just missing
+      .select(profileColumns(!!user, 'id, username, first_name, last_name, avatar_url, user_types, city, country') as 'id, username, first_name, last_name, avatar_url, user_types, city, country')
       .order('created_at', { ascending: false })
       .limit(8),
     supabase.from('user_profiles')

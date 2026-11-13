@@ -3,6 +3,25 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.14.1',
+    date: '2026-11-13',
+    title: 'You choose who sees your fears and healing journey',
+    items: [
+      'Profile › Edit › Goals & Growth now asks who can see your fears and healing journey: only you, full members, joining members and up, everyone signed up, or anyone. It starts at full members.',
+      'Calendar events named like a circle find it even when the name is a little different, for example "Clean Circle" goes in the Cleaning circle.',
+    ],
+  },
+  {
+    version: 'v4.14.0',
+    date: '2026-11-13',
+    title: 'Public profiles and admin rights',
+    items: [
+      'Profiles have an “About you” bio and website, Instagram, LinkedIn and X links. Anyone can see your name, photo, headline, bio and links.',
+      'Everything else on a profile (location, values, skills, personality, offers, requests, travel) is now only for people who have signed up. Visitors see those sections shaded, with an invitation to sign up.',
+      'Only admins can edit other people’s profiles. Circle and project leads could before; project leads also no longer see every join application. Thanks to Max for finding and fixing both.',
+    ],
+  },
+  {
     version: 'v4.13.2',
     date: '2026-11-12',
     title: 'A colour for each calendar',
