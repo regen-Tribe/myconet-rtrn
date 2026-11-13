@@ -5,6 +5,11 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.7 — 2026-11-13
+
+- Profile › Edit step 3: the Myers-Briggs question's small "click here to find yours" link is now a
+  visible invitation linking to https://www.16personalities.com/.
+
 ## v4.15.6 — 2026-11-13
 
 - **Calendar Day view, the default**: `EventsView` gains `day`; `/events` opens on it (today) unless
