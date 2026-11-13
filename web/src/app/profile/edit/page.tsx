@@ -714,12 +714,14 @@ export default function ProfileWizard() {
           {step === 3 && (
             <>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Myers-Briggs Type</Label>
-                  <a href="https://www.16personalities.com/free-personality-test" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors">
-                    click here to find yours
+                <Label>Myers-Briggs Type</Label>
+                <p className="text-sm text-muted-foreground">
+                  Don’t know your type? Find out with the free test at{' '}
+                  <a href="https://www.16personalities.com/" target="_blank" rel="noopener noreferrer" className="font-medium text-foreground underline underline-offset-2">
+                    16personalities.com
                   </a>
-                </div>
+                  {' '}(about 10 minutes), then pick it here.
+                </p>
                 <Select value={form.myersBriggs} onValueChange={v => update('myersBriggs', v)}>
                   <SelectTrigger><SelectValue placeholder="Select your type" /></SelectTrigger>
                   <SelectContent>

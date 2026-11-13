@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.15.7',
+    date: '2026-11-13',
+    title: 'Find your personality type',
+    items: [
+      'Profile › Personality now invites you to find your Myers-Briggs type with the free test at 16personalities.com, then pick it.',
+    ],
+  },
+  {
     version: 'v4.15.6',
     date: '2026-11-13',
     title: 'The calendar opens on today',
