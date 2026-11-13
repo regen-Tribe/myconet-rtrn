@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.15.8 — 2026-11-13
+
+- **Blueprint editing: admins and circle leads only**, in the database too. Migration
+  `20261117000000_blueprint_leads_edit.sql` replaces the owner-only `blueprints` insert/update
+  policies with `private.my_role() in ('admin','circle_lead')`. Before, only the row's `user_id`
+  (whoever first opened the blueprint) could save, so other leads' edits were silently dropped.
+- BlueprintClient's autosave checks the returned rows and shows "Your changes aren't being saved…"
+  when an update is refused. m04 README: project leads are read-only (the README said otherwise).
+
 ## v4.15.7 — 2026-11-13
 
 - Profile › Edit step 3: the Myers-Briggs question's small "click here to find yours" link is now a

@@ -1777,10 +1777,13 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
   )
 
   // One debounced saver per blueprint; it creates its own client so it doesn't
-  // depend on a value that changes every render
+  // depend on a value that changes every render. Only admins and circle leads can
+  // save (RLS); a refused update returns no rows rather than an error.
+  const [saveFailed, setSaveFailed] = useState(false)
   const save = useMemo(
     () => debounce(async (vals: Values) => {
-      await createClient().from('blueprints').update({ answers: vals }).eq('id', blueprintId)
+      const { data, error } = await createClient().from('blueprints').update({ answers: vals }).eq('id', blueprintId).select('id')
+      setSaveFailed(!!error || !data?.length)
     }, 1800),
     [blueprintId],
   )
@@ -1997,6 +2000,12 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
 
         {/* Main content */}
         <main className={`main${mobileTab !== 'content' ? ' mobile-hidden' : ''}`}>
+          {saveFailed && (
+            <div role="alert" style={{ margin: '0 0 16px', padding: '10px 14px', borderRadius: 8, fontSize: 13,
+              background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.35)', color: '#b91c1c' }}>
+              Your changes aren&rsquo;t being saved. Only admins and circle leads can change the blueprint.
+            </div>
+          )}
           {current.kind === 'welcome' && (
             <WelcomeView onStart={() => jumpTo(D.phases[0].steps[0].id)}
               hasProgress={hasProgress} onJumpToDashboard={() => jumpTo('dashboard')}

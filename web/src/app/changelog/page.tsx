@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.15.8',
+    date: '2026-11-13',
+    title: 'Only admins and circle leads change the blueprint',
+    items: [
+      'The Blueprint can now be changed by any admin or circle lead, and only by them. Before, only the person who first set it up could save; other admins and circle leads could type in it but their changes were lost.',
+      'If a change can’t be saved, the Blueprint now says so instead of losing it quietly.',
+    ],
+  },
+  {
     version: 'v4.15.7',
     date: '2026-11-13',
     title: 'Find your personality type',
