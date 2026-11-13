@@ -110,6 +110,8 @@ type TravelPlan = { location: string; startDate: string; endDate: string; notes:
 interface FormData {
   // Step 1 – Basic
   first_name: string; last_name: string; headline: string
+  // Public card (visitors see these)
+  public_bio: string; website_url: string; instagram: string; linkedin: string; twitter: string
   country: string; city: string; user_types: string[]
   skills: string[]; interests: string[]
   // Step 2 – Values
@@ -130,8 +132,16 @@ interface FormData {
   placesTraveling: TravelPlan[]
 }
 
+/** "yoursite.com" → "https://yoursite.com"; the database only accepts http(s) links */
+function websiteUrl(v: string): string | null {
+  const t = v.trim()
+  if (!t) return null
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`
+}
+
 const DEFAULT: FormData = {
   first_name: '', last_name: '', headline: '', country: '', city: '',
+  public_bio: '', website_url: '', instagram: '', linkedin: '', twitter: '',
   user_types: [], skills: [], interests: [],
   values_principles: '', what_creating: '',
   myersBriggs: '',
@@ -270,6 +280,11 @@ export default function ProfileWizard() {
         first_name: p?.first_name ?? '',
         last_name:  p?.last_name ?? '',
         headline:   p?.headline ?? '',
+        public_bio:  p?.public_bio ?? '',
+        website_url: p?.website_url ?? '',
+        instagram:   p?.instagram ?? '',
+        linkedin:    p?.linkedin ?? '',
+        twitter:     p?.twitter ?? '',
         country:    p?.country ?? '',
         city:       p?.city ?? '',
         user_types: p?.user_types ?? [],
@@ -353,6 +368,11 @@ export default function ProfileWizard() {
         first_name: form.first_name || null,
         last_name:  form.last_name  || null,
         headline:   form.headline   || null,
+        public_bio:  form.public_bio.trim() || null,
+        website_url: websiteUrl(form.website_url),
+        instagram:   form.instagram.trim() || null,
+        linkedin:    form.linkedin.trim() || null,
+        twitter:     form.twitter.trim() || null,
         country:    form.country    || null,
         city:       form.city       || null,
         user_types: form.user_types,
@@ -546,6 +566,30 @@ export default function ProfileWizard() {
                 <Input value={form.headline} onChange={e => update('headline', e.target.value)}
                   placeholder="e.g., Permaculture Designer & Community Builder" />
                 <p className="text-xs text-muted-foreground">A short description that appears under your name</p>
+              </div>
+              <div className="space-y-2">
+                <Label>About you</Label>
+                <Textarea value={form.public_bio} onChange={e => update('public_bio', e.target.value)} rows={3} maxLength={1000}
+                  placeholder="A few sentences about you, your work and what brings you here" />
+                <p className="text-xs text-muted-foreground">Public: anyone can see your name, headline, this and your links. The rest of your profile is only for people who have signed up.</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Website</Label>
+                  <Input value={form.website_url} onChange={e => update('website_url', e.target.value)} placeholder="yoursite.com" inputMode="url" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Instagram</Label>
+                  <Input value={form.instagram} onChange={e => update('instagram', e.target.value)} placeholder="@yourname" />
+                </div>
+                <div className="space-y-2">
+                  <Label>LinkedIn</Label>
+                  <Input value={form.linkedin} onChange={e => update('linkedin', e.target.value)} placeholder="yourname or profile link" />
+                </div>
+                <div className="space-y-2">
+                  <Label>X / Twitter</Label>
+                  <Input value={form.twitter} onChange={e => update('twitter', e.target.value)} placeholder="@yourname" />
+                </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">

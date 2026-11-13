@@ -5,6 +5,23 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.14.0 — 2026-11-13
+
+**Database:** `20261115000000_is_admin_means_admin.sql`, `20261115000100_public_profiles.sql`.
+Based on Max Sivry's community PRs (myconet-protopia #7, #8), brought into core.
+
+- **`is_admin()` means admin**: it also matched circle and project leads, so leads could edit any profile
+  (not roles: `guard_profile_privileges` already blocked those) and project leads read every join
+  application. Circle leads keep application reads through `"circle admins read applications"`.
+- **Public profiles**: new `user_profiles.public_bio`, `website_url` (http/https only), `instagram`,
+  `linkedin`, `twitter` (Profile › Edit, step 1). Visitors (`anon`) get column grants for the public card
+  only (`PUBLIC_PROFILE_COLUMNS` in `core/lib/public-profile.ts`); `user_bio`, `user_offers` and
+  `user_requests` are readable by signed-in people only. Public pages ask for `profileColumns(signedIn, …)`.
+  `/u/[username]` shows the bio and links to everyone and shaded sections with Sign up for visitors.
+  Leads, voter counts and vote roles come from `public_circle_directory()`, `eligible_voter_count()` and
+  `open_proposal_voter_roles()`.
+- `/auth/login?mode=register` opens the sign-up form.
+
 ## v4.13.2 — 2026-11-12
 
 - **A colour per calendar** (`KIND_META[kind].color`): Daily `#059669`, Core `#4f46e5`, Community

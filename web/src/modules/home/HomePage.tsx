@@ -8,6 +8,7 @@ import { communityName as getCommunityName } from '@/core/lib/instance'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { isFullMember as checkFullMember, isJoiningOrAbove } from '@/core/lib/roles'
+import { profileColumns } from '@/core/lib/public-profile'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -27,7 +28,7 @@ export default async function HomePage() {
     supabase.from('blueprints').select('answers, updated_at').eq('is_community', true).maybeSingle(),
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
     supabase.from('user_profiles')
-      .select('id, first_name, last_name, username, headline, city, country, avatar_url, user_types')
+      .select(profileColumns(!!user, 'id, first_name, last_name, username, headline, city, country, avatar_url, user_types'))
       .order('created_at', { ascending: false })
       .limit(4),
     supabase.from('community_values').select('id, title, description, sort_order').order('sort_order'),

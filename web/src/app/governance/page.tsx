@@ -1,26 +1,35 @@
 import { createClient } from '@/core/lib/supabase/server'
 import GovernanceClient from '@/modules/m09-governance/GovernanceClient'
-import { isFullMember as checkFullMember, isCircleLead, isAdvisorOrAdmin, MEMBER_ROLES } from '@/core/lib/roles'
+import { isFullMember as checkFullMember, isCircleLead, isAdvisorOrAdmin } from '@/core/lib/roles'
 
 export default async function GovernancePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [proposalsRes, memberCountRes] = await Promise.all([
+  const [proposalsRes, memberCountRes, voterRolesRes] = await Promise.all([
     supabase
       .from('proposals')
       .select(`
         id, title, description, decision_mode, status, closes_at, created_at,
         proposer:user_profiles!proposals_proposer_id_fkey(username, first_name, last_name),
-        votes:proposal_votes(vote, user_id, layer, voter:user_profiles!proposal_votes_user_id_fkey(role))
+        votes:proposal_votes(vote, user_id, layer)
       `)
       .eq('status', 'open')
       .order('closes_at', { ascending: true, nullsFirst: false }),
-    supabase
-      .from('user_profiles')
-      .select('id', { count: 'exact', head: true })
-      .in('role', [...MEMBER_ROLES]),
+    supabase.rpc('eligible_voter_count'),
+    supabase.rpc('open_proposal_voter_roles'),
   ])
+
+  const voterRole = new Map(
+    ((voterRolesRes.data ?? []) as { proposal_id: string; user_id: string; role: string }[])
+      .map(row => [`${row.proposal_id}:${row.user_id}`, row.role]),
+  )
+  const proposals = ((proposalsRes.data ?? []) as any[]).map(proposal => ({
+    ...proposal,
+    votes: (proposal.votes ?? []).map((vote: { user_id: string }) => (
+      { ...vote, voter: { role: voterRole.get(`${proposal.id}:${vote.user_id}`) ?? null } }
+    )),
+  }))
 
   const myVotes: Record<string, Record<string, string>> = {} // { proposalId: { layer: vote } }
   let isFullMember = false
@@ -41,8 +50,8 @@ export default async function GovernancePage() {
 
   return (
     <GovernanceClient
-      proposals={(proposalsRes.data ?? []) as any[]}
-      memberCount={memberCountRes.count ?? 0}
+      proposals={proposals}
+      memberCount={typeof memberCountRes.data === 'number' ? memberCountRes.data : 0}
       currentUserId={user?.id ?? ''}
       myVotes={myVotes}
       isFullMember={isFullMember}
