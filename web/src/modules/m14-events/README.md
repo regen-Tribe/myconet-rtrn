@@ -68,4 +68,14 @@ Policies use `private.my_role()` / `private.my_lead_circles()` (security definer
   next sync would undo it): change them in the source calendar. The exception is the time: "Change time"
   (anyone signed in) sets `times_set_by`, and `calendar_feed_apply()` then keeps that event's times
   (migration `20261118000000_event_times_everyone.sql`).
+- MyCoNet → Google (`lib/google-calendar.ts`, `/api/calendar-push`, migration `20261119000000_calendar_push.sql`):
+  with the worker secret `GOOGLE_SERVICE_ACCOUNT_JSON` (a service account key; the account must be shared
+  on the calendar with "Make changes to events"), a time change on an event from a Google calendar is made
+  in Google too (one date of a repeat via `instances?originalStart`). If a linked Google calendar has
+  `push_new_events`, public MyCoNet events are added to it and follow edits and deletion (members-only ones
+  are kept out, or removed if made members-only). The Google ids live in `google_event_id`/`google_ical_uid`,
+  set only through `calendar_push_mark()` (CALENDAR_SYNC_SECRET); the sync skips those events when Google
+  sends them back. Without the secret nothing goes to Google. Setup per portal: a Google Cloud project with
+  the Calendar API, a service account + JSON key (`wrangler secret put GOOGLE_SERVICE_ACCOUNT_JSON`), share
+  the calendar, tick "Add public MyCoNet events to Google" in Linked calendars.
 - Not yet: recurring events made in MyCoNet itself, .ics export, an events section on the proposal cards in M09.

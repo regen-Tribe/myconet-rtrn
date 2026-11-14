@@ -5,6 +5,16 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.17.0 — 2026-11-14
+
+- **MyCoNet → Google Calendar**: `m14-events/lib/google-calendar.ts` (service-account JWT with WebCrypto;
+  move a feed event or one date of a repeat; add/update/delete a MyCoNet event) and `POST /api/calendar-push`
+  (`times` / `saved` / `delete`; the MyCoNet change runs as the signed-in user, Google never blocks it).
+  Migration `20261119000000_calendar_push.sql`: `events.google_event_id`/`google_ical_uid` (only settable via
+  `calendar_push_mark()` with CALENDAR_SYNC_SECRET; a trigger keeps API users from setting them),
+  `calendar_feeds.push_new_events`, `calendar_push_feeds()`, and `calendar_feed_apply()` skips pushed events.
+  Needs the worker secret `GOOGLE_SERVICE_ACCOUNT_JSON`; see the m14 README for setup.
+
 ## v4.16.5 — 2026-11-14
 
 - Blueprint: applying an import (`applyImport`) saves at once instead of waiting for the autosave pause,
