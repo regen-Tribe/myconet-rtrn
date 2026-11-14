@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.16.3',
+    date: '2026-11-13',
+    title: 'Imports combine answers',
+    items: [
+      'When an import finds something for a question you’ve already answered, the AI now writes one answer that combines both, keeping every fact once, instead of adding the new text after yours. You see the combined answer before applying, and can still keep yours or replace it.',
+    ],
+  },
+  {
     version: 'v4.16.2',
     date: '2026-11-13',
     title: 'Layout fixes, Achievements, and safer decisions',
