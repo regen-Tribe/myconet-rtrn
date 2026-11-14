@@ -10,6 +10,7 @@
     "preview:cf": "npm run instance && opennextjs-cloudflare build && wrangler dev",
     "start": "next start",
     "lint": "eslint",
+    "lint:changed": "node scripts/lint-changed.mjs",
     "preview": "npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare upload",

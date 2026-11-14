@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/core/components/ui/card'
-import { Badge } from '@/core/components/ui/badge'
 import { Button } from '@/core/components/ui/button'
 import { Input } from '@/core/components/ui/input'
 import { Textarea } from '@/core/components/ui/textarea'

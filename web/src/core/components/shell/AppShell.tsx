@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import AppTopBar from '@/core/components/shell/AppTopBar'
 import AppSideNav from '@/core/components/shell/AppSideNav'
@@ -10,6 +10,18 @@ import AssistantChat from '@/modules/assistant/AssistantChat'
 export default function AppShell({ children, role, isLoggedIn = false }: { children: React.ReactNode; role: string; isLoggedIn?: boolean }) {
   const pathname = usePathname()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [navCollapsed, setNavCollapsed] = useState(false)
+
+  useEffect(() => {
+    try { setNavCollapsed(localStorage.getItem('navCollapsed') === '1') } catch {}
+  }, [])
+
+  const toggleDesktopNav = () =>
+    setNavCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem('navCollapsed', next ? '1' : '0') } catch {}
+      return next
+    })
 
   if (pathname.startsWith('/auth/')) {
     return <>{children}</>
@@ -17,10 +29,12 @@ export default function AppShell({ children, role, isLoggedIn = false }: { child
 
   return (
     <ProfileCompletionProvider>
-      <div className="app-shell-layout">
+      <div className={`app-shell-layout${navCollapsed ? ' nav-collapsed' : ''}`}>
         <AppTopBar
           onMobileNavToggle={() => setMobileNavOpen(o => !o)}
           mobileNavOpen={mobileNavOpen}
+          onDesktopNavToggle={toggleDesktopNav}
+          navCollapsed={navCollapsed}
         />
         <AppSideNav
           mobileOpen={mobileNavOpen}

@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/core/components/ui/card'
-import { Badge } from '@/core/components/ui/badge'
 import { Button } from '@/core/components/ui/button'
 import { Textarea } from '@/core/components/ui/textarea'
 import { Label } from '@/core/components/ui/label'
@@ -29,13 +27,6 @@ const URGENCY_OPTIONS = [
   { value: 'high',   label: 'High' },
   { value: 'urgent', label: 'Urgent' },
 ]
-
-const URGENCY_COLORS: Record<string, string> = {
-  low:    'bg-muted text-muted-foreground',
-  normal: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  high:   'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  urgent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-}
 
 interface Request {
   id: string; request_text: string; category: string | null

@@ -117,7 +117,7 @@ function StatusPill({ isLive }: { isLive: boolean }) {
   )
 }
 
-function VoteButton({ vote, label, active, color, bg, onClick, disabled }: {
+function VoteButton({ label, active, color, bg, onClick, disabled }: {
   vote: string; label: string; active: boolean; color: string; bg: string; onClick: () => void; disabled?: boolean
 }) {
   return (
@@ -372,7 +372,7 @@ export default function GovernanceClient({
             const s = layerVotes(selected.votes, 'sociocracy')
             const d = layerVotes(selected.votes, 'democracy')
             const m = layerVotes(selected.votes, 'merit')
-            const { sociocracyPassed, democPassed, meritPassed, aiPassed, passed, isLive } = evalLayers(selected)
+            const { sociocracyPassed, democPassed, meritPassed, passed, isLive } = evalLayers(selected)
             const myL = myVotes[selected.id] ?? {}
             const proposalComments = comments[selected.id] ?? []
             const aiCheck = aiChecks[selected.id]

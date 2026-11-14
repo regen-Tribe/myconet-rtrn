@@ -295,7 +295,7 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div className="dash-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Members" value={String(memberCount)} delta={newMembersThisWeek > 0 ? `+${newMembersThisWeek} this week` : 'none new this week'} href="/network" />
         <StatCard
           label="Blueprint readiness"

@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
 import { FW_DATA, PILLAR_STEPS, type StepDef, type PhaseDef, type GuideContent } from '@/modules/m04-blueprint/lib/wizard-data'
-import { computePillarScores, computeGatesPassed, computePhaseProgress, type Values as SharedValues } from '@/modules/m04-blueprint/lib/blueprint-compute'
+import { computePillarScores, computeGatesPassed } from '@/modules/m04-blueprint/lib/blueprint-compute'
 import { communityName, FRAMEWORK_CREDIT } from '@/core/lib/instance'
 import { useCircles } from '@/core/components/CirclesProvider'
 import CirclesStep from '@/modules/m04-blueprint/CirclesStep'
@@ -20,6 +20,7 @@ import DocumentKindPicker from '@/modules/assistant/DocumentKindPicker'
 import { addToLibrary, titleFromFile, type DocKind } from '@/modules/assistant/lib/library'
 import { setBrandingImage } from '@/modules/m04-blueprint/lib/branding-upload'
 import { FOUND_CIRCLES_KEY, type FoundCircle } from '@/modules/m04-blueprint/lib/circle-setup'
+import { crawlSite, SITE_MAX_PAGES, type SiteCrawl } from '@/modules/m04-blueprint/lib/site-crawl'
 import '@/modules/m04-blueprint/wizard.css'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -182,6 +183,8 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [siteUrl, setSiteUrl] = useState('')
   const [fromSite, setFromSite] = useState(false)
   const [pageUrls, setPageUrls] = useState<string[]>([])
+  const [siteCapped, setSiteCapped] = useState(false)
+  const stopSite = useRef(false)
 
   // Logo and banner from a PDF's images; runs alongside the text scan. Never fails the import.
   const findImages = async (file: File) => {
@@ -258,20 +261,20 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     setLibraryStatus('')
     setFromSite(true)
     setPageUrls([])
+    setSiteCapped(false)
     setStartedAt(Date.now())
     setPdfProgress({ current: 0, total: 0 })
     setStage('extracting')
-    let site: { site: string; title: string; pages: { url: string }[]; text: string }
+    let site: SiteCrawl
+    stopSite.current = false
     try {
-      const res = await fetch('/api/site-text', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: siteUrl }) })
-      const body = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`)
-      site = body
+      site = await crawlSite(siteUrl, (read, found) => setPdfProgress({ current: read, total: found }), stopSite)
     } catch (e) {
       setErrorMsg(`Could not read the website: ${(e as Error).message}`)
       setStage('error')
       return
     }
+    setSiteCapped(site.capped)
     setFileName(site.site)
     setPageUrls(site.pages.map(p => p.url))
     setPdfProgress({ current: site.pages.length, total: site.pages.length })
@@ -374,7 +377,6 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                 title={`${img.width}×${img.height} · page ${img.pages.join(', ')}`}
                 style={{ padding: 4, borderRadius: 8, cursor: 'pointer', background: kind === 'logo' ? 'repeating-conic-gradient(var(--bg-2) 0 25%, var(--surface) 0 50%) 0 0 / 12px 12px' : 'var(--surface)',
                   border: `2px solid ${on ? 'var(--accent)' : 'var(--rule)'}`, boxShadow: on ? '0 0 0 2px var(--accent-soft)' : 'none' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img.url} alt="" style={{ display: 'block', height: kind === 'logo' ? 56 : 72, width: kind === 'logo' ? 'auto' : 160, maxWidth: 160, objectFit: kind === 'logo' ? 'contain' : 'cover', borderRadius: 4 }} />
                 {aiPicked[kind] === img.id && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', marginTop: 3 }}>✨ AI pick</div>}
               </button>
@@ -444,7 +446,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                   <button className="btn" type="submit" disabled={!docKind || !siteUrl.trim()}>Scan site →</button>
                 </form>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>
-                  We read the page and up to 7 pages it links to (about, mission, governance…), and add the text to the library.
+                  We read every page of the site (up to {SITE_MAX_PAGES}), and add the text to the library.
                 </div>
               </div>
             )}
@@ -482,7 +484,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               status: stage === 'extracting' ? 'active' : 'done',
               title: fromSite ? 'Reading the website' : fileName.toLowerCase().endsWith('.pdf') ? 'Reading the PDF' : 'Reading the document',
               detail: stage === 'extracting'
-                ? (fromSite ? 'Opening the site and the pages it links to…' : pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
+                ? (fromSite ? (pdfProgress.total ? `Read ${pdfProgress.current} of ${pdfProgress.total} pages found so far` : 'Opening the site and finding its pages…') : pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
                 : `${docText.length.toLocaleString()} characters${pdfProgress.total ? ` from ${pdfProgress.total} pages` : ''}`,
             },
             {
@@ -522,6 +524,9 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                     <div style={{ fontSize: 14, fontWeight: r.status === 'active' ? 700 : 500 }}>{r.title}</div>
                     {r.detail && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.detail}</div>}
                   </div>
+                  {r.title === 'Reading the website' && stage === 'extracting' && pdfProgress.current > 1 && (
+                    <button className="btn btn-ghost" style={{ fontSize: 11, padding: '2px 8px', alignSelf: 'center' }} onClick={() => { stopSite.current = true }}>Stop here</button>
+                  )}
                   {r.title === 'Looking for your logo and banner' && lookingForImages && (
                     <button className="btn btn-ghost" style={{ fontSize: 11, padding: '2px 8px', alignSelf: 'center' }} onClick={() => { stopImages.current = true }}>Skip</button>
                   )}
@@ -544,6 +549,11 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                 {Object.keys(extracted).filter(k => !k.startsWith('_') && k !== 'circles').length} FIELDS POPULATED
                 {scope?.circles ? '' : ` · ${foundList.length} CIRCLE${foundList.length === 1 ? '' : 'S'} FOUND`} · REVIEW BELOW
               </div>
+              {fromSite && siteCapped && (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                  ⚠ Big site: we read {pageUrls.length} pages (the most useful first) and stopped there. Import a document for anything it missed.
+                </div>
+              )}
               {wasTruncated && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
                   ⚠ Large document — read the first 1,200,000 characters (about 400 pages). If key content comes later, import the rest separately.

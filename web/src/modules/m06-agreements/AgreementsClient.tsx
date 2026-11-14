@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
-import { colorForId, formatDeadline } from '@/core/lib/format'
+import { formatDeadline } from '@/core/lib/format'
 import NewProjectModal from './NewProjectModal'
 import { FormField, FocusInput, FocusTextarea } from './AgreementFormFields'
 

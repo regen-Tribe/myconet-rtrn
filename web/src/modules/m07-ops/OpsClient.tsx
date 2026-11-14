@@ -37,45 +37,6 @@ interface OpsClientProps {
 
 type OpsTab = 'board' | 'deliverables' | 'updates' | 'circles'
 
-// ─── Subscriber Avatars ──────────────────────────────────────────────────────
-
-function SubscriberAvatars({ subscribers, max = 3 }: { subscribers: SubscriberProfile[]; max?: number }) {
-  if (!subscribers.length) return null
-  const shown = subscribers.slice(0, max)
-  const overflow = subscribers.length - max
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-      {shown.map((s, i) => {
-        const label = s.first_name?.[0] ?? s.username?.[0] ?? '?'
-        return (
-          <div key={s.user_id} title={s.first_name ?? s.username ?? ''} style={{
-            width: 18, height: 18, borderRadius: '50%',
-            background: `hsl(${(s.user_id.charCodeAt(0) * 37) % 360}, 55%, 55%)`,
-            border: '1.5px solid var(--surface)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 9, fontWeight: 700, color: '#fff',
-            marginLeft: i === 0 ? 0 : -4, zIndex: max - i,
-            position: 'relative',
-          }}>
-            {label.toUpperCase()}
-          </div>
-        )
-      })}
-      {overflow > 0 && (
-        <div style={{
-          width: 18, height: 18, borderRadius: '50%',
-          background: 'var(--bg-3)', border: '1.5px solid var(--surface)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 8, fontWeight: 700, color: 'var(--ink-3)',
-          marginLeft: -4, position: 'relative',
-        }}>
-          +{overflow}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, delta, valueColor = 'var(--ink)', onClick, active }: {

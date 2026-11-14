@@ -17,6 +17,6 @@ export const MEMBER_MODULES = [
   { num: '06', name: 'Agreements',    color: 'var(--m6)', href: '/agreements' as string | null },
   { num: '17', name: 'Circles',       color: 'var(--m17)', href: '/org' as string | null },
   { num: '07', name: 'Operations',    color: 'var(--m7)', href: '/ops' as string | null },
-  { num: '08', name: 'Contributions', color: 'var(--m8)', href: '/contributions' as string | null },
+  { num: '08', name: 'Achievements', color: 'var(--m8)', href: '/contributions' as string | null },
   { num: '09', name: 'Governance',    color: 'var(--m9)', href: '/governance' as string | null },
 ]

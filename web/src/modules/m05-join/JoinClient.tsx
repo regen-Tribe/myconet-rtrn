@@ -245,7 +245,7 @@ function SetupNotice({ what }: { what: string }) {
 }
 
 
-function Step1Values({ userId, values, signedIds, onToggle, onNext }: { userId: string; values: CommunityValue[]; signedIds: Set<string>; onToggle: (id: string, signed: boolean) => void; onNext: () => void }) {
+function Step1Values({ values, signedIds, onToggle, onNext }: { userId: string; values: CommunityValue[]; signedIds: Set<string>; onToggle: (id: string, signed: boolean) => void; onNext: () => void }) {
   const signedCount = signedIds.size
   const total = values.length
   // With no values written yet, the step can't block anyone

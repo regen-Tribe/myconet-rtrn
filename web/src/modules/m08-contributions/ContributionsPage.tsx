@@ -57,7 +57,7 @@ export default async function ContributionsPage() {
             color: 'var(--m8)', background: 'color-mix(in srgb, var(--m8) 10%, transparent)',
             padding: '2px 8px', borderRadius: 4,
           }}>M08</span>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Contributions</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Achievements</span>
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>Achievements</h1>
         <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>
@@ -74,7 +74,7 @@ export default async function ContributionsPage() {
         }}>
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', margin: '0 0 2px' }}>
-              You're previewing Contributions.
+              You're previewing Achievements.
             </p>
             <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
               Create a free account to track your earned badges and contributions.

@@ -17,53 +17,6 @@ import { circleChangeBlock, projectEditBlock, type CircleDirectory, type Permiss
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-function SubscriberAvatars({ subs, size = 18 }: { subs: SubscriberProfile[]; size?: number }) {
-  if (!subs.length) return null
-  const show = subs.slice(0, 5)
-  const extra = subs.length - show.length
-  return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      {show.map((s, i) => {
-        const name = s.first_name ?? s.username ?? '?'
-        const initial = name[0].toUpperCase()
-        const hue = (name.charCodeAt(0) * 37) % 360
-        return (
-          <div
-            key={s.user_id}
-            title={name}
-            style={{
-              width: size, height: size, borderRadius: '50%',
-              background: `hsl(${hue}, 55%, 55%)`,
-              color: '#fff', fontSize: Math.floor(size * 0.5), fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginLeft: i === 0 ? 0 : -(Math.floor(size * 0.28)),
-              border: '1.5px solid var(--surface)',
-              zIndex: show.length - i,
-              position: 'relative',
-              flexShrink: 0,
-            }}
-          >
-            {initial}
-          </div>
-        )
-      })}
-      {extra > 0 && (
-        <div style={{
-          width: size, height: size, borderRadius: '50%',
-          background: 'var(--rule)', color: 'var(--ink-3)',
-          fontSize: Math.floor(size * 0.45), fontWeight: 700,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginLeft: -(Math.floor(size * 0.28)),
-          border: '1.5px solid var(--surface)',
-          flexShrink: 0,
-        }}>
-          +{extra}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function SubscriberNames({ subs, max = 5 }: { subs: SubscriberProfile[]; max?: number }) {
   if (!subs.length) return null
   const show = subs.slice(0, max)
