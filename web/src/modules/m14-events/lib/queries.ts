@@ -10,7 +10,7 @@ export const EVENT_SELECT = `
   proposal:proposals(id, title)
 `
 
-export const FEED_SELECT = 'id, name, url, kind, is_public, match_circles, rules, enabled, last_synced_at, last_count, last_error'
+export const FEED_SELECT = 'id, name, url, kind, is_public, match_circles, rules, enabled, push_new_events, last_synced_at, last_count, last_error'
 
 export const COMMENT_SELECT = 'id, event_id, user_id, body, created_at, author:user_profiles!event_comments_user_id_fkey(first_name, username)'
 

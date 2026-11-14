@@ -118,6 +118,7 @@ export default function EventsClient({
       setForm(null)
       setOpenId(saved.id)
       setToast('Event updated')
+      push({ action: 'saved', eventId: saved.id }).then(r => setToast(googleNote(r, 'Event updated')))
       return null
     }
     const { data, error } = await supabase.from('events').insert({ ...payload, created_by: userId }).select(EVENT_SELECT).single()
@@ -136,6 +137,7 @@ export default function EventsClient({
     setAnchor(startOfDay(new Date(saved.starts_at)))
     setOpenId(saved.id)
     setToast('Event posted')
+    push({ action: 'saved', eventId: saved.id }).then(r => setToast(googleNote(r, 'Event posted')))
     return null
   }
 
@@ -163,24 +165,41 @@ export default function EventsClient({
     return null
   }
 
+  // Changes that also go to the linked Google calendar run through the server (it holds the Google key)
+  async function push(body: object): Promise<{ ok?: boolean; error?: string; google?: string; googleError?: string }> {
+    try {
+      const res = await fetch('/api/calendar-push', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      return await res.json()
+    } catch (e) {
+      return { error: (e as Error).message }
+    }
+  }
+  const googleNote = (r: { google?: string; googleError?: string }, done: string) =>
+    r.googleError ? `${done} here. Google Calendar wasn’t updated: ${r.googleError}`
+      : r.google === 'updated' ? `${done}, here and in Google Calendar`
+      : r.google === 'added' ? `${done}, and added to Google Calendar`
+      : r.google === 'removed' ? `${done}, and removed from Google Calendar`
+      : done
+
   async function saveTimes(eventId: string, startsAt: string, endsAt: string | null): Promise<string | null> {
-    const { error } = await supabase.rpc('event_set_times', { p_event_id: eventId, p_starts_at: startsAt, p_ends_at: endsAt })
-    if (error) return error.code === '42501' ? 'Sign in to change event times.' : error.message
+    const r = await push({ action: 'times', eventId, startsAt, endsAt })
+    if (r.error) return r.error
     const { data } = await supabase.from('events').select(EVENT_SELECT).eq('id', eventId).single()
     if (data) { const saved = toEvent(data); setEvents(list => list.map(e => (e.id === saved.id ? saved : e))) }
+    setToast(googleNote(r, 'Time changed'))
     return null
   }
 
   async function deleteEvent(eventId: string) {
-    const { data, error } = await supabase.from('events').delete().eq('id', eventId).select('id')
-    if (error || !data?.length) {
+    const r = await push({ action: 'delete', eventId })
+    if (r.error) {
       setToast('That event couldn’t be deleted.')
       return
     }
     setEvents(list => list.filter(e => e.id !== eventId))
     setRsvps(list => list.filter(r => r.event_id !== eventId))
     setOpenId(null)
-    setToast('Event deleted')
+    setToast(googleNote(r, 'Event deleted'))
   }
 
   const toggle = <T,>(list: T[], item: T) => (list.includes(item) ? list.filter(x => x !== item) : [...list, item])

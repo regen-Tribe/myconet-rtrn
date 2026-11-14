@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.17.0',
+    date: '2026-11-14',
+    title: 'Changes go to Google Calendar',
+    items: [
+      'When someone changes the time of an event that came from your Google calendar, Google gets the new time too (just that date, for a repeating event).',
+      'Public events posted in MyCoNet can now be added to your Google calendar, and later edits and deletion follow. Admins turn this on per calendar in Linked calendars: “Add public MyCoNet events to Google”.',
+      'You’ll see “here and in Google Calendar” when it worked, or why Google wasn’t updated.',
+    ],
+  },
+  {
     version: 'v4.16.5',
     date: '2026-11-14',
     title: 'Blueprint confirms imported answers',

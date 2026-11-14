@@ -60,7 +60,7 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
     await sync(data.id)
   }
 
-  const update = async (id: string, patch: Partial<Pick<CalendarFeed, 'is_public' | 'kind' | 'enabled' | 'match_circles' | 'rules'>>) => {
+  const update = async (id: string, patch: Partial<Pick<CalendarFeed, 'is_public' | 'kind' | 'enabled' | 'match_circles' | 'rules' | 'push_new_events'>>) => {
     setError('')
     const { error: err } = await supabase.from('calendar_feeds').update(patch).eq('id', id)
     if (err) return setError(err.message)
@@ -129,6 +129,11 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
               <label style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                 <input type="checkbox" checked={f.enabled} disabled={!!busy} onChange={e => update(f.id, { enabled: e.target.checked })} /> Keep syncing
               </label>
+              {f.url.startsWith('https://calendar.google.com/') && (
+                <label style={{ display: 'flex', gap: 5, alignItems: 'center' }} title="Public events posted in MyCoNet go into this Google calendar too, and follow later edits. Members-only events stay here.">
+                  <input type="checkbox" checked={f.push_new_events} disabled={!!busy} onChange={e => update(f.id, { push_new_events: e.target.checked })} /> Add public MyCoNet events to Google
+                </label>
+              )}
             </div>
             <RulesEditor feed={f} busy={!!busy} onSave={rules => update(f.id, { rules })} />
           </div>

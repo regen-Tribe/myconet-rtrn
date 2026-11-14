@@ -55,6 +55,8 @@ export interface CalendarFeed {
   /** Sort events by title; see FeedRule */
   rules: FeedRule[]
   enabled: boolean
+  /** Public events made in MyCoNet are added to this (Google) calendar */
+  push_new_events: boolean
   last_synced_at: string | null
   last_count: number | null
   last_error: string | null
