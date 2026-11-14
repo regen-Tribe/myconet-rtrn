@@ -186,6 +186,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [fromSite, setFromSite] = useState(false)
   const [pageUrls, setPageUrls] = useState<string[]>([])
   const [siteCapped, setSiteCapped] = useState(false)
+  const [siteTried, setSiteTried] = useState(0)
   const stopSite = useRef(false)
 
   // Logo and banner from a PDF's images; runs alongside the text scan. Never fails the import.
@@ -270,7 +271,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     let site: SiteCrawl
     stopSite.current = false
     try {
-      site = await crawlSite(siteUrl, (read, found) => setPdfProgress({ current: read, total: found }), stopSite)
+      site = await crawlSite(siteUrl, (read, found, tried) => { setPdfProgress({ current: read, total: found }); setSiteTried(tried) }, stopSite)
     } catch (e) {
       setErrorMsg(`Could not read the website: ${(e as Error).message}`)
       setStage('error')
@@ -498,7 +499,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               status: stage === 'extracting' ? 'active' : 'done',
               title: fromSite ? 'Reading the website' : fileName.toLowerCase().endsWith('.pdf') ? 'Reading the PDF' : 'Reading the document',
               detail: stage === 'extracting'
-                ? (fromSite ? (pdfProgress.total ? `Read ${pdfProgress.current} of ${pdfProgress.total} pages found so far` : 'Opening the site and finding its pages…') : pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
+                ? (fromSite ? (pdfProgress.total ? `Read ${pdfProgress.current} pages${siteTried > pdfProgress.current ? ` (tried ${siteTried})` : ''} of ${pdfProgress.total} found so far · stops by itself within 5 minutes` : 'Opening the site and finding its pages…') : pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
                 : `${docText.length.toLocaleString()} characters${pdfProgress.total ? ` from ${pdfProgress.total} pages` : ''}`,
             },
             {
@@ -570,7 +571,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               </div>
               {fromSite && siteCapped && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
-                  ⚠ Big site: we read {pageUrls.length} pages (the most useful first) and stopped there. Import a document for anything it missed.
+                  ⚠ Big site: we read {pageUrls.length} pages (the most useful first) and stopped there, to keep the scan to a few minutes. Import a document for anything it missed.
                 </div>
               )}
               {wasTruncated && (

@@ -7,11 +7,20 @@ import { BATCH, byUsefulness, pageKey, type SitePage } from './site-text'
 export const SITE_MAX_PAGES = 300
 // The scan reads up to 1,200,000 characters; past that more pages wouldn't be read
 const MAX_CHARS = 1_200_000
+// Addresses that fail (timeouts, files, huge pages) don't add pages, so tries and time are capped
+// too: a big sitemap full of dead links must not keep the scan going for an hour
+const MAX_TRIES = 450
+const MAX_MS = 5 * 60_000
+const BATCH_TIMEOUT_MS = 45_000
+const START_TIMEOUT_MS = 60_000
 
 export interface SiteCrawl { site: string; title: string; pages: { url: string; title: string }[]; text: string; capped: boolean }
 
-async function call<T>(body: object): Promise<T> {
-  const res = await fetch('/api/site-text', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+async function call<T>(body: object, timeoutMs?: number): Promise<T> {
+  const res = await fetch('/api/site-text', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
+  })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
   return json as T
@@ -19,30 +28,38 @@ async function call<T>(body: object): Promise<T> {
 
 export async function crawlSite(
   url: string,
-  onProgress?: (read: number, found: number) => void,
+  onProgress?: (read: number, found: number, tried: number) => void,
   stop?: { current: boolean },
 ): Promise<SiteCrawl> {
-  const start = await call<{ site: string; home: SitePage; links: string[] }>({ url })
+  let start: { site: string; home: SitePage; links: string[] }
+  try {
+    start = await call<{ site: string; home: SitePage; links: string[] }>({ url }, START_TIMEOUT_MS)
+  } catch (e) {
+    throw (e as Error).name === 'TimeoutError' ? new Error('The website didn’t answer within a minute. Check the address, or upload a document instead.') : e
+  }
   const pages: SitePage[] = [start.home]
   const seen = new Set<string>([pageKey(start.home.url), ...start.links])
   const queue = [...start.links]
   let chars = start.home.text.length
   let capped = false
-  onProgress?.(1, seen.size)
+  let tried = 1
+  const startedAt = Date.now()
+  onProgress?.(1, seen.size, tried)
 
   while (queue.length && !stop?.current) {
-    if (pages.length >= SITE_MAX_PAGES || chars >= MAX_CHARS) { capped = true; break }
+    if (pages.length >= SITE_MAX_PAGES || chars >= MAX_CHARS || tried >= MAX_TRIES || Date.now() - startedAt > MAX_MS) { capped = true; break }
     queue.sort(byUsefulness)
     const batch = queue.splice(0, BATCH)
+    tried += batch.length
     let got: { pages: SitePage[]; links: string[] }
-    try { got = await call({ url: start.home.url, pages: batch }) } catch { continue } // a failed batch is skipped, not fatal
+    try { got = await call({ url: start.home.url, pages: batch }, BATCH_TIMEOUT_MS) } catch { onProgress?.(pages.length, Math.min(seen.size, SITE_MAX_PAGES), tried); continue } // a failed batch is skipped, not fatal
     for (const p of got.pages) {
       if (pages.length >= SITE_MAX_PAGES) { capped = true; break }
       pages.push(p)
       chars += p.text.length
     }
     for (const l of got.links) if (!seen.has(l)) { seen.add(l); queue.push(l) }
-    onProgress?.(pages.length, Math.min(seen.size, SITE_MAX_PAGES))
+    onProgress?.(pages.length, Math.min(seen.size, SITE_MAX_PAGES), tried)
   }
   if (queue.length && !stop?.current) capped = true
 
