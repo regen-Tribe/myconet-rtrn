@@ -3,6 +3,23 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.17.2',
+    date: '2026-11-14',
+    title: 'Website scans stop on time',
+    items: [
+      'A website scan now always stops by itself within about 5 minutes, even on a big site full of links that don’t load. Before, it could keep trying for over an hour.',
+      'While it reads, it shows how many pages it read and how many it tried.',
+    ],
+  },
+  {
+    version: 'v4.17.1',
+    date: '2026-11-14',
+    title: 'Easier to find: Change time',
+    items: [
+      'Change time is now a clear button with a clock, next to the event’s date.',
+    ],
+  },
+  {
     version: 'v4.17.0',
     date: '2026-11-14',
     title: 'Changes go to Google Calendar',

@@ -180,10 +180,10 @@ export function EventDetailModal({
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span>🗓 {fmtEventWhen(event)}</span>
               {canChangeTime && onSaveTimes && (
-                <button onClick={openTimeEditor} style={{ fontSize: 12, fontWeight: 600, padding: 0, border: 'none', background: 'none', color: 'var(--m14)', cursor: 'pointer' }}>Change time</button>
+                <button onClick={openTimeEditor} style={{ fontSize: 12.5, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--m14)', background: 'var(--surface)', color: 'var(--m14)', cursor: 'pointer' }}>🕒 Change time</button>
               )}
             </div>
           )}

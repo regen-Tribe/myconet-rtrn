@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.17.2 — 2026-11-14
+
+- Website crawl (`m04-blueprint/lib/site-crawl.ts`): caps addresses tried (450) and time (5 minutes) as well
+  as pages read, and times out a batch after 45s. Failed addresses used not to count, so a large sitemap of
+  dead or non-HTML links kept an RTRN scan going for 72 minutes. Progress shows pages read and tried.
+  Tested: ic.org stops at 121 pages in 62s (text cap).
+
+## v4.17.1 — 2026-11-14
+
+- Event detail: "🕒 Change time" is an outlined button instead of a small text link.
+
 ## v4.17.0 — 2026-11-14
 
 - **MyCoNet → Google Calendar**: `m14-events/lib/google-calendar.ts` (service-account JWT with WebCrypto;
