@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.16.3 — 2026-11-13
+
+- **Blueprint import combines answers**: `mergeAnswers()` in `m04-blueprint/lib/doc-scan.ts` asks M3 (12
+  questions per call) for one answer from the current and proposed text. The review's choices are Keep current /
+  Combine (default, shows the result) / Replace it; Apply falls back to appending if a combine failed.
+  A "Combining with the answers you already have" row shows progress.
+
 ## v4.16.2 — 2026-11-13
 
 Community PRs brought into core (Max Sivry: protopia #28–#32; Sonia Wendorff: protopia #36, core #2, #3).

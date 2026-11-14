@@ -73,7 +73,7 @@ The blueprint integrates with `/api/scan` to scan uploaded documents and suggest
 
 Sources: a PDF/.txt/.md file, pasted text, or a website address (`/api/site-text`, admins and circle leads only). Every source is saved to the library (`community_documents`, Setup › Documents) as shareable or sensitive; there is no "don't add it" choice.
 
-Existing answers are never overwritten by default. For a written answer that already exists, the review offers Keep current / Add to it (the default: new text goes after the old, unless the old already contains it) / Replace it. Scores and yes/no answers that already exist are kept unless Replace it is chosen.
+Existing answers are never overwritten by default. For a written answer that already exists, `mergeAnswers` (lib/doc-scan.ts, M3, 12 questions per call) writes one answer combining the current and proposed text: every fact once, the community's facts preferred on conflict, nothing invented. The review offers Keep current / Combine (the default; shows the combined text) / Replace it; if combining fails for a question, Combine adds the new text after the old. Scores and yes/no answers that already exist are kept unless Replace it is chosen.
 
 Full scans (and the Circles step's own scan) also ask for a `circles` array, following `INSTANCES.md` §6.2: standing groups only, each with a `source` quote; any without one is dropped. They are not saved as circles. They wait in the answers under `_circles_found` until an admin confirms them in the Circles step.
 
