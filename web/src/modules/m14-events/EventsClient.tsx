@@ -50,8 +50,6 @@ export default function EventsClient({
   const [kinds, setKinds] = useState<EventKind[]>(initialKinds)
   const [view, setView] = useState<EventsView>(initialView)
   const [circleFilter, setCircleFilter] = useState<CircleSlug | ''>('')
-  // Categories the viewer has unticked ("Food"…); everything else shows
-  const [hiddenCategories, setHiddenCategories] = useState<string[]>([])
   const [showPast, setShowPast] = useState(false)
   const [openId, setOpenId] = useState<string | null>(initialEventId)
   const [form, setForm] = useState<{ existing: CalendarEvent | null; draft: EventDraft } | null>(
@@ -89,9 +87,9 @@ export default function EventsClient({
     EVENT_KINDS.map(k => [k, now ? events.filter(e => e.kind === k && !isPast(e, now)).length : 0]),
   ) as Record<EventKind, number>, [events, now])
 
-  // Categories ("Food", "Movement"…) used by the ticked kinds, for the checkboxes
+  // Categories ("Food", "Movement"…) used by the ticked kinds, for the legend
   const categories = useMemo(() => [...new Set(events.filter(e => kinds.includes(e.kind) && e.category).map(e => e.category as string))].sort(), [events, kinds])
-  const visible = events.filter(e => kinds.includes(e.kind) && (!circleFilter || e.circle === circleFilter) && !(e.category && hiddenCategories.includes(e.category)))
+  const visible = events.filter(e => kinds.includes(e.kind) && (!circleFilter || e.circle === circleFilter))
   const openEvent = openId ? events.find(e => e.id === openId) ?? null : null
   const canPostCommunity = canCreateKind('community', role)
 
@@ -133,7 +131,6 @@ export default function EventsClient({
     setEvents(list => [...list, saved])
     setForm(null)
     setKinds(list => (list.includes(saved.kind) ? list : [...list, saved.kind]))
-    if (saved.category) setHiddenCategories(list => list.filter(c => c !== saved.category))
     setAnchor(startOfDay(new Date(saved.starts_at)))
     setOpenId(saved.id)
     setToast('Event posted')
@@ -257,7 +254,7 @@ export default function EventsClient({
         </div>
       )}
 
-      {/* ── What to show: kinds and categories, any mix ───────────────── */}
+      {/* ── What to show: kinds, any mix ─────────────────────────────── */}
       <div role="group" aria-label="Show these events" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
         {EVENT_KINDS.map(k => {
           const on = kinds.includes(k)
@@ -271,20 +268,6 @@ export default function EventsClient({
           )
         })}
       </div>
-      {categories.length > 0 && (
-        <div role="group" aria-label="Categories" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-          {categories.map(c => {
-            const on = !hiddenCategories.includes(c)
-            const color = categoryColor(c)
-            return (
-              <label key={c} style={{ ...checkStyle(on, color), fontSize: 12.5, padding: '4px 10px' }}>
-                <input type="checkbox" checked={on} onChange={() => setHiddenCategories(list => toggle(list, c))} style={{ margin: 0, accentColor: color }} />
-                <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 2, background: color }} />{c}
-              </label>
-            )
-          })}
-        </div>
-      )}
       {kinds.length === 0 && <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 10px' }}>Tick at least one kind of event to see the calendar.</p>}
       <div style={{ marginBottom: 6 }} />
 
