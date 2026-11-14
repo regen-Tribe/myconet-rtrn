@@ -5,6 +5,20 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.16.4 — 2026-11-14
+
+- **Event times for everyone signed in**: `event_set_times(event, starts_at, ends_at, all_day?)` (security
+  definer; any signed-in user, on events they can read; end not before start) sets `times_set_by`/`times_set_at`
+  (new columns). `calendar_feed_apply()` keeps the times of an event with `times_set_by`. Event detail gets
+  "Change time" and "Time changed by … on …". Migration `20261118000000_event_times_everyone.sql`.
+
+## v4.16.3 — 2026-11-13
+
+- **Blueprint import combines answers**: `mergeAnswers()` in `m04-blueprint/lib/doc-scan.ts` asks M3 (12
+  questions per call) for one answer from the current and proposed text. The review's choices are Keep current /
+  Combine (default, shows the result) / Replace it; Apply falls back to appending if a combine failed.
+  A "Combining with the answers you already have" row shows progress.
+
 ## v4.16.2 — 2026-11-13
 
 Community PRs brought into core (Max Sivry: protopia #28–#32; Sonia Wendorff: protopia #36, core #2, #3).

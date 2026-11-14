@@ -29,6 +29,9 @@ export interface CalendarEvent {
   notes: string | null
   notes_at: string | null
   notes_author: PersonLite | null
+  /** Set when someone changed the time with "Change time" (anyone signed in can) */
+  times_set_at: string | null
+  times_author: PersonLite | null
   creator: PersonLite | null
   project: { id: string; title: string } | null
   proposal: { id: string; title: string } | null
