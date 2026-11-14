@@ -31,6 +31,7 @@ The wizard structure is derived from four research-backed frameworks. Each step 
 |------|---------|
 | `BlueprintClient.tsx` | Full wizard UI — pillar tabs, step fields, AI scan, scoring panels |
 | `BrandingStep.tsx` | Setup step "Look & feel": logo and banner image (`community_settings`, `branding` bucket). Admins only |
+| `lib/site-text.ts` | Reads a website for the import (`/api/site-text`): the page plus up to 7 same-site pages it links to, most useful first, as text with `[Page n]` markers. Public addresses only (no local names, IP literals or odd ports; redirects re-checked) |
 | `lib/pdf-images.ts` | Pulls images out of an imported PDF and suggests a logo and banner (rules, not AI) |
 | `lib/branding-upload.ts` | Uploads/clears the logo or banner (`branding` bucket + `community_settings`) |
 | `DocumentsStep.tsx` | Setup step "Documents": the library the portal assistant answers from (see `modules/assistant/README.md`) |
@@ -62,12 +63,16 @@ These functions are also imported by `m00-dashboard` and `modules/home` to displ
 
 ## Role gating
 
-- **Admin / circle_lead / project_lead**: read + write
-- **All other roles**: read only
+- **Admin / circle_lead**: read + write (the page via `isCircleAdmin`; the database via the `blueprints` update policy, `20261117000000_blueprint_leads_edit.sql`)
+- **All other roles** (project leads included): read only
 
 ## AI scanning
 
 The blueprint integrates with `/api/scan` to scan uploaded documents and suggest answers. The API route calls MiniMax M3 (`lib/doc-scan.ts` runs the two-pass scan: evidence with page quotes, then answers per phase with confidence and sources).
+
+Sources: a PDF/.txt/.md file, pasted text, or a website address (`/api/site-text`, admins and circle leads only). Every source is saved to the library (`community_documents`, Setup › Documents) as shareable or sensitive; there is no "don't add it" choice.
+
+Existing answers are never overwritten by default. For a written answer that already exists, the review offers Keep current / Add to it (the default: new text goes after the old, unless the old already contains it) / Replace it. Scores and yes/no answers that already exist are kept unless Replace it is chosen.
 
 Full scans (and the Circles step's own scan) also ask for a `circles` array, following `INSTANCES.md` §6.2: standing groups only, each with a `source` quote; any without one is dropped. They are not saved as circles. They wait in the answers under `_circles_found` until an admin confirms them in the Circles step.
 

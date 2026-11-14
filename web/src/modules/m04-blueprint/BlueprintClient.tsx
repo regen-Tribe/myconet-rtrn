@@ -153,8 +153,8 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 
   const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null)
-  // Asked before every upload: shareable, sensitive, or not added to the assistant's library
-  const [docKind, setDocKind] = useState<DocKind | 'skip' | null>(null)
+  // Asked before every upload: every document goes into the library, shareable or sensitive
+  const [docKind, setDocKind] = useState<DocKind | null>(null)
   const [libraryStatus, setLibraryStatus] = useState<'' | 'saving' | 'saved' | string>('')
   const [finishingImages, setFinishingImages] = useState(false)
   // Elapsed time on the progress screen, so a long scan never looks stuck
@@ -176,6 +176,12 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [acceptedKeys, setAcceptedKeys] = useState<Record<string, boolean>>({})
   const [wasTruncated, setWasTruncated] = useState(false)
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({})
+  // For a question that already has an answer: true replaces it; otherwise new text is added after it
+  const [replaceKeys, setReplaceKeys] = useState<Record<string, boolean>>({})
+  // Website imports: the address behind each [Page n], so answers cite pages by path
+  const [siteUrl, setSiteUrl] = useState('')
+  const [fromSite, setFromSite] = useState(false)
+  const [pageUrls, setPageUrls] = useState<string[]>([])
 
   // Logo and banner from a PDF's images; runs alongside the text scan. Never fails the import.
   const findImages = async (file: File) => {
@@ -202,10 +208,10 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     setLookingForImages(false)
   }
 
-  const saveToLibrary = async (text: string, fileName: string, visibility: DocKind) => {
+  const saveToLibrary = async (text: string, fileName: string, visibility: DocKind, title = titleFromFile(fileName)) => {
     setLibraryStatus('saving')
     try {
-      await addToLibrary({ title: titleFromFile(fileName), fileName, visibility, content: text })
+      await addToLibrary({ title, fileName, visibility, content: text })
       setLibraryStatus('saved')
     } catch (e) {
       setLibraryStatus(`Couldn't add it to the library: ${(e as Error).message}`)
@@ -217,6 +223,8 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     setFileName(file.name)
     setPdfImages([])
     setLibraryStatus('')
+    setFromSite(false)
+    setPageUrls([])
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
     let text = ''
     try {
@@ -238,8 +246,38 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     setDocText(text)
     const images = isPdf && canSetBranding && !scope ? findImages(file) : null
     // Save to the assistant's library alongside the scan (never blocks or fails the import)
-    const library = docKind && docKind !== 'skip' ? saveToLibrary(text, file.name, docKind) : null
+    const library = docKind ? saveToLibrary(text, file.name, docKind) : null
     await handleScan(text, images, library)
+  }
+
+  // A website: the server reads the page and the most useful pages it links to
+  const handleSite = async () => {
+    if (!docKind || !siteUrl.trim()) return
+    setFileName(siteUrl.trim())
+    setPdfImages([])
+    setLibraryStatus('')
+    setFromSite(true)
+    setPageUrls([])
+    setStartedAt(Date.now())
+    setPdfProgress({ current: 0, total: 0 })
+    setStage('extracting')
+    let site: { site: string; title: string; pages: { url: string }[]; text: string }
+    try {
+      const res = await fetch('/api/site-text', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: siteUrl }) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`)
+      site = body
+    } catch (e) {
+      setErrorMsg(`Could not read the website: ${(e as Error).message}`)
+      setStage('error')
+      return
+    }
+    setFileName(site.site)
+    setPageUrls(site.pages.map(p => p.url))
+    setPdfProgress({ current: site.pages.length, total: site.pages.length })
+    setDocText(site.text)
+    const library = saveToLibrary(site.text, `${site.site} (website)`, docKind, site.title ? `${site.title} (website)` : `${site.site} (website)`)
+    await handleScan(site.text, null, library)
   }
 
   const handleScan = async (text: string = docText, images: Promise<void> | null = null, library: Promise<void> | null = null) => {
@@ -266,13 +304,18 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
       setGaps(scope?.circles ? [] : result.gaps)
       setFailedParts(result.failed)
       setWasTruncated(result.truncated)
-      // New answers start ticked unless the AI wasn't sure; existing answers are kept unless you choose the new one
+      // Answers start ticked unless the AI wasn't sure. Where there's already an answer, new
+      // text is added after it (never overwritten); a score or yes/no is kept unless you pick the new one
       const accepted: Record<string, boolean> = {}
-      Object.keys(result.values).forEach(k => {
-        const hasExisting = currentValues[k] != null && currentValues[k] !== ''
-        accepted[k] = !hasExisting && result.meta[k]?.confidence !== 'low'
+      Object.entries(result.values).forEach(([k, v]) => {
+        const existing = currentValues[k]
+        const hasExisting = existing != null && existing !== ''
+        const addable = typeof existing === 'string' && catalog.find(f => f.id === k)?.kind === 'text'
+          && !existing.includes(String(v).trim())
+        accepted[k] = result.meta[k]?.confidence !== 'low' && (!hasExisting || addable)
       })
       setAcceptedKeys(accepted)
+      setReplaceKeys({})
       setExpandedKeys({})
       // The review shows the images too, so wait for the image search if it's still going
       if (images) { setFinishingImages(true); await images }
@@ -291,7 +334,10 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const handleApply = async () => {
     if (!extracted) return
     const toApply: Values = {}
-    Object.entries(extracted).forEach(([k, v]) => { if (!k.startsWith('_') && k !== 'circles' && acceptedKeys[k]) toApply[k] = v })
+    Object.entries(extracted).forEach(([k, v]) => {
+      if (k.startsWith('_') || k === 'circles' || !acceptedKeys[k]) return
+      toApply[k] = canAddTo(k) && !replaceKeys[k] ? `${String(currentValues[k]).trimEnd()}\n\n${String(v).trim()}` : v
+    })
     // Found circles wait in the answers until an admin confirms them in the Circles step
     if (foundList.length) toApply[FOUND_CIRCLES_KEY] = foundList
     if (brandingCount) {
@@ -353,7 +399,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 6, fontSize: 11 }}>
         <span style={{ fontWeight: 700, color: colour, border: `1px solid ${colour}55`, borderRadius: 20, padding: '0 7px' }}>{m.confidence} confidence</span>
-        {m.pages.length > 0 && <span style={{ color: 'var(--ink-3)' }}>p. {m.pages.slice(0, 6).join(', ')}</span>}
+        {m.pages.length > 0 && <span style={{ color: 'var(--ink-3)' }}>{pageUrls.length ? m.pages.slice(0, 6).map(pageLabel).join(', ') : `p. ${m.pages.slice(0, 6).join(', ')}`}</span>}
         {m.why && <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>{m.why}</span>}
         {m.conflict && <span style={{ flexBasis: '100%', color: '#b45309' }}>⚠ {m.conflict}</span>}
       </div>
@@ -361,6 +407,11 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   }
 
   const fieldMeta = (id: string) => catalog.find(f => f.id === id) ?? { label: id, kind: 'text' as const, step: '', phase: '', help: '' }
+  // A written answer that already exists: new text can be added after it
+  const canAddTo = (id: string) => fieldMeta(id).kind === 'text' && typeof currentValues[id] === 'string' && currentValues[id] !== ''
+  const pageLabel = (n: number) => {
+    try { const u = new URL(pageUrls[n - 1]); return u.pathname === '/' ? 'home page' : u.pathname } catch { return `p. ${n}` }
+  }
 
   return (
     <div className="modal-bg" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -374,16 +425,29 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--ink-2)', marginTop: 8, fontStyle: 'italic' }}>
             {scope?.circles ? "Upload a charter, org chart or handbook and we'll look for the standing groups it describes. You confirm them before anything is saved."
-              : scope?.step ? "Upload a document and we'll pre-fill just this section." : "Have a vision deck, charter, or feasibility study? Drop it in and we'll pre-fill what we can."}
+              : scope?.step ? "Upload a document or give your website and we'll pre-fill just this section." : "Have a website, vision deck, charter, or feasibility study? Give us the link or drop it in and we'll pre-fill what we can. Answers you already have are kept: new ones are added to them."}
           </div>
         </div>
 
         {stage === 'upload' && (
           <div>
             <div style={{ marginBottom: 14 }}>
-              <DocumentKindPicker value={docKind} onChange={setDocKind} allowSkip />
+              <DocumentKindPicker value={docKind} onChange={setDocKind} />
             </div>
             <FileDropzone onFile={handleFile} fileName={fileName} disabled={!docKind} />
+            {!scope?.circles && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--ink-2)' }}>Or scan your website</div>
+                <form style={{ display: 'flex', gap: 8 }} onSubmit={e => { e.preventDefault(); handleSite() }}>
+                  <input className="input" type="url" inputMode="url" placeholder="https://your-community.org" value={siteUrl}
+                    onChange={e => setSiteUrl(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                  <button className="btn" type="submit" disabled={!docKind || !siteUrl.trim()}>Scan site →</button>
+                </form>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>
+                  We read the page and up to 7 pages it links to (about, mission, governance…), and add the text to the library.
+                </div>
+              </div>
+            )}
             <div style={{ marginTop: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--ink-2)' }}>Or paste document text</div>
               <textarea className="textarea" rows={8} placeholder="Paste your project charter, vision document, business plan, meeting notes…" value={docText} onChange={e => setDocText(e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
@@ -395,12 +459,12 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               )}
             </div>
             <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
-              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M3 reads the whole document and collects quotes for each Blueprint question, then writes each answer from all the quotes, with how sure it is and the pages it used. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Works with PDF, .txt and .md files; PDFs give page references.
+              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M3 reads the whole document and collects quotes for each Blueprint question, then writes each answer from all the quotes, with how sure it is and the pages it used. You review and accept what&rsquo;s good — nothing is applied without your sign-off, and answers you already have are added to, not replaced, unless you choose to. Works with websites and PDF, .txt and .md files; PDFs give page references. Every document is saved in the library (Setup › Documents).
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
               <button className="btn btn-primary" disabled={!docText.trim() || !docKind}
-                onClick={() => { setStartedAt(Date.now()); setLibraryStatus(''); handleScan(docText, null, docKind && docKind !== 'skip' ? saveToLibrary(docText, 'Pasted text.txt', docKind) : null) }}>
+                onClick={() => { setStartedAt(Date.now()); setLibraryStatus(''); setFromSite(false); setPageUrls([]); handleScan(docText, null, docKind ? saveToLibrary(docText, 'Pasted text.txt', docKind) : null) }}>
                 Scan with AI →
               </button>
             </div>
@@ -416,9 +480,9 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
           const rows: { status: Status; title: string; detail: string }[] = [
             {
               status: stage === 'extracting' ? 'active' : 'done',
-              title: fileName.toLowerCase().endsWith('.pdf') ? 'Reading the PDF' : 'Reading the document',
+              title: fromSite ? 'Reading the website' : fileName.toLowerCase().endsWith('.pdf') ? 'Reading the PDF' : 'Reading the document',
               detail: stage === 'extracting'
-                ? (pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
+                ? (fromSite ? 'Opening the site and the pages it links to…' : pdfProgress.total ? `Page ${pdfProgress.current} of ${pdfProgress.total}` : 'Opening the file…')
                 : `${docText.length.toLocaleString()} characters${pdfProgress.total ? ` from ${pdfProgress.total} pages` : ''}`,
             },
             {
@@ -565,7 +629,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                             background: accepted ? 'var(--accent-soft)' : 'var(--bg-2)',
                             border: `1px solid ${accepted ? 'var(--accent)' : 'var(--rule)'}`,
                             padding: '2px 8px', borderRadius: 20 }}>
-                            {accepted ? 'Use new' : 'Keep current'}
+                            {!accepted ? 'Keep current' : canAddTo(key) && !replaceKeys[key] ? 'Add to current' : 'Use new'}
                           </span>
                           <span style={{ fontSize: 12, color: 'var(--ink-4)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>▾</span>
                         </div>
@@ -586,14 +650,19 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => setAcceptedKeys(a => ({ ...a, [key]: false }))}
-                              style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)', border: `1.5px solid ${!accepted ? 'var(--ink)' : 'var(--rule)'}`, background: !accepted ? 'var(--ink)' : 'var(--surface)', color: !accepted ? 'var(--bg)' : 'var(--ink-3)', cursor: 'pointer' }}>
-                              Keep current
-                            </button>
-                            <button onClick={() => setAcceptedKeys(a => ({ ...a, [key]: true }))}
-                              style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)', border: `1.5px solid ${accepted ? 'var(--accent)' : 'var(--rule)'}`, background: accepted ? 'var(--accent)' : 'var(--surface)', color: accepted ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}>
-                              Use new answer
-                            </button>
+                            {(() => {
+                              const adding = accepted && canAddTo(key) && !replaceKeys[key]
+                              const replacing = accepted && !adding
+                              const choice = (on: boolean, strong: boolean) => ({ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)', cursor: 'pointer',
+                                border: `1.5px solid ${on ? (strong ? 'var(--accent)' : 'var(--ink)') : 'var(--rule)'}`, background: on ? (strong ? 'var(--accent)' : 'var(--ink)') : 'var(--surface)', color: on ? (strong ? '#fff' : 'var(--bg)') : 'var(--ink-3)' })
+                              return <>
+                                <button onClick={() => setAcceptedKeys(a => ({ ...a, [key]: false }))} style={choice(!accepted, false)}>Keep current</button>
+                                {canAddTo(key) && (
+                                  <button onClick={() => { setAcceptedKeys(a => ({ ...a, [key]: true })); setReplaceKeys(r => ({ ...r, [key]: false })) }} style={choice(adding, true)}>Add to it</button>
+                                )}
+                                <button onClick={() => { setAcceptedKeys(a => ({ ...a, [key]: true })); setReplaceKeys(r => ({ ...r, [key]: true })) }} style={choice(replacing, true)}>Replace it</button>
+                              </>
+                            })()}
                           </div>
                         </div>
                       )}
@@ -1777,10 +1846,13 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
   )
 
   // One debounced saver per blueprint; it creates its own client so it doesn't
-  // depend on a value that changes every render
+  // depend on a value that changes every render. Only admins and circle leads can
+  // save (RLS); a refused update returns no rows rather than an error.
+  const [saveFailed, setSaveFailed] = useState(false)
   const save = useMemo(
     () => debounce(async (vals: Values) => {
-      await createClient().from('blueprints').update({ answers: vals }).eq('id', blueprintId)
+      const { data, error } = await createClient().from('blueprints').update({ answers: vals }).eq('id', blueprintId).select('id')
+      setSaveFailed(!!error || !data?.length)
     }, 1800),
     [blueprintId],
   )
@@ -1997,6 +2069,12 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
 
         {/* Main content */}
         <main className={`main${mobileTab !== 'content' ? ' mobile-hidden' : ''}`}>
+          {saveFailed && (
+            <div role="alert" style={{ margin: '0 0 16px', padding: '10px 14px', borderRadius: 8, fontSize: 13,
+              background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.35)', color: '#b91c1c' }}>
+              Your changes aren&rsquo;t being saved. Only admins and circle leads can change the blueprint.
+            </div>
+          )}
           {current.kind === 'welcome' && (
             <WelcomeView onStart={() => jumpTo(D.phases[0].steps[0].id)}
               hasProgress={hasProgress} onJumpToDashboard={() => jumpTo('dashboard')}

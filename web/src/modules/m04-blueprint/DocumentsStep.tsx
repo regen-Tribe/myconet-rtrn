@@ -15,7 +15,7 @@ import { extractPdfText } from '@/modules/m04-blueprint/lib/pdf-text'
 export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: boolean; onPrev: () => void; onNext: () => void }) {
   const [docs, setDocs] = useState<LibraryEntry[] | null>(null)
   const [adding, setAdding] = useState(false)
-  const [kind, setKind] = useState<DocKind | 'skip' | null>(null)
+  const [kind, setKind] = useState<DocKind | null>(null)
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -34,7 +34,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
   }
 
   const upload = async (file: File | undefined) => {
-    if (!file || !kind || kind === 'skip') return
+    if (!file || !kind) return
     setError(''); setBusy(true)
     try {
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
