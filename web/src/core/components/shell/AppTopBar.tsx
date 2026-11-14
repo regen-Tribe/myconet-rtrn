@@ -32,9 +32,11 @@ function computeCompletion(
   return Math.round(checks.filter(Boolean).length / checks.length * 100)
 }
 
-export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
+export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopNavToggle, navCollapsed }: {
   onMobileNavToggle?: () => void
   mobileNavOpen?: boolean
+  onDesktopNavToggle?: () => void
+  navCollapsed?: boolean
 }) {
   const router = useRouter()
   const { logo_url } = useBranding()
@@ -143,7 +145,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
     { label: 'Dashboard', href: '/dashboard', icon: '⊞' },
     { label: 'Network', href: '/network', icon: '🌐' },
     { label: 'Circles', href: '/org', icon: '🧭' },
-    { label: 'Contributions', href: '/contributions', icon: '✦' },
+    { label: 'Achievements', href: '/contributions', icon: '✦' },
     { label: 'Governance', href: '/governance', icon: '☉' },
     { label: 'Calendar', href: '/events', icon: '🗓' },
     { label: 'Accommodation', href: '/stays', icon: '🏡' },
@@ -165,6 +167,25 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
       flexShrink: 0,
     }}>
     <div className="topbar-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', flex: 1, minWidth: 0 }}>
+      {/* Desktop sidebar collapse toggle (hidden on mobile via CSS) */}
+      <button
+        className="topbar-collapse-btn"
+        onClick={onDesktopNavToggle}
+        aria-label={navCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+        title={navCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        style={{
+          display: 'none', // shown via CSS on desktop
+          alignItems: 'center', justifyContent: 'center',
+          width: 34, height: 34, flexShrink: 0,
+          background: 'none', border: '1px solid var(--rule)', borderRadius: 8,
+          cursor: 'pointer', color: 'var(--ink-2)',
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: navCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+
       {/* Mobile modules toggle */}
       <button
         className="topbar-modules-btn"
@@ -192,7 +213,6 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
       <div className="topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         {logo_url ? (
           <Link href="/home" aria-label={`${COMMUNITY_NAME} home`} style={{ display: 'flex', flexShrink: 0 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="topbar-logo" src={logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 44, width: 'auto', maxWidth: 140, objectFit: 'contain', borderRadius: 8 }} />
           </Link>
         ) : (

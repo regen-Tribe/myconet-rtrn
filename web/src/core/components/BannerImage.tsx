@@ -15,7 +15,6 @@ export default function BannerImage({ isAdmin = false, height = 220, style }: {
 
   if (banner_url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img src={banner_url} alt={COMMUNITY_NAME} style={{
         display: 'block', width: '100%', height, objectFit: 'cover',
         borderRadius: 14, border: '1px solid var(--rule)', ...style,

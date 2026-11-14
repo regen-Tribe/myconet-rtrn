@@ -23,38 +23,53 @@ interface Application {
 interface Props {
   applications: Application[]
   questions: string[]
+  canDecide: boolean
 }
 
-export default function JoinAdminClient({ applications: initial, questions }: Props) {
+export default function JoinAdminClient({ applications: initial, questions, canDecide }: Props) {
   const supabase = createClient()
   const [apps, setApps] = useState(initial)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<{ id: string; message: string } | null>(null)
   const [notes, setNotes] = useState<Record<string, string>>(
     Object.fromEntries(initial.map(a => [a.id, a.admin_notes ?? '']))
   )
   const [filter, setFilter] = useState<'all' | 'pending' | 'reviewing' | 'accepted' | 'rejected'>('pending')
 
   async function updateApplication(appId: string, userId: string, action: 'accept' | 'reject' | 'review') {
+    if (!canDecide) return
     setLoading(appId)
+    setSaveError(null)
     const newStatus = action === 'accept' ? 'accepted' : action === 'reject' ? 'rejected' : 'reviewing'
-    const newRole = action === 'accept' ? 'joining' : null
 
-    const { error: appErr } = await supabase
+    const { data: updated, error: appErr } = await supabase
       .from('applications')
       .update({ status: newStatus, admin_notes: notes[appId] ?? null, updated_at: new Date().toISOString() })
       .eq('id', appId)
+      .select('id')
 
-    if (!appErr && newRole) {
-      await supabase
+    if (appErr || !updated?.length) {
+      setSaveError({ id: appId, message: 'The database did not change this application.' })
+      setLoading(null)
+      return
+    }
+
+    if (action === 'accept') {
+      const { data: promoted, error: roleErr } = await supabase
         .from('user_profiles')
-        .update({ role: newRole })
+        .update({ role: 'joining' })
         .eq('id', userId)
+        .select('id')
+      if (roleErr || !promoted?.length) {
+        setApps(prev => prev.map(a => a.id === appId ? { ...a, status: newStatus } : a))
+        setSaveError({ id: appId, message: 'The application was accepted. The role was not changed to joining.' })
+        setLoading(null)
+        return
+      }
     }
 
-    if (!appErr) {
-      setApps(prev => prev.map(a => a.id === appId ? { ...a, status: newStatus } : a))
-    }
+    setApps(prev => prev.map(a => a.id === appId ? { ...a, status: newStatus } : a))
     setLoading(null)
   }
 
@@ -181,7 +196,11 @@ export default function JoinAdminClient({ applications: initial, questions }: Pr
                       />
                     </div>
 
-                    {/* Action buttons */}
+                    {saveError?.id === app.id && (
+                      <p style={{ color: '#ef4444', fontSize: 13, margin: '0 0 12px' }}>{saveError.message}</p>
+                    )}
+
+                    {canDecide ? (
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {app.status !== 'accepted' && (
                         <button
@@ -222,12 +241,17 @@ export default function JoinAdminClient({ applications: initial, questions }: Pr
                           Decline
                         </button>
                       )}
-                      {app.status === 'accepted' && (
+                      {app.status === 'accepted' && saveError?.id !== app.id && (
                         <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600, padding: '8px 0' }}>
                           ✓ Accepted — user role set to joining
                         </span>
                       )}
                     </div>
+                    ) : (
+                      <p style={{ color: 'var(--ink-3)', fontSize: 13, margin: 0 }}>
+                        Only an admin can accept, decline, or mark an application reviewing.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

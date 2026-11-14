@@ -31,7 +31,8 @@ The wizard structure is derived from four research-backed frameworks. Each step 
 |------|---------|
 | `BlueprintClient.tsx` | Full wizard UI — pillar tabs, step fields, AI scan, scoring panels |
 | `BrandingStep.tsx` | Setup step "Look & feel": logo and banner image (`community_settings`, `branding` bucket). Admins only |
-| `lib/site-text.ts` | Reads a website for the import (`/api/site-text`): the page plus up to 7 same-site pages it links to, most useful first, as text with `[Page n]` markers. Public addresses only (no local names, IP literals or odd ports; redirects re-checked) |
+| `lib/site-text.ts` | Server side of the website import (`/api/site-text`): `startSite` reads the home page and lists the site's pages (its links plus robots.txt/sitemap.xml, following sitemap indexes); `readPages` reads a batch of up to 8 (Cloudflare limits fetches per request). Public addresses only (no local names, IP literals or odd ports; redirects re-checked) |
+| `lib/site-crawl.ts` | Browser side: keeps asking for batches, adding the links each finds, until the whole site is read (cap 300 pages or 1.2M characters, most useful pages first), with Stop here. Returns `[Page n]` text |
 | `lib/pdf-images.ts` | Pulls images out of an imported PDF and suggests a logo and banner (rules, not AI) |
 | `lib/branding-upload.ts` | Uploads/clears the logo or banner (`branding` bucket + `community_settings`) |
 | `DocumentsStep.tsx` | Setup step "Documents": the library the portal assistant answers from (see `modules/assistant/README.md`) |

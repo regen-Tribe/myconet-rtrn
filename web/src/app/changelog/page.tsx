@@ -3,6 +3,21 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.16.2',
+    date: '2026-11-13',
+    title: 'Layout fixes, Achievements, and safer decisions',
+    items: [
+      'Blueprint › Import from a website now reads the whole site, not just 8 pages: every page it lists or links to, up to 300, with a running count and a Stop here button.',
+      'Desktop: a new arrow in the top bar collapses the side menu for more room, and remembers your choice. (Thanks, Sonia.)',
+      'Phones: pages with two columns no longer get cut off at the edge; they stack into one column. The Ask button no longer covers the end of the page. (Thanks, Sonia.)',
+      'Profile photos: the Use photo button now looks clickable, and a new crop shows everywhere straight away, not only on the edit page. (Thanks, Sonia.)',
+      'Contributions is now called Achievements in the menu and search. (Thanks, Sonia.)',
+      'Join: only admins see Accept, Decline and Mark reviewing (they were the only ones who could use them), and the screen only changes when the decision is saved. (Thanks, Max.)',
+      'Governance: whoever makes a proposal can withdraw it while it’s open, but can’t mark it passed or rejected. (Thanks, Max.)',
+      'Agreements: new agreements always start as pending, and only admins and project leads can accept them. (Thanks, Max.)',
+    ],
+  },
+  {
     version: 'v4.16.1',
     date: '2026-11-13',
     title: 'MyCoNet in the phone top bar',

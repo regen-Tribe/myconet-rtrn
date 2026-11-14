@@ -89,7 +89,6 @@ export default function BrandingStep({ canEdit, onPrev, onNext }: {
         {/* Preview of the top bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', border: '1px solid var(--rule)', borderRadius: 8, background: 'var(--surface)' }}>
           {branding.logo_url
-            // eslint-disable-next-line @next/next/no-img-element
             ? <img src={branding.logo_url} alt={`${COMMUNITY_NAME} logo`} style={{ height: 44, width: 'auto', maxWidth: 140, objectFit: 'contain', borderRadius: 8 }} />
             : <span style={{ width: 26, height: 26, borderRadius: 7, background: 'radial-gradient(circle at 30% 30%, var(--accent), color-mix(in srgb, var(--accent) 60%, #000))' }} />}
           <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>MyCoNet</span>
@@ -105,7 +104,6 @@ export default function BrandingStep({ canEdit, onPrev, onNext }: {
           <div className="section-meta-row"><span className="section-meta">{branding.banner_url ? 'Added' : 'Not added yet'}</span></div>
         </div>
         {branding.banner_url
-          // eslint-disable-next-line @next/next/no-img-element
           ? <img src={branding.banner_url} alt={COMMUNITY_NAME} style={{ display: 'block', width: '100%', height: 200, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--rule)' }} />
           : <div style={{ height: 120, borderRadius: 10, border: '1.5px dashed var(--rule)', background: 'var(--bg-2)', display: 'grid', placeItems: 'center', fontSize: 13, color: 'var(--ink-3)' }}>No banner yet</div>}
         {picker('banner', 'banner')}
@@ -120,7 +118,6 @@ export default function BrandingStep({ canEdit, onPrev, onNext }: {
           The picture people see when the portal&rsquo;s link is shared on WhatsApp, Telegram, Slack, email or social media. Apps keep their own copy for a while, so a new picture can take a day or two to show everywhere.
         </p>
         {(branding.share_image_url ?? branding.banner_url)
-          // eslint-disable-next-line @next/next/no-img-element
           ? <img src={(branding.share_image_url ?? branding.banner_url)!} alt="" style={{ display: 'block', width: '100%', maxWidth: 480, aspectRatio: '1200 / 630', objectFit: 'cover', borderRadius: 10, border: '1px solid var(--rule)' }} />
           : <div style={{ maxWidth: 480, aspectRatio: '1200 / 630', borderRadius: 10, border: '1.5px dashed var(--rule)', background: 'var(--bg-2)', display: 'grid', placeItems: 'center', fontSize: 13, color: 'var(--ink-3)' }}>No preview image yet</div>}
         {picker('share_image', 'preview image')}

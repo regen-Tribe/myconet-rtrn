@@ -74,10 +74,12 @@ export function AvatarCropper({
 
   // ── Drag to pan ──────────────────────────────────────────────────────────
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null)
+  const [dragging, setDragging] = useState(false)
 
   const onPointerDown = (e: React.PointerEvent) => {
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
     drag.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y }
+    setDragging(true)
   }
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drag.current) return
@@ -88,7 +90,10 @@ export function AvatarCropper({
       }),
     )
   }
-  const endDrag = () => { drag.current = null }
+  const endDrag = () => {
+    drag.current = null
+    setDragging(false)
+  }
 
   // Wheel zooms the photo, not the page behind: React's onWheel is passive and
   // can't preventDefault, so this listens natively.
@@ -165,12 +170,11 @@ export function AvatarCropper({
               position: 'relative', width: FRAME, height: FRAME,
               borderRadius: '50%', overflow: 'hidden',
               background: 'var(--bg-2)', touchAction: 'none',
-              cursor: drag.current ? 'grabbing' : 'grab',
+              cursor: dragging ? 'grabbing' : 'grab',
               boxShadow: 'inset 0 0 0 1px var(--rule)',
             }}
           >
             {src && (
-              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 ref={imgRef}
                 src={src}
@@ -268,5 +272,5 @@ const btnGhost: React.CSSProperties = {
 const btnPrimary: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
   fontSize: 13, fontWeight: 700, padding: '8px 16px', borderRadius: 8,
-  border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer',
+  border: 'none', background: 'var(--accent-color)', color: '#fff', cursor: 'pointer',
 }

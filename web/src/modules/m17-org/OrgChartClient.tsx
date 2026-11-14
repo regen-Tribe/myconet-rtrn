@@ -11,7 +11,7 @@ import type { OrgMember, OrgPerson, OrgUnit } from './types'
 import { canEditUnit, canLeadCircle, MEMBER_SELECT, toMember } from './lib/org'
 import { UnitEditModal, type UnitDraft } from './UnitEditModal'
 
-function Chip({ id, name, username, note, isMe, accent }: {
+function Chip({ name, username, note, isMe, accent }: {
   id: string; name: string; username: string | null; note?: string | null; isMe: boolean; accent?: string
 }) {
   const color = accent ?? 'var(--ink-2)'

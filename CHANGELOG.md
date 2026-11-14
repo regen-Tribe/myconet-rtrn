@@ -5,6 +5,28 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.16.2 — 2026-11-13
+
+Community PRs brought into core (Max Sivry: protopia #28–#32; Sonia Wendorff: protopia #36, core #2, #3).
+
+- **Website import reads the whole site**: `/api/site-text` now has a start call (home + sitemap/links) and a
+  batch call (≤8 pages); `lib/site-crawl.ts` loops in the browser (cap 300 pages / 1.2M chars, Stop here).
+  Tested: regentribe.co 32 pages in 3s; findhorn.org 161 pages in 20s.
+- **Shell** (Sonia): desktop sidebar collapse (`nav-collapsed`, localStorage `navCollapsed`); the mobile ✕ no
+  longer leaks onto desktop; grid children get `min-width:0` and inline `1fr 1fr`/`1.4fr 1fr` grids stack
+  ≤640px; `<main>` reserves 84px for the assistant bubble; even 2×2 dashboard stats on tablets.
+- **Avatar** (Sonia): Use photo button uses `--accent-color`; `avatar_url` is saved with `?v=<timestamp>`.
+- **M08 label** (Sonia): "Achievements" in nav, search and breadcrumb (route and folder unchanged).
+- **Join** (Max): decision buttons admin-only (`canDecide`), matching the `applications` policy; UI changes
+  only when the update returns the row.
+- **Governance** (Max): `proposals_guard_status` trigger: status changes by admins, the proposer withdrawing an
+  open proposal, or non-API roles. Migration `20261117000100_proposal_status_admin_only.sql`.
+- **Agreements** (Max): insert must be `pending`; the owner's pending update gets a with check (stays pending).
+  Migration `20261117000200_agreements_insert_pending_only.sql`.
+- **Tooling** (Max): lint cleanup to 0 errors; `.github/workflows/lint.yml`, `npm run lint:changed`;
+  `skills-src/` → `.agents|.claude|.cursor/skills` via `scripts/sync-skills.mjs` (+ `skills.yml` check);
+  `verify` skill.
+
 ## v4.16.1 — 2026-11-13
 
 - Phone top bar (≤640px): "MyCoNet" is no longer hidden; it stacks above the community name and the

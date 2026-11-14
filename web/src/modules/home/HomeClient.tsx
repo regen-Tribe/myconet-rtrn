@@ -54,13 +54,6 @@ const CHECK_ICON = (
   </svg>
 )
 
-const GOV_LAYERS = [
-  { num: '01', name: 'Sociocracy (Circle Leads)', mark: '☉', desc: 'Circle Leads decide. Move forward if there are no principled objections from any Circle Lead.' },
-  { num: '02', name: 'Democracy (Majority)', mark: '☑', desc: 'Big shared choices that affect everyone. Open vote, simple majority, public results.' },
-  { num: '03', name: 'Meritocracy (Domain expert)', mark: '△', desc: 'Technical calls go to the person with skin in the game — soil tests, money, contracts.' },
-  { num: '04', name: 'AI-mediated facilitation', mark: '◇', desc: 'When things stall, the AI surfaces blockers, suggests reframes, and finds the next move.' },
-]
-
 const PHASE_COLORS = ['#22c55e', '#ca8a04', '#3b82f6', '#8b5cf6']
 
 function smoothScrollTo(targetId: string) {
@@ -220,7 +213,7 @@ export default function HomeClient({
   memberCount, members, communityValues,
   projects, activeProjectCount, deliverables,
   isLoggedIn, hasApplied, isFullMember,
-  role = 'explorer', applicationStatus, joiningRewardNew = false,
+  role = 'explorer',
   matchScores = {}, upcomingEvents = [], glance = [], previews = null,
 }: Props) {
   const name = firstName || (isLoggedIn ? 'there' : 'you')
@@ -814,10 +807,9 @@ export default function HomeClient({
               {phaseProgress.length > 0 ? (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 6, marginBottom: 16 }}>
-                    {phaseProgress.map((ph, i) => {
+                    {phaseProgress.map(ph => {
                       const isDone = ph.ratio >= 1
                       const isActive = !isDone && ph.ratio > 0
-                      const isFirst = i === 0
                       return (
                         <div key={ph.id} style={{
                           padding: '8px 10px', borderRadius: 7, textAlign: 'center',

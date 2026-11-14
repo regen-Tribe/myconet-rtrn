@@ -189,7 +189,7 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
       }}
     >
       {/* Mobile close row */}
-      <div className="mobile-nav-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div className="mobile-nav-header" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Modules</span>
         <button
           onClick={onClose}

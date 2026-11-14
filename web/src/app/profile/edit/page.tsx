@@ -209,8 +209,8 @@ function TagInput({ value, onChange, placeholder, suggestions = [] }: {
   )
 }
 
-function OceanSlider({ label, value, onChange, description, low, high }: {
-  label: string; value: number; onChange: (v: number) => void; description: string
+function OceanSlider({ label, value, onChange, low, high }: {
+  label: string; value: number; onChange: (v: number) => void; description?: string
   low: string; high: string
 }) {
   return (

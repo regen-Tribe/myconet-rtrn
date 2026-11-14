@@ -17,6 +17,11 @@ The full project context is in [`CLAUDE.md`](./CLAUDE.md); read it first.
 
 ## Checks before opening a PR
 
+The `verify` skill in `skills-src/verify` is this checklist. Skills are authored in
+`skills-src/` and copied into `.agents/skills`, `.claude/skills`, and `.cursor/skills`
+by the sync script. Edit the source, then sync.
+
 ```sh
 cd web && npm run lint && npx tsc --noEmit
+node scripts/sync-skills.mjs --check
 ```

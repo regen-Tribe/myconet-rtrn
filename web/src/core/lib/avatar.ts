@@ -25,12 +25,19 @@ export async function uploadAvatarBlob(
   if (upErr) throw upErr
 
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+  // The storage path is stable, so the public URL never changes between
+  // uploads — which means the browser and the Supabase CDN keep serving the
+  // previously cached image. Every avatar surface (nav bar, member cards,
+  // profiles) reads `avatar_url` straight from the DB, so we persist a
+  // *versioned* URL. The query string forces a fresh fetch everywhere the new
+  // crop should appear, not just on the page that did the upload.
+  const versionedUrl = `${publicUrl}?v=${Date.now()}`
   const { error: dbErr } = await supabase
     .from('user_profiles')
-    .update({ avatar_url: publicUrl })
+    .update({ avatar_url: versionedUrl })
     .eq('id', userId)
   if (dbErr) throw dbErr
 
-  // Cache-bust so the new photo shows immediately (same path = same URL).
-  return `${publicUrl}?t=${Date.now()}`
+  return versionedUrl
 }

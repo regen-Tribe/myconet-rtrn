@@ -1,7 +1,7 @@
 import { createClient } from '@/core/lib/supabase/server'
 import JoinClient from '@/modules/m05-join/JoinClient'
 import JoinAdminClient from '@/modules/m05-join/JoinAdminClient'
-import { isCircleAdmin } from '@/core/lib/roles'
+import { isAdmin, isCircleAdmin } from '@/core/lib/roles'
 
 export default async function JoinPage() {
   const supabase = await createClient()
@@ -31,7 +31,8 @@ export default async function JoinPage() {
     role = profile?.role ?? 'explorer'
   }
 
-  const isAdmin = isCircleAdmin(role)
+  const canReview = isCircleAdmin(role)
+  const canDecide = isAdmin(role)
 
   // Always fetch community data — the roadmap is shown to all users
   const { data: valuesData } = await supabase
@@ -90,13 +91,13 @@ export default async function JoinPage() {
 
   const isProfileComplete = !!(userProfile?.first_name && userProfile?.headline)
 
-  // For admin/circle_lead: also fetch applications to review
+  // Admins and circle leads can read applications. Only an admin can decide one.
   let adminApps: {
     id: string; user_id: string; status: string; answers: Record<string, string>;
     admin_notes: string | null; created_at: string; first_name: string | null; username: string | null;
   }[] = []
 
-  if (isAdmin) {
+  if (canReview) {
     const { data: apps } = await supabase
       .from('applications')
       .select('id, user_id, status, answers, admin_notes, created_at')
@@ -136,9 +137,9 @@ export default async function JoinPage() {
         hasContribution={hasContribution}
         hasOwnProject={hasOwnProject}
       />
-      {isAdmin && (
+      {canReview && (
         <div style={{ borderTop: '1px solid var(--rule)' }}>
-          <JoinAdminClient applications={adminApps} questions={questions} />
+          <JoinAdminClient applications={adminApps} questions={questions} canDecide={canDecide} />
         </div>
       )}
     </>

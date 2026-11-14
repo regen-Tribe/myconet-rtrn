@@ -1,0 +1,18 @@
+# Fails when a generated skill copy differs from skills-src.
+name: Skills
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generated skill copies match skills-src
+        run: node scripts/sync-skills.mjs --check

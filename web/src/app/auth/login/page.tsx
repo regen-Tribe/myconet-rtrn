@@ -103,7 +103,6 @@ export default function AuthPage() {
 
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="auth-logo-wrap">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             {logo_url ? <img src={logo_url} alt="" style={{ height: 36, width: 'auto', maxWidth: 120, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />
               : <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--ink)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>🌱</div>}
             <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>{COMMUNITY_NAME}</span>
