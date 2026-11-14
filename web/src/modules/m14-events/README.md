@@ -46,7 +46,7 @@ Migrations: `supabase/migrations/20261101_m14_events.sql`, `20261102_m14_event_t
 
 | Table | Access |
 |-------|--------|
-| `events` | Read: public events for everyone, all events for joining+. Insert: community = joining+, core and task = full member+. Update/delete: host, admin, or circle lead of the event's circle |
+| `events` | Read: public events for everyone, all events for joining+. Insert: community = joining+, core and task = full member+. Update/delete: host, admin, or circle lead of the event's circle. Times only: anyone signed in, on any event they can see, via `event_set_times()` (sets `times_set_by`/`times_set_at`) |
 | `calendar_feeds` | Linked calendars (`url` may be a secret link; `rules` sort events by title into a kind and category). Admins only |
 | `event_rsvps` | One row per (event, user), status `going`/`maybe`. Signed-in users read; each user writes only their own |
 
@@ -65,5 +65,7 @@ Policies use `private.my_role()` / `private.my_lead_circles()` (security definer
 - Linked calendars: the next 90 days are kept in sync; past occurrences stay. Sync runs after someone
   opens `/events` and the last sync is over an hour old (no cron), or on "Sync now". All-day dates are
   stored at noon UTC so they land on the same day everywhere. Feed events can't be edited here (the
-  next sync would undo it): change them in the source calendar.
+  next sync would undo it): change them in the source calendar. The exception is the time: "Change time"
+  (anyone signed in) sets `times_set_by`, and `calendar_feed_apply()` then keeps that event's times
+  (migration `20261118000000_event_times_everyone.sql`).
 - Not yet: recurring events made in MyCoNet itself, .ics export, an events section on the proposal cards in M09.

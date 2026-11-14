@@ -286,3 +286,44 @@ export async function scanDocument({ docText, fields, current, wantCircles, onPr
     truncated,
   }
 }
+
+const MERGE_GROUP = 12
+
+export interface MergeItem { id: string; label: string; current: string; proposed: string }
+
+/**
+ * For questions that already had an answer: asks the AI to write one answer that
+ * combines what was there with what the import found, instead of stacking the two.
+ * Returns the combined text by field id; a group that fails is left out (the review
+ * then falls back to adding the new text after the old).
+ */
+export async function mergeAnswers(items: MergeItem[], onProgress?: (done: number, total: number) => void): Promise<Record<string, string>> {
+  const groups: MergeItem[][] = []
+  for (let i = 0; i < items.length; i += MERGE_GROUP) groups.push(items.slice(i, i + MERGE_GROUP))
+  let done = 0
+  onProgress?.(0, items.length)
+  const results = await inBatches(groups, async group => {
+    const prompt = `You are helping a community keep its planning Blueprint up to date. Each question below has the answer the community already wrote ("current") and a new answer drawn from one of their documents or their website ("proposed").
+
+For each question, write ONE answer that combines them in the best way:
+- Keep every concrete fact from both (names, numbers, places, dates, decisions). Say each thing once.
+- Where they disagree, prefer the current answer's facts (the community wrote it) unless the proposed one is clearly more specific or more recent; you may mention both briefly if it matters.
+- Write in the community's own voice ("we"), plain and clear, as one flowing answer, not two pasted together. Keep any list or structure the current answer uses.
+- Don't invent anything that isn't in either answer. Keep it about as long as the longer of the two, longer only when both add different facts.
+
+Questions:
+${JSON.stringify(group.map(g => ({ id: g.id, question: g.label, current: g.current, proposed: g.proposed })), null, 1)}
+
+Reply with JSON only, one key per id: {"<id>": "<combined answer>"}`
+    return callAI(prompt, 8000, 'full')
+  }, () => { done = Math.min(items.length, done + MERGE_GROUP); onProgress?.(done, items.length) })
+  const out: Record<string, string> = {}
+  results.forEach((r, gi) => {
+    if (!r) return
+    for (const item of groups[gi]) {
+      const v = r[item.id]
+      if (typeof v === 'string' && v.trim()) out[item.id] = v.trim()
+    }
+  })
+  return out
+}
