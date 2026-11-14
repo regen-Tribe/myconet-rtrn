@@ -733,6 +733,13 @@ export default function ProfileWizard() {
               </div>
               <div className="space-y-4">
                 <Label className="text-base font-semibold">OCEAN / Big Five Personality</Label>
+                <p className="text-sm text-muted-foreground">
+                  Not sure where you sit? Take the free Big Five test at{' '}
+                  <a href="https://bigfivepersonality.me/" target="_blank" rel="noopener noreferrer" className="font-medium text-foreground underline underline-offset-2">
+                    bigfivepersonality.me
+                  </a>
+                  , then set each slider to match your results.
+                </p>
                 <OceanSlider label="Openness" value={form.ocean.openness}
                   onChange={v => update('ocean', { ...form.ocean, openness: v })}
                   description="Curiosity, creativity, and openness to new experiences"

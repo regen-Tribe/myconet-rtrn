@@ -5,6 +5,37 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.17.6 — 2026-11-14
+
+- Reverts v4.17.5: the category checkbox row above the calendar is back.
+- Event form: Category is a select of `DAILY_CATEGORIES` (plus the event's own old category when editing), not free text,
+  so members can't create new categories. Linked-calendar rules can still set categories.
+
+## v4.17.5 — 2026-11-14
+
+- Events: the category checkbox row above the calendar is removed (adding an event category no longer adds a filter there).
+  Categories still colour events and appear in the legend.
+
+## v4.17.4 — 2026-11-14
+
+- Profile › Edit step 3: the OCEAN / Big Five section links to https://bigfivepersonality.me/ (like the Myers-Briggs link).
+
+## v4.17.3 — 2026-11-14
+
+- The website crawl's first request (home page + sitemap) times out after 60s with a clear message. A JavaScript-only
+  site (e.g. rtrn-chat.vercel.app, a React app) has no server-side text and now fails fast with "no readable text".
+
+## v4.17.2 — 2026-11-14
+
+- Website crawl (`m04-blueprint/lib/site-crawl.ts`): caps addresses tried (450) and time (5 minutes) as well
+  as pages read, and times out a batch after 45s. Failed addresses used not to count, so a large sitemap of
+  dead or non-HTML links kept an RTRN scan going for 72 minutes. Progress shows pages read and tried.
+  Tested: ic.org stops at 121 pages in 62s (text cap).
+
+## v4.17.1 — 2026-11-14
+
+- Event detail: "🕒 Change time" is an outlined button instead of a small text link.
+
 ## v4.17.0 — 2026-11-14
 
 - **MyCoNet → Google Calendar**: `m14-events/lib/google-calendar.ts` (service-account JWT with WebCrypto;

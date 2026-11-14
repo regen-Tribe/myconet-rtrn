@@ -3,6 +3,49 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.17.6',
+    date: '2026-11-14',
+    title: 'Event categories from a set list',
+    items: [
+      'The category checkboxes are back above the calendar (undoing v4.17.5).',
+      'When you post or edit an event, the category is now picked from a list (Food, Movement, Focus hours) instead of typed, so new categories can’t be added by accident.',
+    ],
+  },
+  {
+    version: 'v4.17.5',
+    date: '2026-11-14',
+    title: 'Tidier calendar filters',
+    items: [
+      'Event categories no longer add their own row of checkboxes above the calendar. The top shows just the kinds of events; categories still show as coloured dots on events and in the legend.',
+    ],
+  },
+  {
+    version: 'v4.17.4',
+    date: '2026-11-14',
+    title: 'Find your Big Five',
+    items: [
+      'Profile › Personality now invites you to take the free Big Five test at bigfivepersonality.me, then set the OCEAN sliders to match.',
+    ],
+  },
+  {
+    version: 'v4.17.3',
+    date: '2026-11-14',
+    title: 'Website scans stop on time',
+    items: [
+      'A website scan now always stops by itself within about 5 minutes, even on a big site full of links that don’t load, and gives up after a minute if the site doesn’t answer. Before, it could keep going for over an hour.',
+      'Sites built only with JavaScript (the text appears only after the page runs) have nothing to read: the scan now says so straight away. Upload a document for those.',
+      'While it reads, it shows how many pages it read and how many it tried.',
+    ],
+  },
+  {
+    version: 'v4.17.1',
+    date: '2026-11-14',
+    title: 'Easier to find: Change time',
+    items: [
+      'Change time is now a clear button with a clock, next to the event’s date.',
+    ],
+  },
+  {
     version: 'v4.17.0',
     date: '2026-11-14',
     title: 'Changes go to Google Calendar',

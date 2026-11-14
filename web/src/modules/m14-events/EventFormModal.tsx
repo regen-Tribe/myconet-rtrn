@@ -177,8 +177,11 @@ export function EventFormModal({
         {(kind === 'daily' || category) && (
           <div>
             <label style={labelStyle} htmlFor="ev-category">Category <span style={{ fontWeight: 400, color: 'var(--ink-4)' }}>(optional)</span></label>
-            <input id="ev-category" list="ev-categories" value={category} maxLength={40} onChange={e => setCategory(e.target.value)} style={inputStyle} placeholder="Food, Movement, Focus hours…" />
-            <datalist id="ev-categories">{DAILY_CATEGORIES.map(c => <option key={c} value={c} />)}</datalist>
+            {/* A fixed list: people pick a category, they don't add new ones (an old one on an event stays selectable) */}
+            <select id="ev-category" value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
+              <option value="">No category</option>
+              {[...DAILY_CATEGORIES, ...(existing?.category && !DAILY_CATEGORIES.includes(existing.category) ? [existing.category] : [])].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
         )}
 
