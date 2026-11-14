@@ -5,6 +5,10 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.17.1 — 2026-11-14
+
+- Event detail: "🕒 Change time" is an outlined button instead of a small text link.
+
 ## v4.17.0 — 2026-11-14
 
 - **MyCoNet → Google Calendar**: `m14-events/lib/google-calendar.ts` (service-account JWT with WebCrypto;
