@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CalendarEvent, EventRsvp, RsvpStatus } from './types'
-import { fmtEventWhen } from './lib/calendar'
+import { fmtEventWhen, toLocalInput } from './lib/calendar'
 import { KIND_META } from './lib/permissions'
 import { categoryColor, eventColor } from './CalendarViews'
 import { ModalShell } from '@/core/components/ModalShell'
@@ -36,6 +36,7 @@ function PeopleChips({ people }: { people: EventRsvp[] }) {
 
 export function EventDetailModal({
   event, rsvps, userId, canEdit, canAddNotes, canComment, isAdmin, onClose, onRsvp, onEdit, onDelete, onSaveNotes,
+  canChangeTime = false, onSaveTimes,
 }: {
   event: CalendarEvent
   rsvps: EventRsvp[]
@@ -48,6 +49,9 @@ export function EventDetailModal({
   onClose: () => void
   onRsvp: (status: RsvpStatus | null) => Promise<void>
   onEdit: () => void
+  /** Anyone signed in can change when an event starts and ends (only the times) */
+  canChangeTime?: boolean
+  onSaveTimes?: (startsAt: string, endsAt: string | null) => Promise<string | null>
   onDelete: () => Promise<void>
   /** Returns an error message, or null when saved */
   onSaveNotes: (notes: string) => Promise<string | null>
@@ -57,6 +61,9 @@ export function EventDetailModal({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [notesDraft, setNotesDraft] = useState<string | null>(null)
   const [notesError, setNotesError] = useState('')
+  // "Change time": datetime-local values (date only for all-day events)
+  const [timeDraft, setTimeDraft] = useState<{ start: string; end: string } | null>(null)
+  const [timeError, setTimeError] = useState('')
   const color = eventColor(event)
   const kindMeta = KIND_META[event.kind]
   const going = rsvps.filter(r => r.status === 'going')
@@ -77,6 +84,27 @@ export function EventDetailModal({
     setBusy(false)
     if (err) setNotesError(err)
     else { setNotesDraft(null); setNotesError('') }
+  }
+
+  function openTimeEditor() {
+    const cut = (v: string) => (event.all_day ? v.slice(0, 10) : v)
+    setTimeDraft({ start: cut(toLocalInput(event.starts_at)), end: cut(toLocalInput(event.ends_at)) })
+    setTimeError('')
+  }
+
+  async function saveTimes() {
+    if (!timeDraft || !onSaveTimes) return
+    // Times are in the viewer's own time zone; all-day dates are stored at noon UTC, like synced ones
+    const toIso = (v: string) => (v ? new Date(event.all_day ? `${v}T12:00:00Z` : v).toISOString() : null)
+    const start = toIso(timeDraft.start)
+    const end = toIso(timeDraft.end)
+    if (!start) { setTimeError('Pick a start.'); return }
+    if (end && end < start) { setTimeError('The end can’t be before the start.'); return }
+    setBusy(true)
+    const err = await onSaveTimes(start, end)
+    setBusy(false)
+    if (err) setTimeError(err)
+    else setTimeDraft(null)
   }
 
   async function remove() {
@@ -126,7 +154,44 @@ export function EventDetailModal({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, color: 'var(--ink-2)' }}>
-          <div>🗓 {fmtEventWhen(event)}</div>
+          {timeDraft ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 'var(--radius)', background: 'var(--bg-2)' }}>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 12, fontWeight: 600, color: 'var(--ink-3)' }}>
+                  Starts
+                  <input type={event.all_day ? 'date' : 'datetime-local'} value={timeDraft.start}
+                    onChange={e => setTimeDraft(d => d && { ...d, start: e.target.value })}
+                    style={{ fontSize: 14, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }} />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 12, fontWeight: 600, color: 'var(--ink-3)' }}>
+                  Ends (optional)
+                  <input type={event.all_day ? 'date' : 'datetime-local'} value={timeDraft.end}
+                    onChange={e => setTimeDraft(d => d && { ...d, end: e.target.value })}
+                    style={{ fontSize: 14, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }} />
+                </label>
+              </div>
+              {event.feed_id && (
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>This event is from a linked calendar. The new time stays here; the calendar itself isn&rsquo;t changed.</div>
+              )}
+              {timeError && <div role="alert" style={{ fontSize: 12, color: '#dc2626' }}>{timeError}</div>}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setTimeDraft(null)} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveTimes} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 'var(--radius)', border: 'none', background: 'var(--m14)', color: '#fff', cursor: 'pointer' }}>{busy ? 'Saving…' : 'Save time'}</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+              <span>🗓 {fmtEventWhen(event)}</span>
+              {canChangeTime && onSaveTimes && (
+                <button onClick={openTimeEditor} style={{ fontSize: 12, fontWeight: 600, padding: 0, border: 'none', background: 'none', color: 'var(--m14)', cursor: 'pointer' }}>Change time</button>
+              )}
+            </div>
+          )}
+          {event.times_set_at && !timeDraft && (
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+              Time changed by {event.times_author?.first_name ?? event.times_author?.username ?? 'a member'} on {new Date(event.times_set_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </div>
+          )}
           {event.location && <div style={{ overflowWrap: 'anywhere' }}>📍 {event.location}</div>}
           {event.online_url && (
             <div style={{ overflowWrap: 'anywhere' }}>

@@ -163,6 +163,14 @@ export default function EventsClient({
     return null
   }
 
+  async function saveTimes(eventId: string, startsAt: string, endsAt: string | null): Promise<string | null> {
+    const { error } = await supabase.rpc('event_set_times', { p_event_id: eventId, p_starts_at: startsAt, p_ends_at: endsAt })
+    if (error) return error.code === '42501' ? 'Sign in to change event times.' : error.message
+    const { data } = await supabase.from('events').select(EVENT_SELECT).eq('id', eventId).single()
+    if (data) { const saved = toEvent(data); setEvents(list => list.map(e => (e.id === saved.id ? saved : e))) }
+    return null
+  }
+
   async function deleteEvent(eventId: string) {
     const { data, error } = await supabase.from('events').delete().eq('id', eventId).select('id')
     if (error || !data?.length) {
@@ -347,6 +355,8 @@ export default function EventsClient({
           canComment={!!userId && isFullMember(role)}
           isAdmin={role === 'admin'}
           onSaveNotes={notes => saveNotes(openEvent.id, notes)}
+          canChangeTime={!!userId}
+          onSaveTimes={(start, end) => saveTimes(openEvent.id, start, end)}
           onClose={() => setOpenId(null)}
           onRsvp={status => rsvp(openEvent.id, status)}
           onEdit={() => setForm({ existing: openEvent, draft: {} })}

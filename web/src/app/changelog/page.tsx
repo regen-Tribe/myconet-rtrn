@@ -3,6 +3,31 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.16.5',
+    date: '2026-11-14',
+    title: 'Blueprint confirms imported answers',
+    items: [
+      'When you apply answers from an import, the Blueprint saves them straight away and confirms it: “✓ Blueprint updated: 24 answers saved.” If they can’t be saved, it says so.',
+    ],
+  },
+  {
+    version: 'v4.16.4',
+    date: '2026-11-14',
+    title: 'Anyone can change an event’s time',
+    items: [
+      'Everyone signed in can now change when an event starts and ends: open the event and tap Change time. Only the time; the rest stays with the host.',
+      'This works on events from a linked calendar too, and the next sync won’t change the time back. The event shows who changed the time and when.',
+    ],
+  },
+  {
+    version: 'v4.16.3',
+    date: '2026-11-13',
+    title: 'Imports combine answers',
+    items: [
+      'When an import finds something for a question you’ve already answered, the AI now writes one answer that combines both, keeping every fact once, instead of adding the new text after yours. You see the combined answer before applying, and can still keep yours or replace it.',
+    ],
+  },
+  {
     version: 'v4.16.2',
     date: '2026-11-13',
     title: 'Layout fixes, Achievements, and safer decisions',

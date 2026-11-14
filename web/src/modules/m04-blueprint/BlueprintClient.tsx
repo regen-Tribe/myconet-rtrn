@@ -13,7 +13,7 @@ import BrandingStep from '@/modules/m04-blueprint/BrandingStep'
 import { useBranding } from '@/core/components/BrandingProvider'
 import { useRouter } from 'next/navigation'
 import { aiPickBranding, extractPdfImages, releasePdfImages, suggestBranding, type PdfImage } from '@/modules/m04-blueprint/lib/pdf-images'
-import { scanDocument, type AnswerMeta, type ScanProgress } from '@/modules/m04-blueprint/lib/doc-scan'
+import { mergeAnswers, scanDocument, type AnswerMeta, type ScanProgress } from '@/modules/m04-blueprint/lib/doc-scan'
 import { extractPdfText } from '@/modules/m04-blueprint/lib/pdf-text'
 import DocumentsStep from '@/modules/m04-blueprint/DocumentsStep'
 import DocumentKindPicker from '@/modules/assistant/DocumentKindPicker'
@@ -177,8 +177,10 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   const [acceptedKeys, setAcceptedKeys] = useState<Record<string, boolean>>({})
   const [wasTruncated, setWasTruncated] = useState(false)
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({})
-  // For a question that already has an answer: true replaces it; otherwise new text is added after it
+  // For a question that already has an answer: true replaces it; otherwise the AI's combined answer is used
   const [replaceKeys, setReplaceKeys] = useState<Record<string, boolean>>({})
+  const [merged, setMerged] = useState<Record<string, string>>({})
+  const [mergeProgress, setMergeProgress] = useState<{ done: number; total: number } | null>(null)
   // Website imports: the address behind each [Page n], so answers cite pages by path
   const [siteUrl, setSiteUrl] = useState('')
   const [fromSite, setFromSite] = useState(false)
@@ -289,6 +291,8 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 
     const catalog = buildFieldCatalog(scope)
     setScanProgress(null)
+    setMergeProgress(null)
+    setMerged({})
     setFinishingImages(false)
     setStartedAt(t => t ?? Date.now())
     try {
@@ -307,18 +311,26 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
       setGaps(scope?.circles ? [] : result.gaps)
       setFailedParts(result.failed)
       setWasTruncated(result.truncated)
-      // Answers start ticked unless the AI wasn't sure. Where there's already an answer, new
-      // text is added after it (never overwritten); a score or yes/no is kept unless you pick the new one
+      // Answers start ticked unless the AI wasn't sure. Where there's already a written answer,
+      // the AI combines the two (never overwritten); a score or yes/no is kept unless you pick the new one
       const accepted: Record<string, boolean> = {}
+      const toMerge: { id: string; label: string; current: string; proposed: string }[] = []
       Object.entries(result.values).forEach(([k, v]) => {
         const existing = currentValues[k]
         const hasExisting = existing != null && existing !== ''
-        const addable = typeof existing === 'string' && catalog.find(f => f.id === k)?.kind === 'text'
-          && !existing.includes(String(v).trim())
-        accepted[k] = result.meta[k]?.confidence !== 'low' && (!hasExisting || addable)
+        const field = catalog.find(f => f.id === k)
+        const combinable = typeof existing === 'string' && field?.kind === 'text' && !existing.includes(String(v).trim())
+        if (hasExisting && combinable) toMerge.push({ id: k, label: field.label, current: existing, proposed: String(v) })
+        accepted[k] = result.meta[k]?.confidence !== 'low' && (!hasExisting || combinable)
       })
       setAcceptedKeys(accepted)
       setReplaceKeys({})
+      if (toMerge.length) {
+        setMergeProgress({ done: 0, total: toMerge.length })
+        // If combining fails, Apply falls back to adding the new text after the old
+        try { setMerged(await mergeAnswers(toMerge, (done, total) => setMergeProgress({ done, total }))) } catch { /* fallback */ }
+        setMergeProgress({ done: toMerge.length, total: toMerge.length })
+      }
       setExpandedKeys({})
       // The review shows the images too, so wait for the image search if it's still going
       if (images) { setFinishingImages(true); await images }
@@ -339,7 +351,9 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
     const toApply: Values = {}
     Object.entries(extracted).forEach(([k, v]) => {
       if (k.startsWith('_') || k === 'circles' || !acceptedKeys[k]) return
-      toApply[k] = canAddTo(k) && !replaceKeys[k] ? `${String(currentValues[k]).trimEnd()}\n\n${String(v).trim()}` : v
+      toApply[k] = canAddTo(k) && !replaceKeys[k]
+        ? merged[k] ?? `${String(currentValues[k]).trimEnd()}\n\n${String(v).trim()}`
+        : v
     })
     // Found circles wait in the answers until an admin confirms them in the Circles step
     if (foundList.length) toApply[FOUND_CIRCLES_KEY] = foundList
@@ -409,7 +423,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
   }
 
   const fieldMeta = (id: string) => catalog.find(f => f.id === id) ?? { label: id, kind: 'text' as const, step: '', phase: '', help: '' }
-  // A written answer that already exists: new text can be added after it
+  // A written answer that already exists: it can be combined with the new one
   const canAddTo = (id: string) => fieldMeta(id).kind === 'text' && typeof currentValues[id] === 'string' && currentValues[id] !== ''
   const pageLabel = (n: number) => {
     try { const u = new URL(pageUrls[n - 1]); return u.pathname === '/' ? 'home page' : u.pathname } catch { return `p. ${n}` }
@@ -427,7 +441,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--ink-2)', marginTop: 8, fontStyle: 'italic' }}>
             {scope?.circles ? "Upload a charter, org chart or handbook and we'll look for the standing groups it describes. You confirm them before anything is saved."
-              : scope?.step ? "Upload a document or give your website and we'll pre-fill just this section." : "Have a website, vision deck, charter, or feasibility study? Give us the link or drop it in and we'll pre-fill what we can. Answers you already have are kept: new ones are added to them."}
+              : scope?.step ? "Upload a document or give your website and we'll pre-fill just this section." : "Have a website, vision deck, charter, or feasibility study? Give us the link or drop it in and we'll pre-fill what we can. Answers you already have are kept: the AI combines them with what it finds."}
           </div>
         </div>
 
@@ -461,7 +475,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               )}
             </div>
             <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
-              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M3 reads the whole document and collects quotes for each Blueprint question, then writes each answer from all the quotes, with how sure it is and the pages it used. You review and accept what&rsquo;s good — nothing is applied without your sign-off, and answers you already have are added to, not replaced, unless you choose to. Works with websites and PDF, .txt and .md files; PDFs give page references. Every document is saved in the library (Setup › Documents).
+              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M3 reads the whole document and collects quotes for each Blueprint question, then writes each answer from all the quotes, with how sure it is and the pages it used. You review and accept what&rsquo;s good — nothing is applied without your sign-off, and where you already have an answer the AI writes one answer combining both, unless you choose otherwise. Works with websites and PDF, .txt and .md files; PDFs give page references. Every document is saved in the library (Setup › Documents).
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
@@ -503,6 +517,11 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
             title: `Adding it to the library (${docKind === 'leads' ? 'sensitive' : 'shareable'})`,
             detail: libraryStatus === 'saving' ? 'So the portal assistant can answer questions from it'
               : libraryStatus === 'saved' ? 'Added: Ask the assistant about it any time' : libraryStatus,
+          })
+          if (mergeProgress) rows.push({
+            status: mergeProgress.done < mergeProgress.total ? 'active' : 'done',
+            title: 'Combining with the answers you already have',
+            detail: `${mergeProgress.done} of ${mergeProgress.total} questions: one answer from both, nothing lost`,
           })
           if (lookingForImages || finishingImages) rows.push({
             status: lookingForImages ? 'active' : 'done',
@@ -639,7 +658,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                             background: accepted ? 'var(--accent-soft)' : 'var(--bg-2)',
                             border: `1px solid ${accepted ? 'var(--accent)' : 'var(--rule)'}`,
                             padding: '2px 8px', borderRadius: 20 }}>
-                            {!accepted ? 'Keep current' : canAddTo(key) && !replaceKeys[key] ? 'Add to current' : 'Use new'}
+                            {!accepted ? 'Keep current' : canAddTo(key) && !replaceKeys[key] ? 'Combine' : 'Use new'}
                           </span>
                           <span style={{ fontSize: 12, color: 'var(--ink-4)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>▾</span>
                         </div>
@@ -659,6 +678,16 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                               {answerInfo(key)}
                             </div>
                           </div>
+                          {canAddTo(key) && (
+                            <div style={{ background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '10px 12px', marginBottom: 12 }}>
+                              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>
+                                {merged[key] ? 'Combined by AI' : 'Combined (new text added after yours)'}
+                              </div>
+                              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                                {merged[key] ?? `${String(existingVal).trimEnd()}\n\n${String(val).trim()}`}
+                              </div>
+                            </div>
+                          )}
                           <div style={{ display: 'flex', gap: 8 }}>
                             {(() => {
                               const adding = accepted && canAddTo(key) && !replaceKeys[key]
@@ -668,7 +697,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                               return <>
                                 <button onClick={() => setAcceptedKeys(a => ({ ...a, [key]: false }))} style={choice(!accepted, false)}>Keep current</button>
                                 {canAddTo(key) && (
-                                  <button onClick={() => { setAcceptedKeys(a => ({ ...a, [key]: true })); setReplaceKeys(r => ({ ...r, [key]: false })) }} style={choice(adding, true)}>Add to it</button>
+                                  <button onClick={() => { setAcceptedKeys(a => ({ ...a, [key]: true })); setReplaceKeys(r => ({ ...r, [key]: false })) }} style={choice(adding, true)}>Combine</button>
                                 )}
                                 <button onClick={() => { setAcceptedKeys(a => ({ ...a, [key]: true })); setReplaceKeys(r => ({ ...r, [key]: true })) }} style={choice(replacing, true)}>Replace it</button>
                               </>
@@ -1871,6 +1900,22 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
     if (!readOnly) save(values)
   }, [values, save, readOnly])
 
+  // Applying an import saves straight away (not after the autosave pause) and says so
+  const [applied, setApplied] = useState<{ count: number; circles: boolean; status: 'saving' | 'saved' | 'failed' } | null>(null)
+  const applyImport = async (extracted: Values) => {
+    const count = Object.keys(extracted).filter(k => k !== FOUND_CIRCLES_KEY).length
+    const circles = FOUND_CIRCLES_KEY in extracted
+    if (!count && !circles) return
+    const next = { ...values, ...extracted }
+    setValues(next)
+    setApplied({ count, circles, status: 'saving' })
+    const { data, error } = await createClient().from('blueprints').update({ answers: next }).eq('id', blueprintId).select('id')
+    const ok = !error && !!data?.length
+    setSaveFailed(!ok)
+    setApplied({ count, circles, status: ok ? 'saved' : 'failed' })
+    if (ok) setTimeout(() => setApplied(a => (a?.status === 'saved' ? null : a)), 7000)
+  }
+
   const idx = flat.findIndex(s => s.id === currentId)
   const current = flat[idx] ?? flat[0]
 
@@ -2079,6 +2124,18 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
 
         {/* Main content */}
         <main className={`main${mobileTab !== 'content' ? ' mobile-hidden' : ''}`}>
+          {applied && (
+            <div role="status" style={{ position: 'fixed', left: '50%', bottom: 96, transform: 'translateX(-50%)', zIndex: 300, maxWidth: 'calc(100vw - 32px)',
+              display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, fontSize: 14, fontWeight: 600, boxShadow: '0 6px 24px rgba(0,0,0,.18)',
+              background: applied.status === 'failed' ? '#b91c1c' : applied.status === 'saved' ? '#15803d' : 'var(--ink)', color: '#fff' }}>
+              <span>
+                {applied.status === 'saving' ? `Saving ${applied.count} answer${applied.count === 1 ? '' : 's'}…`
+                  : applied.status === 'failed' ? 'The answers couldn’t be saved. Only admins and circle leads can change the Blueprint.'
+                  : `✓ Blueprint updated: ${applied.count} answer${applied.count === 1 ? '' : 's'} saved${applied.circles ? ', and the circles found are waiting in the Circles step' : ''}.`}
+              </span>
+              <button onClick={() => setApplied(null)} aria-label="Dismiss" style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', padding: 0 }}>×</button>
+            </div>
+          )}
           {saveFailed && (
             <div role="alert" style={{ margin: '0 0 16px', padding: '10px 14px', borderRadius: 8, fontSize: 13,
               background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.35)', color: '#b91c1c' }}>
@@ -2180,7 +2237,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
           currentValues={values}
           scope={importScope}
           canSetBranding={isAdmin && !readOnly}
-          onApply={extracted => setValues(v => ({ ...v, ...extracted }))}
+          onApply={applyImport}
         />
       )}
     </div>

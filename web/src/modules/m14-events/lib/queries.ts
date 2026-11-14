@@ -2,8 +2,9 @@ import type { CalendarEvent, EventComment, EventRsvp } from '../types'
 
 export const EVENT_SELECT = `
   id, title, description, location, online_url, starts_at, ends_at, all_day, kind, is_public,
-  circle, category, project_id, proposal_id, created_by, feed_id, notes, notes_at,
+  circle, category, project_id, proposal_id, created_by, feed_id, notes, notes_at, times_set_at,
   creator:user_profiles!events_created_by_fkey(first_name, username),
+  times_author:user_profiles!events_times_set_by_fkey(first_name, username),
   notes_author:user_profiles!events_notes_by_fkey(first_name, username),
   project:projects(id, title),
   proposal:proposals(id, title)
@@ -19,7 +20,7 @@ export const RSVP_SELECT = 'event_id, user_id, status, person:user_profiles!even
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null)
 
 export function toEvent(row: any): CalendarEvent {
-  return { ...row, creator: one(row.creator), notes_author: one(row.notes_author), project: one(row.project), proposal: one(row.proposal) }
+  return { ...row, creator: one(row.creator), notes_author: one(row.notes_author), times_author: one(row.times_author), project: one(row.project), proposal: one(row.proposal) }
 }
 
 export function toRsvp(row: any): EventRsvp {
