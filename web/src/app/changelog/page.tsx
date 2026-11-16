@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.18.0',
+    date: '2026-11-16',
+    title: 'Add events from a photo',
+    items: [
+      'Events › 📷 Add from a photo: take a photo of the schedule board, pick the week, and the AI reads the notes (about a minute or two). You check every event, fix anything misread, and add the ones you tick. Events already on the calendar are spotted and left unticked.',
+      'The new events go to the linked Google calendar too, like any event posted from the form.',
+      'Who can use it: admins, and the leads and people of one circle that admins choose under Linked calendars (on Protopia, Community Hosting).',
+    ],
+  },
+  {
     version: 'v4.17.7',
     date: '2026-11-15',
     title: 'Weeks start on Monday',
