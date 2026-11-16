@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { ModalShell } from '@/core/components/ModalShell'
@@ -174,7 +174,43 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
       ) : (
         <button style={{ ...small, marginTop: 14 }} onClick={() => setAdding(true)}>+ Link a calendar</button>
       )}
+      <PhotoAccess />
     </ModalShell>
+  )
+}
+
+/** Which circle (besides admins) can use "Add from a photo": its leads and the people listed in it on the Circles page */
+function PhotoAccess() {
+  const [supabase] = useState(createClient)
+  const [circles, setCircles] = useState<{ slug: string; name: string; hosts_events: boolean }[] | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    supabase.from('circles').select('slug, name, hosts_events').is('archived_at', null).order('sort_order')
+      .then(({ data }) => setCircles((data ?? []) as { slug: string; name: string; hosts_events: boolean }[]))
+  }, [supabase])
+  if (!circles) return null
+  const current = circles.find(c => c.hosts_events)?.slug ?? ''
+  const choose = async (slug: string) => {
+    setSaving(true); setError('')
+    const { error: e1 } = await supabase.from('circles').update({ hosts_events: false }).eq('hosts_events', true)
+    const { error: e2 } = slug ? await supabase.from('circles').update({ hosts_events: true }).eq('slug', slug) : { error: null }
+    setSaving(false)
+    if (e1 || e2) return setError((e1 ?? e2)!.message)
+    setCircles(list => list?.map(c => ({ ...c, hosts_events: c.slug === slug })) ?? null)
+  }
+  return (
+    <div style={{ marginTop: 18, borderTop: '1px solid var(--rule)', paddingTop: 14, fontSize: 13, color: 'var(--ink-2)' }}>
+      <div style={{ fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>📷 Add from a photo</div>
+      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8, lineHeight: 1.5 }}>
+        Admins can read a photo of the schedule board into the calendar. So can the leads and people of this circle (as listed on the Circles page):
+      </div>
+      <select value={current} disabled={saving} onChange={e => choose(e.target.value)} style={{ fontSize: 13, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)' }}>
+        <option value="">Admins only</option>
+        {circles.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+      </select>
+      {error && <div style={{ fontSize: 12, color: 'var(--danger, #dc2626)', marginTop: 6 }}>{error}</div>}
+    </div>
   )
 }
 

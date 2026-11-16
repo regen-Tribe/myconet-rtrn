@@ -5,6 +5,21 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.18.1 — 2026-11-16
+
+- Events Week view (`CalendarViews.tsx`): wider than 640px it's a Google-style time grid (`WeekGrid`, 44px per hour,
+  overlap columns, all-day/multi-day strip, now line, sticky day header and hour gutter, scrolls to 7am or the week's
+  earliest event). Phones keep the day cards (`WeekCards`); switched by `.ev-week-grid` / `.ev-week-cards` in globals.css.
+
+## v4.18.0 — 2026-11-16
+
+- Events: **Add from a photo** (`PhotoImportModal.tsx`, `/api/events/photo`). The photo is shrunk to 2000px in the browser,
+  read by MiniMax-M3.1-Flash (low reasoning, with the week's event titles and circle names as spelling hints), reviewed
+  row by row, inserted as the signed-in person, then pushed to Google via `/api/calendar-push` (`saved`).
+- Migration `20261120000000_events_from_photo.sql`: `circles.hosts_events` and `public.can_add_events_from_photo()` —
+  admins, account leads of the hosting circle, and anyone in that circle or its teams (`org_unit_members`).
+  Admins choose the circle at the bottom of Linked calendars. Off (admins only) until a circle is chosen.
+
 ## v4.17.7 — 2026-11-15
 
 - Events: weeks start on Monday (`startOfWeek` in `m14-events/lib/calendar.ts`; month header uses `WEEK_LABELS`).

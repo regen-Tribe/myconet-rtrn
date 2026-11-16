@@ -61,6 +61,9 @@ export default async function EventsPage({ searchParams }: {
     proposals = (propRes.data ?? []) as LinkOption[]
   }
 
+  // Admins and the circle that hosts the calendar can add events from a photo of the board
+  const { data: canPhoto } = user ? await supabase.rpc('can_add_events_from_photo') : { data: false }
+
   // Admins manage linked calendars from this page
   const { data: feedRows } = role === 'admin'
     ? await supabase.from('calendar_feeds').select(FEED_SELECT).order('created_at')
@@ -100,6 +103,7 @@ export default async function EventsPage({ searchParams }: {
       initialEventId={linked?.id ?? null}
       initialDraft={initialDraft}
       initialFeeds={role === 'admin' ? feeds : null}
+      canAddFromPhoto={!!canPhoto && isJoiningOrAbove(role)}
     />
   )
 }

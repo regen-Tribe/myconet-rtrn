@@ -14,6 +14,7 @@ import { categoryColor, DayView, ListView, MonthView, WeekView } from './Calenda
 import { EventDetailModal } from './EventDetailModal'
 import { EventFormModal, type EventDraft, type EventPayload } from './EventFormModal'
 import { CalendarFeedsModal } from './CalendarFeedsModal'
+import { PhotoImportModal } from './PhotoImportModal'
 
 const VIEWS: { id: EventsView; label: string }[] = [
   { id: 'day', label: 'Day' },
@@ -24,7 +25,7 @@ const VIEWS: { id: EventsView; label: string }[] = [
 
 export default function EventsClient({
   initialEvents, initialRsvps, userId, me, role, leadCircles, projects, proposals,
-  initialKinds, initialView, initialEventId, initialDraft, initialFeeds,
+  initialKinds, initialView, initialEventId, initialDraft, initialFeeds, canAddFromPhoto,
 }: {
   initialEvents: CalendarEvent[]
   initialRsvps: EventRsvp[]
@@ -42,6 +43,8 @@ export default function EventsClient({
   initialDraft: EventDraft | null
   /** Linked calendars; set for admins only */
   initialFeeds: CalendarFeed[] | null
+  /** Admins and the circle that hosts the calendar: "Add from a photo" */
+  canAddFromPhoto: boolean
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -59,6 +62,7 @@ export default function EventsClient({
   )
   const [toast, setToast] = useState<string | null>(null)
   const [showFeeds, setShowFeeds] = useState(false)
+  const [showPhoto, setShowPhoto] = useState(false)
 
   // Dates depend on the viewer's time zone, so the calendar renders after mount
   const [now, setNow] = useState<Date | null>(null)
@@ -235,6 +239,11 @@ export default function EventsClient({
               🔗 Linked calendars{initialFeeds.length > 0 ? ` (${initialFeeds.length})` : ''}
             </button>
           )}
+          {canAddFromPhoto && userId && (
+            <button onClick={() => setShowPhoto(true)} title="Read a photo of the schedule board and add its events" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>
+              📷 Add from a photo
+            </button>
+          )}
           {canPostCommunity ? (
             <button onClick={() => openNew()} style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--m14)', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer' }}>
               + New event or task
@@ -380,6 +389,24 @@ export default function EventsClient({
           onRsvp={status => rsvp(openEvent.id, status)}
           onEdit={() => setForm({ existing: openEvent, draft: {} })}
           onDelete={() => deleteEvent(openEvent.id)}
+        />
+      )}
+
+      {showPhoto && userId && (
+        <PhotoImportModal
+          events={events}
+          role={role}
+          userId={userId}
+          circleNames={circles.slugs.map(c => circles.meta(c).label)}
+          onClose={() => setShowPhoto(false)}
+          onAdded={(added, note) => {
+            setEvents(list => [...list, ...added])
+            setKinds(list => [...new Set([...list, ...added.map(e => e.kind)])])
+            setShowPhoto(false)
+            if (added[0]) setAnchor(startOfDay(new Date(added[0].starts_at)))
+            setView('week')
+            setToast(note)
+          }}
         />
       )}
 
