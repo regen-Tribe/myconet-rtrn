@@ -541,16 +541,16 @@ a:has(.dash-stat-card--link):hover .dash-stat-card--link {
 .ev-grid7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .ev-cell { min-height: 108px; }
 .ev-dots { display: none; }
-.ev-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-@media (max-width: 1024px) {
-  .ev-week { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
+.ev-week { display: grid; grid-template-columns: 1fr; }
+/* Week view: the time grid on wider screens, day cards on phones */
+.ev-week-cards { display: none; }
 @media (max-width: 640px) {
   .ev-page { padding: 20px 16px 48px !important; }
   .ev-cell { min-height: 58px; padding: 3px !important; }
   .ev-chips { display: none !important; }
   .ev-dots { display: flex; }
-  .ev-week { grid-template-columns: 1fr; }
+  .ev-week-grid { display: none; }
+  .ev-week-cards { display: block; }
 }
 
 /* ─── M17 Org chart ─────────────────────────────────────────────── */

@@ -79,3 +79,10 @@ Policies use `private.my_role()` / `private.my_lead_circles()` (security definer
   the Calendar API, a service account + JSON key (`wrangler secret put GOOGLE_SERVICE_ACCOUNT_JSON`), share
   the calendar, tick "Add public MyCoNet events to Google" in Linked calendars.
 - Not yet: recurring events made in MyCoNet itself, .ics export, an events section on the proposal cards in M09.
+
+## Add events from a photo
+
+`PhotoImportModal.tsx` + `app/api/events/photo/route.ts`. A photo of the schedule board is read by MiniMax-M3.1-Flash
+(about 1–3 minutes), each event is reviewed and edited, and the ticked ones are inserted as the signed-in person (normal
+RLS) and pushed to Google. Access: `public.can_add_events_from_photo()` — admins, plus the leads and members (Circles
+page, `org_unit_members`) of the circle with `circles.hosts_events` (admins choose it under Linked calendars).

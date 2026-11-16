@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CalendarEvent, EventRsvp } from './types'
 import { KIND_META } from './lib/permissions'
@@ -116,7 +117,181 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
 
 // ─── Week ────────────────────────────────────────────────────────────────────
 
-export function WeekView({ anchor, events, now, onOpen }: {
+const HOUR_PX = 44
+const GUTTER_PX = 52
+const DAY_MIN_PX = 104
+
+interface Placed { event: CalendarEvent; top: number; height: number; col: number; cols: number }
+
+/** One day's timed events as blocks; events that overlap share the width side by side */
+function placeDay(events: CalendarEvent[], day: Date): Placed[] {
+  const dayStart = day.getTime()
+  const dayEnd = addDays(day, 1).getTime()
+  const items = events.map(e => {
+    const s = Math.max(new Date(e.starts_at).getTime(), dayStart)
+    const rawEnd = e.ends_at ? new Date(e.ends_at).getTime() : new Date(e.starts_at).getTime() + 3600_000
+    const end = Math.min(Math.max(rawEnd, s + 15 * 60_000), dayEnd)
+    return { event: e, s, end }
+  }).sort((a, b) => a.s - b.s || b.end - a.end)
+
+  const placed: Placed[] = []
+  let cluster: { item: (typeof items)[number]; col: number }[] = []
+  let clusterEnd = 0
+  const flush = () => {
+    const cols = Math.max(0, ...cluster.map(c => c.col)) + 1
+    for (const { item, col } of cluster) {
+      placed.push({
+        event: item.event, col, cols,
+        top: ((item.s - dayStart) / 3600_000) * HOUR_PX,
+        height: Math.max(18, ((item.end - item.s) / 3600_000) * HOUR_PX - 2),
+      })
+    }
+    cluster = []
+  }
+  for (const item of items) {
+    if (cluster.length && item.s >= clusterEnd) flush()
+    // First column whose last event has ended
+    const used = new Set(cluster.filter(c => {
+      const last = cluster.filter(x => x.col === c.col).at(-1)!
+      return last.item.end > item.s
+    }).map(c => c.col))
+    let col = 0
+    while (used.has(col)) col++
+    cluster.push({ item, col })
+    clusterEnd = Math.max(clusterEnd, item.end)
+  }
+  if (cluster.length) flush()
+  return placed
+}
+
+/** Google-style week on wider screens: hours down the side, one column per day, events at their times; day cards on phones */
+export function WeekView(props: { anchor: Date; events: CalendarEvent[]; now: Date; onOpen: (id: string) => void }) {
+  return (
+    <>
+      <div className="ev-week-grid"><WeekGrid {...props} /></div>
+      <div className="ev-week-cards"><WeekCards {...props} /></div>
+    </>
+  )
+}
+
+function WeekGrid({ anchor, events, now, onOpen }: {
+  anchor: Date; events: CalendarEvent[]; now: Date; onOpen: (id: string) => void
+}) {
+  const days = weekDays(anchor)
+  const byDay = groupByDay(events)
+  const scroller = useRef<HTMLDivElement>(null)
+  // All-day and multi-day events go in the strip at the top; the rest on the grid
+  const isBanner = (e: CalendarEvent) => e.all_day || (!!e.ends_at && new Date(e.ends_at).getTime() - new Date(e.starts_at).getTime() >= 24 * 3600_000)
+  const firstHour = Math.min(7, ...days.flatMap(d => (byDay.get(dayKey(d)) ?? []).filter(e => !isBanner(e) && sameDay(new Date(e.starts_at), d)).map(e => new Date(e.starts_at).getHours())))
+
+  // Open scrolled to the morning (or the week's earliest event)
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = Math.max(0, firstHour * HOUR_PX - 8)
+  }, [firstHour, anchor])
+
+  const gridCols = `${GUTTER_PX}px repeat(7, minmax(${DAY_MIN_PX}px, 1fr))`
+  const nowTop = ((now.getTime() - startOfDay(now).getTime()) / 3600_000) * HOUR_PX
+  const banners = days.map(d => (byDay.get(dayKey(d)) ?? []).filter(isBanner))
+  const hasBanners = banners.some(b => b.length)
+
+  return (
+    <div ref={scroller} style={{
+      border: '1px solid var(--rule)', borderRadius: 10, background: 'var(--surface)',
+      overflow: 'auto', maxHeight: 'min(72vh, 760px)', position: 'relative',
+    }}>
+      <div style={{ minWidth: GUTTER_PX + 7 * DAY_MIN_PX }}>
+        {/* Day names, and all-day events, stay on top while scrolling */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 3, background: 'var(--surface)', borderBottom: '1px solid var(--rule)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: gridCols }}>
+            <div style={{ position: 'sticky', left: 0, background: 'var(--surface)', zIndex: 1 }} />
+            {days.map(d => {
+              const isToday = sameDay(d, now)
+              return (
+                <div key={dayKey(d)} style={{ padding: '8px 6px 6px', textAlign: 'center', borderLeft: '1px solid var(--rule)' }}>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: isToday ? 'var(--m14)' : 'var(--ink-4)' }}>
+                    {DAY_LABELS[d.getDay()]}
+                  </div>
+                  <div style={{
+                    fontSize: 18, fontWeight: 700, lineHeight: '30px', width: 30, height: 30, margin: '2px auto 0', borderRadius: '50%',
+                    color: isToday ? '#fff' : 'var(--ink)', background: isToday ? 'var(--m14)' : 'transparent',
+                  }}>{d.getDate()}</div>
+                </div>
+              )
+            })}
+          </div>
+          {hasBanners && (
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderTop: '1px solid var(--rule)' }}>
+              <div style={{ position: 'sticky', left: 0, background: 'var(--surface)', fontSize: 10, color: 'var(--ink-4)', padding: '4px 6px', textAlign: 'right' }}>all day</div>
+              {banners.map((list, i) => (
+                <div key={i} style={{ borderLeft: '1px solid var(--rule)', padding: 3, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                  {list.map(e => <EventChip key={e.id} event={e} onOpen={onOpen} showTime={false} />)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* The hours */}
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, position: 'relative' }}>
+          <div style={{ position: 'sticky', left: 0, zIndex: 2, background: 'var(--surface)' }}>
+            {Array.from({ length: 24 }, (_, h) => (
+              <div key={h} style={{ height: HOUR_PX, position: 'relative' }}>
+                {h > 0 && (
+                  <span style={{ position: 'absolute', top: -7, right: 6, fontSize: 10, color: 'var(--ink-4)', whiteSpace: 'nowrap' }}>
+                    {new Date(2000, 0, 1, h).toLocaleTimeString('en-US', { hour: 'numeric' })}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          {days.map(d => {
+            const timed = (byDay.get(dayKey(d)) ?? []).filter(e => !isBanner(e))
+            const isToday = sameDay(d, now)
+            return (
+              <div key={dayKey(d)} style={{
+                position: 'relative', height: 24 * HOUR_PX, borderLeft: '1px solid var(--rule)',
+                backgroundImage: `repeating-linear-gradient(to bottom, var(--rule) 0, var(--rule) 1px, transparent 1px, transparent ${HOUR_PX}px)`,
+              }}>
+                {placeDay(timed, d).map(({ event: e, top, height, col, cols }) => {
+                  const color = eventColor(e)
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => onOpen(e.id)}
+                      title={`${e.title} · ${fmtEventWhen(e)}`}
+                      style={{
+                        position: 'absolute', top, height, left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)`,
+                        textAlign: 'left', cursor: 'pointer', overflow: 'hidden', zIndex: 1,
+                        border: 'none', borderLeft: `3px solid ${color}`, borderRadius: 4, padding: '2px 4px',
+                        background: `color-mix(in srgb, ${color} 16%, var(--surface))`,
+                        boxShadow: '0 0 0 1px var(--surface)', opacity: isPast(e, now) ? 0.6 : 1,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2, overflowWrap: 'anywhere' }}>
+                        {e.category && <span aria-hidden style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: categoryColor(e.category), marginRight: 3, verticalAlign: 1 }} />}
+                        {e.title}
+                      </div>
+                      {height >= 30 && <div style={{ fontSize: 10, color, fontWeight: 600, lineHeight: 1.2 }}>{fmtTime(e.starts_at)}{e.ends_at ? ` – ${fmtTime(e.ends_at)}` : ''}</div>}
+                      {height >= 52 && e.location && <div style={{ fontSize: 10, color: 'var(--ink-3)', lineHeight: 1.2 }}>📍 {e.location}</div>}
+                    </button>
+                  )
+                })}
+                {isToday && (
+                  <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: nowTop, height: 2, background: '#dc2626', zIndex: 2 }}>
+                    <span style={{ position: 'absolute', left: -4, top: -3, width: 8, height: 8, borderRadius: '50%', background: '#dc2626' }} />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Phones: one card per day with its events listed (the time grid is too wide) */
+function WeekCards({ anchor, events, now, onOpen }: {
   anchor: Date; events: CalendarEvent[]; now: Date; onOpen: (id: string) => void
 }) {
   const days = weekDays(anchor)
