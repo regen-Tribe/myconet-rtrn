@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-16 — Working rules: maintainers push directly; local changes logged
+
+- New `instance/CONTRIBUTING.md`: Oscar and Sonia push checked changes straight to `master`; everyone else uses PRs. Before starting, check what changed. Every change: ask "core too, or only RTRN?"
+- New `instance/LOCAL-CHANGES.md` for RTRN-only changes. Matching core rules are in PR regen-Tribe/myconet#4 (v4.18.2).
+
 ## 2026-11-05 — Core v4.10.0 via PR #5 (deployed, 45924c90)
 
 - Home pages: every module at a glance + Ask section; demo panels use the community name, Join demo uses RTRN's real values.
