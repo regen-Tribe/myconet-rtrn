@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.17.7',
+    date: '2026-11-15',
+    title: 'Weeks start on Monday',
+    items: [
+      'The Events calendar now runs Monday to Sunday, in the month and week views.',
+    ],
+  },
+  {
     version: 'v4.17.6',
     date: '2026-11-14',
     title: 'Event categories from a set list',

@@ -6,6 +6,8 @@
 import type { CalendarEvent } from '../types'
 
 export const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+/** Weeks run Monday to Sunday */
+export const WEEK_LABELS = [...DAY_LABELS.slice(1), DAY_LABELS[0]]
 
 export function startOfDay(d: Date): Date {
   const x = new Date(d)
@@ -21,7 +23,7 @@ export function addDays(d: Date, n: number): Date {
 
 export function startOfWeek(d: Date): Date {
   const x = startOfDay(d)
-  return addDays(x, -x.getDay())
+  return addDays(x, -((x.getDay() + 6) % 7))
 }
 
 export function sameDay(a: Date, b: Date): boolean {

@@ -5,6 +5,10 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.17.7 — 2026-11-15
+
+- Events: weeks start on Monday (`startOfWeek` in `m14-events/lib/calendar.ts`; month header uses `WEEK_LABELS`).
+
 ## v4.17.6 — 2026-11-14
 
 - Reverts v4.17.5: the category checkbox row above the calendar is back.
