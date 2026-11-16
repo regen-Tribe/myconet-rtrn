@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.18.2',
+    date: '2026-11-16',
+    title: 'How changes are made',
+    items: [
+      'Behind the scenes only: new working rules for the people and AI agents who build MyCoNet. Each change is now marked as for every community or for this one only, and community-only changes are logged.',
+    ],
+  },
+  {
     version: 'v4.18.1',
     date: '2026-11-16',
     title: 'Week view like Google Calendar',

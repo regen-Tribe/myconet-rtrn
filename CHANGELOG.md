@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.18.2 — 2026-11-16
+
+- Working rules for people and AI agents (`CLAUDE.md`, `AGENTS.md`, `README.md`): check what others changed before
+  starting; ask "core too, or only this community?" for every change; community-only changes go in `instance/` and
+  are logged in `instance/LOCAL-CHANGES.md` (new; starter in `instance.example/`). Maintainers (Oscar, Sonia) push
+  checked changes straight to a community repo's main and may merge core PRs. Docs only, no app changes.
+
 ## v4.18.1 — 2026-11-16
 
 - Events Week view (`CalendarViews.tsx`): wider than 640px it's a Google-style time grid (`WeekGrid`, 44px per hour,

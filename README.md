@@ -21,21 +21,24 @@ and [`CORE-EXTRACTION.md`](./CORE-EXTRACTION.md). **Starting a new community:**
 
 ## Working on the code (people and AI coding agents)
 
-**Never commit or push to `main` / `master`.** Every change goes on its own branch and in
-a pull request that a maintainer reviews and merges. On a free private repo GitHub can't
-enforce this, so it's up to you, and to your coding agent.
+**Before you start:** pull, and read what changed since you last worked here (`git log --stat`,
+core's latest releases, the community's `instance/log.md` and `instance/LOCAL-CHANGES.md`).
 
-1. `git checkout main && git pull`, then `git checkout -b <your-name>/<short-description>`
-2. Make the change; check it with `cd web && npm run lint && npx tsc --noEmit` and `npm run dev`
-3. Commit, `git push -u origin <branch>`, and open a PR (`gh pr create --fill`) saying what
-   changed, how you tested it, and a screenshot for anything visible
-4. Stop there. A maintainer merges and deploys; don't merge your own PR, deploy, or run
-   migrations against a live database unless a maintainer asks you to
+**For every change, decide first: core too, or only this community?**
 
-In a **community repo**, change only `instance/` there. Anything else is a core change: build
-it on your branch, then send it to core with `cd web && npm run upstream` (the **Core drift
-check** fails a PR that edits core files). A community's own notes for contributors are in
-its `instance/CONTRIBUTING.md`. Never commit keys, tokens, passwords or `.env*` files.
+- **Core too** (every community gets it): change core files on a branch, then send them to core
+  with `cd web && npm run upstream`. It comes back to each community with the next core release.
+- **Only this community:** change only `instance/` and log it in `instance/LOCAL-CHANGES.md`
+  (date, who, what, why, files). Something that needs core code but should stay local goes into
+  core behind a config switch, or, as a logged **core exception**, is edited locally; the
+  **Core drift check** fails until it's resolved.
+
+**Maintainers** (Oscar, Sonia) push checked changes (`cd web && npm run lint && npx tsc --noEmit`)
+straight to a community repo's `main` / `master` and can merge core PRs themselves. **Everyone
+else:** branch `<your-name>/<short-description>`, open a PR (`gh pr create --fill`) saying what
+changed, how you tested it, and a screenshot for anything visible, then stop. Nobody deploys or
+runs migrations against a live database without being asked. A community's own notes for
+contributors are in its `instance/CONTRIBUTING.md`. Never commit keys, tokens, passwords or `.env*` files.
 
 ## The docs
 
