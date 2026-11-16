@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-16 — Core v4.18.2 (not deployed; docs only)
+
+- Working rules in `CLAUDE.md`, `AGENTS.md`, `README.md`: check what changed first, ask core-or-community, log local changes; maintainers push directly. Merged from the v4.18.2 tag. The app's version badge updates on the next deploy.
+
 ## 2026-11-16 — Working rules: maintainers push directly; local changes logged
 
 - New `instance/CONTRIBUTING.md`: Oscar and Sonia push checked changes straight to `master`; everyone else uses PRs. Before starting, check what changed. Every change: ask "core too, or only RTRN?"
