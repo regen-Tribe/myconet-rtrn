@@ -4,7 +4,7 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import type { CalendarEvent, EventRsvp } from './types'
 import { KIND_META } from './lib/permissions'
 import {
-  DAY_LABELS, addDays, dayKey, fmtDayLong, fmtEventWhen, fmtTime, groupByDay, isPast,
+  DAY_LABELS, WEEK_LABELS, addDays, dayKey, fmtDayLong, fmtEventWhen, fmtTime, groupByDay, isPast,
   monthGrid, sameDay, startOfDay, weekDays,
 } from './lib/calendar'
 
@@ -61,7 +61,7 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
   return (
     <div style={{ border: '1px solid var(--rule)', borderRadius: 10, overflow: 'hidden', background: 'var(--surface)' }}>
       <div className="ev-grid7" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--bg-2)' }}>
-        {DAY_LABELS.map(l => (
+        {WEEK_LABELS.map(l => (
           <div key={l} style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', padding: '8px 8px' }}>
             {l}
           </div>
