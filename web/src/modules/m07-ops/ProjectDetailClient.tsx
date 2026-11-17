@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { fmtDate } from '@/core/lib/format'
+import { fmtTaskWhen, isTaskOverdue, toTimeInput } from '@/core/lib/tasks'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -72,7 +73,7 @@ export default function ProjectDetailClient({
   deliverables: initialDeliverables, myProposal: initialMyProposal, userId, userRole, leadCircles, circleDirectory, isAdmin, isProjectCreator,
   projectSubscribers: initialProjectSubscribers, isProjectSubscribed: initialIsProjectSubscribed,
   deliverableSubscribers: initialDeliverableSubscribers,
-  leadProfile, creatorProfile, projectEvents,
+  leadProfile, creatorProfile, projectEvents, initialTaskId,
 }: {
   project: Project
   updates: ProjectUpdate[]
@@ -91,6 +92,8 @@ export default function ProjectDetailClient({
   leadProfile: { first_name: string | null; username: string | null } | null
   creatorProfile: { first_name: string | null; username: string | null } | null
   projectEvents: CalendarEvent[]
+  /** Opens this task's pop-up on arrival (links from the calendar: ?task=<id>) */
+  initialTaskId?: string | null
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -108,6 +111,7 @@ export default function ProjectDetailClient({
   const [pendingProposals, setPendingProposals] = useState<CollaborationAgreement[]>(initialPendingProposals)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDue, setNewTaskDue] = useState<string | null>(null)
+  const [newTaskTime, setNewTaskTime] = useState('')
   const [addingTask, setAddingTask] = useState(false)
   const [taskError, setTaskError] = useState<string | null>(null)
 
@@ -148,7 +152,15 @@ export default function ProjectDetailClient({
   const [editModal, setEditModal] = useState<Deliverable | null>(null)
   const [editModalTitle, setEditModalTitle] = useState('')
   const [editModalDue, setEditModalDue] = useState<string | null>(null)
+  const [editModalTime, setEditModalTime] = useState('')
+  const [editModalCircle, setEditModalCircle] = useState<string>('')
   const [editModalSaving, setEditModalSaving] = useState(false)
+
+  useEffect(() => {
+    const d = initialTaskId ? initialDeliverables.find(x => x.id === initialTaskId) : null
+    if (d) openEditModal(d)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTaskId])
 
   useEffect(() => {
     if (!editModal) return
@@ -177,6 +189,8 @@ export default function ProjectDetailClient({
     setEditModal(d)
     setEditModalTitle(d.title)
     setEditModalDue(d.due_date)
+    setEditModalTime(toTimeInput(d.due_time))
+    setEditModalCircle(d.circle ?? project.circle ?? '')
   }
 
   async function toggleProjectSubscription() {
@@ -248,9 +262,10 @@ export default function ProjectDetailClient({
       project_id: project.id,
       title: newTaskTitle.trim(),
       due_date: newTaskDue || null,
+      due_time: newTaskDue && newTaskTime ? newTaskTime : null,
       status: 'backlog',
       progress: 0,
-    }).select('id, project_id, title, status, due_date, assignee_id, progress').single()
+    }).select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, assignee_id, progress').single()
     if (error) {
       setTaskError(error.message)
       setAddingTask(false)
@@ -259,6 +274,7 @@ export default function ProjectDetailClient({
     setDeliverables(prev => [...prev, data])
     setNewTaskTitle('')
     setNewTaskDue(null)
+    setNewTaskTime('')
     setAddingTask(false)
   }
 
@@ -270,13 +286,18 @@ export default function ProjectDetailClient({
   async function saveDeliverableEdit() {
     if (!editModal || !editModalTitle.trim()) return
     setEditModalSaving(true)
-    const { error } = await supabase.from('deliverables').update({
+    const changes = {
       title: editModalTitle.trim(),
       due_date: editModalDue,
-    }).eq('id', editModal.id)
+      due_time: editModalDue && editModalTime ? editModalTime : null,
+      circle: editModalCircle || null,
+      // Saving a draft (e.g. from a meeting) confirms it
+      needs_review: false,
+    }
+    const { error } = await supabase.from('deliverables').update(changes).eq('id', editModal.id)
     if (!error) {
       setDeliverables(prev => prev.map(d =>
-        d.id === editModal.id ? { ...d, title: editModalTitle.trim(), due_date: editModalDue } : d
+        d.id === editModal.id ? { ...d, ...changes } : d
       ))
       setEditModal(null)
     }
@@ -329,7 +350,7 @@ export default function ProjectDetailClient({
         assignee_id: optimisticDeliverable.assignee_id,
         from_agreement_id: agreementId,
       })
-      .select('id, project_id, title, status, due_date, assignee_id, progress, from_agreement_id')
+      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, assignee_id, progress, from_agreement_id')
       .single()
 
     if (insertErr || !newDeliverable) {
@@ -632,6 +653,16 @@ export default function ProjectDetailClient({
                       align="right"
                     />
                   </div>
+                  {newTaskDue && (
+                    <input
+                      type="time"
+                      value={newTaskTime}
+                      onChange={e => setNewTaskTime(e.target.value)}
+                      aria-label="Time (optional)"
+                      title="Time (optional)"
+                      style={{ ...inputStyle, width: 120, flexShrink: 0, padding: '8px 10px', fontSize: 13 }}
+                    />
+                  )}
                   <button
                     onClick={addSubtask}
                     disabled={addingTask || !newTaskTitle.trim()}
@@ -740,7 +771,8 @@ export default function ProjectDetailClient({
                         const assignee = d.user_profiles?.first_name ?? d.user_profiles?.username ?? null
                         const isSubbed = myDeliverableSubIds.has(d.id)
                         const subsList = deliverableSubsMap[d.id] ?? []
-                        const isOverdue = d.due_date && !['done', 'review'].includes(d.status) && new Date(d.due_date) < new Date()
+                        const isOverdue = isTaskOverdue(d.due_date, d.due_time, d.status)
+                        const otherCircle = d.circle && d.circle !== project.circle && circles.has(d.circle) ? circles.meta(d.circle) : null
                         return (
                           <div
                             key={d.id}
@@ -771,6 +803,9 @@ export default function ProjectDetailClient({
                               textDecoration: d.status === 'done' ? 'line-through' : 'none',
                               opacity: d.status === 'done' ? 0.6 : 1,
                             }}>
+                              {d.needs_review && (
+                                <span title="A draft (e.g. from a meeting): open it and save to confirm" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#b45309', background: '#fef3c7', borderRadius: 4, padding: '1px 5px', marginRight: 5, verticalAlign: 1 }}>Draft</span>
+                              )}
                               {d.title}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, flexWrap: 'wrap' }}>
@@ -778,9 +813,10 @@ export default function ProjectDetailClient({
                                 {assignee && <span>{assignee}</span>}
                                 {d.due_date && (
                                   <span style={{ color: isOverdue ? '#ef4444' : 'var(--ink-4)', fontWeight: isOverdue ? 700 : 400 }}>
-                                    {assignee ? '· ' : ''}{fmtDate(d.due_date)}{isOverdue ? ' ⚠' : ''}
+                                    {assignee ? '· ' : ''}{fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}
                                   </span>
                                 )}
+                                {otherCircle && <span title={otherCircle.label}>· {otherCircle.emoji} {otherCircle.label}</span>}
                               </div>
                               <button
                                 onClick={(e) => toggleDeliverableSubscription(d.id, e)}
@@ -1016,13 +1052,54 @@ export default function ProjectDetailClient({
                   Due date
                 </label>
                 {canManage ? (
-                  <CalendarPicker value={editModalDue} onChange={setEditModalDue} placeholder="No due date" />
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <CalendarPicker value={editModalDue} onChange={setEditModalDue} placeholder="No due date" />
+                    {editModalDue && (
+                      <input
+                        type="time"
+                        value={editModalTime}
+                        onChange={e => setEditModalTime(e.target.value)}
+                        aria-label="Time (optional)"
+                        style={{ ...inputStyle, width: 130, padding: '8px 10px', fontSize: 13 }}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <div style={{ fontSize: 13, color: editModal.due_date ? 'var(--ink-2)' : 'var(--ink-4)', fontFamily: 'var(--mono)' }}>
-                    {editModal.due_date ? fmtDate(editModal.due_date) : 'No due date'}
+                    {editModal.due_date ? fmtTaskWhen(editModal.due_date, editModal.due_time) : 'No due date'}
+                  </div>
+                )}
+                {editModal.due_date && (
+                  <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>Dated tasks also show on the calendar.</div>
+                )}
+              </div>
+
+              {/* Circle */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
+                  Circle
+                </label>
+                {canManage ? (
+                  <select
+                    value={editModalCircle}
+                    onChange={e => setEditModalCircle(e.target.value)}
+                    style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}
+                  >
+                    <option value="">No circle</option>
+                    {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).emoji} {circles.meta(c).label}</option>)}
+                  </select>
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                    {editModal.circle && circles.has(editModal.circle) ? `${circles.meta(editModal.circle).emoji} ${circles.meta(editModal.circle).label}` : 'No circle'}
                   </div>
                 )}
               </div>
+
+              {editModal.needs_review && (
+                <div style={{ fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
+                  {editModal.source === 'meeting' ? 'Drafted from a meeting’s action items.' : 'A draft.'} Check it{canManage ? ' and save to confirm' : ''}.
+                </div>
+              )}
 
               {/* Subscribe toggle */}
               <div style={{ marginBottom: (() => {

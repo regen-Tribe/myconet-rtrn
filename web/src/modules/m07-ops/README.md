@@ -22,6 +22,7 @@ Ideas  →  Backlog  →  In progress  →  Review  →  Done
 | `ProjectDetailClient.tsx` | Per-project page — header + circle badge + settings (admin) + 5-column Kanban + updates feed. |
 | `NewProjectClient.tsx` | Admin direct-create form (sets initial status to `pending`). |
 | `DeliverablesTab.tsx` | Table view of all deliverables across all projects. |
+| `NewTaskModal.tsx` | **+ Task** on the board: a one-off task for a circle, saved into that circle's Chores project (`chores_project()`). |
 | `UpdatesTab.tsx` | Timeline of all project updates across all projects. |
 | `types.ts` | Shared types — `Project`, `ProjectSummary`, `Deliverable`, `ProjectUpdate`, `CollaborationAgreement`, `MyProposal`. |
 
@@ -56,7 +57,8 @@ pending  →  backlog  →  in_progress  →  review  →  done
 | Table | Notes |
 |-------|-------|
 | `projects` | `status` ∈ `pending | backlog | in_progress | review | done | paused`. `circle` text (one of the 5 pillars from `@/core/lib/pillars`). `created_by`, `lead_user_id` used for permission checks. |
-| `deliverables` | `status` ∈ `backlog | in_progress | review | done`. `assignee_id` is the contributor. `from_agreement_id` (nullable) links back to the proposal that spawned this deliverable, if any. |
+| `deliverables` | `status` ∈ `backlog | in_progress | review | done`. `assignee_id` is the contributor. `from_agreement_id` (nullable) links back to the proposal that spawned this deliverable, if any. Since v4.20.0: `due_time` (local time, only with `due_date`), `circle` (defaults to the project's, by trigger), `source` (`person` · `agent` · `meeting`), `source_meeting_id` + `source_item`, `needs_review` (a draft; saving the task pop-up clears it), `created_by`. Dates are local: format them with `core/lib/tasks.ts`, never `new Date('YYYY-MM-DD')`. |
+| `projects.is_chores` | One per circle (unique): the circle's standing project for one-off tasks. Made on first use by `public.chores_project(circle)` (admins, circle leads, project leads). |
 | `project_updates` | Freeform timeline posts per project. |
 | `collaboration_agreements` | Proposals. `status='pending'` rows appear in the Ideas column on project detail. |
 

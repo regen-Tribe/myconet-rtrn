@@ -6,6 +6,7 @@ import { loadCircles } from '@/core/lib/circles-server'
 import { EVENT_KINDS, isEventKind } from '@/modules/m14-events/lib/permissions'
 import { EVENT_SELECT, FEED_SELECT, RSVP_SELECT, toEvent, toRsvp } from '@/modules/m14-events/lib/queries'
 import { syncCalendarFeeds } from '@/modules/m14-events/lib/feed-sync'
+import { BOARD_TASK_SELECT, toBoardTask } from '@/modules/m14-events/lib/board-tasks'
 import type { EventDraft } from '@/modules/m14-events/EventFormModal'
 import type { CalendarFeed, EventsView, LinkOption } from '@/modules/m14-events/types'
 
@@ -42,6 +43,15 @@ export default async function EventsPage({ searchParams }: {
     .gte('starts_at', since)
     .order('starts_at', { ascending: true })
   const events = (eventRows ?? []).map(toEvent)
+
+  // The Tasks layer: dated tasks from the task board (shown here, kept on the board)
+  const { data: taskRows } = await supabase
+    .from('deliverables')
+    .select(BOARD_TASK_SELECT)
+    .not('due_date', 'is', null)
+    .gte('due_date', since.slice(0, 10))
+    .order('due_date', { ascending: true })
+  const boardTasks = (taskRows ?? []).map(toBoardTask)
 
   const eventIds = events.map(e => e.id)
   const { data: rsvpRows } = user && eventIds.length
@@ -91,6 +101,7 @@ export default async function EventsPage({ searchParams }: {
   return (
     <EventsClient
       initialEvents={events}
+      boardTasks={boardTasks}
       initialRsvps={rsvps}
       userId={user?.id ?? null}
       me={me}

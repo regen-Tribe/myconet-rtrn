@@ -1,6 +1,6 @@
 'use client'
 
-import { fmtDate } from '@/core/lib/format'
+import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import type { Deliverable, ProjectSummary } from './types'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
@@ -56,11 +56,13 @@ export function DeliverablesTab({ deliverables, projects }: {
         <tbody>
           {deliverables.map(d => {
             const pill = STATUS_PILL[d.status] ?? STATUS_PILL.backlog
-            const today = new Date(); today.setHours(0, 0, 0, 0)
-            const isOverdue = !!d.due_date && !['done', 'review'].includes(d.status) && new Date(d.due_date) < today
+            const isOverdue = isTaskOverdue(d.due_date, d.due_time, d.status)
             return (
               <tr key={d.id}>
-                <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>{d.title}</td>
+                <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>
+                  {d.needs_review && <span title="A draft waiting for a lead to confirm" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#b45309', background: '#fef3c7', borderRadius: 4, padding: '1px 5px', marginRight: 6 }}>Draft</span>}
+                  {d.title}
+                </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
                   {projectMap[d.project_id] ?? '—'}
                 </td>
@@ -68,7 +70,7 @@ export function DeliverablesTab({ deliverables, projects }: {
                   {d.assignee_username ?? '—'}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap', color: isOverdue ? '#ef4444' : 'inherit', fontWeight: isOverdue ? 700 : 'inherit' }}>
-                  {fmtDate(d.due_date)}{isOverdue ? ' ⚠' : ''}
+                  {fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}
                 </td>
                 <td style={tdStyle}>
                   <span style={{

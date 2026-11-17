@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
@@ -63,7 +64,10 @@ export function EventFormModal({
 }) {
   const circles = useCircles()
   const canCore = canCreateKind('core', role)
-  const initialKind: EventKind = existing?.kind ?? (draft.kind && draft.kind !== 'community' && canCore ? draft.kind : 'community')
+  // Tasks live on the task board; the calendar only shows them. Older calendar tasks can still be edited.
+  const draftKind = draft.kind === 'task' ? 'core' : draft.kind
+  const initialKind: EventKind = existing?.kind ?? (draftKind && draftKind !== 'community' && canCore ? draftKind : 'community')
+  const kinds = EVENT_KINDS.filter(k => k !== 'task' || existing?.kind === 'task')
 
   const [title, setTitle] = useState(existing?.title ?? '')
   const [kind, setKind] = useState<EventKind>(initialKind)
@@ -140,7 +144,7 @@ export function EventFormModal({
   }
 
   return (
-    <ModalShell title={existing ? (existing.kind === 'task' ? 'Edit task' : 'Edit event') : 'New event or task'} onClose={onClose} maxWidth={560}>
+    <ModalShell title={existing ? (existing.kind === 'task' ? 'Edit task' : 'Edit event') : 'New event'} onClose={onClose} maxWidth={560}>
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
           <label style={labelStyle} htmlFor="ev-title">Title</label>
@@ -150,7 +154,7 @@ export function EventFormModal({
         <div>
           <span style={labelStyle}>Calendar</span>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
-            {EVENT_KINDS.map(k => {
+            {kinds.map(k => {
               const active = kind === k
               const locked = k !== 'community' && !canCore
               return (
@@ -172,6 +176,11 @@ export function EventFormModal({
             })}
           </div>
           {kindNote && <div style={{ fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', marginTop: 8, lineHeight: 1.5 }}>🔒 {kindNote}</div>}
+          {!existing && (
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
+              Something to get done rather than an event? Tasks go on the <Link href="/ops" style={{ color: 'var(--m7)', fontWeight: 600 }}>task board</Link>; dated tasks show here too.
+            </div>
+          )}
         </div>
 
         {(kind === 'daily' || category) && (

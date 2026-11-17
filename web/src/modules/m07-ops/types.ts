@@ -9,6 +9,8 @@ export interface Project {
   status: string
   open_for_collaborators: boolean
   circle?: string | null
+  /** The circle's standing project for one-off tasks */
+  is_chores?: boolean
   needs?: string[] | string | null
   deadline?: string | null
   sprint_name?: string | null
@@ -30,6 +32,14 @@ export interface Deliverable {
   progress: number | null
   assignee_username?: string | null
   from_agreement_id?: string | null
+  /** Local time of day ("19:00:00"), only with a due_date */
+  due_time?: string | null
+  /** Defaults to the project's circle */
+  circle?: string | null
+  /** Who added it: a person, the agent, or a meeting's action items */
+  source?: 'person' | 'agent' | 'meeting'
+  /** A draft (e.g. from a meeting) waiting for a lead to confirm */
+  needs_review?: boolean
   user_profiles?: { first_name: string | null; username: string | null } | null
 }
 

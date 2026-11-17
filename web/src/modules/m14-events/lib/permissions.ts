@@ -54,7 +54,7 @@ export const KIND_META: Record<EventKind, {
     label: 'Tasks',
     short: 'Task',
     color: '#ea580c',
-    blurb: 'Things the community needs done, posted by members and leads. Sign up to help.',
+    blurb: 'Dated tasks from the task board (add and change them there), plus older calendar tasks you can sign up to help with.',
     rsvpHeading: 'Who’s helping', goingLabel: 'I’ll help', goingCount: 'helping', youGoing: '✓ You’re helping', noneYet: 'No one has signed up yet.',
   },
 }

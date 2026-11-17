@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
-import type { CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
+import type { BoardTask, CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
+import { boardTaskEvent } from './lib/board-tasks'
 import { addDays, fmtDayLong, fmtMonthTitle, fmtWeekTitle, isPast, sameDay, startOfDay } from './lib/calendar'
 import { canCreateKind, canEditEvent, EVENT_KINDS, KIND_META } from './lib/permissions'
 import { isFullMember } from '@/core/lib/roles'
@@ -24,10 +26,12 @@ const VIEWS: { id: EventsView; label: string }[] = [
 ]
 
 export default function EventsClient({
-  initialEvents, initialRsvps, userId, me, role, leadCircles, projects, proposals,
+  initialEvents, boardTasks, initialRsvps, userId, me, role, leadCircles, projects, proposals,
   initialKinds, initialView, initialEventId, initialDraft, initialFeeds, canAddFromPhoto,
 }: {
   initialEvents: CalendarEvent[]
+  /** Dated tasks from the task board, for the Tasks layer */
+  boardTasks: BoardTask[]
   initialRsvps: EventRsvp[]
   userId: string | null
   me: PersonLite | null
@@ -47,6 +51,7 @@ export default function EventsClient({
   canAddFromPhoto: boolean
 }) {
   const circles = useCircles()
+  const router = useRouter()
   const supabase = createClient()
   const [events, setEvents] = useState(initialEvents)
   const [rsvps, setRsvps] = useState(initialRsvps)
@@ -74,6 +79,16 @@ export default function EventsClient({
     setAnchor(startOfDay(linked ? new Date(linked.starts_at) : n))
   }, [initialEventId, initialEvents])
 
+  // Board tasks become calendar items in the browser (their dates and times are local)
+  const taskEvents = useMemo(() => (now ? boardTasks.map(boardTaskEvent) : []), [boardTasks, now])
+  const shown = useMemo(() => [...events, ...taskEvents], [events, taskEvents])
+  // A board task opens on the board; everything else opens the event pop-up
+  function open(id: string) {
+    const task = taskEvents.find(e => e.id === id)?.board
+    if (task) router.push(`/ops/${task.projectId}?task=${task.taskId}`)
+    else setOpenId(id)
+  }
+
   // Keep the URL shareable without a navigation
   useEffect(() => {
     const params = new URLSearchParams()
@@ -90,12 +105,12 @@ export default function EventsClient({
   }, [toast])
 
   const counts = useMemo(() => Object.fromEntries(
-    EVENT_KINDS.map(k => [k, now ? events.filter(e => e.kind === k && !isPast(e, now)).length : 0]),
-  ) as Record<EventKind, number>, [events, now])
+    EVENT_KINDS.map(k => [k, now ? shown.filter(e => e.kind === k && !isPast(e, now)).length : 0]),
+  ) as Record<EventKind, number>, [shown, now])
 
   // Categories ("Food", "Movement"…) used by the ticked kinds, for the checkboxes
-  const categories = useMemo(() => [...new Set(events.filter(e => kinds.includes(e.kind) && e.category).map(e => e.category as string))].sort(), [events, kinds])
-  const visible = events.filter(e => kinds.includes(e.kind) && (!circleFilter || e.circle === circleFilter) && !(e.category && hiddenCategories.includes(e.category)))
+  const categories = useMemo(() => [...new Set(shown.filter(e => kinds.includes(e.kind) && e.category).map(e => e.category as string))].sort(), [shown, kinds])
+  const visible = shown.filter(e => kinds.includes(e.kind) && (!circleFilter || e.circle === circleFilter) && !(e.category && hiddenCategories.includes(e.category)))
   const openEvent = openId ? events.find(e => e.id === openId) ?? null : null
   const canPostCommunity = canCreateKind('community', role)
 
@@ -106,7 +121,7 @@ export default function EventsClient({
   }
 
   function openNew(draft: EventDraft = {}) {
-    const kind = EVENT_KINDS.find(k => kinds.includes(k) && canCreateKind(k, role)) ?? 'community'
+    const kind = EVENT_KINDS.find(k => k !== 'task' && kinds.includes(k) && canCreateKind(k, role)) ?? 'community'
     setForm({ existing: null, draft: { kind, circle: circleFilter || null, ...draft } })
   }
 
@@ -246,7 +261,7 @@ export default function EventsClient({
           )}
           {canPostCommunity ? (
             <button onClick={() => openNew()} style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--m14)', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer' }}>
-              + New event or task
+              + New event
             </button>
           ) : userId ? (
             <Link href="/join" style={{ fontSize: 12, color: 'var(--ink-3)', maxWidth: 260, lineHeight: 1.45, textDecoration: 'none' }}>
@@ -345,18 +360,18 @@ export default function EventsClient({
         <div style={{ height: 420, borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--rule)' }} />
       ) : view === 'day' ? (
         <DayView
-          anchor={anchor} events={visible} rsvps={rsvps} userId={userId} now={now} onOpen={setOpenId}
+          anchor={anchor} events={visible} rsvps={rsvps} userId={userId} now={now} onOpen={open}
           onPickDay={setAnchor}
         />
       ) : view === 'month' ? (
         <MonthView
-          anchor={anchor} events={visible} now={now} onOpen={setOpenId}
+          anchor={anchor} events={visible} now={now} onOpen={open}
           onPickDay={d => { setAnchor(d); setView('day') }}
         />
       ) : view === 'week' ? (
-        <WeekView anchor={anchor} events={visible} now={now} onOpen={setOpenId} />
+        <WeekView anchor={anchor} events={visible} now={now} onOpen={open} />
       ) : (
-        <ListView events={visible} rsvps={rsvps} userId={userId} now={now} showPast={showPast} onOpen={setOpenId} />
+        <ListView events={visible} rsvps={rsvps} userId={userId} now={now} showPast={showPast} onOpen={open} />
       )}
 
       {/* Legend */}

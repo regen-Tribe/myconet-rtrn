@@ -31,12 +31,12 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
 
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, title, description, status, open_for_collaborators, circle, needs, deadline, sprint_name, created_at, created_by, lead_user_id')
+    .select('id, title, description, status, open_for_collaborators, circle, is_chores, needs, deadline, sprint_name, created_at, created_by, lead_user_id')
     .order('created_at', { ascending: false })
 
   const { data: deliverablesRaw } = await supabase
     .from('deliverables')
-    .select('id, project_id, title, assignee_id, due_date, status, progress, user_profiles(username)')
+    .select('id, project_id, title, assignee_id, due_date, due_time, circle, needs_review, status, progress, user_profiles(username)')
     .order('due_date', { ascending: true })
 
   const deliverables = (deliverablesRaw ?? []).map((d: any) => ({
@@ -45,6 +45,9 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
     title: d.title as string,
     assignee_id: d.assignee_id as string | null,
     due_date: d.due_date as string | null,
+    due_time: d.due_time as string | null,
+    circle: d.circle as string | null,
+    needs_review: !!d.needs_review,
     status: (d.status as string) ?? 'backlog',
     progress: d.progress as number | null,
     assignee_username: d.user_profiles?.username ?? null,

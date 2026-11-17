@@ -5,6 +5,25 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.20.0 — 2026-11-17
+
+- **Task data, for the agent and the calendar** (first step of the MyCoNet agent plan). Tasks stay on the task board and
+  events stay on the calendar; the calendar only *shows* dated tasks.
+  - Board tasks (`deliverables`) get `due_time` (local time of day, only with a date), `circle` (defaults to the
+    project's circle, by trigger), `source` (`person` · `agent` · `meeting`), `source_meeting_id` + `source_item`
+    (a meeting's action item), `needs_review` (a draft a lead confirms) and `created_by`.
+  - **Chores projects:** `projects.is_chores`, one per circle (unique), made the first time someone adds a one-off
+    task through `public.chores_project(circle)` (admins, circle leads, project leads: the same people who can add
+    tasks). The board's new **+ Task** button uses it ("kitchen clean-up Saturday 4 PM" → Kitchen chores).
+  - Task pop-up on a project: time, circle, "Draft" badge (saving confirms it); cards and the Deliverables tab show the
+    time. `/ops/<project>?task=<id>` opens a task.
+  - **Calendar Tasks layer:** the Tasks checkbox now shows dated board tasks (☐ / ✓, all day without a time, a
+    30-minute slot with one); clicking one opens it on the board. New events can no longer be calendar "tasks"
+    (the form points to the board); existing task-kind events still show and can be edited.
+  - Task dates are read as local dates (`core/lib/tasks.ts`); `new Date('2026-11-21')` showed the day before west
+    of UTC.
+  - Migration `20261122000000_task_data.sql` (safe to re-run; backfills task circles from their projects).
+
 ## v4.19.0 — 2026-11-17
 
 - **Meetings (M18, Sonia's)**, recovered from the build she deployed to Protopia on Nov 16 (from an old checkout,

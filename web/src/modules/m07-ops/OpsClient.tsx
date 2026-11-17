@@ -11,6 +11,8 @@ import { DeliverablesTab } from './DeliverablesTab'
 import { UpdatesTab } from './UpdatesTab'
 import { CirclesTab } from './CirclesTab'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
+import { NewTaskModal } from './NewTaskModal'
+import { taskDate } from '@/core/lib/tasks'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile } from './types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -126,6 +128,11 @@ function ProjectKanbanCard({
             {circleMeta.emoji} {circleMeta.label}
           </div>
         )}
+        {project.is_chores && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 600, color: 'var(--ink-3)', background: 'var(--bg-2)', padding: '1px 6px', borderRadius: 20, marginBottom: 5, marginLeft: circleMeta ? 4 : 0 }}>
+            🧹 One-off tasks
+          </div>
+        )}
 
         {project.description && (
           <p style={{
@@ -186,6 +193,7 @@ export default function OpsClient({
   const [selectedCircle, setSelectedCircle] = useState<string | null>(null)
   const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>('all')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  const [newTask, setNewTask] = useState(false)
 
   async function moveProject(projectId: string, newStatus: string) {
     const p = boardProjects.find(x => x.id === projectId)
@@ -223,7 +231,7 @@ export default function OpsClient({
   const overdueToday = new Date(); overdueToday.setHours(0, 0, 0, 0)
   const overdueProjectIds = new Set(
     initialDeliverables
-      .filter(d => d.due_date && !['done', 'review'].includes(d.status) && new Date(d.due_date) < overdueToday)
+      .filter(d => d.due_date && !['done', 'review'].includes(d.status) && taskDate(d.due_date) < overdueToday)
       .map(d => d.project_id)
   )
 
@@ -290,6 +298,16 @@ export default function OpsClient({
             }}>
               + Propose project
             </Link>
+          )}
+          {/* One-off task for a circle — the same people who can add tasks */}
+          {isAdmin && (
+            <button onClick={() => setNewTask(true)} style={{
+              fontSize: 13, fontWeight: 600, color: 'var(--m7)', background: 'var(--surface)',
+              border: '1px solid color-mix(in srgb, var(--m7) 40%, var(--rule))', borderRadius: 8, padding: '8px 16px',
+              cursor: 'pointer', whiteSpace: 'nowrap',
+            }}>
+              + Task
+            </button>
           )}
           {/* Create project — visible to ops admins */}
           {isAdmin && (
@@ -489,6 +507,13 @@ export default function OpsClient({
       )}
 
       <PermissionNoticeModal notice={notice} directory={circleDirectory} onClose={() => setNotice(null)} />
+      {newTask && (
+        <NewTaskModal
+          defaultCircle={selectedCircle ?? leadCircles[0] ?? null}
+          onClose={() => setNewTask(false)}
+          onAdded={(projectId, taskId) => router.push(`/ops/${projectId}?task=${taskId}`)}
+        />
+      )}
     </div>
   )
 }
