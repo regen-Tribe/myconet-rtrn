@@ -9,13 +9,13 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { smtpSendAll } from './smtp'
+import type { NotesTask } from '../types'
 
 const MAX_RECIPIENTS = 30
 
 export const notesEmailOn = () =>
   Boolean(process.env.MEETINGS_EMAIL_FROM && process.env.MEETINGS_SMTP_HOST && process.env.MEETINGS_SMTP_PASSWORD)
 
-export interface EmailTask { title: string; person: string | null; onMyCoNet: boolean; url: string; draft: boolean; when: string | null; circleName: string }
 
 export interface EmailInput {
   id: string
@@ -23,7 +23,7 @@ export interface EmailInput {
   when: string
   circleName: string | null
   summary: string | null
-  tasks: EmailTask[]
+  tasks: NotesTask[]
   /** Named in the meeting, no account yet */
   notOnMyCoNet: string[]
   notesUrl: string | null
@@ -57,7 +57,7 @@ export function buildNotesEmail(m: EmailInput) {
   const subject = `Meeting notes: ${m.title}`.slice(0, 200)
   const drafts = m.tasks.filter(t => t.draft).length
   const several = new Set(m.tasks.map(t => t.circleName)).size > 1
-  const taskLine = (t: EmailTask) =>
+  const taskLine = (t: NotesTask) =>
     `${several ? `[${t.circleName}] ` : ''}${t.person ? `${t.person}${t.onMyCoNet ? '' : ' (not on MyCoNet yet)'}: ` : ''}${t.title}${t.when ? ` · ${t.when}` : ''}`
 
   const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:640px;color:#18181b;line-height:1.55">

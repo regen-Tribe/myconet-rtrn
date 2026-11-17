@@ -1,3 +1,4 @@
+import { one } from '@/core/lib/rows'
 import type { CalendarEvent, EventComment, EventRsvp } from '../types'
 
 export const EVENT_SELECT = `
@@ -16,8 +17,6 @@ export const COMMENT_SELECT = 'id, event_id, user_id, body, created_at, author:u
 
 export const RSVP_SELECT = 'event_id, user_id, status, person:user_profiles!event_rsvps_user_id_fkey(first_name, username)'
 
-// PostgREST types to-one embeds loosely; flatten any array forms.
-const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null)
 
 export function toEvent(row: any): CalendarEvent {
   return { ...row, creator: one(row.creator), notes_author: one(row.notes_author), times_author: one(row.times_author), project: one(row.project), proposal: one(row.proposal) }

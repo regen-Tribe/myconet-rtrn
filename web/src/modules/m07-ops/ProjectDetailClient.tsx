@@ -1,7 +1,7 @@
 'use client'
+import { DraftBadge } from '@/core/components/DraftBadge'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
-import { fmtDate } from '@/core/lib/format'
 import { fmtTaskWhen, isTaskOverdue, toTimeInput } from '@/core/lib/tasks'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
@@ -483,13 +483,11 @@ export default function ProjectDetailClient({
                 <span style={{
                   fontSize: 12, color: (() => {
                     if (['done', 'review'].includes(project.status)) return 'var(--ink-4)'
-                    const d = new Date(project.deadline); d.setHours(0,0,0,0)
-                    const now = new Date(); now.setHours(0,0,0,0)
-                    return d < now ? '#ef4444' : 'var(--ink-3)'
+                    return isTaskOverdue(project.deadline, null, project.status) ? '#ef4444' : 'var(--ink-3)'
                   })(),
                   fontFamily: 'var(--mono)',
                 }}>
-                  Due {fmtDate(project.deadline)}
+                  Due {fmtTaskWhen(project.deadline)}
                 </span>
               </div>
             )}
@@ -804,7 +802,7 @@ export default function ProjectDetailClient({
                               opacity: d.status === 'done' ? 0.6 : 1,
                             }}>
                               {d.needs_review && (
-                                <span title="A draft (e.g. from a meeting): open it and save to confirm" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#b45309', background: '#fef3c7', borderRadius: 4, padding: '1px 5px', marginRight: 5, verticalAlign: 1 }}>Draft</span>
+                                <DraftBadge />
                               )}
                               {d.title}
                             </div>

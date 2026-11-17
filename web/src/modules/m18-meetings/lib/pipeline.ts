@@ -14,6 +14,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { fmtTaskWhen } from '@/core/lib/tasks'
+import { one } from '@/core/lib/rows'
 import type { ActionItem, MeetingVisibility } from '../types'
 import { draftTasks, localDay } from './draft-tasks'
 import { itemKey, matchPerson, displayName, type PersonProfile } from './people'
@@ -36,11 +37,10 @@ export interface PipelineResult {
   errors: string[]
 }
 
-const one = (v: any) => (Array.isArray(v) ? v[0] : v)
 
 export async function processMeeting(
   admin: SupabaseClient, meetingId: string,
-  opts: { requestedBy: string | null; timeoutMs: number; email: 'auto' | 'again' | 'skip' },
+  opts: { requestedBy: string | null; timeoutMs: number; email: 'auto' | 'again' },
 ): Promise<PipelineResult> {
   const now = new Date()
   const errors: string[] = []
@@ -186,7 +186,7 @@ export async function processMeeting(
 
     // 4. Email the leads of the circles involved (once on its own; again only when asked)
     let email: PipelineResult['email'] = null
-    if (notesEmailOn() && opts.email !== 'skip' && (opts.email === 'again' || !m.notes_emailed_at)) {
+    if (notesEmailOn() && (opts.email === 'again' || !m.notes_emailed_at)) {
       const { emails, leadCount } = await notesRecipients(admin, involved)
       if (!emails.length) {
         email = { sent: 0, error: leadCount ? 'The leads have no email on their accounts' : 'No circle lead with an account yet' }

@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.21.1',
+    date: '2026-11-17',
+    title: 'Fixes after a review',
+    items: [
+      'Setting the circle on a meeting the agent skipped now puts its tasks on the board.',
+      'Removing a meeting’s circle also makes it visible to everyone again (no more Circle only without a circle).',
+      'Task and project dates no longer show a day early on the home page, the board’s At risk count and project deadlines.',
+    ],
+  },
+  {
     version: 'v4.21.0',
     date: '2026-11-17',
     title: 'Meetings turn into tasks on the board',

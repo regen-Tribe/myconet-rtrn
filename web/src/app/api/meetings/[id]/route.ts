@@ -33,7 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (body.action === 'settings') {
     const changes: Record<string, unknown> = {}
     if (body.circle !== undefined) {
-      if (body.circle === null || body.circle === '') { changes.circle = null; changes.circle_source = null }
+      // No circle → it can't be Circle only
+      if (body.circle === null || body.circle === '') { changes.circle = null; changes.circle_source = null; changes.visibility = 'community' }
       else {
         const { data: c } = await supabase.from('circles').select('slug').eq('slug', String(body.circle)).is('archived_at', null).maybeSingle()
         if (!c) return NextResponse.json({ error: 'No such circle.' }, { status: 400 })
@@ -42,8 +43,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         changes.needs_review = false
       }
     }
-    if (body.visibility === 'community' || body.visibility === 'circle') changes.visibility = body.visibility
-    if ((changes.visibility ?? 'community') === 'circle' && !(changes.circle ?? meeting.circle)) {
+    if ((body.visibility === 'community' || body.visibility === 'circle') && changes.visibility === undefined) changes.visibility = body.visibility
+    if (changes.visibility === 'circle' && !('circle' in changes ? changes.circle : meeting.circle)) {
       return NextResponse.json({ error: 'Choose a circle before making it Circle only.' }, { status: 400 })
     }
     if (Object.keys(changes).length) {

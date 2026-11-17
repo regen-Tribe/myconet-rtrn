@@ -1,7 +1,7 @@
 import { after, NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/core/lib/supabase/service'
 import { moduleOn } from '@/core/lib/modules'
-import { buildTranscriptText, fetchTranscript, parseActionItems } from '@/modules/m18-meetings/lib/fireflies'
+import { fetchTranscript, transcriptFields } from '@/modules/m18-meetings/lib/fireflies'
 import { processMeeting } from '@/modules/m18-meetings/lib/pipeline'
 
 // Meetings recorded straight in Fireflies (not uploaded here; most meetings): Fireflies' own webhook
@@ -26,12 +26,10 @@ export async function POST(req: NextRequest) {
     const t = await fetchTranscript(meetingId)
     const { data, error } = await admin.from('meeting_transcripts').insert({
       title: t.title || 'Untitled meeting',
-      meeting_date: t.date ? new Date(t.date).toISOString() : null,
+      meeting_date: null,
       attendees: (t.speakers ?? []).map(s => s.name).filter(Boolean),
-      fireflies_id: meetingId, status: 'done',
-      summary: t.summary?.overview || t.summary?.short_summary || null,
-      action_items: parseActionItems(t.summary?.action_items),
-      transcript: buildTranscriptText(t.sentences),
+      fireflies_id: meetingId,
+      ...transcriptFields(t),
       source: 'fireflies_direct', needs_review: true, circle: null, created_by: null,
     }).select('id').single()
     if (error) throw new Error(error.message)

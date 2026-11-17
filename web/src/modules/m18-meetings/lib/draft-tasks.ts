@@ -85,7 +85,7 @@ function prompt(input: DraftInput): string {
 
 The meeting was on ${weekday} ${date} (time zone ${input.timeZone}).
 
-1. Decide whether this is a meeting of ${input.community} (its people, its land, its projects, its circles). The same Fireflies account may record other calls (personal, client, other organisations): for those, or when you're not sure, set "community": false and return no tasks.
+1. ${input.fixedCircle ? `A person confirmed this is a meeting of ${input.community}: set "community": true.` : `Decide whether this is a meeting of ${input.community} (its people, its land, its projects, its circles). The same Fireflies account may record other calls (personal, client, other organisations): for those, or when you're not sure, set "community": false and return no tasks.`}
 2. ${input.fixedCircle ? `A person set this meeting's circle: ${input.fixedCircle} (${circleName(input.fixedCircle)}). Keep it as the main circle.` : 'Choose the meeting\'s main circle: the circle most of the discussion and work belongs to, even if a task or two belong to other circles. Use null only when it is community-wide: a general sync, community circle or logistics meeting with reports from several circles.'}
 3. Make one task per concrete thing someone agreed to do. Start from the action items, and use the summary and transcript for who does it, by when, and anything clearly agreed that the action items missed. Skip anything already in "Open tasks on the board". Leave out vague intentions, discussion points and decisions that need no work.
 4. Give each task the circle whose work it is (it can differ from the meeting's circle). Put it in a project only when it is clearly part of that project's work, and only a project of the same circle. Routine upkeep (cleaning, repairs, checks, restocking, chores) gets project_id null: it goes to the circle's Chores.
@@ -136,7 +136,8 @@ export function parseDrafts(content: string, input: DraftInput): Omit<DraftResul
   const projectCircle = new Map(input.projects.map(p => [p.id, p.circle]))
   const circle = input.fixedCircle ?? (typeof raw.circle === 'string' && slugs.has(raw.circle) ? raw.circle : null)
   const reason = str(raw.reason, 300)
-  if (!raw.community) return { isCommunity: false, circle: input.fixedCircle, reason, tasks: [] }
+  // A person who chose the circle has already decided it's a community meeting
+  if (!raw.community && !input.fixedCircle) return { isCommunity: false, circle: null, reason, tasks: [] }
 
   const items = input.meeting.action_items
   const tasks: DraftTask[] = []

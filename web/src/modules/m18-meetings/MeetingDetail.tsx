@@ -1,5 +1,6 @@
 'use client'
 
+import { DraftBadge } from '@/core/components/DraftBadge'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -168,7 +169,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
                   <div style={{ border: '1px solid var(--rule)', borderRadius: 10, padding: '10px 14px', background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>
-                        {t.needs_review && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#b45309', background: '#fef3c7', borderRadius: 4, padding: '1px 5px', marginRight: 6, verticalAlign: 1 }}>Draft</span>}
+                        {t.needs_review && <DraftBadge />}
                         {t.title}
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t.project_title ?? ''} ↗</span>

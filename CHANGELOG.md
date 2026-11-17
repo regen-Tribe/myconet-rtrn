@@ -5,6 +5,21 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.21.1 — 2026-11-17
+
+Review of v4.20.0–v4.21.0:
+- **Fix:** a lead who sets the circle on a meeting the agent skipped now gets its tasks; the agent can no longer
+  answer "not a community meeting" over a person's choice.
+- **Fix:** clearing a meeting's circle also turns off Circle only (it would have hidden the meeting from everyone but
+  admins).
+- **Fix:** dates without a time (Home's task list, the board's At risk count, a project's deadline) were read as
+  midnight UTC, a day early west of UTC; they now use `core/lib/tasks.ts` like the rest.
+- Less duplication: one `one()` for PostgREST embeds (`core/lib/rows.ts`), one `DraftBadge`
+  (`core/components/DraftBadge.tsx`), one `NotesTask` shape for the note and the email, one `transcriptFields()`
+  for both Fireflies routes; the unused `email: 'skip'` is gone.
+- Web/mobile check: the circle's **Meeting notes** button sits under the circle name in Operations › Circles (it
+  squeezed long names), the org chart's steward circle has one too, and both use one `MeetingNotesLink`.
+
 ## v4.21.0 — 2026-11-17
 
 - **The meeting pipeline** (Phase 7 step 4 of the agent plan; rewrites the goals of Sonia's Protopia PR #53). Most

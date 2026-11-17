@@ -4,11 +4,10 @@
  * SECOND_BRAIN_GITHUB_TOKEN secret exists: a fine-grained token for that repo only, Contents r/w.
  * The note has the summary and action items with links to their tasks; never the transcript.
  */
-import type { ActionItem, MeetingVisibility } from '../types'
+import type { ActionItem, MeetingVisibility, NotesTask } from '../types'
 
 export const secondBrainOn = () => Boolean(process.env.KNOWLEDGE_REPO && process.env.SECOND_BRAIN_GITHUB_TOKEN)
 
-export interface NoteTask { title: string; person: string | null; onMyCoNet: boolean; url: string; draft: boolean; when: string | null; circle: string | null; circleName: string }
 
 export interface NoteInput {
   id: string
@@ -22,7 +21,7 @@ export interface NoteInput {
   attendees: string[]
   summary: string | null
   action_items: ActionItem[]
-  tasks: NoteTask[]
+  tasks: NotesTask[]
   appUrl: string
 }
 
@@ -58,7 +57,7 @@ export function buildNote(n: NoteInput): string {
   lines.push('## Tasks on the board', '')
   if (n.tasks.length) {
     // Grouped by circle when the meeting touched several
-    const groups = new Map<string, NoteTask[]>()
+    const groups = new Map<string, NotesTask[]>()
     for (const t of n.tasks) groups.set(t.circleName, [...(groups.get(t.circleName) ?? []), t])
     for (const [circleName, list] of groups) {
       if (groups.size > 1) lines.push(`### ${circleName}`, '')

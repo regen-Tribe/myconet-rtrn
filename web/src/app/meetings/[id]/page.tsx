@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import MeetingDetail from '@/modules/m18-meetings/MeetingDetail'
 import { requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
 import { isOpsAdmin } from '@/core/lib/roles'
+import { one } from '@/core/lib/rows'
 import { notesEmailOn } from '@/modules/m18-meetings/lib/notes-email'
 import { secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
 import type { Meeting, MeetingTask } from '@/modules/m18-meetings/types'
@@ -20,7 +21,6 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   ])
   if (!data) notFound()
 
-  const one = (v: any) => (Array.isArray(v) ? v[0] : v)
   const tasks: MeetingTask[] = (links ?? []).map((l: any) => {
     const d = one(l.deliverables)
     if (!d) return null

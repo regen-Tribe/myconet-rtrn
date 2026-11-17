@@ -36,6 +36,18 @@ export interface Meeting extends MeetingListItem {
   notes_email_error: string | null
 }
 
+/** A meeting's task as the second-brain note and the notes email show it */
+export interface NotesTask {
+  title: string
+  person: string | null
+  onMyCoNet: boolean
+  url: string
+  draft: boolean
+  when: string | null
+  circle: string | null
+  circleName: string
+}
+
 /** A task the pipeline put on the board for this meeting */
 export interface MeetingTask {
   deliverable_id: string
