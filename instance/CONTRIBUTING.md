@@ -62,3 +62,11 @@ RTRN-only tables go in `instance/migrations/`.
 - API keys, tokens, passwords, or `.env*` files (they're git-ignored, keep it that way)
 - Real members' personal data, even in tests or screenshots
 - Secrets live in Bitwarden, Cloudflare and Supabase; ask Oz if you need access to something.
+
+## Work log discipline
+
+**Any change, PR, push, release or deploy here ends with the logs updated, the same day.** Deploys, migrations and
+new secrets (names only) go in `instance/log.md`; a community-only code change also in `instance/LOCAL-CHANGES.md`.
+Then the team's work log (Oscar's team: the agnetO vault, `projects/active/myconet/WORKLOG.md` + the root
+`WORKLOG.md`): what changed with its PR, tag or deploy id, the gotchas, and the open items with who each is waiting
+on. Never write that something is done unless a log or a live check says so. Same rules as core `CLAUDE.md`.
