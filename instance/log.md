@@ -2,6 +2,10 @@
 
 ---
 
+
+## 2026-11-17 — Core v4.21.1 via PR #44 (deployed, 3a1b13f2)
+- Review fixes (person's circle beats the agent's skip, Circle-only without a circle, date-only values, less duplication, Meeting notes button layout). No migration.
+
 ## 2026-11-17 — Core v4.20.0 + v4.21.0 via PR #43 (deployed, 801d8500)
 - Task data (v4.20.0): tasks get time, circle (backfilled from projects: 20/20), source, needs-review; per-circle
   Chores + "+ Task"; dated tasks on the calendar's Tasks layer; new events can't be task-kind (RTRN had none).
