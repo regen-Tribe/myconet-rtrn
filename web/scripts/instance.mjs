@@ -4,6 +4,7 @@
 //
 //   node scripts/instance.mjs            generate
 //   MYCONET_INSTANCE_DIR=../other node … use another instance folder
+import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -41,6 +42,8 @@ export function loadInstance() {
   if (!/^[a-z0-9-]+$/.test(cfg.cloudflare?.workerName ?? '')) problems.push('cloudflare.workerName: lowercase letters, numbers and dashes')
   if (!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(cfg.supabase?.url ?? '')) problems.push('supabase.url: https://<ref>.supabase.co')
   if (!cfg.supabase?.anonKey) problems.push('supabase.anonKey is required')
+  const known = ['meetings']
+  for (const m of cfg.modules ?? []) if (!known.includes(m)) problems.push(`modules: unknown module "${m}" (known: ${known.join(', ')})`)
   if (problems.length) throw new Error(`instance/config.jsonc:\n  - ${problems.join('\n  - ')}`)
   return cfg
 }
@@ -63,12 +66,20 @@ function wranglerConfig(cfg) {
   }
 }
 
+function gitSha() {
+  try { return execSync('git rev-parse HEAD', { cwd: WEB, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { return '' }
+}
+
 function publicEnv(cfg) {
   return {
     NEXT_PUBLIC_SUPABASE_URL: cfg.supabase.url,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: cfg.supabase.anonKey,
     NEXT_PUBLIC_APP_URL: cfg.appUrl,
     NEXT_PUBLIC_COMMUNITY_NAME: cfg.displayName,
+    // Optional modules that are on, e.g. "meetings" (core/lib/modules.ts)
+    NEXT_PUBLIC_MODULES: (cfg.modules ?? []).join(','),
+    // The commit this build came from: /api/version reports it, and the deploy check compares it
+    NEXT_PUBLIC_GIT_SHA: gitSha(),
   }
 }
 

@@ -5,6 +5,24 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.19.0 — 2026-11-17
+
+- **Meetings (M18, Sonia's)**, recovered from the build she deployed to Protopia on Nov 16 (from an old checkout,
+  which rolled Protopia back to v4.10.0). Optional module: `instance/config.jsonc` `"modules": ["meetings"]` →
+  `NEXT_PUBLIC_MODULES` (`core/lib/modules.ts`); off means no sidebar entry and 404s. Pages `/meetings`,
+  `/meetings/[id]`, `/meetings/upload`; routes `/api/meetings/upload`, `/api/fireflies-webhook`,
+  `/api/fireflies-ingest`. Changes from her build: webhook URL from `NEXT_PUBLIC_APP_URL` (was hard-coded),
+  Supabase URL from env, uploads need joining or above (as the pages do), the webhook always needs its secret.
+  Migration `20261121000000_meetings.sql` (safe to re-run over her hand-made table and bucket); reading is now
+  joining members and above (was every signed-in person).
+- **Newest code for everyone working on it:** `npm run start-work` (run automatically by Claude Code's
+  SessionStart hook in `.claude/settings.json`) pulls when safe, lists others' recent commits, open PRs and fresh
+  branches with file overlaps, and checks the live portal's commit. `npm run deploy` / `upload` / `deploy:cf` now
+  run `scripts/deploy-check.mjs` first: refuses a dirty, unpushed, behind or non-main checkout, live code that
+  isn't in your history, or a version older than live (`MYCONET_DEPLOY_FORCE=1` to override). `/api/version`
+  reports `{ version, sha }` (`NEXT_PUBLIC_GIT_SHA` from `scripts/instance.mjs`). AGENTS.md / CLAUDE.md rules
+  updated (start-work, concurrent work, deploys, migrations only, logging new secrets).
+
 ## v4.18.2 — 2026-11-16
 
 - Working rules for people and AI agents (`CLAUDE.md`, `AGENTS.md`, `README.md`): check what others changed before

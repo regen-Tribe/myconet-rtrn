@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.19.0',
+    date: '2026-11-17',
+    title: 'Meetings, and everyone works from the newest code',
+    items: [
+      'Meetings (Sonia’s, M18): upload a meeting recording and it’s transcribed and summarised by Fireflies, with action items by person and the full transcript. Meetings recorded straight in Fireflies come in too, marked for review. An optional module: on for communities that turn it on.',
+      'Working on the code: every session starts with a check that pulls the newest code, shows what others changed and who is working on what right now, and warns when files overlap. Deploys are refused when the code isn’t on GitHub, is behind, or is older than what’s live, so one person’s deploy can’t undo another’s.',
+      'The portal reports its version and commit at /api/version.',
+    ],
+  },
+  {
     version: 'v4.18.2',
     date: '2026-11-16',
     title: 'How changes are made',
