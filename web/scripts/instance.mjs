@@ -44,6 +44,15 @@ export function loadInstance() {
   if (!cfg.supabase?.anonKey) problems.push('supabase.anonKey is required')
   const known = ['meetings']
   for (const m of cfg.modules ?? []) if (!known.includes(m)) problems.push(`modules: unknown module "${m}" (known: ${known.join(', ')})`)
+  if (cfg.timeZone) {
+    try { new Intl.DateTimeFormat('en-US', { timeZone: cfg.timeZone }) } catch { problems.push(`timeZone: "${cfg.timeZone}" isn't a time zone (e.g. "America/Costa_Rica")`) }
+  }
+  if (cfg.knowledge?.repo && !/^[\w.-]+\/[\w.-]+$/.test(cfg.knowledge.repo)) problems.push('knowledge.repo: "owner/repo"')
+  const mail = cfg.meetings?.notesEmail
+  if (mail) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.from ?? '')) problems.push('meetings.notesEmail.from: an email address')
+    if (!mail.smtpHost) problems.push('meetings.notesEmail.smtpHost is required (e.g. "smtp.gmail.com")')
+  }
   if (problems.length) throw new Error(`instance/config.jsonc:\n  - ${problems.join('\n  - ')}`)
   return cfg
 }
@@ -78,6 +87,18 @@ function publicEnv(cfg) {
     NEXT_PUBLIC_COMMUNITY_NAME: cfg.displayName,
     // Optional modules that are on, e.g. "meetings" (core/lib/modules.ts)
     NEXT_PUBLIC_MODULES: (cfg.modules ?? []).join(','),
+    // The community's time zone, for dates said in meetings ("by Friday") and task times
+    COMMUNITY_TIME_ZONE: cfg.timeZone ?? 'UTC',
+    // The community's second brain on GitHub (meeting notes are saved there); the token is the
+    // SECOND_BRAIN_GITHUB_TOKEN secret
+    ...(cfg.knowledge?.repo ? { KNOWLEDGE_REPO: cfg.knowledge.repo, KNOWLEDGE_BRANCH: cfg.knowledge.branch ?? 'main' } : {}),
+    // Meeting notes email (needs the MEETINGS_SMTP_PASSWORD secret)
+    ...(cfg.meetings?.notesEmail ? {
+      MEETINGS_EMAIL_FROM: cfg.meetings.notesEmail.from,
+      MEETINGS_SMTP_HOST: cfg.meetings.notesEmail.smtpHost,
+      MEETINGS_SMTP_PORT: String(cfg.meetings.notesEmail.smtpPort ?? 465),
+      MEETINGS_EMAIL_ALWAYS_TO: (cfg.meetings.notesEmail.alwaysTo ?? []).join(','),
+    } : {}),
     // The commit this build came from: /api/version reports it, and the deploy check compares it
     NEXT_PUBLIC_GIT_SHA: gitSha(),
   }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
+import { useCircles } from '@/core/components/CirclesProvider'
 
 const MAX_BYTES = 200 * 1024 * 1024
 
@@ -11,6 +12,9 @@ const MAX_BYTES = 200 * 1024 * 1024
 export default function UploadForm({ userId }: { userId: string }) {
   const supabase = createClient()
   const router = useRouter()
+  const circles = useCircles()
+  const [circle, setCircle] = useState('')
+  const [circleOnly, setCircleOnly] = useState(false)
   const [title, setTitle] = useState('')
   const [attendees, setAttendees] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -32,7 +36,7 @@ export default function UploadForm({ userId }: { userId: string }) {
       const res = await fetch('/api/meetings/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio_path: path, title: title.trim(), attendees: attendees.split(',').map(a => a.trim()).filter(Boolean) }),
+        body: JSON.stringify({ audio_path: path, title: title.trim(), attendees: attendees.split(',').map(a => a.trim()).filter(Boolean), circle: circle || null, visibility: circle && circleOnly ? 'circle' : 'community' }),
       })
       const body = await res.json().catch(() => ({})) as { error?: string }
       if (!res.ok) throw new Error(body.error || 'Upload failed')
@@ -66,6 +70,22 @@ export default function UploadForm({ userId }: { userId: string }) {
         <div>
           <label style={label} htmlFor="mt-att">Who was there <span style={{ fontWeight: 400, color: 'color-mix(in srgb, var(--ink) 50%, transparent)' }}>(optional, comma-separated)</span></label>
           <input id="mt-att" style={input} value={attendees} onChange={e => setAttendees(e.target.value)} placeholder="Sonia, Oscar, …" />
+        </div>
+        <div>
+          <label style={label} htmlFor="mt-circle">Circle</label>
+          <select id="mt-circle" style={input} value={circle} onChange={e => setCircle(e.target.value)}>
+            <option value="">Let the agent choose</option>
+            {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).emoji} {circles.meta(c).label}</option>)}
+          </select>
+          <p style={{ fontSize: 12, color: 'color-mix(in srgb, var(--ink) 50%, transparent)', margin: '6px 0 0', lineHeight: 1.5 }}>
+            When the notes are ready, the agent puts the meeting’s tasks on the board as drafts and emails the leads. Without a circle, it chooses one from what was said (a lead can change it).
+          </p>
+          {circle && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-2)', marginTop: 10, cursor: 'pointer' }}>
+              <input type="checkbox" checked={circleOnly} onChange={e => setCircleOnly(e.target.checked)} />
+              Circle only: just this circle’s members, its leads and admins can read the notes
+            </label>
+          )}
         </div>
         <div>
           <label style={label} htmlFor="mt-file">Audio file</label>

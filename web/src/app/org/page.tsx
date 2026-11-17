@@ -1,3 +1,4 @@
+import { meetingCountsByCircle } from '@/modules/m18-meetings/lib/counts'
 import { createClient } from '@/core/lib/supabase/server'
 import OrgChartClient from '@/modules/m17-org/OrgChartClient'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
@@ -17,10 +18,11 @@ export default async function OrgPage() {
     leadCircles = profile?.lead_circles ?? []
   }
 
-  const [unitsRes, membersRes, directory] = await Promise.all([
+  const [unitsRes, membersRes, directory, meetingCounts] = await Promise.all([
     supabase.from('org_units').select('id, kind, circle, name, description, sort_order').order('sort_order'),
     supabase.from('org_unit_members').select(MEMBER_SELECT),
     fetchCircleDirectory(supabase),
+    user ? meetingCountsByCircle(supabase) : Promise.resolve(null),
   ])
   const members = (membersRes.data ?? []).map(toMember)
 
@@ -42,6 +44,7 @@ export default async function OrgPage() {
       userId={user?.id ?? null}
       role={role}
       leadCircles={leadCircles}
+      meetingCounts={meetingCounts}
     />
   )
 }

@@ -11,6 +11,8 @@ import { DeliverablesTab } from './DeliverablesTab'
 import { UpdatesTab } from './UpdatesTab'
 import { CirclesTab } from './CirclesTab'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
+import { NewTaskModal } from './NewTaskModal'
+import { taskDate } from '@/core/lib/tasks'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile } from './types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -33,6 +35,8 @@ interface OpsClientProps {
   canPropose: boolean
   circleDirectory: CircleDirectory
   initialTab: OpsTab
+  /** Meetings per circle this person can read; null when Meetings is off */
+  meetingCounts: Record<string, number> | null
 }
 
 type OpsTab = 'board' | 'deliverables' | 'updates' | 'circles'
@@ -126,6 +130,11 @@ function ProjectKanbanCard({
             {circleMeta.emoji} {circleMeta.label}
           </div>
         )}
+        {project.is_chores && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 600, color: 'var(--ink-3)', background: 'var(--bg-2)', padding: '1px 6px', borderRadius: 20, marginBottom: 5, marginLeft: circleMeta ? 4 : 0 }}>
+            🧹 One-off tasks
+          </div>
+        )}
 
         {project.description && (
           <p style={{
@@ -174,7 +183,7 @@ export default function OpsClient({
   projects, deliverables: initialDeliverables, updates,
   activeCount, deliverableCount, doneCount, atRiskCount,
   isAdmin, userId, userRole, leadCircles, sprintName,
-  projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab,
+  projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
 }: OpsClientProps) {
   const circles = useCircles()
   const router = useRouter()
@@ -186,6 +195,9 @@ export default function OpsClient({
   const [selectedCircle, setSelectedCircle] = useState<string | null>(null)
   const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>('all')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  const [newTask, setNewTask] = useState(false)
+  const [draftsOnly, setDraftsOnly] = useState(false)
+  const draftCount = initialDeliverables.filter(d => d.needs_review).length
 
   async function moveProject(projectId: string, newStatus: string) {
     const p = boardProjects.find(x => x.id === projectId)
@@ -223,7 +235,7 @@ export default function OpsClient({
   const overdueToday = new Date(); overdueToday.setHours(0, 0, 0, 0)
   const overdueProjectIds = new Set(
     initialDeliverables
-      .filter(d => d.due_date && !['done', 'review'].includes(d.status) && new Date(d.due_date) < overdueToday)
+      .filter(d => d.due_date && !['done', 'review'].includes(d.status) && taskDate(d.due_date) < overdueToday)
       .map(d => d.project_id)
   )
 
@@ -291,6 +303,16 @@ export default function OpsClient({
               + Propose project
             </Link>
           )}
+          {/* One-off task for a circle — the same people who can add tasks */}
+          {isAdmin && (
+            <button onClick={() => setNewTask(true)} style={{
+              fontSize: 13, fontWeight: 600, color: 'var(--m7)', background: 'var(--surface)',
+              border: '1px solid color-mix(in srgb, var(--m7) 40%, var(--rule))', borderRadius: 8, padding: '8px 16px',
+              cursor: 'pointer', whiteSpace: 'nowrap',
+            }}>
+              + Task
+            </button>
+          )}
           {/* Create project — visible to ops admins */}
           {isAdmin && (
             <Link href="/ops/new" style={{
@@ -317,6 +339,13 @@ export default function OpsClient({
           onClick={atRiskCount > 0 ? () => { setOverdueOnly(v => !v); setActiveTab('board') } : undefined}
         />
         <StatCard label="Projects" value={totalProjects} delta={`${totalProjects} total`} />
+        {draftCount > 0 && (
+          <StatCard
+            label="Drafts" value={draftCount} valueColor="#b45309"
+            delta="tasks to confirm · click to see" active={activeTab === 'deliverables' && draftsOnly}
+            onClick={() => { setDraftsOnly(true); setActiveTab('deliverables') }}
+          />
+        )}
       </div>
 
       {/* ── Tab Row ───────────────────────────────────────────────────── */}
@@ -471,7 +500,7 @@ export default function OpsClient({
       )}
 
       {activeTab === 'deliverables' && (
-        <DeliverablesTab deliverables={initialDeliverables} projects={boardProjects} />
+        <DeliverablesTab deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly} />
       )}
       {activeTab === 'updates' && (
         <UpdatesTab updates={updates} projects={projects} />
@@ -485,10 +514,18 @@ export default function OpsClient({
           userRole={userRole}
           leadCircles={leadCircles}
           involvedProjectIds={myInvolvedProjectIds}
+          meetingCounts={meetingCounts}
         />
       )}
 
       <PermissionNoticeModal notice={notice} directory={circleDirectory} onClose={() => setNotice(null)} />
+      {newTask && (
+        <NewTaskModal
+          defaultCircle={selectedCircle ?? leadCircles[0] ?? null}
+          onClose={() => setNewTask(false)}
+          onAdded={(projectId, taskId) => router.push(`/ops/${projectId}?task=${taskId}`)}
+        />
+      )}
     </div>
   )
 }
