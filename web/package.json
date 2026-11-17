@@ -6,17 +6,18 @@
     "build": "next build",
     "dev": "next dev",
     "build:cf": "npm run instance && opennextjs-cloudflare build",
-    "deploy:cf": "npm run instance && opennextjs-cloudflare build && wrangler deploy",
+    "deploy:cf": "node scripts/deploy-check.mjs && npm run instance && opennextjs-cloudflare build && wrangler deploy",
     "preview:cf": "npm run instance && opennextjs-cloudflare build && wrangler dev",
     "start": "next start",
     "lint": "eslint",
     "lint:changed": "node scripts/lint-changed.mjs",
     "preview": "npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "deploy": "node scripts/deploy-check.mjs && npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "node scripts/deploy-check.mjs && npm run instance && opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "instance": "node scripts/instance.mjs",
-    "upstream": "node scripts/upstream.mjs"
+    "upstream": "node scripts/upstream.mjs",
+    "start-work": "node scripts/start-work.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

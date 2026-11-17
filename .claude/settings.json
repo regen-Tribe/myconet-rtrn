@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/web/scripts/start-work.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Checking for newer code and others' work…"
+          }
+        ]
+      }
+    ]
+  }
+}

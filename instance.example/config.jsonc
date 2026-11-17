@@ -22,5 +22,9 @@
     // Supabase dashboard → Project Settings → API
     "url": "https://<project-ref>.supabase.co",
     "anonKey": ""
-  }
+  },
+
+  // Optional modules to turn on. "meetings": meeting recordings transcribed by Fireflies
+  // (needs the FIREFLIES_API_KEY, FIREFLIES_WEBHOOK_SECRET and SUPABASE_SERVICE_ROLE_KEY secrets)
+  "modules": []
 }

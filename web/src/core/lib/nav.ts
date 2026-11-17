@@ -1,3 +1,5 @@
+import { moduleOn } from './modules'
+
 /**
  * Sidebar module order — the single source for the app sidebar and the
  * sidebar mock-ups in the landing / home page previews.
@@ -19,4 +21,6 @@ export const MEMBER_MODULES = [
   { num: '07', name: 'Operations',    color: 'var(--m7)', href: '/ops' as string | null },
   { num: '08', name: 'Achievements', color: 'var(--m8)', href: '/contributions' as string | null },
   { num: '09', name: 'Governance',    color: 'var(--m9)', href: '/governance' as string | null },
+  // Optional modules (instance/config.jsonc "modules")
+  ...(moduleOn('meetings') ? [{ num: '18', name: 'Meetings', color: 'var(--m18)', href: '/meetings' as string | null }] : []),
 ]
