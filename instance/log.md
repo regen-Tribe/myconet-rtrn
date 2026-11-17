@@ -2,6 +2,15 @@
 
 ---
 
+## 2026-11-17 — Core v4.20.0 + v4.21.0 via PR #43 (deployed, 801d8500)
+- Task data (v4.20.0): tasks get time, circle (backfilled from projects: 20/20), source, needs-review; per-circle
+  Chores + "+ Task"; dated tasks on the calendar's Tasks layer; new events can't be task-kind (RTRN had none).
+- Meeting pipeline (v4.21.0): code only here. Meetings is off on RTRN and none of its settings (`timeZone`,
+  `knowledge`, `meetings.notesEmail`) are set.
+- Migrations applied via the Supabase MCP (signed in as correa.oscar11@gmail.com): `task_data`,
+  `meeting_pipeline`, without their `drop … if exists` lines (the MCP cancels policy drops; none of those objects
+  existed here). Checked: columns, tables, functions, 3 policies, trigger. PR #42 (v4.20.0) closed as superseded.
+
 ## 2026-11-16 — Core v4.18.2 (not deployed; docs only)
 
 - Working rules in `CLAUDE.md`, `AGENTS.md`, `README.md`: check what changed first, ask core-or-community, log local changes; maintainers push directly. Merged from the v4.18.2 tag. The app's version badge updates on the next deploy.
