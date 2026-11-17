@@ -53,6 +53,17 @@ export async function fetchTranscript(id: string): Promise<Transcript> {
   return data.transcript
 }
 
+/** What a Fireflies transcript fills in on meeting_transcripts (both webhooks) */
+export function transcriptFields(t: Transcript) {
+  return {
+    status: 'done' as const,
+    summary: t.summary?.overview || t.summary?.short_summary || null,
+    action_items: parseActionItems(t.summary?.action_items),
+    transcript: buildTranscriptText(t.sentences),
+    ...(t.date ? { meeting_date: new Date(t.date).toISOString() } : {}),
+  }
+}
+
 /** "[mm:ss] Speaker: text", one line per sentence */
 export function buildTranscriptText(sentences: Transcript['sentences']): string {
   return (sentences ?? []).map(s => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { MeetingNotesLink } from '@/modules/m18-meetings/MeetingNotesLink'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
@@ -177,6 +178,7 @@ export default function OrgChartClient({
                 {steward && su && canLeadCircle(steward.slug, role, leadCircles) && <button onClick={() => setEditing({ unit: su, circle: steward.slug })} style={editBtn}>Edit</button>}
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{sm ? 'Community stewards · look after every circle' : 'Admins · look after every circle'}</div>
+              {steward && meetingCounts && <div style={{ display: 'flex', justifyContent: 'center' }}><MeetingNotesLink circle={steward.slug} count={meetingCounts[steward.slug]} color={accent} /></div>}
               {su?.description && <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap', maxWidth: '60ch' }}>{su.description}</p>}
               {steward && <CircleLeadName slug={steward.slug} canEdit={role === 'admin'} color={accent} />}
               {sLeads.length > 0 && <div style={{ display: 'flex', justifyContent: 'center' }}>{peopleRow(sLeads, accent)}</div>}
@@ -208,11 +210,7 @@ export default function OrgChartClient({
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: meta.color, margin: 0 }}>{meta.emoji} {meta.label}</h2>
                 {cu && canLead && <button onClick={() => setEditing({ unit: cu, circle: c })} style={editBtn}>Edit</button>}
               </div>
-              {meetingCounts && (
-                <Link href={`/meetings?circle=${c}`} style={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 600, color: meta.color, textDecoration: 'none', border: `1px solid color-mix(in srgb, ${meta.color} 35%, var(--rule))`, borderRadius: 20, padding: '3px 10px' }}>
-                  📝 Meeting notes{meetingCounts[c] ? ` (${meetingCounts[c]})` : ''}
-                </Link>
-              )}
+              {meetingCounts && <MeetingNotesLink circle={c} count={meetingCounts[c]} color={meta.color} />}
               {cu?.description
                 ? <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>{cu.description}</p>
                 : canLead && <p style={{ fontSize: 12, color: 'var(--ink-4)', margin: 0, fontStyle: 'italic' }}>Add this circle’s purpose with Edit.</p>}

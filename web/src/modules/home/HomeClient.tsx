@@ -1,4 +1,5 @@
 'use client'
+import { isTaskOverdue } from '@/core/lib/tasks'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { isFullMember as checkFullMember, isJoiningOrAbove, ROLE_LABELS } from '@/core/lib/roles'
@@ -17,7 +18,7 @@ type PhaseP = { id: string; name: string; answered: number; total: number; ratio
 type Member = { id: string; first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null; avatar_url: string | null; username: string | null }
 type Value  = { id: string; title: string; description: string; sort_order: number }
 type Project = { id: string; title: string; description: string | null; needs: string[] | null; open_for_collaborators: boolean }
-type Deliverable = { id: string; title: string; status: string; due_date: string | null; user_profiles?: { username: string | null } | null }
+type Deliverable = { id: string; title: string; status: string; due_date: string | null; due_time?: string | null; user_profiles?: { username: string | null } | null }
 
 interface Props {
   firstName: string | null
@@ -1156,7 +1157,7 @@ export default function HomeClient({
                       {done && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" style={{ width: 9, height: 9 }}><polyline points="5 12 10 17 19 7" /></svg>}
                     </div>
                     <span style={{ fontSize: 12, color: 'var(--ink-2)', textDecoration: done ? 'line-through' : 'none', lineHeight: 1.4 }}>{d.title}</span>
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: d.due_date && new Date(d.due_date) < new Date() && !done ? '#dc2626' : 'var(--ink-4)' }}>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: isTaskOverdue(d.due_date, d.due_time, d.status) ? '#dc2626' : 'var(--ink-4)' }}>
                       {owner ? `@${owner}` : d.due_date ?? ''}
                     </span>
                   </div>

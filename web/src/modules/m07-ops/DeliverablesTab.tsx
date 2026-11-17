@@ -1,5 +1,6 @@
 'use client'
 
+import { DraftBadge } from '@/core/components/DraftBadge'
 import Link from 'next/link'
 import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import type { Deliverable, ProjectSummary } from './types'
@@ -74,7 +75,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
             return (
               <tr key={d.id}>
                 <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>
-                  {d.needs_review && <span title="A draft waiting for a lead to confirm" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#b45309', background: '#fef3c7', borderRadius: 4, padding: '1px 5px', marginRight: 6 }}>Draft</span>}
+                  {d.needs_review && <DraftBadge />}
                   <Link href={`/ops/${d.project_id}?task=${d.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{d.title}</Link>
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>

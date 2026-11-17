@@ -1,3 +1,4 @@
+import { isTaskOverdue } from '@/core/lib/tasks'
 import { meetingCountsByCircle } from '@/modules/m18-meetings/lib/counts'
 import { createClient } from '@/core/lib/supabase/server'
 import OpsClient from '@/modules/m07-ops/OpsClient'
@@ -103,13 +104,7 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
   const deliverableCount = deliverables.length
   const doneCount = deliverables.filter(d => d.status === 'done').length
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const atRiskCount = deliverables.filter(d => {
-    if (!d.due_date) return false
-    if (['done', 'review'].includes(d.status)) return false
-    return new Date(d.due_date) < today
-  }).length
+  const atRiskCount = deliverables.filter(d => isTaskOverdue(d.due_date, d.due_time, d.status)).length
 
   const sprintName = allProjects.find(p => p.sprint_name)?.sprint_name ?? null
   const circleDirectory = await fetchCircleDirectory(supabase)

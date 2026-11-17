@@ -3,14 +3,15 @@
  * They're turned into calendar items in the browser, because a task's date and time are local.
  */
 import { taskDate } from '@/core/lib/tasks'
+import { one } from '@/core/lib/rows'
 import type { BoardTask, CalendarEvent } from '../types'
 
 export const BOARD_TASK_SELECT =
   'id, title, due_date, due_time, status, circle, project_id, projects(title), user_profiles!deliverables_assignee_id_fkey(first_name, username)'
 
 export function toBoardTask(r: any): BoardTask {
-  const person = Array.isArray(r.user_profiles) ? r.user_profiles[0] : r.user_profiles
-  const project = Array.isArray(r.projects) ? r.projects[0] : r.projects
+  const person = one<{ first_name: string | null; username: string | null }>(r.user_profiles)
+  const project = one<{ title: string }>(r.projects)
   return {
     id: r.id, title: r.title, due_date: r.due_date, due_time: r.due_time ?? null, status: r.status,
     circle: r.circle ?? null, project_id: r.project_id, project_title: project?.title ?? null,
