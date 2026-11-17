@@ -38,7 +38,7 @@ const label: React.CSSProperties = {
 }
 
 export default function OrgChartClient({
-  initialUnits, initialMembers, directory, people, userId, role, leadCircles,
+  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts,
 }: {
   initialUnits: OrgUnit[]
   initialMembers: OrgMember[]
@@ -48,6 +48,8 @@ export default function OrgChartClient({
   userId: string | null
   role: string
   leadCircles: string[]
+  /** Meetings per circle this person can read; null when Meetings is off or signed out */
+  meetingCounts?: Record<string, number> | null
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -206,6 +208,11 @@ export default function OrgChartClient({
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: meta.color, margin: 0 }}>{meta.emoji} {meta.label}</h2>
                 {cu && canLead && <button onClick={() => setEditing({ unit: cu, circle: c })} style={editBtn}>Edit</button>}
               </div>
+              {meetingCounts && (
+                <Link href={`/meetings?circle=${c}`} style={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 600, color: meta.color, textDecoration: 'none', border: `1px solid color-mix(in srgb, ${meta.color} 35%, var(--rule))`, borderRadius: 20, padding: '3px 10px' }}>
+                  📝 Meeting notes{meetingCounts[c] ? ` (${meetingCounts[c]})` : ''}
+                </Link>
+              )}
               {cu?.description
                 ? <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>{cu.description}</p>
                 : canLead && <p style={{ fontSize: 12, color: 'var(--ink-4)', margin: 0, fontStyle: 'italic' }}>Add this circle’s purpose with Edit.</p>}

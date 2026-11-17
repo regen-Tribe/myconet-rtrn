@@ -35,6 +35,21 @@ export interface CalendarEvent {
   creator: PersonLite | null
   project: { id: string; title: string } | null
   proposal: { id: string; title: string } | null
+  /** Set when this is a task from the task board shown on the calendar (opens the board, not a pop-up) */
+  board?: { taskId: string; projectId: string; status: string; assignee: string | null }
+}
+
+/** A dated task from the task board, as the calendar loads it */
+export interface BoardTask {
+  id: string
+  title: string
+  due_date: string
+  due_time: string | null
+  status: string
+  circle: string | null
+  project_id: string
+  project_title: string | null
+  assignee: string | null
 }
 
 /** A linked calendar's sorting rule: titles containing any of `words` go to `kind`, in `category` */

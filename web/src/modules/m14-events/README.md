@@ -4,7 +4,7 @@ The community calendar (labelled "Calendar" in the UI; route `/events`, with `/c
 
 - **Core events** — official events, posted by full members, circle leads, project leads, advisors and admins
 - **Community hosted** — events anyone joining or above can post
-- **Tasks** — things the community needs done; same posting rule as core. RSVP reads "I'll help" / "Who's helping" (`KIND_META` holds the wording)
+- **Tasks** — since v4.20.0 this layer shows **dated tasks from the task board** (`lib/board-tasks.ts`; loaded on the events page, turned into calendar items in the browser, clicking opens `/ops/<project>?task=<id>`). Tasks are added and changed on the board, so new events can't be task-kind; older task-kind events still show and can be edited (RSVP reads "I'll help" / "Who's helping").
 
 ## What users see here
 

@@ -5,6 +5,49 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.21.0 — 2026-11-17
+
+- **The meeting pipeline** (Phase 7 step 4 of the agent plan; rewrites the goals of Sonia's Protopia PR #53). Most
+  meetings arrive straight from Fireflies; when the notes are in, the MyCoNet agent makes sense of them and puts the
+  work on the board. Details: `web/src/modules/m18-meetings/README.md`.
+  - **The agent reads the whole meeting** (action items + summary + transcript) against the circles, open projects
+    and open tasks (MiniMax M3.1-Flash, one call): is it a community meeting (no or unsure → it waits for a lead,
+    nothing is posted or emailed), its main circle or community-wide, and the tasks, **each in its own circle**'s
+    best-matching project or Chores, with the person and any date/time said. Skips what's on the board; adds what
+    was agreed but missed. Drafts (`needs_review`, `source='meeting'`). A circle a person chose is kept.
+  - People without an account keep "(for Name)" in the task title; the email lists them as not on MyCoNet yet.
+  - **Second brain note** (`knowledge.repo` + `SECOND_BRAIN_GITHUB_TOKEN`): summary + tasks grouped by circle with
+    links, never the transcript.
+  - **Notes email** to the leads of the circles involved, at their account email (+ `alwaysTo`), over SMTP from the
+    Worker (Sonia's `lib/smtp.ts`, unchanged). Needs `meetings.notesEmail` + `MEETINGS_SMTP_PASSWORD`.
+  - **Circle only** meetings: just the circle's members (its teams), its leads and admins can read them (RLS).
+  - `/meetings`: circle chips, My circles, All, search, Needs review. **📝 Meeting notes (N)** on each circle (/org,
+    Operations › Circles). Meeting page: the agent's circle choice and reason, the tasks on the board, and for leads:
+    circle, Circle only, let the agent read it / look again, confirm all drafts, email again. Upload: circle optional
+    ("let the agent choose"). Board: **Drafts** card; Deliverables tab links each task and filters drafts; a task
+    shows "📝 From a meeting".
+  - `agent_actions`: everything the agent did (admins read it).
+  - New settings: `timeZone`, `knowledge`, `meetings.notesEmail`. Migration `20261124000000_meeting_pipeline.sql`.
+
+## v4.20.0 — 2026-11-17
+
+- **Task data, for the agent and the calendar** (first step of the MyCoNet agent plan). Tasks stay on the task board and
+  events stay on the calendar; the calendar only *shows* dated tasks.
+  - Board tasks (`deliverables`) get `due_time` (local time of day, only with a date), `circle` (defaults to the
+    project's circle, by trigger), `source` (`person` · `agent` · `meeting`), `source_meeting_id` + `source_item`
+    (a meeting's action item), `needs_review` (a draft a lead confirms) and `created_by`.
+  - **Chores projects:** `projects.is_chores`, one per circle (unique), made the first time someone adds a one-off
+    task through `public.chores_project(circle)` (admins, circle leads, project leads: the same people who can add
+    tasks). The board's new **+ Task** button uses it ("kitchen clean-up Saturday 4 PM" → Kitchen chores).
+  - Task pop-up on a project: time, circle, "Draft" badge (saving confirms it); cards and the Deliverables tab show the
+    time. `/ops/<project>?task=<id>` opens a task.
+  - **Calendar Tasks layer:** the Tasks checkbox now shows dated board tasks (☐ / ✓, all day without a time, a
+    30-minute slot with one); clicking one opens it on the board. New events can no longer be calendar "tasks"
+    (the form points to the board); existing task-kind events still show and can be edited.
+  - Task dates are read as local dates (`core/lib/tasks.ts`); `new Date('2026-11-21')` showed the day before west
+    of UTC.
+  - Migration `20261122000000_task_data.sql` (safe to re-run; backfills task circles from their projects).
+
 ## v4.19.0 — 2026-11-17
 
 - **Meetings (M18, Sonia's)**, recovered from the build she deployed to Protopia on Nov 16 (from an old checkout,

@@ -27,7 +27,7 @@ function PersonChip({ person, isMe }: { person: PersonRef; isMe: boolean }) {
 
 /** Who leads each circle, and where the signed-in user fits in. */
 export function CirclesTab({
-  directory, projects, userId, userRole, leadCircles, involvedProjectIds,
+  directory, projects, userId, userRole, leadCircles, involvedProjectIds, meetingCounts,
 }: {
   directory: CircleDirectory
   projects: Project[]
@@ -36,6 +36,8 @@ export function CirclesTab({
   leadCircles: string[]
   /** Projects the user leads, created, is assigned in, or watches. */
   involvedProjectIds: Set<string>
+  /** Meetings per circle this person can read; null when Meetings is off */
+  meetingCounts?: Record<string, number> | null
 }) {
   const circles = useCircles()
   const isAdmin = userRole === 'admin'
@@ -89,9 +91,16 @@ export function CirclesTab({
                   <div style={{ fontSize: 15, fontWeight: 700, color: meta.color }}>{meta.emoji} {meta.label}</div>
                   {steward?.slug === c && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>Community stewards · look after every circle</div>}
                 </div>
-                {iLead && (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: meta.color, borderRadius: 20, padding: '2px 8px' }}>You lead this</span>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {meetingCounts && (
+                    <Link href={`/meetings?circle=${c}`} style={{ fontSize: 11.5, fontWeight: 600, color: meta.color, textDecoration: 'none', border: `1px solid color-mix(in srgb, ${meta.color} 35%, var(--rule))`, borderRadius: 20, padding: '2px 9px', whiteSpace: 'nowrap' }}>
+                      📝 Meeting notes{meetingCounts[c] ? ` (${meetingCounts[c]})` : ''}
+                    </Link>
+                  )}
+                  {iLead && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: meta.color, borderRadius: 20, padding: '2px 8px' }}>You lead this</span>
+                  )}
+                </div>
               </div>
 
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Leads</div>

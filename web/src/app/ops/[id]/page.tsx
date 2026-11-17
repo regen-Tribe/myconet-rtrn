@@ -6,8 +6,12 @@ import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import type { Project, ProjectUpdate, CollaborationAgreement, SubscriberProfile } from '@/modules/m07-ops/types'
 
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProjectDetailPage({ params, searchParams }: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ task?: string }>
+}) {
   const { id } = await params
+  const { task } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -28,7 +32,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       .eq('status', 'pending')
       .order('created_at', { ascending: false }),
     supabase.from('deliverables')
-      .select('id, project_id, title, status, due_date, assignee_id, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
+      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
       .eq('project_id', id)
       .order('created_at', { ascending: true }),
     supabase.from('project_subscriptions')
@@ -136,6 +140,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       leadProfile={leadProfile}
       creatorProfile={creatorProfile}
       projectEvents={(eventRows ?? []).map(toEvent)}
+      initialTaskId={task ?? null}
     />
   )
 }
