@@ -749,3 +749,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ## 2026-11-18 — Core v4.33.3 (deployed, 4d5df6cd)
 - Oscar: "ok good send it" (previewed locally first). Update PR #53 merged; no migration. A meeting's summary shows as topic cards.
+
+## 2026-11-18 — Core v4.33.4 (deployed, 04d377a2)
+- Oscar: "send it" (previewed locally first). Update PR #54 merged; no migration. The task pop-up fits the screen
+  (middle scrolls, header and buttons stay), lighter blurred backdrop; minimal, Apple-like is now design principle 0.
