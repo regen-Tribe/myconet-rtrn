@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { fmtTaskWhen } from '@/core/lib/tasks'
 import NotesText from './NotesText'
+import SummaryCards from './SummaryCards'
 import type { Meeting, MeetingTask } from './types'
 
 const sectionStyle: React.CSSProperties = {
@@ -205,7 +206,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
           {m.summary && (
             <>
               <div style={sectionStyle}>Summary</div>
-              <div style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>{m.summary}</div>
+              <SummaryCards text={m.summary} accent={meta?.color} />
             </>
           )}
 

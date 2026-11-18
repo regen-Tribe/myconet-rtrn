@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.3 — 2026-11-18
+
+- **A meeting's summary looks like a summary** (Oscar: "looks ugly"): Fireflies writes it as "- **Topic:** …" bullets,
+  which the page showed as raw text with the `-` and `**`. Each topic is now a card with its heading, two or more to a
+  row on a wide screen, one on a phone, topped in the circle's colour (`m18-meetings/SummaryCards.tsx`). A summary in
+  another shape is shown formatted as a note (`NotesText`).
+
 ## v4.33.2 — 2026-11-18
 
 - **Slide a draft on the meeting page too** (Oscar): the tasks under a meeting get the same Draft pill as the board
