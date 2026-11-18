@@ -765,3 +765,8 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - Oscar: "Ship to both". Update PR #57 merged; migration `20261204000000_tasks_without_projects.sql` applied and checked
   before the deploy (chores projects 0, tasks with no project all have a circle, team_id added, chores functions gone;
   no chores tasks here). Tasks need no project; one task pop-up with Project and Team.
+
+## 2026-11-18 — Core v4.35.0 (deployed, ccd6955e)
+- Oscar: "ship it". Update PR #58 merged; migration `20261205000000_circle_join_requests.sql` applied and checked before
+  the deploy (table, decide_circle_join, trigger). Circle members: + Add member on the Circles page and Ops › Circles,
+  Member of in Admin › Users, ask to join from your profile (leads approve on the Circles page).
