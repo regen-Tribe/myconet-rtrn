@@ -726,3 +726,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - `knowledge.repo` set in instance/config.jsonc (no deploy yet). **Waiting on Oscar:** a fine-grained GitHub token for
   that repo only (Contents read/write) in Bitwarden → Worker secret `SECOND_BRAIN_GITHUB_TOKEN`; then deploy, and the
   sweep secrets (Worker `MEETINGS_SWEEP_SECRET` + Vault `myconet_url`, `meetings_sweep_secret`) so reviews run here.
+
+## 2026-11-18 — Core v4.31.0 (deployed)
+- Oscar: "merge rtrn". Update PR #48 merged; migration `task_notes` applied through the Supabase MCP and checked
+  (deliverables.notes + update_my_task) before the deploy.
