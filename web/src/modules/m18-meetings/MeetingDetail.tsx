@@ -1,6 +1,6 @@
 'use client'
 
-import { DraftBadge } from '@/core/components/DraftBadge'
+import { DraftSwipe } from '@/modules/m07-ops/DraftSwipe'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -156,6 +156,7 @@ function DocTabs({ m, brainNote }: { m: Meeting; brainNote: string | null }) {
 export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, secondBrainOn, brainNote }: {
   meeting: Meeting; tasks: MeetingTask[]; canManage: boolean; emailOn: boolean; secondBrainOn: boolean; brainNote: string | null
 }) {
+  const router = useRouter()
   const circles = useCircles()
   const meta = m.circle && circles.has(m.circle) ? circles.meta(m.circle) : null
   const drafts = tasks.filter(t => t.needs_review).length
@@ -220,7 +221,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
                   <div style={{ border: '1px solid var(--rule)', borderRadius: 10, padding: '10px 14px', background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>
-                        {t.needs_review && <DraftBadge />}
+                        {t.needs_review && <DraftSwipe taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => router.refresh()} onDeclined={() => router.refresh()} />}
                         {t.title}
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t.project_title ?? ''} ↗</span>

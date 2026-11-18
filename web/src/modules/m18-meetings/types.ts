@@ -68,4 +68,6 @@ export interface MeetingTask {
   person_name: string | null
   assignee: string | null
   item_text: string
+  /** May the viewer approve or decline this draft from its pill (v4.33.2): an admin, the project’s circle lead, or its project lead */
+  can_decide: boolean
 }

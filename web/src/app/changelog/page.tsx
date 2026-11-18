@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.33.2',
+    date: '2026-11-18',
+    title: 'Confirm drafts from the meeting page',
+    items: [
+      'On a meeting’s page, leads can slide a task’s Draft pill right to approve it or left to decline it, as on the board.',
+    ],
+  },
+  {
     version: 'v4.33.1',
     date: '2026-11-18',
     title: 'A tidier operations page',
