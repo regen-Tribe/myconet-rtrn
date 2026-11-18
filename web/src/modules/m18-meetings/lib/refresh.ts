@@ -21,3 +21,22 @@ export async function refreshFromFireflies(admin: SupabaseClient, id: string, fi
   if (error) throw new Error(error.message)
   return { summary: !!fields.summary, action_items: fields.action_items.length, notes: extra ? Object.keys(extra).filter(k => extra[k as keyof typeof extra]) : [] }
 }
+
+/**
+ * The meeting waits for the agent: the sweep (/api/meetings/sweep, every 2 minutes) runs the pipeline
+ * with its full AI time. The webhooks never run the AI themselves (v4.32.1): a Worker gets only about
+ * 30 s after replying, too little for MiniMax to read a long meeting.
+ */
+export async function queueForAgent(admin: SupabaseClient, id: string) {
+  const { error } = await admin.from('meeting_transcripts').update({ processed_at: null, sweep_attempts: 0 }).eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+/** Fresh notes from Fireflies; the agent reads the meeting (again) when it hasn't yet, or the summary is new */
+export async function refreshAndQueue(admin: SupabaseClient, id: string, firefliesId: string) {
+  const { data: before } = await admin.from('meeting_transcripts').select('summary, processed_at').eq('id', id).maybeSingle()
+  const got = await refreshFromFireflies(admin, id, firefliesId)
+  const queued = !before?.processed_at || (!before?.summary && got.summary)
+  if (queued) await queueForAgent(admin, id)
+  return { ...got, queued }
+}

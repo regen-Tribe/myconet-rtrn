@@ -5,10 +5,11 @@ import { processMeeting } from '@/modules/m18-meetings/lib/pipeline'
 import { refreshFromFireflies } from '@/modules/m18-meetings/lib/refresh'
 import { NOTES_VERSION } from '@/modules/m18-meetings/lib/second-brain'
 
-// Finishes the meetings the webhooks couldn't: a Worker only gets about 30 s after replying, so a
-// long meeting can stop before its note is written. The database calls this every 10 minutes when
+// The meeting agent runs here, and only here for new meetings (v4.32.1): a Worker gets only about 30 s
+// after replying, too little for the AI to read a long meeting, so the webhooks save the notes and the
+// meeting waits. The database calls this every 2 minutes when
 // there's something to do (private.meetings_sweep(), pg_cron + pg_net, key MEETINGS_SWEEP_SECRET in
-// Vault and as a Worker secret). It works while the caller waits, so the AI gets its full time.
+// Vault and as a Worker secret). It works while the caller waits, so the AI gets its full time (150 s; pg_net waits 300 s).
 // One meeting per request ({ "id": … } or the oldest waiting): a Worker may make only 50 outside
 // calls per request. A meeting is tried at most 3 times; a lead's "let the agent read it" still works.
 const STALE_MS = 10 * 60_000
@@ -40,6 +41,6 @@ export async function POST(req: NextRequest) {
   if (m.fireflies_id && (!m.summary || !m.fireflies_notes)) {
     try { await refreshFromFireflies(admin, m.id, m.fireflies_id); refreshed = 'ok' } catch (e) { refreshed = (e as Error).message }
   }
-  const r = await processMeeting(admin, m.id, { requestedBy: m.created_by ?? null, timeoutMs: 90_000, email: 'auto' })
+  const r = await processMeeting(admin, m.id, { requestedBy: m.created_by ?? null, timeoutMs: 150_000, email: 'auto' })
   return NextResponse.json({ swept: 1, waiting: todo.length - 1, id: m.id, refreshed, ok: r.ok, skipped: r.skipped ?? null, added: r.added, errors: r.errors })
 }

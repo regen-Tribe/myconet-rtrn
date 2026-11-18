@@ -94,7 +94,7 @@ function LeadBar({ m, drafts, emailOn, secondBrainOn }: { m: Meeting; drafts: nu
             ? <>Agent ran {ago(m.processed_at)}. {m.circle_source === 'agent' ? (m.circle ? 'It chose the circle' : 'It found this meeting community-wide') : m.circle ? 'The circle was set by a person' : ''}{m.agent_note ? `: ${m.agent_note}` : '.'} Change the circle above if it’s wrong (tasks already on the board stay where they are).</>
           : m.needs_review && m.agent_note
             ? <>The agent didn’t put anything on the board: {m.agent_note} If this is a community meeting, choose its circle and save.</>
-            : 'The agent hasn’t read this meeting yet.'}
+            : 'The agent hasn’t read this meeting yet: it reads each new meeting within a few minutes.'}
         {m.notes_emailed_at ? ` Emailed ${m.notes_email_count ?? 0} on ${ago(m.notes_emailed_at)}.` : ''}
         {!emailOn && ' Notes email is off (no SMTP password set).'}
         {!secondBrainOn && ' Saving to the second brain is off.'}

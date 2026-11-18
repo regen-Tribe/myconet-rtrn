@@ -188,7 +188,7 @@ export async function draftTasks(input: DraftInput, opts: { timeoutMs: number })
   const fallback = (note: string): DraftResult => input.fixedCircle
     ? { isCommunity: true, circle: input.fixedCircle, reason: null, title: null, tasks: fallbackDrafts(input.meeting.action_items, input.fixedCircle), by: 'action-items', note }
     // No circle and no AI: a lead has to look at it
-    : { isCommunity: false, circle: null, reason: `The agent couldn’t read this meeting (${note}); choose its circle to continue.`, title: null, tasks: [], by: 'none', note }
+    : { isCommunity: false, circle: null, reason: `The agent couldn’t read this meeting yet (${note}). It tries again by itself, up to 3 times; a lead can also choose its circle to continue.`, title: null, tasks: [], by: 'none', note }
   const apiKey = process.env.MINIMAX_API_KEY
   if (!apiKey) return fallback('MINIMAX_API_KEY not set')
   if (!input.meeting.action_items.length && !input.meeting.summary && !input.meeting.transcript) {

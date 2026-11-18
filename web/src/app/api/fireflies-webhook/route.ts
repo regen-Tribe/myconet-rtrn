@@ -1,14 +1,13 @@
-import { after, NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/core/lib/supabase/service'
 import { moduleOn } from '@/core/lib/modules'
 import { fetchTranscript, transcriptFields } from '@/modules/m18-meetings/lib/fireflies'
-import { processMeeting } from '@/modules/m18-meetings/lib/pipeline'
 
 // Fireflies calls this when a recording sent by /api/meetings/upload is transcribed
 // (?key=FIREFLIES_WEBHOOK_SECRET). clientReferenceId is our meeting_transcripts id.
-// Then, after the reply, the meeting pipeline runs: the agent chooses the circle(s) from the content
-// (or keeps the one chosen at upload), puts the tasks on the board, saves the second-brain note and
-// emails the leads.
+// The meeting then waits for the agent: the sweep (every 2 minutes, full AI time) chooses the
+// circle(s) from the content (or keeps the one chosen at upload), puts the tasks on the board, saves
+// the second-brain note and emails the leads.
 export async function POST(req: NextRequest) {
   const secret = process.env.FIREFLIES_WEBHOOK_SECRET
   if (!moduleOn('meetings') || !secret || req.nextUrl.searchParams.get('key') !== secret) {
@@ -23,17 +22,11 @@ export async function POST(req: NextRequest) {
   const admin = createServiceClient()
   try {
     const t = await fetchTranscript(meetingId)
-    await admin.from('meeting_transcripts').update({ fireflies_id: meetingId, ...transcriptFields(t), error: null }).eq('id', ref)
+    await admin.from('meeting_transcripts').update({ fireflies_id: meetingId, ...transcriptFields(t), error: null, processed_at: null, sweep_attempts: 0 }).eq('id', ref)
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Transcript fetch failed'
     await admin.from('meeting_transcripts').update({ status: 'error', error: message }).eq('id', ref)
     return NextResponse.json({ received: true, error: message })
   }
-  // After the reply, so Fireflies isn't kept waiting. Short AI budget: the Worker's waitUntil
-  // lasts about 30 s; if the AI is slower the action items go on the board as they are.
-  after(async () => {
-    const { data: m } = await admin.from('meeting_transcripts').select('created_by').eq('id', ref).maybeSingle()
-    await processMeeting(admin, ref, { requestedBy: m?.created_by ?? null, timeoutMs: 22_000, email: 'auto' })
-  })
   return NextResponse.json({ received: true })
 }

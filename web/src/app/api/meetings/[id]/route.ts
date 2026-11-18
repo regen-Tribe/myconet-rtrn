@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   let body: { action?: unknown; circle?: unknown; visibility?: unknown; process?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Bad JSON' }, { status: 400 }) }
   const admin = createServiceClient()
-  const run = (email: 'auto' | 'again') => processMeeting(admin, id, { requestedBy: user.id, timeoutMs: 60_000, email })
+  const run = (email: 'auto' | 'again') => processMeeting(admin, id, { requestedBy: user.id, timeoutMs: 120_000, email })
 
   if (body.action === 'settings') {
     const changes: Record<string, unknown> = {}

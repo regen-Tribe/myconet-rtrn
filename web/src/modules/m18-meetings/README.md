@@ -13,7 +13,9 @@ Built by Sonia for Protopia (Nov 16). Meeting recordings are transcribed and sum
    action items and transcript (`status: done`, or `error`).
 2. **Recorded in Fireflies directly**: Fireflies' webhook calls
    `/api/fireflies-ingest?key=PROTOPIA_INGEST_SECRET` → a new row with `source: fireflies_direct`,
-   `needs_review: true` (skipped if that Fireflies id is already in).
+   `needs_review: true`. A meeting already in (an upload, by its `client_reference_id`, or the same Fireflies id)
+   gets its notes refreshed instead, and is read again when the summary is new (v4.32.1), so a community's filter
+   can be the only webhook Fireflies needs.
 3. **The summary comes later** (Webhooks V2, v4.21.2): Fireflies writes the summary and action items a few
    minutes after the transcript, so the two webhooks above often get the transcript only. Its V2 webhook
    (`app.fireflies.ai/integrations/api/webhook`, events **meeting.transcribed** and **meeting.summarized**,
@@ -46,8 +48,9 @@ historical), `SUPABASE_SERVICE_ROLE_KEY` (the webhooks write with it: `core/lib/
 ## The meeting pipeline (v4.21.0)
 
 Most meetings come **straight from Fireflies** (`/api/fireflies-ingest`); uploads (`/api/fireflies-webhook`)
-work the same way. When the notes are in, `lib/pipeline.ts` (service role) runs right after the reply
-(`after()`, a 22 s AI budget, since waitUntil lasts about 30 s):
+work the same way. When the notes are in, the meeting waits (`processed_at` null) and **the sweep** runs
+`lib/pipeline.ts` (service role) within about 2 minutes, with 150 s for the AI (v4.32.1). The webhooks never run
+the AI themselves: a Worker gets only about 30 s after replying, too little for a long meeting.
 
 1. **The agent reads the meeting** (`lib/draft-tasks.ts`, MiniMax M3.1-Flash, low reasoning, one call) against
    the community's circles (with their org-chart descriptions), the open projects and the open tasks:
@@ -67,7 +70,8 @@ work the same way. When the notes are in, `lib/pipeline.ts` (service role) runs 
    member has). No match is normal (not everyone has an account): the task keeps "(for Name)" and no
    assignee, and the email lists them as "not on MyCoNet yet".
 3. **No duplicates:** `meeting_action_links` (meeting + normalised title) is claimed before each task is
-   written, so a re-run or a repeated webhook adds only new tasks.
+   written, so a re-run or a repeated webhook adds only new tasks. A task a lead declines or deletes keeps its link
+   (with no task, v4.33.0), so it isn't drafted again.
 4. **Name** (v4.23.0): the same AI call names the meeting from the title people gave and the content;
    the title becomes `17.11.2026 <name>` (date in `COMMUNITY_TIME_ZONE`), what they called it stays in
    `original_title` (shown small on the meeting page; the AI reads it, not its own earlier name).
@@ -79,12 +83,12 @@ work the same way. When the notes are in, `lib/pipeline.ts` (service role) runs 
    items, and a link to the **transcript** in `transcripts/<same name>` beside it. A renamed meeting (or a
    moved folder) **moves**: the agent removes its own old files (only files with `source: myconet-meeting…`,
    never a person's note). `notes_version` = `NOTES_VERSION`: the sweep rewrites older notes.
-   **The sweep** (`/api/meetings/sweep`, `MEETINGS_SWEEP_SECRET`): a Worker only gets about 30 s after replying,
-   so a webhook's run can stop before the note. Every 10 minutes the database (`private.meetings_sweep()`,
+   **The sweep** (`/api/meetings/sweep`, `MEETINGS_SWEEP_SECRET`) is where the agent runs. Every 2 minutes the database (`private.meetings_sweep()`,
    pg_cron + pg_net, URL + key in Vault: `myconet_url`, `meetings_sweep_secret`) calls it when a meeting is
    unprocessed or its note is older, **one request per meeting** (a Worker may make only 50 outside calls per
    request on the free plan, so the pipeline writes tasks, links and logs in batches); it refreshes missing
-   Fireflies notes, runs the pipeline with 90 s for the AI, at most 3 tries a meeting.
+   Fireflies notes, runs the pipeline with 150 s for the AI, at most 3 tries a meeting. When the AI gives no answer
+   (too slow, down, unreadable) the meeting stays unprocessed, so the next sweep tries again.
 5. **Email** (`lib/notes-email.ts`, based on Sonia's; `lib/smtp.ts` is hers unchanged): to the **leads of every
    circle involved, at the email on their account**, plus `meetings.notesEmail.alwaysTo` usernames. Not to
    outside attendees. Once automatically; "Email the notes again" sends again.

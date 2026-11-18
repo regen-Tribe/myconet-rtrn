@@ -30,24 +30,73 @@ export default function AuthPage() {
   const [regError, setRegError] = useState('')
   const [regLoading, setRegLoading] = useState(false)
   const [regSent, setRegSent] = useState(false)
+  // Supabase answers a sign-up for an address that already has an account with a
+  // user and no error, but sends nothing: say so instead of "Check your inbox"
+  const [regExists, setRegExists] = useState(false)
+
+  // Sending the confirmation email again (after sign-up, or when sign-in says it isn't confirmed)
+  const [loginUnconfirmed, setLoginUnconfirmed] = useState(false)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [resendError, setResendError] = useState('')
 
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotError, setForgotError] = useState('')
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
 
+  // A resent confirmation link lands here (via /auth/callback) as #access_token=:
+  // Supabase's resend has no PKCE code. The address is confirmed by now, so sign in
+  // and carry on as a normal confirmation would.
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1))
+    const onboarding = new URLSearchParams(window.location.search).get('onboarding')
+    const expired = 'That link has expired or was already used. Sign in with your email and password; if your email isn’t confirmed yet, you can ask for a new link here.'
+    const access_token = hash.get('access_token'), refresh_token = hash.get('refresh_token')
+    const failed = hash.get('error_description')
+    if (!failed && !(access_token && refresh_token)) return
+    const signIn = failed
+      ? Promise.resolve({ error: true })
+      : supabase.auth.setSession({ access_token: access_token!, refresh_token: refresh_token! })
+    signIn.then(({ error }) => {
+      window.history.replaceState(null, '', window.location.pathname)
+      if (error) setLoginError(expired)
+      else { router.push(onboarding ? '/profile/edit' : '/home'); router.refresh() }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoginError('')
+    setLoginUnconfirmed(false)
+    setResendState('idle'); setResendError('')
     setLoginLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword })
-    if (error) { setLoginError(error.message) } else { router.push('/home'); router.refresh() }
+    if (error) {
+      setLoginError(error.message)
+      setLoginUnconfirmed(error.code === 'email_not_confirmed')
+    } else { router.push('/home'); router.refresh() }
     setLoginLoading(false)
+  }
+
+  async function resendConfirmation(email: string) {
+    setResendError('')
+    setResendState('sending')
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${location.origin}/auth/callback?onboarding=1` },
+    })
+    if (error) {
+      setResendError(error.status === 429 ? 'Too many emails just now. Wait a minute and try again.' : error.message)
+      setResendState('idle')
+    } else setResendState('sent')
   }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setRegError('')
+    setRegExists(false)
+    setResendState('idle'); setResendError('')
     if (regPassword !== regConfirm) { setRegError("Passwords don't match"); return }
     if (regPassword.length < 6) { setRegError('Password must be at least 6 characters'); return }
     setRegLoading(true)
@@ -60,6 +109,7 @@ export default function AuthPage() {
       },
     })
     if (error) { setRegError(error.message) }
+    else if (data.user && data.user.identities?.length === 0) { setRegExists(true) }
     else if (data.user && !data.session) { setRegSent(true) }
     else { router.push('/home'); router.refresh() }
     setRegLoading(false)
@@ -93,6 +143,7 @@ export default function AuthPage() {
     transition: 'opacity 120ms',
   }
   const lbl: React.CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }
+  const linkBtn: React.CSSProperties = { fontSize: 'inherit', fontWeight: 600, color: 'var(--accent-color)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }
 
   return (
     <div style={{ minHeight: '100vh', display: 'grid', background: 'var(--bg)' }} className="auth-page-grid">
@@ -126,6 +177,17 @@ export default function AuthPage() {
                   <input style={inp} type="password" required value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Enter your password" />
                 </div>
                 {loginError && <p style={{ fontSize: 13, color: '#ef4444', margin: 0 }}>{loginError}</p>}
+                {loginUnconfirmed && (
+                  <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0, lineHeight: 1.55 }}>
+                    {resendState === 'sent'
+                      ? <>A new confirmation link is on its way to <strong style={{ color: 'var(--ink-2)' }}>{loginEmail}</strong>. Open it in this browser, then sign in.</>
+                      : <>This account’s email isn’t confirmed yet.{' '}
+                          <button type="button" onClick={() => resendConfirmation(loginEmail)} disabled={resendState === 'sending'} style={linkBtn}>
+                            {resendState === 'sending' ? 'Sending…' : 'Send the confirmation link again'}
+                          </button></>}
+                    {resendError && <span style={{ display: 'block', color: '#ef4444', marginTop: 4 }}>{resendError}</span>}
+                  </p>
+                )}
                 <button type="submit" style={{ ...btn, opacity: loginLoading ? 0.6 : 1 }} disabled={loginLoading}>
                   {loginLoading ? 'Signing in…' : 'Sign in'}
                 </button>
@@ -152,7 +214,16 @@ export default function AuthPage() {
               <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6 }}>
                 We sent a confirmation link to <strong style={{ color: 'var(--ink-2)' }}>{regEmail}</strong>.<br />Click it to activate your account — then fill in your profile.
               </p>
-              <button onClick={() => { setRegSent(false); setMode('login') }} style={{ marginTop: 24, padding: '10px 24px', borderRadius: 9, fontSize: 13, fontWeight: 600, border: '1px solid var(--rule)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer' }}>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-4)', lineHeight: 1.6, margin: '12px auto 0', maxWidth: 340 }}>
+                Nothing after a few minutes? Check spam, and that the address is right.{' '}
+                {resendState === 'sent'
+                  ? 'We sent it again.'
+                  : <button type="button" onClick={() => resendConfirmation(regEmail)} disabled={resendState === 'sending'} style={linkBtn}>
+                      {resendState === 'sending' ? 'Sending…' : 'Send it again'}
+                    </button>}
+              </p>
+              {resendError && <p style={{ fontSize: 12.5, color: '#ef4444', margin: '8px auto 0', maxWidth: 340 }}>{resendError}</p>}
+              <button onClick={() => { setRegSent(false); setResendState('idle'); setResendError(''); setMode('login') }} style={{ marginTop: 24, padding: '10px 24px', borderRadius: 9, fontSize: 13, fontWeight: 600, border: '1px solid var(--rule)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer' }}>
                 Back to sign in
               </button>
             </div>
@@ -196,6 +267,15 @@ export default function AuthPage() {
                   <input style={inp} type="password" required value={regConfirm} onChange={e => setRegConfirm(e.target.value)} placeholder="Repeat your password" />
                 </div>
                 {regError && <p style={{ fontSize: 13, color: '#ef4444', margin: 0 }}>{regError}</p>}
+                {regExists && (
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--rule)', background: 'var(--bg-2)' }}>
+                    <strong>{regEmail}</strong> already has an account, so no email was sent. Sign in instead, or get a reset link if you don’t remember the password.
+                    <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                      <button type="button" onClick={() => { setLoginEmail(regEmail); setRegExists(false); setMode('login') }} style={linkBtn}>Sign in</button>
+                      <button type="button" onClick={() => { setForgotEmail(regEmail); setRegExists(false); setMode('forgot') }} style={linkBtn}>Send me a reset link</button>
+                    </div>
+                  </div>
+                )}
                 <button type="submit" style={{ ...btn, opacity: regLoading ? 0.6 : 1, marginTop: 4 }} disabled={regLoading}>
                   {regLoading ? 'Creating account…' : 'Create account →'}
                 </button>

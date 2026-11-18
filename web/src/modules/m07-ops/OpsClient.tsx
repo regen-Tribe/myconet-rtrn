@@ -13,7 +13,7 @@ import { CirclesTab } from './CirclesTab'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
 import { NewTaskModal } from './NewTaskModal'
 import { fmtTaskWhen, isTaskOverdue, taskDate } from '@/core/lib/tasks'
-import { DraftBadge } from '@/core/components/DraftBadge'
+import { DraftSwipe } from './DraftSwipe'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
 import { ProjectManagerPanel } from './ProjectManagerPanel'
 import { NameTag } from './NameTag'
@@ -189,8 +189,10 @@ function ProjectKanbanCard({
 // A circle's one-off task (it lives in the circle's Chores project) shown on the main board on its own,
 // tagged with its circle, instead of inside a "Chores" project card.
 
-function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, isDragging }: {
+function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, isDragging, onApproved, onDeclined }: {
   task: Deliverable; canMove: boolean
+  /** A draft was approved or declined from its pill */
+  onApproved?: () => void; onDeclined?: () => void
   onDragStart?: (id: string) => void; onDragEnd?: () => void; onBlockedDrag?: () => void; isDragging?: boolean
 }) {
   const circles = useCircles()
@@ -216,7 +218,7 @@ function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, 
         }}
       >
         <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 5, color: 'var(--ink)', lineHeight: 1.35 }}>
-          {task.needs_review && <DraftBadge />}{task.title}
+          {task.needs_review && <DraftSwipe taskId={task.id} canDecide={canMove} onApproved={onApproved} onDeclined={onDeclined} />}{task.title}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <PriorityBadge priority={task.priority} />
@@ -267,6 +269,7 @@ export default function OpsClient({
   const draftCount = initialDeliverables.filter(d => d.needs_review).length
   // Chores projects hold a circle's one-off tasks: on the board their tasks are cards of their own
   const choresById = new Map(boardProjects.filter(p => p.is_chores).map(p => [p.id, p]))
+  const projectsById = new Map(boardProjects.map(p => [p.id, p]))
 
   async function moveTask(taskId: string, newStatus: string) {
     const t = boardTasks.find(x => x.id === taskId)
@@ -614,6 +617,8 @@ export default function OpsClient({
                         onBlockedDrag={userId ? () => setNotice(projectEditBlock(p, userId, userRole, leadCircles, circles)) : undefined}
                         onDragEnd={() => { setDraggingId(null); setDropTarget(null) }}
                         isDragging={draggingId === `task:${t.id}`}
+                        onApproved={() => { setBoardTasks(prev => prev.map(x => (x.id === t.id ? { ...x, needs_review: false } : x))); router.refresh() }}
+                        onDeclined={() => { setBoardTasks(prev => prev.filter(x => x.id !== t.id)); router.refresh() }}
                       />
                     )
                   }))
@@ -626,7 +631,11 @@ export default function OpsClient({
       )}
 
       {activeTab === 'deliverables' && (
-        <DeliverablesTab deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly} />
+        <DeliverablesTab
+          deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly}
+          canDecide={d => { const p = projectsById.get(d.project_id); return !!p && canMoveProject(p, userId, userRole, leadCircles, circles) }}
+          onDecided={() => router.refresh()}
+        />
       )}
       {activeTab === 'updates' && (
         <UpdatesTab updates={updates} projects={projects} />
