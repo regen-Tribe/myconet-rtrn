@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.33.5',
+    date: '2026-11-18',
+    title: 'Back to the board after a task',
+    items: [
+      'Closing a circle’s loose task takes you back to where you opened it, such as the main board, instead of a “chores” page.',
+    ],
+  },
+  {
     version: 'v4.33.4',
     date: '2026-11-18',
     title: 'The task pop-up fits your screen',

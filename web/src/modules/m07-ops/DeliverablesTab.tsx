@@ -82,7 +82,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
                 <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>
                   {d.needs_review && <DraftSwipe taskId={d.id} canDecide={!!canDecide?.(d)} onApproved={onDecided} onDeclined={onDecided} />}
                   <PriorityBadge priority={d.priority} />{d.priority && d.priority !== 'none' ? ' ' : ''}
-                  <Link href={`/ops/${d.project_id}?task=${d.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{d.title}</Link>
+                  <Link href={`/ops/${d.project_id}?task=${d.id}&back=1`} style={{ color: 'inherit', textDecoration: 'none' }}>{d.title}</Link>
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
                   {projectMap[d.project_id] ?? '—'}
