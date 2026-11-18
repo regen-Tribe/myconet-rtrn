@@ -3,6 +3,16 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.32.0',
+    date: '2026-11-18',
+    title: 'Task priority, and names without an account',
+    items: [
+      'Each task has a priority: None, Low, Med or High, set with a slider in its pop-up and shown on the board.',
+      'In a task’s pop-up, Assigned to has “Type a name…” for someone who isn’t on MyCoNet yet. It’s just a name on the task: no account or invite is made.',
+      'Once they join, pick their account and the name goes away. Tasks from meetings use the same name tag instead of “(for …)” in the title.',
+    ],
+  },
+  {
     version: 'v4.31.0',
     date: '2026-11-18',
     title: 'More in the task pop-up',

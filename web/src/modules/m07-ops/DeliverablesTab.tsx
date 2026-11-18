@@ -4,6 +4,8 @@ import { DraftBadge } from '@/core/components/DraftBadge'
 import Link from 'next/link'
 import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import type { Deliverable, ProjectSummary } from './types'
+import { NameTag } from './NameTag'
+import { PriorityBadge } from './Priority'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
   backlog:     { label: 'Backlog',     color: 'var(--ink-4)', bg: 'var(--bg-3)' },
@@ -76,13 +78,14 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
               <tr key={d.id}>
                 <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>
                   {d.needs_review && <DraftBadge />}
+                  <PriorityBadge priority={d.priority} />{d.priority && d.priority !== 'none' ? ' ' : ''}
                   <Link href={`/ops/${d.project_id}?task=${d.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{d.title}</Link>
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
                   {projectMap[d.project_id] ?? '—'}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-                  {d.assignee_username ?? '—'}
+                  {d.assignee_username ?? (d.assignee_name ? <NameTag name={d.assignee_name} /> : '—')}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap', color: isOverdue ? '#ef4444' : 'inherit', fontWeight: isOverdue ? 700 : 'inherit' }}>
                   {fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}

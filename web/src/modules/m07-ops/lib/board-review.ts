@@ -42,6 +42,9 @@ export async function requestBoardReview(admin: SupabaseClient, circles: string[
 
 interface Task {
   id: string; title: string; project_id: string; assignee_id: string | null; due_date: string | null
+  /** Someone not on MyCoNet yet (a typed name) */
+  assignee_name?: string | null
+  priority?: string | null
   status: string; needs_review: boolean; source: string | null; source_meeting_id: string | null
   notes?: string | null
 }
@@ -57,8 +60,8 @@ function prompt(circleName: string, community: string, projects: Project[], task
   const taskLines = tasks.map((t, i) => {
     const p = projects.find(x => x.id === t.project_id)
     const where = p && !p.is_chores ? pIdx.get(p.id) : 'board'
-    const who = nameOf(t.assignee_id)
-    return `T${i + 1} · [${where}] ${t.title}${who ? ` · ${who}` : ' · nobody'}${t.due_date ? ` · due ${t.due_date}` : ''} · ${t.status}${t.needs_review ? ' · draft' : ''}`
+    const who = nameOf(t.assignee_id) ?? (t.assignee_name ? `${t.assignee_name} (not on MyCoNet yet)` : null)
+    return `T${i + 1} · [${where}] ${t.title}${who ? ` · ${who}` : ' · nobody'}${t.due_date ? ` · due ${t.due_date}` : ''}${t.priority && t.priority !== 'none' ? ` · ${t.priority} priority` : ''} · ${t.status}${t.needs_review ? ' · draft' : ''}`
   }).join('\n')
   return `You are the project manager of the ${circleName} circle of ${community}. Review the circle's board and help it stay organised. Be conservative: only propose what a careful, experienced project manager would.
 
@@ -66,7 +69,7 @@ Find:
 1. "duplicates": two tasks that are the same piece of work. Keep the clearer one (the one with a person or a date, or confirmed over draft).
 2. "moves": a task on the board ("[board]") that clearly belongs to one of the circle's projects.
 3. "new_projects": three or more open tasks that together are one larger piece of work no project covers yet: a short project title, a one-sentence description, and its tasks.
-4. "assign": a task with nobody on it, when one of the people below is the obvious person (it's their area or they talked about it). Use the exact name.
+4. "assign": a task with nobody on it, when one of the people below is the obvious person (it's their area or they talked about it). Use the exact name. A task with a name "(not on MyCoNet yet)": suggest a person below only when they are clearly that same person (they've since joined).
 5. "status": the circle's board in 3–6 short markdown bullets: what's moving, what's next, what's stuck or late, what needs a person. Name tasks and projects by their titles here, never by T1/P1.
 
 For each item say "sure": true only when you have no doubt. Don't repeat what was already turned down: ${dismissed.length ? dismissed.join(' · ') : '(nothing)'}.
@@ -89,7 +92,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   const [circleRes, projRes, taskRes, peopleRes, sugRes] = await Promise.all([
     admin.from('circles').select('slug, name, emoji, archived_at, brain_folder, leads_to_assign').eq('slug', circle).maybeSingle(),
     admin.from('projects').select('id, title, description, is_chores, status').eq('circle', circle).in('status', ['pending', 'backlog', 'in_progress', 'review']),
-    admin.from('deliverables').select('id, title, project_id, assignee_id, due_date, status, needs_review, source, source_meeting_id, notes')
+    admin.from('deliverables').select('id, title, project_id, assignee_id, assignee_name, priority, due_date, status, needs_review, source, source_meeting_id, notes')
       .eq('circle', circle).neq('status', 'done').order('created_at').limit(MAX_TASKS),
     admin.from('user_profiles').select('id, first_name, last_name, username, role, lead_circles'),
     admin.from('agent_suggestions').select('kind, payload, status').eq('circle', circle).in('status', ['dismissed']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
@@ -243,11 +246,12 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
  * Merge drop into keep: keep takes drop's person / date when it has none, drop's meeting links point
  * to keep (so a re-run doesn't add it again), then drop is deleted. Returns what's needed to undo.
  */
-export async function mergeTasks(admin: SupabaseClient, keep: { id: string; assignee_id: string | null; due_date: string | null }, drop: { id: string }) {
+export async function mergeTasks(admin: SupabaseClient, keep: { id: string; assignee_id: string | null; assignee_name?: string | null; due_date: string | null }, drop: { id: string }) {
   const { data: full } = await admin.from('deliverables').select('*').eq('id', drop.id).maybeSingle()
   if (!full) return { error: 'task already gone' }
   const fill: Record<string, unknown> = {}
   if (!keep.assignee_id && full.assignee_id) fill.assignee_id = full.assignee_id
+  else if (!keep.assignee_id && !keep.assignee_name && full.assignee_name) fill.assignee_name = full.assignee_name
   if (!keep.due_date && full.due_date) { fill.due_date = full.due_date; fill.due_time = full.due_time }
   if (Object.keys(fill).length) await admin.from('deliverables').update(fill).eq('id', keep.id)
   const { data: links } = await admin.from('meeting_action_links').update({ deliverable_id: keep.id }).eq('deliverable_id', drop.id).select('meeting_id, item_key')
@@ -263,8 +267,8 @@ function buildBoardNote(n: {
 }): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const line = (t: Task) => {
-    const who = n.nameOf(t.assignee_id)
-    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}/ops/${t.project_id}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
+    const who = n.nameOf(t.assignee_id) ?? (t.assignee_name ? `${t.assignee_name} (not on MyCoNet yet)` : null)
+    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''}${t.priority && t.priority !== 'none' ? ` · ${t.priority} priority` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}/ops/${t.project_id}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
   }
   const out = [
     '---',

@@ -11,6 +11,8 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
 import { isActiveProject, isOpenForProposals, PROJECT_STATUS_META, PROJECT_KANBAN_COLUMNS } from '@/core/lib/project-status'
 import { CalendarPicker } from './CalendarPicker'
+import { NAME_TAG, NameTag } from './NameTag'
+import { PriorityBadge, PrioritySlider, PRIORITIES, type Priority } from './Priority'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
 import { LinkedEventsList } from '@/modules/m14-events/LinkedEventsList'
 import type { CalendarEvent } from '@/modules/m14-events/types'
@@ -158,6 +160,9 @@ export default function ProjectDetailClient({
   const [editModalCircle, setEditModalCircle] = useState<string>('')
   const [editModalStatus, setEditModalStatus] = useState('backlog')
   const [editModalAssignee, setEditModalAssignee] = useState('')
+  // A typed name for someone not on MyCoNet yet (assignee '__name__')
+  const [editModalAssigneeName, setEditModalAssigneeName] = useState('')
+  const [editModalPriority, setEditModalPriority] = useState<Priority>('none')
   const [editModalNotes, setEditModalNotes] = useState('')
   const [editModalError, setEditModalError] = useState('')
   const [editModalSaving, setEditModalSaving] = useState(false)
@@ -198,7 +203,9 @@ export default function ProjectDetailClient({
     setEditModalTime(toTimeInput(d.due_time))
     setEditModalCircle(d.circle ?? project.circle ?? '')
     setEditModalStatus(d.status ?? 'backlog')
-    setEditModalAssignee(d.assignee_id ?? '')
+    setEditModalAssignee(d.assignee_id ?? (d.assignee_name ? NAME_TAG : ''))
+    setEditModalAssigneeName(d.assignee_name ?? '')
+    setEditModalPriority((d.priority as Priority) ?? 'none')
     setEditModalNotes(d.notes ?? '')
     setEditModalError('')
   }
@@ -313,8 +320,10 @@ export default function ProjectDetailClient({
       due_time: editModalDue && editModalTime ? editModalTime : null,
       circle: editModalCircle || null,
       status: editModalStatus,
-      assignee_id: editModalAssignee || null,
+      assignee_id: editModalAssignee && editModalAssignee !== NAME_TAG ? editModalAssignee : null,
+      assignee_name: editModalAssignee === NAME_TAG ? editModalAssigneeName.trim().slice(0, 80) || null : null,
       notes: editModalNotes.trim() || null,
+      priority: editModalPriority,
       // Saving a draft (e.g. from a meeting) confirms it
       needs_review: false,
     }
@@ -792,6 +801,7 @@ export default function ProjectDetailClient({
                       cards.map(c => {
                         const d = c as Deliverable
                         const assignee = d.user_profiles?.first_name ?? d.user_profiles?.username ?? null
+                        const named = !assignee && d.assignee_name ? d.assignee_name : null
                         const isSubbed = myDeliverableSubIds.has(d.id)
                         const subsList = deliverableSubsMap[d.id] ?? []
                         const isOverdue = isTaskOverdue(d.due_date, d.due_time, d.status)
@@ -834,9 +844,11 @@ export default function ProjectDetailClient({
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, flexWrap: 'wrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, flexWrap: 'wrap', fontSize: 10, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>
                                 {assignee && <span>{assignee}</span>}
+                                {named && <NameTag name={named} />}
+                                <PriorityBadge priority={d.priority} />
                                 {d.due_date && (
                                   <span style={{ color: isOverdue ? '#ef4444' : 'var(--ink-4)', fontWeight: isOverdue ? 700 : 400 }}>
-                                    {assignee ? '· ' : ''}{fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}
+                                    {assignee || named ? '· ' : ''}{fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}
                                   </span>
                                 )}
                                 {otherCircle && <span title={otherCircle.label}>· {otherCircle.emoji} {otherCircle.label}</span>}
@@ -1087,23 +1099,47 @@ export default function ProjectDetailClient({
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-assignee">Assigned to</label>
                   {canManage ? (
-                    <select id="task-assignee" value={editModalAssignee} onChange={e => setEditModalAssignee(e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}>
-                      <option value="">Nobody yet</option>
-                      {userId && <option value={userId}>Me</option>}
-                      {people.filter(p => p.id !== userId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                    <>
+                      <select id="task-assignee" value={editModalAssignee} onChange={e => setEditModalAssignee(e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}>
+                        <option value="">Nobody yet</option>
+                        {userId && <option value={userId}>Me</option>}
+                        {people.filter(p => p.id !== userId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        <option value={NAME_TAG}>✏️ Type a name…</option>
+                      </select>
+                      {editModalAssignee === NAME_TAG && (
+                        <input
+                          autoFocus={!editModalAssigneeName}
+                          value={editModalAssigneeName}
+                          onChange={e => setEditModalAssigneeName(e.target.value)}
+                          maxLength={80}
+                          placeholder="Their name"
+                          aria-label="Name of someone not on MyCoNet yet"
+                          style={{ ...inputStyle, padding: '8px 10px', fontSize: 13, marginTop: 6 }}
+                        />
+                      )}
+                    </>
                   ) : (
                     <div style={{ fontSize: 13, color: editModal.assignee_id ? 'var(--ink-2)' : 'var(--ink-4)' }}>
-                      {people.find(p => p.id === editModal.assignee_id)?.name ?? (editModal.assignee_id ? 'Someone' : 'Nobody yet')}
+                      {people.find(p => p.id === editModal.assignee_id)?.name ?? (editModal.assignee_id ? 'Someone' : editModal.assignee_name ? <NameTag name={editModal.assignee_name} /> : 'Nobody yet')}
                     </div>
                   )}
                 </div>
               </div>
-              {editModal.needs_review && editModal.title.match(/\(for ([^)]+)\)$/) && !editModalAssignee && (
+              {canManage && editModalAssignee === NAME_TAG && (
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: -8, marginBottom: 16 }}>
-                  The meeting named {editModal.title.match(/\(for ([^)]+)\)$/)![1]}, who isn’t on MyCoNet yet: pick someone, or leave it for them.
+                  Just a name on the task: no account or invite is made. Once they join, pick their account instead.
                 </div>
               )}
+
+              {/* Priority */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-priority">Priority</label>
+                {canManage ? (
+                  <PrioritySlider id="task-priority" value={editModalPriority} onChange={setEditModalPriority} />
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{PRIORITIES.find(p => p.value === editModal.priority)?.label ?? 'None'}</div>
+                )}
+              </div>
 
               {/* Due date */}
               <div style={{ marginBottom: 16 }}>
