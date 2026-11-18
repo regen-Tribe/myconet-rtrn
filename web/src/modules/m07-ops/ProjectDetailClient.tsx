@@ -1033,17 +1033,19 @@ export default function ProjectDetailClient({
           onClick={() => setEditModal(null)}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.45)',
+            background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 20,
+            padding: 12,
           }}
         >
+          {/* Never taller than the screen (web or phone): the middle scrolls, the header and the buttons stay */}
           <div
             onClick={e => e.stopPropagation()}
             style={{
               background: 'var(--surface)', borderRadius: 14,
               border: '1px solid var(--rule)',
               width: '100%', maxWidth: 480,
+              maxHeight: 'calc(100dvh - 24px)', overflowY: 'auto', overscrollBehavior: 'contain',
               boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
               animation: 'calFadeIn 160ms ease',
             }}
@@ -1052,6 +1054,7 @@ export default function ProjectDetailClient({
             <div style={{
               padding: '16px 20px', borderBottom: '1px solid var(--rule)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '14px 14px 0 0',
             }}>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
                 Subtask
@@ -1256,7 +1259,7 @@ export default function ProjectDetailClient({
             {editModalError && <div style={{ fontSize: 12.5, color: '#b91c1c', padding: '0 20px 10px' }}>{editModalError}</div>}
             {/* The assignee (not a lead): status and notes only */}
             {!canManage && editModal.assignee_id === userId && (
-              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8, position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px' }}>
                 <button onClick={() => setEditModal(null)} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
                 <button onClick={saveMyTask} disabled={editModalSaving} style={{ background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: editModalSaving ? 'wait' : 'pointer' }}>{editModalSaving ? 'Saving…' : 'Save'}</button>
               </div>
@@ -1266,6 +1269,7 @@ export default function ProjectDetailClient({
               <div style={{
                 padding: '14px 20px', borderTop: '1px solid var(--rule)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px',
               }}>
                 <button
                   onClick={deleteDeliverableFromModal}

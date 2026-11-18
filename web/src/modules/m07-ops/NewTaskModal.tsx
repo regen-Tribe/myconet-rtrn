@@ -59,13 +59,13 @@ export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label="New task"
         onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--rule)', width: '100%', maxWidth: 440, boxShadow: '0 24px 64px rgba(0,0,0,0.22)' }}
+        style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--rule)', width: '100%', maxWidth: 440, maxHeight: 'calc(100dvh - 24px)', overflowY: 'auto', overscrollBehavior: 'contain', boxShadow: '0 24px 64px rgba(0,0,0,0.22)' }}
       >
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>New task</span>

@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.4 — 2026-11-18
+
+- **The task pop-up fits the screen** (Oscar: too long to see everything, on web or a phone). It's never taller than the
+  window (`100dvh`, so a phone's browser bars count): the middle scrolls, while the header (×) and the Save / Delete
+  buttons stay in view. The New task pop-up gets the same height limit. Both get a lighter, blurred backdrop
+  (DESIGN-SYSTEM.md principle 0: minimal and modern, like Apple).
+
 ## v4.33.3 — 2026-11-18
 
 - **A meeting's summary looks like a summary** (Oscar: "looks ugly"): Fireflies writes it as "- **Topic:** …" bullets,
