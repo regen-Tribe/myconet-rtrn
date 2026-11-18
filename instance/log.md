@@ -760,3 +760,8 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ## 2026-11-18 — Core v4.33.6 (deployed, f1ec1115)
 - Oscar: "show the paused column". Update PR #56 merged; no migration. The main board has a Paused column (projects only).
+
+## 2026-11-18 — Core v4.34.0 (deployed, b294cf5c)
+- Oscar: "Ship to both". Update PR #57 merged; migration `20261204000000_tasks_without_projects.sql` applied and checked
+  before the deploy (chores projects 0, tasks with no project all have a circle, team_id added, chores functions gone;
+  no chores tasks here). Tasks need no project; one task pop-up with Project and Team.
