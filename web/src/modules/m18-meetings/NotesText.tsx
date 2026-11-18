@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 
 const safeHref = (href: string) => (/^(https?:\/\/|\/)/i.test(href) ? href : null)
 
-function inline(text: string): ReactNode[] {
+export function inline(text: string): ReactNode[] {
   const out: ReactNode[] = []
   const re = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|(?<![\w*])[_*]([^_*]+)[_*](?![\w*])/g
   let last = 0, k = 0
