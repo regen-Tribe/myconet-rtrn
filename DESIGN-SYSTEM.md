@@ -10,6 +10,9 @@ The **canonical reference implementation is `/dashboard`** (M00) — `web/src/mo
 
 ## 1. Design principles
 
+0. **Minimal and modern, like Apple** (Oscar, 2026-11-18: "lets keep with the styling of everything minimal modern
+   like apple"). Every screen: calm, quiet, plenty of space, one clear action; nothing that doesn't help the person.
+   Pop-ups never run off the screen (the middle scrolls, the buttons stay), backdrops are light and blurred.
 1. **White surfaces with thin grey borders.** No drop shadows except on hover/active.
 2. **Four-step grey hierarchy** for text — `--ink` (titles) → `--ink-2` (body strong) → `--ink-3` (body) → `--ink-4` (labels / metadata).
 3. **Module colors are accents, not backgrounds.** Reserve color for: 3px top stripes on cards, 2px left stripes on nav items, badge tints, primary CTA fills, status indicators. Body content stays neutral.

@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.33.4',
+    date: '2026-11-18',
+    title: 'The task pop-up fits your screen',
+    items: [
+      'A task’s pop-up no longer runs off the screen on a computer or a phone: its fields scroll, and the Save and Delete buttons stay in view.',
+    ],
+  },
+  {
     version: 'v4.33.3',
     date: '2026-11-18',
     title: 'Easier-to-read meeting summaries',
