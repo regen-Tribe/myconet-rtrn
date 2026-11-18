@@ -743,3 +743,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-18 — Core v4.33.1 (deployed, 1740e989)
 - Oscar: "ship to both". Update PR #51 merged; no migration. The project manager panel on the board starts collapsed
   (opens at `#pm`, from a circle page's Project manager button).
+
+## 2026-11-18 — Core v4.33.2 (deployed, d71e6fa5)
+- Oscar: "send it". Update PR #52 merged; no migration. The meeting page's tasks get the Draft pill slide (leads).
