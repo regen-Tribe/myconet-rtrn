@@ -746,3 +746,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ## 2026-11-18 — Core v4.33.2 (deployed, d71e6fa5)
 - Oscar: "send it". Update PR #52 merged; no migration. The meeting page's tasks get the Draft pill slide (leads).
+
+## 2026-11-18 — Core v4.33.3 (deployed, 4d5df6cd)
+- Oscar: "ok good send it" (previewed locally first). Update PR #53 merged; no migration. A meeting's summary shows as topic cards.
