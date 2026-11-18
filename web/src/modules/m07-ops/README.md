@@ -38,7 +38,7 @@ reviews the circle's whole board like a project manager:
 | Duplicates, both its own drafts (`needs_review`, `source='meeting'`), when sure | **Merges them itself** (keeps the clearer one, takes the other's person/date, relinks the meeting links, deletes the other) |
 | A board (Chores) task or a draft that belongs to a project of the circle, when sure, with a reason | **Files it itself** |
 | Any other duplicate or move; 3+ tasks that make a project nobody made; who could take a task nobody has | **Suggests** it (`agent_suggestions`) |
-| The circle's state | Writes `knowledge.boardFolder/<Circle>.md` in the second brain (status, projects with their tasks, the board, open suggestions) |
+| The circle's state | Keeps the circle's **space in the second brain** (`lib/circle-space.ts`, v4.30.0): its folder (`circles.brain_folder`, else the slug) with `README.md` (the circle's index; the agent writes only its own part, between the `myconet:circle` markers, in a README people wrote) and `board.md` (status, projects with their tasks, the board, open suggestions). A new folder gets a line in the second brain's README map. A new, renamed, retired or moved circle asks for a review itself (trigger `circles_request_brain_update`), so it gets its space within 10 minutes. |
 
 Its own changes are logged in `agent_actions` (`pm_merge`, `pm_move`, `pm_assign`) with what's needed to undo
 them. A review replaces the circle's open suggestions; dismissed ones (60 days) aren't suggested again.

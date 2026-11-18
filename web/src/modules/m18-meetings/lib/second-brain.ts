@@ -169,6 +169,15 @@ const gh = () => ({
   },
 })
 
+/** A file as it is in the repo (front matter included); null if there's none */
+export async function readFile(path: string): Promise<string | null> {
+  const { repo, branch, headers } = gh()
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${enc(path)}?ref=${encodeURIComponent(branch)}`, {
+    headers: { ...headers, Accept: 'application/vnd.github.raw+json' }, cache: 'no-store',
+  })
+  return res.ok ? await res.text() : null
+}
+
 /** Every file path in the repo, in one call (to find a renamed meeting's old files cheaply) */
 export async function listPaths(): Promise<Set<string>> {
   const { repo, branch, headers } = gh()
@@ -180,7 +189,7 @@ export async function listPaths(): Promise<Set<string>> {
 
 /**
  * Removes a file the agent wrote earlier (a renamed meeting's old note); false if it's gone. Only the
- * agent's own files (source: myconet-meeting…): a note a person wrote is never removed.
+ * agent's own files (source: myconet-…): a note a person wrote is never removed.
  */
 export async function deleteFile(path: string, message: string): Promise<boolean> {
   const { repo, branch, headers } = gh()
@@ -189,7 +198,7 @@ export async function deleteFile(path: string, message: string): Promise<boolean
   if (!existing.ok) return false
   const { sha, content } = (await existing.json()) as { sha?: string; content?: string }
   const text = content ? Buffer.from(content, 'base64').toString('utf8') : ''
-  if (!sha || !/^source: myconet-meeting/m.test(text.split('\n---')[0])) return false
+  if (!sha || !/^source: myconet-/m.test(text.split('\n---')[0])) return false
   const res = await fetch(api, {
     method: 'DELETE',
     headers: { ...headers, 'Content-Type': 'application/json' },

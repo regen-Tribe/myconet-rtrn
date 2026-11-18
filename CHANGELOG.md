@@ -5,6 +5,28 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.30.0 — 2026-11-17
+
+- **Every circle has its space in the second brain** (Oscar: "while you use the operating system, it also keeps
+  your second brain up to date"; the second brain's structure should stay functional and organised for the agents
+  that scan it). `circles.brain_folder` (null = the slug); `m07-ops/lib/circle-space.ts` keeps `<folder>/README.md`
+  (the circle's index: purpose, leads, board and meeting links, projects with open counts, recent meeting notes,
+  what's in the folder; written whole when missing, otherwise only the part between the `myconet:circle` markers)
+  and `<folder>/board.md` (the board status, moved from `knowledge.boardFolder/<Circle>.md`, the old copy removed).
+  A new folder gets a line in the second brain's README map. Trigger `circles_request_brain_update` queues a review
+  for a new, renamed, retired or moved circle, so it gets its space within 10 minutes whichever way it was made.
+  Board status names tasks by title (no more "T3"). Ask / Do can set a circle's folder.
+- **Migration** `20261129000000_circle_folders.sql`.
+
+## v4.29.0 — 2026-11-17
+
+- **Ask / Do: anything the person may do** (Oscar: "the MyCoNet agent should be able to do anything on MyCoNet that
+  that user's permissions allow"; it couldn't assign a circle lead). New general changes (`lib/do-catalog.ts`):
+  update any catalogued field (people's role and `lead_circles`, circles, org-chart units, projects, tasks) and
+  add / remove org-chart members. Made **with the person's own Supabase session**, so RLS and the profile guard
+  trigger decide; the card shows before → after; Undo restores as the person. Logged `do_update` /
+  `do_add_member` / `do_remove_member` with `as_user`. Next for the catalogue: events, bookings, governance.
+
 ## v4.28.0 — 2026-11-17
 
 - **Ask / Do: create a circle** (asked for in Protopia): admins **and circle leads** can tell the agent to create a

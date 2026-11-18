@@ -3,6 +3,24 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.30.0',
+    date: '2026-11-17',
+    title: 'Every circle has its space in the second brain',
+    items: [
+      'Each circle has a folder in the second brain with its index (purpose, leads, projects, recent meetings, what’s in the folder) and its board status, kept up to date by MyCoNet.',
+      'A new circle gets its folder automatically within minutes; a renamed or retired one is updated. Notes people write in a circle’s README are left as they are.',
+    ],
+  },
+  {
+    version: 'v4.29.0',
+    date: '2026-11-17',
+    title: 'The agent can do what you can do',
+    items: [
+      'Ask / Do now reaches beyond the board: roles and circle leadership, circles, the org chart (who’s in which circle or team), projects and tasks.',
+      'Those changes are made with your own permissions, so the agent can do exactly what you could do yourself, and nothing more. You confirm each one, and each can be undone.',
+    ],
+  },
+  {
     version: 'v4.28.0',
     date: '2026-11-17',
     title: 'Ask the agent to create a circle',

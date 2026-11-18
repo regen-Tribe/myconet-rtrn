@@ -42,3 +42,15 @@ change on the board in plain words ("merge the 4 elements project into the 5 sen
 | `rename_task`, `assign_task`, `confirm_drafts` | the task's circle or project leads |
 | `set_task_date`, `set_task_status` | also the person on the task |
 
+### General changes: anything the person may do (v4.29.0)
+
+"The agent can do anything on MyCoNet this person's permissions allow." Besides the board changes above, the agent
+can change any field in the catalogue (`lib/do-catalog.ts`: people's role and circle leadership, circles, org-chart
+units, projects, tasks) and add or remove people in the org chart. These are made **with the person's own session**,
+so the database's own rules (RLS, the `guard_profile_privileges` trigger) decide, exactly as for their own clicks;
+MyCoNet adds no rights. The card shows each field before → after; Undo puts the old values back, again as the
+person. Example: "make Sonia a circle lead of Kitchen" → *Person "Sonia Wendorff": role member → circle lead;
+leads the circles — → Kitchen* (admins only, like Admin › Users). An admin made circle lead stays admin. To reach
+more of MyCoNet, add tables and fields to `CATALOG` (events, bookings and governance are next). At most 8 changes
+per request (Cloudflare's 50 outside calls per request).
+
