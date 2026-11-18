@@ -148,16 +148,14 @@ export async function processMeeting(
       await unclaim(noProject.map(w => w.key))
       mine = mine.filter(w => w.d.project_id || chores.has(w.d.circle))
 
-      // Someone without an account keeps their name in the title, so a lead can pass it on
-      const rows = mine.map(w => {
-        const title = w.d.person && !w.person ? `${w.d.title} (for ${w.d.person})` : w.d.title
-        return {
-          w, title, projectId: w.d.project_id ?? chores.get(w.d.circle)!,
-        }
-      })
+      // Someone without an account gets a name tag on the task (assignee_name), so a lead can pass it on
+      const rows = mine.map(w => ({
+        w, title: w.d.title, projectId: w.d.project_id ?? chores.get(w.d.circle)!,
+        name: w.d.person && !w.person ? w.d.person.slice(0, 80) : null,
+      }))
       if (rows.length) {
         const { data: made, error: taskErr } = await admin.from('deliverables').insert(rows.map(r => ({
-          project_id: r.projectId, title: r.title.slice(0, 300), assignee_id: r.w.person?.id ?? null, circle: r.w.d.circle,
+          project_id: r.projectId, title: r.title.slice(0, 300), assignee_id: r.w.person?.id ?? null, assignee_name: r.name, circle: r.w.d.circle,
           due_date: r.w.d.due_date, due_time: r.w.d.due_date ? r.w.d.due_time : null, status: 'backlog', progress: 0,
           source: 'meeting', source_meeting_id: meetingId, source_item: r.w.d.source_text, needs_review: true,
           created_by: opts.requestedBy,
@@ -187,7 +185,7 @@ export async function processMeeting(
       const t = one(l.deliverables)
       if (!t) return null
       return {
-        // "(for Luis)" is for the board; the note and email show the person already
+        // Tasks before v4.32.0 had "(for Luis)" in the title; the note and email show the person already
         title: (t.title as string).replace(/ \(for [^)]+\)$/, ''), person: (l.person_name as string | null), onMyCoNet: !!l.assignee_id || !l.person_name,
         url: `${appUrl}/ops/${t.project_id}?task=${t.id}`, draft: !!t.needs_review, circle: t.circle as string | null,
         circleName: circleName(t.circle), when: t.due_date ? fmtTaskWhen(t.due_date, t.due_time) : null,

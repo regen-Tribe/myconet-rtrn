@@ -16,6 +16,8 @@ import { fmtTaskWhen, isTaskOverdue, taskDate } from '@/core/lib/tasks'
 import { DraftBadge } from '@/core/components/DraftBadge'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
 import { ProjectManagerPanel } from './ProjectManagerPanel'
+import { NameTag } from './NameTag'
+import { PriorityBadge } from './Priority'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -217,12 +219,14 @@ function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, 
           {task.needs_review && <DraftBadge />}{task.title}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <PriorityBadge priority={task.priority} />
           {meta && (
             <span style={{ fontSize: 9, fontWeight: 600, color: meta.color, background: `${meta.color}15`, padding: '1px 6px', borderRadius: 20 }}>
               {meta.emoji} {meta.label}
             </span>
           )}
           {task.assignee_username && <span style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>@{task.assignee_username}</span>}
+          {!task.assignee_id && task.assignee_name && <NameTag name={task.assignee_name} style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }} />}
           {task.due_date && (
             <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, color: late ? '#ef4444' : 'var(--ink-4)', marginLeft: 'auto' }}>
               {fmtTaskWhen(task.due_date, task.due_time)}

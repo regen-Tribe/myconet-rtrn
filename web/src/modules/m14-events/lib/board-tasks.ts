@@ -7,7 +7,7 @@ import { one } from '@/core/lib/rows'
 import type { BoardTask, CalendarEvent } from '../types'
 
 export const BOARD_TASK_SELECT =
-  'id, title, due_date, due_time, status, circle, project_id, projects(title), user_profiles!deliverables_assignee_id_fkey(first_name, username)'
+  'id, title, due_date, due_time, status, circle, project_id, assignee_name, projects(title), user_profiles!deliverables_assignee_id_fkey(first_name, username)'
 
 export function toBoardTask(r: any): BoardTask {
   const person = one<{ first_name: string | null; username: string | null }>(r.user_profiles)
@@ -15,7 +15,8 @@ export function toBoardTask(r: any): BoardTask {
   return {
     id: r.id, title: r.title, due_date: r.due_date, due_time: r.due_time ?? null, status: r.status,
     circle: r.circle ?? null, project_id: r.project_id, project_title: project?.title ?? null,
-    assignee: person?.first_name ?? person?.username ?? null,
+    // A name typed in for someone not on MyCoNet yet
+    assignee: person?.first_name ?? person?.username ?? r.assignee_name ?? null,
   }
 }
 

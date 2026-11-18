@@ -31,6 +31,10 @@ export interface Deliverable {
   status: string
   due_date: string | null
   assignee_id: string | null
+  /** Someone not on MyCoNet yet: only a name tag, no account (v4.32.0). Empty when assignee_id is set */
+  assignee_name?: string | null
+  /** none · low · medium · high (v4.32.0) */
+  priority?: string | null
   progress: number | null
   assignee_username?: string | null
   from_agreement_id?: string | null

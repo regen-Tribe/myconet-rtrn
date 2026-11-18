@@ -32,7 +32,7 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       .eq('status', 'pending')
       .order('created_at', { ascending: false }),
     supabase.from('deliverables')
-      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, notes, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
+      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, assignee_name, priority, notes, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
       .eq('project_id', id)
       .order('created_at', { ascending: true }),
     supabase.from('project_subscriptions')

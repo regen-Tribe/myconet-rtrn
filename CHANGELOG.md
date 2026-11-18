@@ -5,6 +5,21 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.32.0 — 2026-11-18
+
+- **`npm run upstream` no longer corrupts a patch** (Sonia): the script trimmed the diff, which could cut a last
+  context line that is a single space. It now sends the diff as git wrote it, and stops if `git diff` fails.
+- **A priority on each task**: a four-step slider in the task pop-up (None · Low · Med · High; leads set it), shown
+  as a badge on the board card, the task list and the project page. The project manager reads it and the circle's
+  `board.md` shows it; Ask / Do can set it. `deliverables.priority` (default `none`).
+- **Assign a task to someone who isn't on MyCoNet yet** (asked for in Protopia: some people haven't made accounts).
+  The pop-up's **Assigned to** gets "✏️ Type a name…": the name is only a tag on the task (no account, no invite),
+  shown dotted on the board, the task list, the project page and the calendar. Choosing their account later clears
+  it (trigger `deliverables_one_assignee`). **Meetings** now put a name without an account there instead of
+  "(for Luis)" in the title, and the migration moves the old "(for …)" titles across. The project manager sees these
+  names and may suggest the account once that person joins; Ask / Do can set one. **Migration**
+  `20261201000000_task_name_tag_priority.sql` (`deliverables.assignee_name`, `deliverables.priority`).
+
 ## v4.31.0 — 2026-11-18
 
 - **The task pop-up** (asked for in Protopia: opening a draft from a meeting should let you set its status and who

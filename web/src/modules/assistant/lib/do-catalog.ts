@@ -71,8 +71,11 @@ export const CATALOG: Record<string, TableDef> = {
       title: { label: 'title', type: { t: 'text', max: 300 } },
       status: { label: 'status', type: { t: 'enum', values: ['backlog', 'in_progress', 'review', 'done'] } },
       assignee_id: { label: 'person', type: { t: 'person' } },
+      // Someone not on MyCoNet yet: a name tag only (setting a person clears it)
+      assignee_name: { label: 'name of someone not on MyCoNet yet', type: { t: 'text', max: 80 } },
       due_date: { label: 'due date', type: { t: 'date' } },
       due_time: { label: 'due time', type: { t: 'time' } },
+      priority: { label: 'priority', type: { t: 'enum', values: ['none', 'low', 'medium', 'high'] } },
       circle: { label: 'circle', type: { t: 'circle' } },
       project_id: { label: 'project', type: { t: 'project' } },
       needs_review: { label: 'draft', type: { t: 'bool' } },
