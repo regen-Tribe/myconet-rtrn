@@ -730,3 +730,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-18 — Core v4.31.0 (deployed)
 - Oscar: "merge rtrn". Update PR #48 merged; migration `task_notes` applied through the Supabase MCP and checked
   (deliverables.notes + update_my_task) before the deploy.
+
+## 2026-11-18 — Core v4.32.0: task priority, names without an account (deployed, 3d534b96)
+- Update PR #49 merged; migration `20261201000000_task_name_tag_priority.sql` applied through the Supabase MCP and checked
+  (both columns, the trigger; no tasks had "(for …)" titles here) before the deploy.
