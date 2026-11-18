@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.31.0 — 2026-11-18
+
+- **The task pop-up** (asked for in Protopia: opening a draft from a meeting should let you set its status and who
+  has it, and add notes): **Status**, **Assigned to** (everyone, shared admin accounts left out; "Me" first) and
+  **Notes**. Leads (admins, circle leads, project leads) edit everything as before, and saving a draft confirms it.
+  **The person a task is assigned to** can change its status and notes, nothing else
+  (`update_my_task()`, security definer). A task's notes also show under it in the circle's `board.md`; Ask / Do can
+  set notes. **Migration** `20261130000000_task_notes.sql` (`deliverables.notes`, `update_my_task`).
+
 ## v4.30.0 — 2026-11-17
 
 - **Every circle has its space in the second brain** (Oscar: "while you use the operating system, it also keeps

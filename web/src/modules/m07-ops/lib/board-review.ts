@@ -43,6 +43,7 @@ export async function requestBoardReview(admin: SupabaseClient, circles: string[
 interface Task {
   id: string; title: string; project_id: string; assignee_id: string | null; due_date: string | null
   status: string; needs_review: boolean; source: string | null; source_meeting_id: string | null
+  notes?: string | null
 }
 interface Project { id: string; title: string; description: string | null; is_chores: boolean; status: string }
 
@@ -88,7 +89,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   const [circleRes, projRes, taskRes, peopleRes, sugRes] = await Promise.all([
     admin.from('circles').select('slug, name, emoji, archived_at, brain_folder, leads_to_assign').eq('slug', circle).maybeSingle(),
     admin.from('projects').select('id, title, description, is_chores, status').eq('circle', circle).in('status', ['pending', 'backlog', 'in_progress', 'review']),
-    admin.from('deliverables').select('id, title, project_id, assignee_id, due_date, status, needs_review, source, source_meeting_id')
+    admin.from('deliverables').select('id, title, project_id, assignee_id, due_date, status, needs_review, source, source_meeting_id, notes')
       .eq('circle', circle).neq('status', 'done').order('created_at').limit(MAX_TASKS),
     admin.from('user_profiles').select('id, first_name, last_name, username, role, lead_circles'),
     admin.from('agent_suggestions').select('kind, payload, status').eq('circle', circle).in('status', ['dismissed']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
@@ -263,7 +264,7 @@ function buildBoardNote(n: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const line = (t: Task) => {
     const who = n.nameOf(t.assignee_id)
-    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}/ops/${t.project_id}?task=${t.id})`
+    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}/ops/${t.project_id}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
   }
   const out = [
     '---',
