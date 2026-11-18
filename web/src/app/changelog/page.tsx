@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.33.1',
+    date: '2026-11-18',
+    title: 'A tidier operations page',
+    items: [
+      'The project manager’s panel on the board starts collapsed: press Show to see its suggestions. The Project manager button on a circle page still opens it.',
+    ],
+  },
+  {
     version: 'v4.33.0',
     date: '2026-11-18',
     title: 'Slide a draft to approve or decline it',

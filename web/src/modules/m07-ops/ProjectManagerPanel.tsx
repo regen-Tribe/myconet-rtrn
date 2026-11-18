@@ -1,12 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { AgentSuggestion, PmAction } from './types'
 
 const KIND: Record<string, string> = { merge: 'Merge duplicates', move: 'Into a project', new_project: 'New project', assign: 'Who could take it' }
 const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a project', pm_assign: 'Assigned' }
+
+// Arriving from a circle page's "🧭 Project manager" button (/ops?circle=…#pm) opens the panel
+const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
+const atPm = () => window.location.hash === '#pm'
 
 const btn = (primary = false): React.CSSProperties => ({
   fontSize: 12, fontWeight: 600, borderRadius: 8, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap',
@@ -17,7 +21,8 @@ const btn = (primary = false): React.CSSProperties => ({
 /**
  * The project manager on the board: what the agent suggests for each circle (leads accept or dismiss)
  * and what it did itself in the last two weeks (leads can undo). Everyone sees it; only a circle's
- * leads and admins decide. Filtered by the board's circle filter.
+ * leads and admins decide. Filtered by the board's circle filter. Starts collapsed (v4.33.1), except when the
+ * page was opened at #pm.
  */
 export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide }: {
   suggestions: AgentSuggestion[]; actions: PmAction[]; taskTitles: Record<string, string>
@@ -27,7 +32,10 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
-  const [open, setOpen] = useState(true)
+  // null until the person toggles it: collapsed, unless the page was opened at #pm
+  const [toggled, setToggled] = useState<boolean | null>(null)
+  const linkedHere = useSyncExternalStore(onHash, atPm, () => false)
+  const open = toggled ?? linkedHere
   const sugs = suggestions.filter(s => !circle || s.circle === circle)
   const done = actions.filter(a => !circle || a.circle === circle)
   if (!sugs.length && !done.length) return null
@@ -51,7 +59,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>🧭 Project manager</span>
         <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{sugs.length} suggestion{sugs.length === 1 ? '' : 's'}{done.length ? ` · ${done.length} change${done.length === 1 ? '' : 's'} made` : ''}</span>
-        <button onClick={() => setOpen(o => !o)} style={{ ...btn(), marginLeft: 'auto', padding: '3px 10px' }}>{open ? 'Hide' : 'Show'}</button>
+        <button onClick={() => setToggled(!open)} style={{ ...btn(), marginLeft: 'auto', padding: '3px 10px' }}>{open ? 'Hide' : 'Show'}</button>
       </div>
       {open && (
         <>

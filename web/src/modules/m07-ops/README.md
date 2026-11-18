@@ -43,7 +43,7 @@ reviews the circle's whole board like a project manager:
 Its own changes are logged in `agent_actions` (`pm_merge`, `pm_move`, `pm_assign`) with what's needed to undo
 them. A review replaces the circle's open suggestions; dismissed ones (60 days) aren't suggested again.
 
-**On the board:** the **🧭 Project manager** panel (`ProjectManagerPanel.tsx`, `#pm`, follows the circle filter):
+**On the board:** the **🧭 Project manager** panel (`ProjectManagerPanel.tsx`, `#pm`, follows the circle filter; starts collapsed since v4.33.1 unless opened at `#pm`):
 suggestions with **Accept** / **Dismiss** and the agent's changes of the last two weeks with **Undo**, for
 admins and that circle's leads (`lib/pm-access.ts`; routes `/api/ops/suggestions/[id]`,
 `/api/ops/agent-actions/[id]`); everyone else sees them read-only. **On the circles** (Operations › Circles and

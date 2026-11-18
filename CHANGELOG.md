@@ -5,6 +5,11 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.1 — 2026-11-18
+
+- **The 🧭 Project manager panel starts collapsed** on the operations page (Oscar); **Show** opens it. A circle
+  page's "🧭 Project manager" button (`/ops?circle=…#pm`) still opens it straight away.
+
 ## v4.33.0 — 2026-11-18
 
 - **Approve or decline a draft from its pill** (Oscar: "slide left to decline, slide right to approve"). On the board,
