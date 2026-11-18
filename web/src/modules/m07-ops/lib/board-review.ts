@@ -10,11 +10,13 @@
  * The safe things it does itself, each logged in agent_actions with what's needed to undo it:
  * merging duplicates that are both its own drafts, and filing a Chores task or a draft into a project
  * when it's very sure. Everything else becomes a suggestion (agent_suggestions) for the circle's
- * leads. The status goes to the second brain (knowledge.boardFolder/<Circle>.md).
+ * leads. The status goes to the circle's own folder in the second brain (<folder>/board.md), next to
+ * its README (circle-space.ts), which this keeps up to date too.
  * One circle per request: a Worker may make only 50 outside calls per request.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { saveNote, secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
+import { deleteFile, listPaths, saveNote, secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
+import { updateCircleSpace, type CircleRow } from './circle-space'
 import { matchPerson, displayName, type PersonProfile } from '@/modules/m18-meetings/lib/people'
 
 const MODEL = 'MiniMax-M3.1-Flash'
@@ -64,7 +66,7 @@ Find:
 2. "moves": a task on the board ("[board]") that clearly belongs to one of the circle's projects.
 3. "new_projects": three or more open tasks that together are one larger piece of work no project covers yet: a short project title, a one-sentence description, and its tasks.
 4. "assign": a task with nobody on it, when one of the people below is the obvious person (it's their area or they talked about it). Use the exact name.
-5. "status": the circle's board in 3–6 short markdown bullets: what's moving, what's next, what's stuck or late, what needs a person.
+5. "status": the circle's board in 3–6 short markdown bullets: what's moving, what's next, what's stuck or late, what needs a person. Name tasks and projects by their titles here, never by T1/P1.
 
 For each item say "sure": true only when you have no doubt. Don't repeat what was already turned down: ${dismissed.length ? dismissed.join(' · ') : '(nothing)'}.
 
@@ -84,11 +86,11 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   const errors: string[] = []
   const log = (rows: object[]) => rows.length ? admin.from('agent_actions').insert(rows).then(({ error }) => { if (error) errors.push(`log: ${error.message}`) }) : Promise.resolve()
   const [circleRes, projRes, taskRes, peopleRes, sugRes] = await Promise.all([
-    admin.from('circles').select('slug, name').eq('slug', circle).maybeSingle(),
+    admin.from('circles').select('slug, name, emoji, archived_at, brain_folder, leads_to_assign').eq('slug', circle).maybeSingle(),
     admin.from('projects').select('id, title, description, is_chores, status').eq('circle', circle).in('status', ['pending', 'backlog', 'in_progress', 'review']),
     admin.from('deliverables').select('id, title, project_id, assignee_id, due_date, status, needs_review, source, source_meeting_id')
       .eq('circle', circle).neq('status', 'done').order('created_at').limit(MAX_TASKS),
-    admin.from('user_profiles').select('id, first_name, last_name, username'),
+    admin.from('user_profiles').select('id, first_name, last_name, username, role, lead_circles'),
     admin.from('agent_suggestions').select('kind, payload, status').eq('circle', circle).in('status', ['dismissed']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
   ])
   if (!circleRes.data) return { ok: false, merged: 0, moved: 0, suggested: 0, note: null, errors: ['no such circle'] }
@@ -99,10 +101,37 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   const everyone = (peopleRes.data ?? []) as PersonProfile[]
   const people = everyone.filter(p => !/admin/i.test(`${p.username ?? ''} ${displayName(p)}`))
   const nameOf = (id: string | null) => { const p = id ? everyone.find(x => x.id === id) : null; return p ? displayName(p) : null }
+  const circleRow = circleRes.data as CircleRow
+  // Its space in the second brain: README (index) + board.md, written after every review
+  const writeSpace = async (status: string | null, left: Task[], suggestions: { kind: string; payload: object; reason: string | null }[]) => {
+    if (!secondBrainOn()) return null
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      const [paths, unit] = await Promise.all([
+        listPaths(),
+        admin.from('org_units').select('description').eq('kind', 'circle').eq('circle', circle).maybeSingle(),
+      ])
+      const leads = everyone.filter(p => ((p as PersonProfile & { lead_circles?: string[] }).lead_circles ?? []).includes(circle)).map(displayName)
+      const { folder } = await updateCircleSpace(admin, circleRow, {
+        purpose: (unit.data?.description as string | null) ?? null, leads, paths,
+        projects: projects.filter(p => !p.is_chores).map(p => ({ title: p.title, open: left.filter(t => t.project_id === p.id).length, url: `${appUrl}/ops/${p.id}` })),
+      })
+      const saved = await saveNote(`${folder}/board.md`, buildBoardNote({ circle, circleName, status, projects, tasks: left, nameOf, suggestions }), `Board status: ${circleName}`)
+      // Board notes used to live together in knowledge.boardFolder: the agent removes its old copy
+      const old = `${(process.env.KNOWLEDGE_BOARD_FOLDER || 'operations/board').replace(/^\/+|\/+$/g, '')}/${circleName.replace(/[\\/:*?"<>|#^[\]&]+/g, ' ').replace(/\s+/g, ' ').trim()}.md`
+      if (paths.has(old) && old !== `${folder}/board.md`) await deleteFile(old, `Board status moved to ${folder}/board.md`)
+      return saved.url
+    } catch (e) {
+      errors.push(`second brain: ${(e as Error).message}`)
+      return null
+    }
+  }
   const dismissed = (sugRes.data ?? []).map(s => `${s.kind}: ${(s.payload as { title?: string; label?: string }).title ?? (s.payload as { label?: string }).label ?? ''}`).slice(0, 30)
-  if (!tasks.length) {
-    await admin.from('board_reviews').update({ reviewed_at: new Date().toISOString(), last_error: null }).eq('circle', circle)
-    return { ok: true, merged: 0, moved: 0, suggested: 0, note: null, errors }
+  // No open tasks (a new circle): nothing for the AI, but the circle still gets its space
+  if (!tasks.length || circleRow.archived_at) {
+    const note = await writeSpace(circleRow.archived_at ? '- This circle is retired.' : '- No open tasks yet.', tasks, [])
+    await admin.from('board_reviews').update({ reviewed_at: new Date().toISOString(), attempts: 0, last_error: errors.length ? errors.join(' · ').slice(0, 500) : null }).eq('circle', circle)
+    return { ok: true, merged: 0, moved: 0, suggested: 0, note, errors }
   }
 
   // ── The AI reads the board ──
@@ -197,21 +226,13 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   }
   await log([...mergeLog, ...moveLog])
 
-  // ── The circle's board status in the second brain ──
-  let note: string | null = null
-  const status = str(raw.status, 2000) ? String(raw.status).trim().slice(0, 2000) : null
-  if (secondBrainOn()) {
-    try {
-      // The board as it is now: without merged-away tasks, moved ones in their project
-      const left = tasks.filter(t => !dropped.has(t.id)).map(t => (movedTo.has(t.id) ? { ...t, project_id: movedTo.get(t.id)! } : t))
-      const content = buildBoardNote({ circle, circleName, status, projects, tasks: left, nameOf, suggestions })
-      const folder = (process.env.KNOWLEDGE_BOARD_FOLDER || 'operations/board').replace(/^\/+|\/+$/g, '')
-      const saved = await saveNote(`${folder}/${circleName.replace(/[\\/:*?"<>|#^[\]&]+/g, ' ').replace(/\s+/g, ' ').trim()}.md`, content, `Board status: ${circleName}`)
-      note = saved.url
-    } catch (e) {
-      errors.push(`second brain: ${(e as Error).message}`)
-    }
-  }
+  // ── The circle's space in the second brain: README + board status ──
+  // The AI's T1/P1 references mean nothing to a reader: names instead
+  const status = str(raw.status, 2000)
+    ? String(raw.status).trim().slice(0, 2000).replace(/\b([TP])(\d+)\b/g, (m, k, n) => (k === 'T' ? tasks[+n - 1] : projects[+n - 1]) ? `“${(k === 'T' ? tasks[+n - 1] : projects[+n - 1]).title}”` : m)
+    : null
+  // The board as it is now: without merged-away tasks, moved ones in their project
+  const note = await writeSpace(status, tasks.filter(t => !dropped.has(t.id)).map(t => (movedTo.has(t.id) ? { ...t, project_id: movedTo.get(t.id)! } : t)), suggestions)
 
   await admin.from('board_reviews').update({ reviewed_at: new Date().toISOString(), attempts: 0, last_error: errors.length ? errors.join(' · ').slice(0, 500) : null }).eq('circle', circle)
   return { ok: true, merged, moved, suggested: suggestions.length, note, errors }
