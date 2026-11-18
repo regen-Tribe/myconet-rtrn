@@ -715,3 +715,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - Oscar: "merge". Update PR #47 (v4.30.0, core files only) merged; #46 (v4.29.0) closed as superseded. Migration
   `circle_folders` applied through the Supabase MCP. RTRN has no `knowledge.repo`, so circle spaces aren't written here;
   it gets Ask / Do general changes (v4.29.0: roles, circle leads, org chart… with the person's own rights).
+- Correction: the first `apply_migration` call's confirmation **expired** and the deploy (77845003) went out before the
+  column existed; the migration was applied about a minute later and checked (brain_folder column + trigger present).
+  Lesson: check the migration result before deploying.
