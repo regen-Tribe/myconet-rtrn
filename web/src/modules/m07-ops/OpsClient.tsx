@@ -199,7 +199,7 @@ function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, 
   const meta = task.circle && circles.has(task.circle) ? circles.meta(task.circle) : null
   const late = isTaskOverdue(task.due_date, task.due_time, task.status)
   return (
-    <Link href={`/ops/${task.project_id}?task=${task.id}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+    <Link href={`/ops/${task.project_id}?task=${task.id}&back=1`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
       <div
         draggable={canMove || !!onBlockedDrag}
         onDragStart={(e) => {
@@ -659,7 +659,7 @@ export default function OpsClient({
         <NewTaskModal
           defaultCircle={selectedCircle ?? leadCircles[0] ?? null}
           onClose={() => setNewTask(false)}
-          onAdded={(projectId, taskId) => router.push(`/ops/${projectId}?task=${taskId}`)}
+          onAdded={(projectId, taskId) => router.push(`/ops/${projectId}?task=${taskId}&back=1`)}
         />
       )}
     </div>

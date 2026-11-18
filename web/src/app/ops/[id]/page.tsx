@@ -1,5 +1,5 @@
 import { createClient } from '@/core/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import ProjectDetailClient from '@/modules/m07-ops/ProjectDetailClient'
 import { isOpsAdmin } from '@/core/lib/roles'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
@@ -8,10 +8,10 @@ import type { Project, ProjectUpdate, CollaborationAgreement, SubscriberProfile 
 
 export default async function ProjectDetailPage({ params, searchParams }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ task?: string }>
+  searchParams: Promise<{ task?: string; back?: string }>
 }) {
   const { id } = await params
-  const { task } = await searchParams
+  const { task, back } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -42,6 +42,8 @@ export default async function ProjectDetailPage({ params, searchParams }: {
 
   if (!projectRes.data) notFound()
   const project = projectRes.data as Project
+  // A circle's chores project is only where its loose tasks are kept: it has no page of its own, the board is its page
+  if (project.is_chores && !task) redirect(`/ops${project.circle ? `?circle=${project.circle}` : ''}`)
 
   // Lead/creator display names — public
   const leadUserId = project.lead_user_id ?? project.created_by
@@ -146,6 +148,7 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       creatorProfile={creatorProfile}
       projectEvents={(eventRows ?? []).map(toEvent)}
       initialTaskId={task ?? null}
+      backOnClose={back === '1'}
       people={people}
     />
   )

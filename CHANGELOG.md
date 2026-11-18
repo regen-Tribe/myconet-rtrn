@@ -5,6 +5,14 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.5 — 2026-11-18
+
+- **Closing a loose task goes back to the board, not the chores page** (Oscar). A circle's one-off tasks live in its
+  hidden chores project; opening one shows its pop-up over that project's page. Closing it (×, Esc, Cancel, Save,
+  Delete) now goes back to where it was opened: the board with its filter, the meeting page, the calendar or the task
+  list (in-app links carry `?back=1`), or to the board filtered to the task's circle (a link from an email). A chores
+  project's page opened on its own goes straight to the board. Tasks in real projects behave as before.
+
 ## v4.33.4 — 2026-11-18
 
 - **The task pop-up fits the screen** (Oscar: too long to see everything, on web or a phone). It's never taller than the

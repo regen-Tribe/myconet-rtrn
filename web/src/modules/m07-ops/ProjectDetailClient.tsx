@@ -75,7 +75,7 @@ export default function ProjectDetailClient({
   deliverables: initialDeliverables, myProposal: initialMyProposal, userId, userRole, leadCircles, circleDirectory, isAdmin, isProjectCreator,
   projectSubscribers: initialProjectSubscribers, isProjectSubscribed: initialIsProjectSubscribed,
   deliverableSubscribers: initialDeliverableSubscribers,
-  leadProfile, creatorProfile, projectEvents, initialTaskId, people = [],
+  leadProfile, creatorProfile, projectEvents, initialTaskId, backOnClose = false, people = [],
 }: {
   project: Project
   /** Who a task can be given to (the task pop-up's Assigned to) */
@@ -98,6 +98,8 @@ export default function ProjectDetailClient({
   projectEvents: CalendarEvent[]
   /** Opens this task's pop-up on arrival (links from the calendar: ?task=<id>) */
   initialTaskId?: string | null
+  /** Opened from a page in the app (?back=1): closing a loose task's pop-up goes back there */
+  backOnClose?: boolean
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -175,9 +177,10 @@ export default function ProjectDetailClient({
 
   useEffect(() => {
     if (!editModal) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setEditModal(null) }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeEditModal() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- closeEditModal only reads props and the router
   }, [editModal])
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -195,6 +198,15 @@ export default function ProjectDetailClient({
   }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
+
+  // A loose task (in the circle's chores project) lives on the main board, so closing it never leaves the person on
+  // the chores page: back to where they opened it (?back=1), or to the board filtered to its circle (v4.33.5)
+  function closeEditModal() {
+    setEditModal(null)
+    if (!project.is_chores) return
+    if (backOnClose && window.history.length > 1) router.back()
+    else router.replace(`/ops${project.circle ? `?circle=${project.circle}` : ''}`)
+  }
 
   function openEditModal(d: Deliverable) {
     setEditModal(d)
@@ -308,7 +320,7 @@ export default function ProjectDetailClient({
     setEditModalSaving(false)
     if (error) { setEditModalError(error.message); return }
     setDeliverables(prev => prev.map(d => (d.id === editModal.id ? { ...d, status: editModalStatus, notes: editModalNotes.trim() || null } : d)))
-    setEditModal(null)
+    closeEditModal()
   }
 
   async function saveDeliverableEdit() {
@@ -333,7 +345,7 @@ export default function ProjectDetailClient({
       setDeliverables(prev => prev.map(d =>
         d.id === editModal.id ? { ...d, ...changes, user_profiles: (() => { const p = people.find(x => x.id === changes.assignee_id); return p ? { first_name: p.name.split(' ')[0], username: p.username } : null })() } as Deliverable : d
       ))
-      setEditModal(null)
+      closeEditModal()
     }
     setEditModalSaving(false)
   }
@@ -342,7 +354,7 @@ export default function ProjectDetailClient({
     if (!editModal) return
     setDeliverables(prev => prev.filter(d => d.id !== editModal.id))
     await supabase.from('deliverables').delete().eq('id', editModal.id)
-    setEditModal(null)
+    closeEditModal()
   }
 
   async function acceptProposal(agreementId: string, targetStatus: string = 'backlog') {
@@ -1030,7 +1042,7 @@ export default function ProjectDetailClient({
       {/* ── Subtask edit modal ─────────────────────────────────────────────────── */}
       {editModal && (
         <div
-          onClick={() => setEditModal(null)}
+          onClick={() => closeEditModal()}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999,
             background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
@@ -1060,7 +1072,7 @@ export default function ProjectDetailClient({
                 Subtask
               </div>
               <button
-                onClick={() => setEditModal(null)}
+                onClick={() => closeEditModal()}
                 style={{ background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0, display: 'flex' }}
               >
                 ×
@@ -1260,7 +1272,7 @@ export default function ProjectDetailClient({
             {/* The assignee (not a lead): status and notes only */}
             {!canManage && editModal.assignee_id === userId && (
               <div style={{ padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8, position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px' }}>
-                <button onClick={() => setEditModal(null)} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => closeEditModal()} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
                 <button onClick={saveMyTask} disabled={editModalSaving} style={{ background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: editModalSaving ? 'wait' : 'pointer' }}>{editModalSaving ? 'Saving…' : 'Save'}</button>
               </div>
             )}
@@ -1279,7 +1291,7 @@ export default function ProjectDetailClient({
                 </button>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    onClick={() => setEditModal(null)}
+                    onClick={() => closeEditModal()}
                     style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}
                   >
                     Cancel
