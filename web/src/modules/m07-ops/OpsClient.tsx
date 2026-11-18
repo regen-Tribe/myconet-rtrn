@@ -6,6 +6,13 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { PROJECT_KANBAN_COLUMNS } from '@/core/lib/project-status'
+
+// The main board's columns: the Kanban ones, then Paused (v4.33.6), so paused and merged projects can be seen and
+// dragged back. Projects only: a task can't be paused, so tasks can't be dropped there.
+const BOARD_COLUMNS: { key: string; label: string; color: string }[] = [
+  ...PROJECT_KANBAN_COLUMNS,
+  { key: 'paused', label: 'Paused', color: '#a1a1aa' },
+]
 import { canMoveProject, projectEditBlock, type CircleDirectory, type PermissionNotice } from '@/core/lib/ops-permissions'
 import { DeliverablesTab } from './DeliverablesTab'
 import { UpdatesTab } from './UpdatesTab'
@@ -367,10 +374,10 @@ export default function OpsClient({
   })
 
   const grouped = Object.fromEntries(
-    PROJECT_KANBAN_COLUMNS.map(col => [col.key, filteredProjects.filter(p => p.status === col.key)])
+    BOARD_COLUMNS.map(col => [col.key, filteredProjects.filter(p => p.status === col.key)])
   )
   const groupedTasks = Object.fromEntries(
-    PROJECT_KANBAN_COLUMNS.map(col => [col.key, filteredTasks.filter(t => t.status === col.key)])
+    BOARD_COLUMNS.map(col => [col.key, filteredTasks.filter(t => t.status === col.key)])
   )
 
   function tabStyle(tab: typeof activeTab): React.CSSProperties {
@@ -546,7 +553,7 @@ export default function OpsClient({
           taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
         />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          {PROJECT_KANBAN_COLUMNS.map(col => {
+          {BOARD_COLUMNS.map(col => {
             const cards = grouped[col.key] ?? []
             const taskCards = groupedTasks[col.key] ?? []
             const isTarget = dropTarget === col.key
@@ -555,6 +562,7 @@ export default function OpsClient({
                 key={col.key}
                 onDragOver={(e) => {
                   if (!draggingId) return
+                  if (col.key === 'paused' && draggingId.startsWith('task:')) return
                   e.preventDefault()
                   e.dataTransfer.dropEffect = 'move'
                   if (dropTarget !== col.key) setDropTarget(col.key)
@@ -563,7 +571,7 @@ export default function OpsClient({
                 onDrop={(e) => {
                   e.preventDefault()
                   const id = e.dataTransfer.getData('text/plain')
-                  if (id.startsWith('task:')) moveTask(id.slice(5), col.key)
+                  if (id.startsWith('task:')) { if (col.key !== 'paused') moveTask(id.slice(5), col.key) }
                   else if (id) moveProject(id, col.key)
                   setDropTarget(null); setDraggingId(null)
                 }}

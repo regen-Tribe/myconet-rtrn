@@ -5,6 +5,12 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.6 — 2026-11-18
+
+- **A Paused column on the main board** (Oscar), after Done: paused projects (including ones merged into another)
+  are visible, and a lead can drag a project there to pause it or out of it to restart it. Projects only: a task
+  can't be dropped there. The task board inside a project is unchanged.
+
 ## v4.33.5 — 2026-11-18
 
 - **Closing a loose task goes back to the board, not the chores page** (Oscar). A circle's one-off tasks live in its

@@ -10,7 +10,7 @@
  * Projects start in 'pending' (the Ideas column). When an admin activates a
  * project — or when a proposed-by-modal project is accepted — it moves to
  * 'backlog'. From there it advances through 'in_progress', 'review', and
- * 'done'. 'paused' is an off-board state that doesn't appear on the Kanban.
+ * 'done'. 'paused' isn't a Kanban column here; the main board adds a Paused column for projects (OpsClient, v4.33.6).
  */
 
 export const PROJECT_KANBAN_STATUSES = ['pending', 'backlog', 'in_progress', 'review', 'done'] as const
