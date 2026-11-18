@@ -757,3 +757,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-18 — Core v4.33.5 (deployed, b891074d)
 - Oscar: no local test needed, push it. Update PR #55 merged; no migration. Closing a loose task goes back to where it
   was opened (the board), not the chores page; a chores page on its own redirects to the board.
+
+## 2026-11-18 — Core v4.33.6 (deployed, f1ec1115)
+- Oscar: "show the paused column". Update PR #56 merged; no migration. The main board has a Paused column (projects only).
