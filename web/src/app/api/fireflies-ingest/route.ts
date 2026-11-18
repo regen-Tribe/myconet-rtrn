@@ -1,7 +1,7 @@
 import { after, NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/core/lib/supabase/service'
 import { moduleOn } from '@/core/lib/modules'
-import { fetchTranscript, transcriptFields } from '@/modules/m18-meetings/lib/fireflies'
+import { fetchFirefliesNotes, fetchTranscript, transcriptFields } from '@/modules/m18-meetings/lib/fireflies'
 import { processMeeting } from '@/modules/m18-meetings/lib/pipeline'
 
 // Meetings recorded straight in Fireflies (not uploaded here; most meetings): Fireflies' own webhook
@@ -23,13 +23,14 @@ export async function POST(req: NextRequest) {
   const { data: existing } = await admin.from('meeting_transcripts').select('id').eq('fireflies_id', meetingId).maybeSingle()
   if (existing) return NextResponse.json({ received: true, skipped: 'already imported', id: existing.id })
   try {
-    const t = await fetchTranscript(meetingId)
+    // The filter may forward a meeting after Fireflies has summarised it: take the tabs' notes too
+    const [t, extra] = await Promise.all([fetchTranscript(meetingId), fetchFirefliesNotes(meetingId)])
     const { data, error } = await admin.from('meeting_transcripts').insert({
       title: t.title || 'Untitled meeting',
       meeting_date: null,
       attendees: (t.speakers ?? []).map(s => s.name).filter(Boolean),
       fireflies_id: meetingId,
-      ...transcriptFields(t),
+      ...transcriptFields(t), ...(extra ? { fireflies_notes: extra } : {}),
       source: 'fireflies_direct', needs_review: true, circle: null, created_by: null,
     }).select('id').single()
     if (error) throw new Error(error.message)

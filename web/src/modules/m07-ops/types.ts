@@ -85,3 +85,21 @@ export interface MyProposal {
   conditions: string | null
   status: string
 }
+
+/** One of the project manager's suggestions for a circle (agent_suggestions, open) */
+export interface AgentSuggestion {
+  id: string
+  circle: string
+  kind: 'merge' | 'move' | 'new_project' | 'assign'
+  payload: Record<string, unknown>
+  reason: string | null
+}
+
+/** A change the project manager made itself (agent_actions pm_*), undoable by the circle's leads */
+export interface PmAction {
+  id: string
+  action: string
+  circle: string
+  label: string
+  reason: string | null
+}

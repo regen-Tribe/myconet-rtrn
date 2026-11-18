@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { MeetingNotesLink } from '@/modules/m18-meetings/MeetingNotesLink'
+import { PmLink } from './PmLink'
+import { AddCircleButton } from '@/modules/m04-blueprint/AddCircleButton'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
 import { isActiveProject } from '@/core/lib/project-status'
@@ -28,7 +30,7 @@ function PersonChip({ person, isMe }: { person: PersonRef; isMe: boolean }) {
 
 /** Who leads each circle, and where the signed-in user fits in. */
 export function CirclesTab({
-  directory, projects, userId, userRole, leadCircles, involvedProjectIds, meetingCounts,
+  directory, projects, userId, userRole, leadCircles, involvedProjectIds, meetingCounts, pmCounts,
 }: {
   directory: CircleDirectory
   projects: Project[]
@@ -39,6 +41,8 @@ export function CirclesTab({
   involvedProjectIds: Set<string>
   /** Meetings per circle this person can read; null when Meetings is off */
   meetingCounts?: Record<string, number> | null
+  /** Open project-manager suggestions per circle, counted only for circles this person decides */
+  pmCounts?: Record<string, number>
 }) {
   const circles = useCircles()
   const isAdmin = userRole === 'admin'
@@ -76,6 +80,8 @@ export function CirclesTab({
         )}
       </div>
 
+      {isAdmin && <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -6 }}><AddCircleButton /></div>}
+
       {/* One card per circle */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
         {circles.slugs.map(c => {
@@ -96,7 +102,12 @@ export function CirclesTab({
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: meta.color, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' }}>You lead this</span>
                 )}
               </div>
-              {meetingCounts && <div style={{ marginTop: -4, marginBottom: 10 }}><MeetingNotesLink circle={c} count={meetingCounts[c]} color={meta.color} /></div>}
+              {(meetingCounts || pmCounts?.[c]) && (
+                <div style={{ marginTop: -4, marginBottom: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {meetingCounts && <MeetingNotesLink circle={c} count={meetingCounts[c]} color={meta.color} />}
+                  <PmLink circle={c} count={pmCounts?.[c]} color={meta.color} />
+                </div>
+              )}
 
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Leads</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>

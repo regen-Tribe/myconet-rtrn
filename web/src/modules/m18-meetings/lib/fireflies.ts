@@ -53,7 +53,55 @@ export async function fetchTranscript(id: string): Promise<Transcript> {
   return data.transcript
 }
 
-/** What a Fireflies transcript fills in on meeting_transcripts (both webhooks) */
+/** The rest of Fireflies' notes: the meeting page's tabs (meeting_transcripts.fireflies_notes) */
+export interface FirefliesNotes {
+  notes?: string; outline?: string; shorthand_bullet?: string; bullet_gist?: string
+  keywords?: string[]; topics?: string[]
+}
+
+const list = (v: unknown): string[] | undefined => {
+  const items = Array.isArray(v) ? v.map(String) : typeof v === 'string' ? v.split(/[,\n]/) : []
+  const out = items.map(s => s.replace(/^[-•*]\s*/, '').trim()).filter(Boolean)
+  return out.length ? out : undefined
+}
+const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+
+/**
+ * A query of its own, so a field Fireflies doesn't fill (or a plan without it) never stops the
+ * transcript and summary coming in. Null when there's nothing yet or Fireflies refused.
+ */
+export async function fetchFirefliesNotes(id: string): Promise<FirefliesNotes | null> {
+  try {
+    const data = await graphql<{ transcript: { summary: Record<string, unknown> | null } | null }>(`query($id: String!) { transcript(id: $id) {
+        summary { notes outline shorthand_bullet bullet_gist keywords topics_discussed }
+      } }`, { id })
+    const s = data.transcript?.summary
+    if (!s) return null
+    const notes: FirefliesNotes = {
+      notes: text(s.notes), outline: text(s.outline), shorthand_bullet: text(s.shorthand_bullet),
+      bullet_gist: text(s.bullet_gist), keywords: list(s.keywords), topics: list(s.topics_discussed),
+    }
+    return Object.values(notes).some(Boolean) ? notes : null
+  } catch {
+    return null
+  }
+}
+
+/** Webhooks V2 signature: X-Hub-Signature = "sha256=" + hex HMAC-SHA256 of the raw body */
+export async function verifyFirefliesSignature(raw: string, header: string | null, secret: string): Promise<boolean> {
+  if (!header) return false
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const mac = new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(raw)))
+  const expected = 'sha256=' + Array.from(mac, b => b.toString(16).padStart(2, '0')).join('')
+  const got = header.trim().toLowerCase()
+  // Constant time over the expected length
+  let diff = got.length ^ expected.length
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ (got.charCodeAt(i) || 0)
+  return diff === 0
+}
+
+/** What a Fireflies transcript fills in on meeting_transcripts (all three webhooks) */
 export function transcriptFields(t: Transcript) {
   return {
     status: 'done' as const,

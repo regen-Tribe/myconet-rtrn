@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { MeetingNotesLink } from '@/modules/m18-meetings/MeetingNotesLink'
+import { PmLink } from '@/modules/m07-ops/PmLink'
+import { AddCircleButton } from '@/modules/m04-blueprint/AddCircleButton'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
@@ -39,7 +41,7 @@ const label: React.CSSProperties = {
 }
 
 export default function OrgChartClient({
-  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts,
+  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts,
 }: {
   initialUnits: OrgUnit[]
   initialMembers: OrgMember[]
@@ -51,6 +53,8 @@ export default function OrgChartClient({
   leadCircles: string[]
   /** Meetings per circle this person can read; null when Meetings is off or signed out */
   meetingCounts?: Record<string, number> | null
+  /** Open project-manager suggestions per circle this person decides */
+  pmCounts?: Record<string, number>
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -151,7 +155,8 @@ export default function OrgChartClient({
   return (
     <div className="ev-page" style={{ padding: '26px 32px 60px' }}>
       {/* ── Page head ─────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 22 }}>
+      <div style={{ marginBottom: 22, position: 'relative' }}>
+        {role === 'admin' && <div style={{ position: 'absolute', right: 0, top: 0 }}><AddCircleButton /></div>}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, var(--m17) 10%, var(--surface))', color: 'var(--m17)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>
           Module 17 · Circles
         </div>
@@ -178,7 +183,7 @@ export default function OrgChartClient({
                 {steward && su && canLeadCircle(steward.slug, role, leadCircles) && <button onClick={() => setEditing({ unit: su, circle: steward.slug })} style={editBtn}>Edit</button>}
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{sm ? 'Community stewards · look after every circle' : 'Admins · look after every circle'}</div>
-              {steward && meetingCounts && <div style={{ display: 'flex', justifyContent: 'center' }}><MeetingNotesLink circle={steward.slug} count={meetingCounts[steward.slug]} color={accent} /></div>}
+              {steward && (meetingCounts || pmCounts?.[steward.slug]) && <div style={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>{meetingCounts && <MeetingNotesLink circle={steward.slug} count={meetingCounts[steward.slug]} color={accent} />}<PmLink circle={steward.slug} count={pmCounts?.[steward.slug]} color={accent} /></div>}
               {su?.description && <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap', maxWidth: '60ch' }}>{su.description}</p>}
               {steward && <CircleLeadName slug={steward.slug} canEdit={role === 'admin'} color={accent} />}
               {sLeads.length > 0 && <div style={{ display: 'flex', justifyContent: 'center' }}>{peopleRow(sLeads, accent)}</div>}
@@ -211,6 +216,7 @@ export default function OrgChartClient({
                 {cu && canLead && <button onClick={() => setEditing({ unit: cu, circle: c })} style={editBtn}>Edit</button>}
               </div>
               {meetingCounts && <MeetingNotesLink circle={c} count={meetingCounts[c]} color={meta.color} />}
+              <PmLink circle={c} count={pmCounts?.[c]} color={meta.color} />
               {cu?.description
                 ? <p style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' }}>{cu.description}</p>
                 : canLead && <p style={{ fontSize: 12, color: 'var(--ink-4)', margin: 0, fontStyle: 'italic' }}>Add this circle’s purpose with Edit.</p>}

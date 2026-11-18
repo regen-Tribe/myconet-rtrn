@@ -12,8 +12,10 @@ import { UpdatesTab } from './UpdatesTab'
 import { CirclesTab } from './CirclesTab'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
 import { NewTaskModal } from './NewTaskModal'
-import { taskDate } from '@/core/lib/tasks'
-import type { Project, Deliverable, ProjectUpdate, SubscriberProfile } from './types'
+import { fmtTaskWhen, isTaskOverdue, taskDate } from '@/core/lib/tasks'
+import { DraftBadge } from '@/core/components/DraftBadge'
+import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
+import { ProjectManagerPanel } from './ProjectManagerPanel'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -37,6 +39,10 @@ interface OpsClientProps {
   initialTab: OpsTab
   /** Meetings per circle this person can read; null when Meetings is off */
   meetingCounts: Record<string, number> | null
+  /** ?circle= : the board opens filtered to it (the circles' Project manager buttons) */
+  initialCircle: string | null
+  pmSuggestions: AgentSuggestion[]
+  pmActions: PmAction[]
 }
 
 type OpsTab = 'board' | 'deliverables' | 'updates' | 'circles'
@@ -177,6 +183,57 @@ function ProjectKanbanCard({
   )
 }
 
+// ─── Task Kanban Card ────────────────────────────────────────────────────────
+// A circle's one-off task (it lives in the circle's Chores project) shown on the main board on its own,
+// tagged with its circle, instead of inside a "Chores" project card.
+
+function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, isDragging }: {
+  task: Deliverable; canMove: boolean
+  onDragStart?: (id: string) => void; onDragEnd?: () => void; onBlockedDrag?: () => void; isDragging?: boolean
+}) {
+  const circles = useCircles()
+  const meta = task.circle && circles.has(task.circle) ? circles.meta(task.circle) : null
+  const late = isTaskOverdue(task.due_date, task.due_time, task.status)
+  return (
+    <Link href={`/ops/${task.project_id}?task=${task.id}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+      <div
+        draggable={canMove || !!onBlockedDrag}
+        onDragStart={(e) => {
+          if (!canMove) { e.preventDefault(); onBlockedDrag?.(); return }
+          e.dataTransfer.effectAllowed = 'move'
+          e.dataTransfer.setData('text/plain', `task:${task.id}`)
+          onDragStart?.(`task:${task.id}`)
+        }}
+        onDragEnd={canMove ? () => onDragEnd?.() : undefined}
+        title={canMove ? undefined : "You can't move this card — drag it to see why"}
+        style={{
+          background: 'var(--surface)', border: '1px solid var(--rule)',
+          borderLeft: `3px solid ${meta?.color ?? 'var(--m7)'}`, borderRadius: 8,
+          padding: '8px 12px', boxShadow: 'var(--shadow-sm)',
+          cursor: canMove ? 'grab' : 'pointer', opacity: isDragging ? 0.5 : 1,
+        }}
+      >
+        <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 5, color: 'var(--ink)', lineHeight: 1.35 }}>
+          {task.needs_review && <DraftBadge />}{task.title}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {meta && (
+            <span style={{ fontSize: 9, fontWeight: 600, color: meta.color, background: `${meta.color}15`, padding: '1px 6px', borderRadius: 20 }}>
+              {meta.emoji} {meta.label}
+            </span>
+          )}
+          {task.assignee_username && <span style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>@{task.assignee_username}</span>}
+          {task.due_date && (
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, color: late ? '#ef4444' : 'var(--ink-4)', marginLeft: 'auto' }}>
+              {fmtTaskWhen(task.due_date, task.due_time)}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function OpsClient({
@@ -184,6 +241,7 @@ export default function OpsClient({
   activeCount, deliverableCount, doneCount, atRiskCount,
   isAdmin, userId, userRole, leadCircles, sprintName,
   projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
+  initialCircle, pmSuggestions, pmActions,
 }: OpsClientProps) {
   const circles = useCircles()
   const router = useRouter()
@@ -192,12 +250,41 @@ export default function OpsClient({
   const [boardProjects, setBoardProjects] = useState<Project[]>(projects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
-  const [selectedCircle, setSelectedCircle] = useState<string | null>(null)
+  const [selectedCircle, setSelectedCircle] = useState<string | null>(initialCircle && circles.has(initialCircle) ? initialCircle : null)
+  // Who decides the project manager's suggestions for a circle: admins and that circle's leads
+  const canDecide = (c: string) => userRole === 'admin' || (userRole === 'circle_lead' && leadCircles.includes(c))
+  const pmCounts: Record<string, number> = {}
+  for (const sg of pmSuggestions) if (canDecide(sg.circle)) pmCounts[sg.circle] = (pmCounts[sg.circle] ?? 0) + 1
   const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>('all')
   const [overdueOnly, setOverdueOnly] = useState(false)
   const [newTask, setNewTask] = useState(false)
   const [draftsOnly, setDraftsOnly] = useState(false)
+  const [boardTasks, setBoardTasks] = useState<Deliverable[]>(initialDeliverables)
   const draftCount = initialDeliverables.filter(d => d.needs_review).length
+  // Chores projects hold a circle's one-off tasks: on the board their tasks are cards of their own
+  const choresById = new Map(boardProjects.filter(p => p.is_chores).map(p => [p.id, p]))
+
+  async function moveTask(taskId: string, newStatus: string) {
+    const t = boardTasks.find(x => x.id === taskId)
+    const p = t ? choresById.get(t.project_id) : null
+    // Tasks have no Ideas column
+    if (!t || !p || t.status === newStatus || newStatus === 'pending') return
+    const block = projectEditBlock(p, userId, userRole, leadCircles, circles)
+    if (block) { setNotice(block); return }
+    setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: newStatus } : x))
+    const supabase = createClient()
+    const { data, error } = await supabase.from('deliverables').update({ status: newStatus }).eq('id', taskId).select('id')
+    if (error || !data?.length) {
+      setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: t.status } : x))
+      setNotice({
+        title: "That move didn't save",
+        message: error?.message ?? 'The database didn’t allow this change for your account. Ask a lead of this circle or an admin to move it.',
+        circle: circles.has(t.circle ?? p.circle) ? (t.circle ?? p.circle ?? null) : null,
+      })
+    } else {
+      router.refresh()
+    }
+  }
 
   async function moveProject(projectId: string, newStatus: string) {
     const p = boardProjects.find(x => x.id === projectId)
@@ -222,7 +309,7 @@ export default function OpsClient({
 
   const sprintLabel = sprintName ?? 'Community Projects'
   const onTrackCount = initialDeliverables.filter(d => d.status === 'in_progress').length
-  const totalProjects = boardProjects.filter(p => ['backlog', 'in_progress', 'review'].includes(p.status)).length
+  const totalProjects = boardProjects.filter(p => !p.is_chores && ['backlog', 'in_progress', 'review'].includes(p.status)).length
 
   const subtasksByProject = new Map<string, { total: number; done: number }>()
   for (const d of initialDeliverables) {
@@ -251,6 +338,7 @@ export default function OpsClient({
   ])
 
   const filteredProjects = boardProjects.filter(p => {
+    if (p.is_chores) return false
     if (overdueOnly && !overdueProjectIds.has(p.id)) return false
     if (selectedCircle && p.circle !== selectedCircle) return false
     if (myRole === 'lead') return p.lead_user_id === userId || p.created_by === userId
@@ -259,8 +347,23 @@ export default function OpsClient({
     return true
   })
 
+  const filteredTasks = boardTasks.filter(t => {
+    const p = choresById.get(t.project_id)
+    if (!p) return false
+    const circle = t.circle ?? p.circle
+    if (overdueOnly && !isTaskOverdue(t.due_date, t.due_time, t.status)) return false
+    if (selectedCircle && circle !== selectedCircle) return false
+    if (myRole === 'lead') return !!circle && leadCircles.includes(circle)
+    if (myRole === 'member') return t.assignee_id === userId
+    if (myRole === 'subscriber') return mySubscribedProjectIds.has(p.id)
+    return true
+  })
+
   const grouped = Object.fromEntries(
     PROJECT_KANBAN_COLUMNS.map(col => [col.key, filteredProjects.filter(p => p.status === col.key)])
+  )
+  const groupedTasks = Object.fromEntries(
+    PROJECT_KANBAN_COLUMNS.map(col => [col.key, filteredTasks.filter(t => t.status === col.key)])
   )
 
   function tabStyle(tab: typeof activeTab): React.CSSProperties {
@@ -431,9 +534,14 @@ export default function OpsClient({
             )}
           </div>
 
+        <ProjectManagerPanel
+          suggestions={pmSuggestions} actions={pmActions} circle={selectedCircle} canDecide={canDecide}
+          taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
+        />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {PROJECT_KANBAN_COLUMNS.map(col => {
             const cards = grouped[col.key] ?? []
+            const taskCards = groupedTasks[col.key] ?? []
             const isTarget = dropTarget === col.key
             return (
               <div
@@ -448,7 +556,8 @@ export default function OpsClient({
                 onDrop={(e) => {
                   e.preventDefault()
                   const id = e.dataTransfer.getData('text/plain')
-                  if (id) moveProject(id, col.key)
+                  if (id.startsWith('task:')) moveTask(id.slice(5), col.key)
+                  else if (id) moveProject(id, col.key)
                   setDropTarget(null); setDraggingId(null)
                 }}
                 style={{
@@ -461,12 +570,12 @@ export default function OpsClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{col.label}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{cards.length}</span>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{cards.length + taskCards.length}</span>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: col.color }} />
                   </div>
                 </div>
 
-                {cards.length === 0 ? (
+                {cards.length + taskCards.length === 0 ? (
                   <div style={{ fontSize: 11, color: 'var(--ink-4)', padding: '12px 4px', textAlign: 'center' }}>Empty</div>
                 ) : (
                   cards.map(p => {
@@ -490,7 +599,20 @@ export default function OpsClient({
                         isDragging={draggingId === p.id}
                       />
                     )
-                  })
+                  }).concat(taskCards.map(t => {
+                    const p = choresById.get(t.project_id)!
+                    return (
+                      <TaskKanbanCard
+                        key={t.id}
+                        task={t}
+                        canMove={canMoveProject(p, userId, userRole, leadCircles, circles)}
+                        onDragStart={(id) => setDraggingId(id)}
+                        onBlockedDrag={userId ? () => setNotice(projectEditBlock(p, userId, userRole, leadCircles, circles)) : undefined}
+                        onDragEnd={() => { setDraggingId(null); setDropTarget(null) }}
+                        isDragging={draggingId === `task:${t.id}`}
+                      />
+                    )
+                  }))
                 )}
               </div>
             )
@@ -515,6 +637,7 @@ export default function OpsClient({
           leadCircles={leadCircles}
           involvedProjectIds={myInvolvedProjectIds}
           meetingCounts={meetingCounts}
+          pmCounts={pmCounts}
         />
       )}
 

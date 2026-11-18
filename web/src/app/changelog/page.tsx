@@ -3,6 +3,115 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.28.0',
+    date: '2026-11-17',
+    title: 'Ask the agent to create a circle',
+    items: [
+      'Admins and circle leads can ask the agent (Do tab) to create a new circle, e.g. “add an Incubator circle for new ventures until they stand on their own”. Undo retires it.',
+    ],
+  },
+  {
+    version: 'v4.27.0',
+    date: '2026-11-17',
+    title: 'Add a circle from the circle pages',
+    items: [
+      'Admins can add a circle straight from Operations › Circles and the Circles chart: a name, a one-line purpose and an emoji.',
+    ],
+  },
+  {
+    version: 'v4.26.0',
+    date: '2026-11-17',
+    title: 'Ask / Do: tell the agent what to change',
+    items: [
+      'Signed in, the assistant has a Do tab: say what to change on the board (merge or rename projects, move tasks, give a task to someone, set dates, confirm drafts).',
+      'The agent shows exactly what it will do first; you confirm, it acts with your own rights, and every change can be undone.',
+    ],
+  },
+  {
+    version: 'v4.25.0',
+    date: '2026-11-17',
+    title: 'A project manager for every circle',
+    items: [
+      'When a meeting adds tasks, the MyCoNet agent reviews the circle’s whole board: it merges its own duplicate drafts and files tasks into projects when it’s sure (each can be undone).',
+      'It suggests new projects, merges, moves and who could take a task; circle leads accept or dismiss them in the 🧭 Project manager panel on the board, reached from each circle’s page.',
+      'Each circle’s board status is kept in the second brain.',
+    ],
+  },
+  {
+    version: 'v4.24.3',
+    date: '2026-11-17',
+    title: 'Meeting tasks join a project only when it’s clear',
+    items: [
+      'A meeting task goes into an existing project only when the agent is very sure it belongs there (it says why); everything else stays on the main board with its circle.',
+    ],
+  },
+  {
+    version: 'v4.24.2',
+    date: '2026-11-17',
+    title: 'No more “(for Unassigned)”',
+    items: [
+      'Meeting tasks no longer get “(for Unassigned)” or “(for Kitchen Circle)” in their title: those are Fireflies headings, not people.',
+    ],
+  },
+  {
+    version: 'v4.24.1',
+    date: '2026-11-17',
+    title: 'Meeting tasks always on the main board',
+    items: [
+      'Tasks from a meeting now always go on the main board, tagged with their circle, never inside a project as subtasks.',
+    ],
+  },
+  {
+    version: 'v4.24.0',
+    date: '2026-11-17',
+    title: 'Circle tasks on the main board',
+    items: [
+      'A circle’s one-off tasks (from meetings or + Task) are now cards on the main board, tagged with their circle, instead of sitting inside a “Chores” card.',
+    ],
+  },
+  {
+    version: 'v4.23.1',
+    date: '2026-11-17',
+    title: 'Long meetings finish',
+    items: [
+      'Meetings with many tasks no longer stop before their second-brain note is written.',
+    ],
+  },
+  {
+    version: 'v4.23.0',
+    date: '2026-11-17',
+    title: 'Meetings named by date and content, all of it in the second brain',
+    items: [
+      'Meetings are named like “17.11.2026 Kitchen lead handover”: the date, then a name from the title people gave and what was discussed.',
+      'Each meeting goes to the second brain in full: summary, Fireflies’ notes, bullet points, outline, topics, keywords, tasks, and the transcript in its own file.',
+      'Meetings that came in but weren’t finished are completed automatically every few minutes.',
+    ],
+  },
+  {
+    version: 'v4.22.1',
+    date: '2026-11-17',
+    title: 'Only this community’s meetings',
+    items: [
+      'Fireflies’ “summary ready” calls only update meetings that are already in MyCoNet. Other calls recorded on the same Fireflies account are ignored.',
+    ],
+  },
+  {
+    version: 'v4.22.0',
+    date: '2026-11-17',
+    title: 'Meeting documents in tabs',
+    items: [
+      'At the bottom of a meeting page, a tab for each document: Fireflies’ notes, outline, bullet points, topics and keywords, the second-brain note and the transcript.',
+    ],
+  },
+  {
+    version: 'v4.21.2',
+    date: '2026-11-17',
+    title: 'Meeting summaries arrive when Fireflies has them',
+    items: [
+      'Fireflies writes a meeting’s summary and action items a few minutes after the transcript. MyCoNet now hears when they’re ready, fetches them and lets the agent read the meeting again, without adding tasks twice.',
+    ],
+  },
+  {
     version: 'v4.21.1',
     date: '2026-11-17',
     title: 'Fixes after a review',

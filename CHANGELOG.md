@@ -5,6 +5,138 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.28.0 — 2026-11-17
+
+- **Ask / Do: create a circle** (asked for in Protopia): admins **and circle leads** can tell the agent to create a
+  circle (name, one-line purpose → its org-chart description, emoji). It's made like **+ Add circle** (free slug and
+  colour, org-chart unit by the trigger); the agent asks when the purpose isn't clear; **Undo** retires it
+  (`archived_at`), circles are never deleted. No database change.
+
+## v4.27.0 — 2026-11-17
+
+- **+ Add circle** for admins on Operations › Circles and the `/org` chart (asked for in Protopia, for an Incubator
+  circle): name, one-line purpose (the org-chart description the meeting agent and the project manager read), emoji;
+  a free colour; its org-chart unit is made by the existing trigger. Before, circles were added only in Blueprint ›
+  ◯ Circles. No database change.
+
+## v4.26.0 — 2026-11-17
+
+- **Ask / Do** (Phase 7 step 3; asked for in Protopia: "message the agent from MyCoNet to tell it to group the 4
+  element project and 5 senses project"). Signed-in members get a **Do** tab in the assistant: an instruction in
+  plain words → `/api/agent/plan` proposes changes on a **confirm card** (described by MyCoNet, not the AI; changes
+  this person may not make are marked) → **Do it** → `/api/agent/do` re-checks every change with the person's own
+  rights, makes it, logs it in `agent_actions` with the rows' previous values → **Undo** on the card or in the 🧭
+  panel. Changes: merge / rename / create projects, move tasks (into a project or onto the main board), rename,
+  assign, date, status, confirm drafts. No database change. Details: `web/src/modules/assistant/README.md`.
+
+## v4.25.1 — 2026-11-17
+
+- Project manager: shared accounts (a name or username with "admin") are never suggested to take a task; board
+  notes' file names collapse spaces ("Vision & Strategy" → `Vision Strategy.md`).
+
+## v4.25.0 — 2026-11-17
+
+- **The project manager** (asked for in Protopia: "review existing tasks every time new tasks come in and manage
+  like a professional project manager"). When a meeting adds tasks to a circle, the agent reviews that circle's
+  whole board (one AI call per circle, every 10 minutes for waiting circles: `private.board_review_sweep()` →
+  `/api/ops/board-review`).
+  - **Does the safe things itself**, logged and undoable: merges duplicates that are both its own drafts; files a
+    board task or a draft into a project of the circle when very sure (with a reason).
+  - **Suggests the rest** to the circle's leads: new projects for groups of tasks, other merges and moves, who could
+    take a task nobody has. **🧭 Project manager** panel on the board (Accept / Dismiss, Undo for its changes);
+    a **🧭 Project manager (N)** button on each circle in Operations › Circles and `/org` for its leads.
+  - **Second brain:** `knowledge.boardFolder/<Circle>.md` (default `operations/board`): status, projects and their
+    tasks, the board, open suggestions; rewritten in place each review.
+- **Migration** `20261128000000_board_review.sql`: `agent_suggestions`, `board_reviews`,
+  `agent_actions.undone_by`, `private.board_review_sweep()` and its schedule (same Vault secrets as the meetings
+  sweep).
+
+## v4.24.3 — 2026-11-17
+
+- **Meeting tasks and projects** (Oscar: "group things when you are very sure"): the main board stays the default,
+  but the agent may put a task into an open project of the same circle when it is very sure it's part of that
+  project's work (the meeting names it, or the work is unmistakably a piece of it). It must give a
+  `project_reason` (logged in `agent_actions`); without one, or for another circle's project, the task goes on
+  the main board.
+
+## v4.24.2 — 2026-11-17
+
+- **Fix:** Fireflies' action-item headings that aren't people ("Unassigned", "Everyone", "Team", "<Name> Circle")
+  were taken for a person, so tasks got "(for Unassigned)" in their title. They now mean no person, in the AI's
+  answer and without it. (Protopia: 73 existing titles cleaned in the database.)
+
+## v4.24.1 — 2026-11-17
+
+- **Meeting tasks always on the main board** (asked for in Protopia): the agent no longer files a task into a
+  matching project (where it was a subtask); every meeting task goes to its circle's Chores, i.e. a card on the
+  main board tagged with its circle (v4.24.0). Open projects stay in the prompt as context only.
+
+## v4.24.0 — 2026-11-17
+
+- **Circle tasks on the main board** (asked for in Protopia): the tasks in a circle's Chores project (from meetings
+  or **+ Task**) were hidden inside one "<Circle> Chores" card. Now each is a card of its own on the main board, in
+  its own status column, with its circle's tag, person, date and Draft badge; the circle, My role and At risk
+  filters apply; drag it with the same rights as the project; it opens the task pop-up. Chores projects aren't
+  shown or counted as projects. No database change: the tasks already there show up as cards.
+
+## v4.23.1 — 2026-11-17
+
+- **Fix:** the real reason meetings stopped before their note: a Worker may make only **50 outside calls per
+  request** (Cloudflare free plan) and the pipeline made about five per task. Tasks, their links and their log
+  entries are now written in one call each; a renamed meeting's old files are found with one repo listing; the
+  sweep does one meeting per request, and the database sends one request per waiting meeting (migration
+  `20261127000000_meetings_sweep_per_meeting.sql`).
+
+## v4.23.0 — 2026-11-17
+
+- **Meeting names:** the agent names each meeting from the title people gave and the content, after the date:
+  `17.11.2026 Kitchen lead handover and stock routines`. `original_title` keeps what they called it.
+- **The whole meeting in the second brain:** the note now has topics, keywords, Fireflies' bullet points, notes and
+  outline as well as the summary, tasks and action items, and links the **transcript**, saved in
+  `transcripts/` beside it (asked for by Oscar; the assistant's library has it leads-only). The folder is a setting,
+  `knowledge.meetingsFolder` (default `operations/meetings`). A renamed meeting or moved folder moves the note: the
+  agent removes its own old files (never a person's).
+- **The sweep:** webhooks' runs could stop before the note (a Worker gets about 30 s after replying; Protopia's
+  first six direct meetings have tasks but no note). `/api/meetings/sweep` (secret `MEETINGS_SWEEP_SECRET`) is
+  called every 10 minutes by the database (pg_cron + pg_net; URL and key in Vault, see the migration) when a
+  meeting is unprocessed or its note is older, refreshes missing Fireflies notes and gives the AI 90 s.
+- A Fireflies heading such as "Kitchen Circle" is no longer taken for a person ("(for Kitchen Circle)").
+- **Migration** `20261126000000_meeting_names_and_sweep.sql`: `original_title`, `notes_version`,
+  `sweep_attempts`; pg_net + pg_cron; `private.meetings_sweep()` and its schedule (does nothing until the
+  Vault secrets exist).
+- Design goal: the second brain is part of the offering, used **through MyCoNet or any agent tool**.
+
+## v4.22.1 — 2026-11-17
+
+- **Fix (privacy):** `/api/fireflies-events` added any meeting it didn't know, so a Fireflies account that also
+  records other calls (Protopia's: Sonia's account behind her filter) would have sent all of them in, past the
+  filter. It now only updates meetings already in (an upload, or one `/api/fireflies-ingest` let in); anything
+  else gets `skipped` and is never fetched or saved. A malformed `client_reference_id` no longer errors.
+- `/api/fireflies-ingest` also stores Fireflies' extra notes (the tabs), for meetings forwarded after the summary.
+
+## v4.22.0 — 2026-11-17
+
+- **Meeting documents in tabs** (asked for in Protopia): the meeting page's Transcript box becomes a row of tabs, one
+  per document there is: Fireflies' **Notes**, **Outline**, **Bullet points**, **Topics & keywords**, the
+  **Second brain** note (read from the repo as it is now) and the **Transcript**. The first document opens; the
+  transcript only when asked.
+- Fireflies' extra notes are fetched by `/api/fireflies-events` (`meeting.summarized`) in a query of their own, so
+  a field Fireflies doesn't fill can't stop the transcript and summary. New column `fireflies_notes`
+  (**migration** `20261125000000_meeting_fireflies_notes.sql`; `supabase db push`). Meetings already in get theirs
+  on Fireflies' next webhook, or when it's sent again.
+- `NotesText.tsx`: their markdown as React elements, never HTML.
+
+## v4.21.2 — 2026-11-17
+
+- **Fireflies summaries arrive after the transcript.** The upload and ingest webhooks fire when the transcript is
+  ready, before Fireflies has written the summary and action items, so meetings came in with the transcript only
+  (Protopia's first two had no summary and no action items). New `/api/fireflies-events` for Fireflies
+  **Webhooks V2** (`meeting.transcribed`, `meeting.summarized`, HMAC-signed with the new secret
+  `FIREFLIES_SIGNING_SECRET`): it fetches the notes again (never blanking ones already in), adds a direct
+  recording that isn't in yet, and runs the meeting pipeline again (no duplicate tasks; the note is updated; the
+  email still goes once). Set it up in Fireflies: `app.fireflies.ai/integrations/api/webhook`. Details:
+  `web/src/modules/m18-meetings/README.md`.
+
 ## v4.21.1 — 2026-11-17
 
 Review of v4.20.0–v4.21.0:

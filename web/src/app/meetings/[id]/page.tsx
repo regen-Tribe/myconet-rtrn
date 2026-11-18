@@ -4,7 +4,7 @@ import { requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
 import { isOpsAdmin } from '@/core/lib/roles'
 import { one } from '@/core/lib/rows'
 import { notesEmailOn } from '@/modules/m18-meetings/lib/notes-email'
-import { secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
+import { readNote, secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
 import type { Meeting, MeetingTask } from '@/modules/m18-meetings/types'
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,7 +12,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   const { supabase, user } = await requireMeetingsAccess()
   const [{ data }, { data: profile }, { data: links }] = await Promise.all([
     supabase.from('meeting_transcripts')
-      .select('id, title, meeting_date, attendees, status, summary, action_items, transcript, error, source, needs_review, circle, visibility, created_by, created_at, processed_at, circle_source, agent_note, processing_started_at, processing_error, tasks_drafted, notes_url, notes_emailed_at, notes_email_count, notes_email_error')
+      .select('id, title, original_title, meeting_date, attendees, status, summary, action_items, transcript, error, source, needs_review, circle, visibility, created_by, created_at, processed_at, circle_source, agent_note, processing_started_at, processing_error, tasks_drafted, notes_path, notes_url, fireflies_notes, notes_emailed_at, notes_email_count, notes_email_error')
       .eq('id', id).maybeSingle(),
     supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle(),
     supabase.from('meeting_action_links')
@@ -20,6 +20,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       .eq('meeting_id', id).not('deliverable_id', 'is', null).order('created_at'),
   ])
   if (!data) notFound()
+  // The second-brain note for its tab, read from the repo (only after the page's own access check)
+  const brainNote = data.notes_path ? await readNote(data.notes_path) : null
 
   const tasks: MeetingTask[] = (links ?? []).map((l: any) => {
     const d = one(l.deliverables)
@@ -39,6 +41,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       canManage={isOpsAdmin(profile?.role ?? '')}
       emailOn={notesEmailOn()}
       secondBrainOn={secondBrainOn()}
+      brainNote={brainNote}
     />
   )
 }

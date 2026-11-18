@@ -3,6 +3,53 @@
 Instructions for AI coding agents (Codex, Cursor, Claude Code, Copilot and others).
 The full project context is in [`CLAUDE.md`](./CLAUDE.md); read it first.
 
+## Design goal: the community's second brain (every change passes this filter)
+
+MyCoNet helps the community **keep its second brain organized and up to date** with what comes in from
+**meetings** and from **people using the platform** (projects, tasks, agreements, decisions, governance,
+Blueprint, members and circles). The second brain is part of what MyCoNet offers: the community works
+with it **through MyCoNet or any agent tool** (Claude, ChatGPT, Cursor, Obsidian…), so it must stay
+readable and well organized on its own, not only inside the portal. Before designing or changing
+anything, answer these questions and say the answers in the PR:
+
+1. **What knowledge does this change create or change?** (A decision, a task, a project, an agreement, a
+   person's role, an event, a document.)
+2. **Where does it land in the second brain?** The right folder, with front matter (circle(s),
+   visibility, source, a link back to the portal) and links to related notes. If it doesn't land
+   there yet, say why and add it to the plan as a follow-up.
+3. **Does it stay current?** Update the existing note in place, never add a near-duplicate. When
+   something is renamed, finished or archived, the note says so.
+4. **Who may read it?** `visibility: members | circle`, as in the portal. Meeting transcripts only in
+   their own file beside the note (leads-only in the assistant's library); never private messages or
+   personal data.
+5. **Can people see and undo what the agent did?** Every write is logged (`agent_actions`) and can be
+   reverted (it's git).
+
+Today only meetings are written (`web/src/modules/m18-meetings/lib/second-brain.ts`, the community's
+`knowledge.meetingsFolder`: a note per meeting and its transcript). Each new feature should move the rest
+of the platform toward the same, and toward agents reaching it through MyCoNet with the same permissions.
+
+---
+
+## Work log discipline (every change ends here)
+
+**Any change, PR, push, release or deploy ends with the work logs updated, the same day.** A merge or deploy
+that no log mentions looks like it never happened: the log is the handoff to whoever works next.
+
+- **In this repo:** a core release goes in `CHANGELOG.md` (and `web/src/app/changelog/page.tsx`); a community's
+  change, deploy, migration or new secret (names only) in its `instance/log.md`, and a community-only code change
+  also in `instance/LOCAL-CHANGES.md`.
+- **The team's work log**, if your team keeps one outside the repo (Oscar's team: the agnetO vault,
+  `projects/active/myconet/WORKLOG.md` for the detail and the root `WORKLOG.md` as the index): after each working
+  session, what changed with its PR number, tag, commit or deploy id; the gotchas; and the open items, each with
+  **who it's waiting on**. Refresh the summary at the top when the status changes.
+- A decision that matters beyond the session goes into the decisions log too, and, if it's a design rule, into
+  this file.
+- Never write that something is done unless a log or a live check says so; a half-finished change is logged as
+  half-finished, with the blocker named.
+
+---
+
 ## Rules
 
 - **Start from the newest code, every session.** First run `cd web && npm run start-work`
