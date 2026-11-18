@@ -207,9 +207,10 @@ export default async function DashboardPage() {
     rawFeed.push({ who: author, act: `on "${proj}" — ${body}`, when: '', color: 'var(--m7)', tag: 'M07', href: `/ops/${u.project_id}`, ts: new Date(u.created_at).getTime() })
   }
   for (const d of (opsTasksRes.data ?? []) as any[]) {
-    const proj = d.projects?.title ?? 'a project'
     const task = (d.title as string).length > 50 ? (d.title as string).slice(0, 48) + '…' : d.title
-    rawFeed.push({ who: 'New task', act: `on "${proj}" — ${task}`, when: '', color: 'var(--m7)', tag: 'M07', href: `/ops/${d.project_id}`, ts: new Date(d.created_at).getTime() })
+    // A task with no project is on the main board (v4.34.0)
+    const act = d.project_id ? `on "${d.projects?.title ?? 'a project'}" — ${task}` : `on the board — ${task}`
+    rawFeed.push({ who: 'New task', act, when: '', color: 'var(--m7)', tag: 'M07', href: d.project_id ? `/ops/${d.project_id}` : `/ops?task=${d.id}`, ts: new Date(d.created_at).getTime() })
   }
 
   const feed = rawFeed

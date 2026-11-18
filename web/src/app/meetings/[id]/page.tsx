@@ -16,7 +16,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       .eq('id', id).maybeSingle(),
     supabase.from('user_profiles').select('role, lead_circles').eq('id', user.id).maybeSingle(),
     supabase.from('meeting_action_links')
-      .select('item_text, person_name, deliverables(id, title, status, needs_review, due_date, due_time, project_id, projects(title, circle, created_by, lead_user_id), user_profiles!deliverables_assignee_id_fkey(first_name, username))')
+      .select('item_text, person_name, deliverables(id, title, status, needs_review, due_date, due_time, project_id, circle, created_by, projects(title, circle, created_by, lead_user_id), user_profiles!deliverables_assignee_id_fkey(first_name, username))')
       .eq('meeting_id', id).not('deliverable_id', 'is', null).order('created_at'),
   ])
   if (!data) notFound()
@@ -41,7 +41,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       deliverable_id: d.id, project_id: d.project_id, project_title: project?.title ?? null,
       title: d.title, status: d.status, needs_review: !!d.needs_review, due_date: d.due_date, due_time: d.due_time,
       person_name: l.person_name, assignee: who?.first_name ?? who?.username ?? null, item_text: l.item_text,
-      can_decide: !!d.needs_review && mayDecide(project),
+      // A task with no project goes by its own circle (v4.34.0)
+      can_decide: !!d.needs_review && mayDecide(project ?? { circle: d.circle ?? null, created_by: d.created_by ?? null, lead_user_id: null }),
     }
   }).filter((t): t is MeetingTask => !!t)
 

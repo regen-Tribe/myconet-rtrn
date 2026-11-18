@@ -5,6 +5,24 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.34.0 — 2026-11-18
+
+- **A task needs no project** (Oscar: "its better that a task can be created without having any project assigned").
+  `deliverables.project_id` is now nullable: a task with no project is on the main board, tagged with its circle.
+  The hidden per-circle **chores projects are gone**: their tasks moved onto the board (Protopia: 150) and the 12
+  projects were deleted, with `chores_project()` / `chores_project_for_server()`. "+ Task" on the board, meetings
+  (a task the agent isn't very sure belongs to a project) and Ask / Do's "move to the board" all make tasks with no
+  project. Permissions are unchanged: `private.can_manage_project(null)` is the role check (admins, circle leads,
+  project leads), as for the chores tasks.
+- **One task pop-up, on the board too** (`m07-ops/TaskModal.tsx`, shared by the board and project pages). A task with
+  no project opens right on the board (`/ops?task=<id>`), and closing it leaves you there. New in it: **Project**
+  (see which project a task is in, file it into another, or "No project · on the board") and **Team** (one of its
+  circle's teams from the org chart; choosing a team sets the circle, another circle takes it off the team).
+  `deliverables.team_id` → `org_units` (teams only, trigger `deliverables_team_circle`). Ask / Do can set both.
+- `m07-ops/lib/task-options.ts` loads the pop-up's people, open projects and teams for both pages.
+- **Migration** `20261204000000_tasks_without_projects.sql`. Dry run on Protopia (rolled back): 150 tasks onto the
+  board, none without a circle; a circle lead can add a task with no project, an explorer can't; the team rules hold.
+
 ## v4.33.6 — 2026-11-18
 
 - **A Paused column on the main board** (Oscar), after Done: paused projects (including ones merged into another)

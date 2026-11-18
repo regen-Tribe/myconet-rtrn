@@ -36,7 +36,7 @@ export interface CalendarEvent {
   project: { id: string; title: string } | null
   proposal: { id: string; title: string } | null
   /** Set when this is a task from the task board shown on the calendar (opens the board, not a pop-up) */
-  board?: { taskId: string; projectId: string; status: string; assignee: string | null }
+  board?: { taskId: string; projectId: string | null; status: string; assignee: string | null }
 }
 
 /** A dated task from the task board, as the calendar loads it */
@@ -47,7 +47,7 @@ export interface BoardTask {
   due_time: string | null
   status: string
   circle: string | null
-  project_id: string
+  project_id: string | null
   project_title: string | null
   assignee: string | null
 }

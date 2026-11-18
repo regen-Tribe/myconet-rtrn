@@ -58,7 +58,8 @@ export interface NotesTask {
 /** A task the pipeline put on the board for this meeting */
 export interface MeetingTask {
   deliverable_id: string
-  project_id: string
+  /** null: on the main board (v4.34.0) */
+  project_id: string | null
   project_title: string | null
   title: string
   status: string

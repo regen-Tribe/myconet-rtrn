@@ -1,8 +1,8 @@
 'use client'
 import { DraftSwipe } from './DraftSwipe'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
-import { fmtTaskWhen, isTaskOverdue, toTimeInput } from '@/core/lib/tasks'
+import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -11,51 +11,15 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
 import { isActiveProject, isOpenForProposals, PROJECT_STATUS_META, PROJECT_KANBAN_COLUMNS } from '@/core/lib/project-status'
 import { CalendarPicker } from './CalendarPicker'
-import { NAME_TAG, NameTag } from './NameTag'
-import { PriorityBadge, PrioritySlider, PRIORITIES, type Priority } from './Priority'
+import { NameTag } from './NameTag'
+import { TaskModal, BellIcon, SubscriberNames, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
+import { PriorityBadge } from './Priority'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
 import { LinkedEventsList } from '@/modules/m14-events/LinkedEventsList'
 import type { CalendarEvent } from '@/modules/m14-events/types'
 import { circleChangeBlock, projectEditBlock, type CircleDirectory, type PermissionNotice } from '@/core/lib/ops-permissions'
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
-
-function SubscriberNames({ subs, max = 5 }: { subs: SubscriberProfile[]; max?: number }) {
-  if (!subs.length) return null
-  const show = subs.slice(0, max)
-  const extra = subs.length - max
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
-      {show.map(s => {
-        const name = s.first_name ?? s.username ?? 'Member'
-        const hue = (name.charCodeAt(0) * 37) % 360
-        return (
-          <span key={s.user_id} style={{
-            fontSize: 11, fontWeight: 500,
-            color: `hsl(${hue}, 45%, 40%)`,
-            background: `hsl(${hue}, 55%, 55%, 0.12)`,
-            border: `1px solid hsl(${hue}, 55%, 55%, 0.3)`,
-            padding: '2px 8px', borderRadius: 999,
-          }}>
-            {name}
-          </span>
-        )
-      })}
-      {extra > 0 && (
-        <span style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>+{extra} more</span>
-      )}
-    </div>
-  )
-}
-
-function BellIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  )
-}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -75,7 +39,7 @@ export default function ProjectDetailClient({
   deliverables: initialDeliverables, myProposal: initialMyProposal, userId, userRole, leadCircles, circleDirectory, isAdmin, isProjectCreator,
   projectSubscribers: initialProjectSubscribers, isProjectSubscribed: initialIsProjectSubscribed,
   deliverableSubscribers: initialDeliverableSubscribers,
-  leadProfile, creatorProfile, projectEvents, initialTaskId, backOnClose = false, people = [],
+  leadProfile, creatorProfile, projectEvents, initialTaskId, people = [], projectOptions = [], teams = [],
 }: {
   project: Project
   /** Who a task can be given to (the task pop-up's Assigned to) */
@@ -98,8 +62,9 @@ export default function ProjectDetailClient({
   projectEvents: CalendarEvent[]
   /** Opens this task's pop-up on arrival (links from the calendar: ?task=<id>) */
   initialTaskId?: string | null
-  /** Opened from a page in the app (?back=1): closing a loose task's pop-up goes back there */
-  backOnClose?: boolean
+  /** For the task pop-up: projects a task can be filed into, and the circles' teams */
+  projectOptions?: TaskProjectOption[]
+  teams?: TaskTeamOption[]
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -154,34 +119,8 @@ export default function ProjectDetailClient({
   // ── Deliverable subscriptions ─────────────────────────────────────────────
   const [deliverableSubsMap, setDeliverableSubsMap] = useState<Record<string, SubscriberProfile[]>>(initialDeliverableSubscribers)
 
-  // ── Subtask edit modal ────────────────────────────────────────────────────
-  const [editModal, setEditModal] = useState<Deliverable | null>(null)
-  const [editModalTitle, setEditModalTitle] = useState('')
-  const [editModalDue, setEditModalDue] = useState<string | null>(null)
-  const [editModalTime, setEditModalTime] = useState('')
-  const [editModalCircle, setEditModalCircle] = useState<string>('')
-  const [editModalStatus, setEditModalStatus] = useState('backlog')
-  const [editModalAssignee, setEditModalAssignee] = useState('')
-  // A typed name for someone not on MyCoNet yet (assignee '__name__')
-  const [editModalAssigneeName, setEditModalAssigneeName] = useState('')
-  const [editModalPriority, setEditModalPriority] = useState<Priority>('none')
-  const [editModalNotes, setEditModalNotes] = useState('')
-  const [editModalError, setEditModalError] = useState('')
-  const [editModalSaving, setEditModalSaving] = useState(false)
-
-  useEffect(() => {
-    const d = initialTaskId ? initialDeliverables.find(x => x.id === initialTaskId) : null
-    if (d) openEditModal(d)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTaskId])
-
-  useEffect(() => {
-    if (!editModal) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeEditModal() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- closeEditModal only reads props and the router
-  }, [editModal])
+  // ── The task pop-up (TaskModal) ──────────────────────────────────────────
+  const [editModal, setEditModal] = useState<Deliverable | null>(() => (initialTaskId ? initialDeliverables.find(x => x.id === initialTaskId) ?? null : null))
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const myDeliverableSubIds = new Set(
@@ -198,29 +137,6 @@ export default function ProjectDetailClient({
   }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-
-  // A loose task (in the circle's chores project) lives on the main board, so closing it never leaves the person on
-  // the chores page: back to where they opened it (?back=1), or to the board filtered to its circle (v4.33.5)
-  function closeEditModal() {
-    setEditModal(null)
-    if (!project.is_chores) return
-    if (backOnClose && window.history.length > 1) router.back()
-    else router.replace(`/ops${project.circle ? `?circle=${project.circle}` : ''}`)
-  }
-
-  function openEditModal(d: Deliverable) {
-    setEditModal(d)
-    setEditModalTitle(d.title)
-    setEditModalDue(d.due_date)
-    setEditModalTime(toTimeInput(d.due_time))
-    setEditModalCircle(d.circle ?? project.circle ?? '')
-    setEditModalStatus(d.status ?? 'backlog')
-    setEditModalAssignee(d.assignee_id ?? (d.assignee_name ? NAME_TAG : ''))
-    setEditModalAssigneeName(d.assignee_name ?? '')
-    setEditModalPriority((d.priority as Priority) ?? 'none')
-    setEditModalNotes(d.notes ?? '')
-    setEditModalError('')
-  }
 
   async function toggleProjectSubscription() {
     if (!userId) { router.push('/auth/signup'); return }
@@ -310,51 +226,6 @@ export default function ProjectDetailClient({
   async function updateTaskStatus(taskId: string, newStatus: string) {
     setDeliverables(prev => prev.map(d => d.id === taskId ? { ...d, status: newStatus } : d))
     await supabase.from('deliverables').update({ status: newStatus }).eq('id', taskId)
-  }
-
-  // The person a task is assigned to (not a lead): its status and notes, through update_my_task()
-  async function saveMyTask() {
-    if (!editModal) return
-    setEditModalSaving(true); setEditModalError('')
-    const { error } = await supabase.rpc('update_my_task', { p_task: editModal.id, p_status: editModalStatus, p_notes: editModalNotes.trim() })
-    setEditModalSaving(false)
-    if (error) { setEditModalError(error.message); return }
-    setDeliverables(prev => prev.map(d => (d.id === editModal.id ? { ...d, status: editModalStatus, notes: editModalNotes.trim() || null } : d)))
-    closeEditModal()
-  }
-
-  async function saveDeliverableEdit() {
-    if (!editModal || !editModalTitle.trim()) return
-    setEditModalSaving(true)
-    const changes = {
-      title: editModalTitle.trim(),
-      due_date: editModalDue,
-      due_time: editModalDue && editModalTime ? editModalTime : null,
-      circle: editModalCircle || null,
-      status: editModalStatus,
-      assignee_id: editModalAssignee && editModalAssignee !== NAME_TAG ? editModalAssignee : null,
-      assignee_name: editModalAssignee === NAME_TAG ? editModalAssigneeName.trim().slice(0, 80) || null : null,
-      notes: editModalNotes.trim() || null,
-      priority: editModalPriority,
-      // Saving a draft (e.g. from a meeting) confirms it
-      needs_review: false,
-    }
-    const { error } = await supabase.from('deliverables').update(changes).eq('id', editModal.id)
-    setEditModalError(error ? error.message : '')
-    if (!error) {
-      setDeliverables(prev => prev.map(d =>
-        d.id === editModal.id ? { ...d, ...changes, user_profiles: (() => { const p = people.find(x => x.id === changes.assignee_id); return p ? { first_name: p.name.split(' ')[0], username: p.username } : null })() } as Deliverable : d
-      ))
-      closeEditModal()
-    }
-    setEditModalSaving(false)
-  }
-
-  async function deleteDeliverableFromModal() {
-    if (!editModal) return
-    setDeliverables(prev => prev.filter(d => d.id !== editModal.id))
-    await supabase.from('deliverables').delete().eq('id', editModal.id)
-    closeEditModal()
   }
 
   async function acceptProposal(agreementId: string, targetStatus: string = 'backlog') {
@@ -831,7 +702,7 @@ export default function ProjectDetailClient({
                             onDragEnd={() => { setDragging(null); setDropTarget(null) }}
                             onClick={() => {
                               if (dragging) return
-                              openEditModal(d)
+                              setEditModal(d)
                             }}
                             style={{
                               background: 'var(--surface)', border: '1px solid var(--rule)',
@@ -1039,280 +910,24 @@ export default function ProjectDetailClient({
 
       <PermissionNoticeModal notice={notice} directory={circleDirectory} onClose={() => setNotice(null)} />
 
-      {/* ── Subtask edit modal ─────────────────────────────────────────────────── */}
+      {/* ── The task pop-up ─────────────────────────────────────────────────────── */}
       {editModal && (
-        <div
-          onClick={() => closeEditModal()}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 12,
+        <TaskModal
+          task={editModal}
+          canManage={canManage}
+          userId={userId}
+          people={people}
+          projects={projectOptions}
+          teams={teams}
+          onClose={() => setEditModal(null)}
+          onSaved={t => {
+            // Filed into another project, or onto the board: it leaves this project's list
+            setDeliverables(prev => (t.project_id === project.id ? prev.map(d => (d.id === t.id ? t : d)) : prev.filter(d => d.id !== t.id)))
+            setEditModal(null)
           }}
-        >
-          {/* Never taller than the screen (web or phone): the middle scrolls, the header and the buttons stay */}
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: 'var(--surface)', borderRadius: 14,
-              border: '1px solid var(--rule)',
-              width: '100%', maxWidth: 480,
-              maxHeight: 'calc(100dvh - 24px)', overflowY: 'auto', overscrollBehavior: 'contain',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
-              animation: 'calFadeIn 160ms ease',
-            }}
-          >
-            {/* Modal header */}
-            <div style={{
-              padding: '16px 20px', borderBottom: '1px solid var(--rule)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '14px 14px 0 0',
-            }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
-                Subtask
-              </div>
-              <button
-                onClick={() => closeEditModal()}
-                style={{ background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0, display: 'flex' }}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Modal body */}
-            <div style={{ padding: '20px' }}>
-              {/* Title */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
-                  Title
-                </label>
-                {canManage ? (
-                  <input
-                    type="text"
-                    value={editModalTitle}
-                    onChange={e => setEditModalTitle(e.target.value)}
-                    style={{ ...inputStyle, fontSize: 15, fontWeight: 500 }}
-                  />
-                ) : (
-                  <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
-                    {editModal.title}
-                  </div>
-                )}
-              </div>
-
-              {/* Status and who has it */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-status">Status</label>
-                  {canManage || editModal.assignee_id === userId ? (
-                    <select id="task-status" value={editModalStatus} onChange={e => setEditModalStatus(e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}>
-                      <option value="backlog">Backlog</option>
-                      <option value="in_progress">In progress</option>
-                      <option value="review">Review</option>
-                      <option value="done">Done</option>
-                    </select>
-                  ) : (
-                    <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{({ backlog: 'Backlog', in_progress: 'In progress', review: 'Review', done: 'Done' } as Record<string, string>)[editModal.status] ?? editModal.status}</div>
-                  )}
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-assignee">Assigned to</label>
-                  {canManage ? (
-                    <>
-                      <select id="task-assignee" value={editModalAssignee} onChange={e => setEditModalAssignee(e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}>
-                        <option value="">Nobody yet</option>
-                        {userId && <option value={userId}>Me</option>}
-                        {people.filter(p => p.id !== userId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        <option value={NAME_TAG}>✏️ Type a name…</option>
-                      </select>
-                      {editModalAssignee === NAME_TAG && (
-                        <input
-                          autoFocus={!editModalAssigneeName}
-                          value={editModalAssigneeName}
-                          onChange={e => setEditModalAssigneeName(e.target.value)}
-                          maxLength={80}
-                          placeholder="Their name"
-                          aria-label="Name of someone not on MyCoNet yet"
-                          style={{ ...inputStyle, padding: '8px 10px', fontSize: 13, marginTop: 6 }}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <div style={{ fontSize: 13, color: editModal.assignee_id ? 'var(--ink-2)' : 'var(--ink-4)' }}>
-                      {people.find(p => p.id === editModal.assignee_id)?.name ?? (editModal.assignee_id ? 'Someone' : editModal.assignee_name ? <NameTag name={editModal.assignee_name} /> : 'Nobody yet')}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {canManage && editModalAssignee === NAME_TAG && (
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: -8, marginBottom: 16 }}>
-                  Just a name on the task: no account or invite is made. Once they join, pick their account instead.
-                </div>
-              )}
-
-              {/* Priority */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-priority">Priority</label>
-                {canManage ? (
-                  <PrioritySlider id="task-priority" value={editModalPriority} onChange={setEditModalPriority} />
-                ) : (
-                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{PRIORITIES.find(p => p.value === editModal.priority)?.label ?? 'None'}</div>
-                )}
-              </div>
-
-              {/* Due date */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
-                  Due date
-                </label>
-                {canManage ? (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <CalendarPicker value={editModalDue} onChange={setEditModalDue} placeholder="No due date" />
-                    {editModalDue && (
-                      <input
-                        type="time"
-                        value={editModalTime}
-                        onChange={e => setEditModalTime(e.target.value)}
-                        aria-label="Time (optional)"
-                        style={{ ...inputStyle, width: 130, padding: '8px 10px', fontSize: 13 }}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 13, color: editModal.due_date ? 'var(--ink-2)' : 'var(--ink-4)', fontFamily: 'var(--mono)' }}>
-                    {editModal.due_date ? fmtTaskWhen(editModal.due_date, editModal.due_time) : 'No due date'}
-                  </div>
-                )}
-                {editModal.due_date && (
-                  <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>Dated tasks also show on the calendar.</div>
-                )}
-              </div>
-
-              {/* Circle */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
-                  Circle
-                </label>
-                {canManage ? (
-                  <select
-                    value={editModalCircle}
-                    onChange={e => setEditModalCircle(e.target.value)}
-                    style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}
-                  >
-                    <option value="">No circle</option>
-                    {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).emoji} {circles.meta(c).label}</option>)}
-                  </select>
-                ) : (
-                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                    {editModal.circle && circles.has(editModal.circle) ? `${circles.meta(editModal.circle).emoji} ${circles.meta(editModal.circle).label}` : 'No circle'}
-                  </div>
-                )}
-              </div>
-
-              {editModal.needs_review && (
-                <div style={{ fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
-                  {editModal.source === 'meeting' ? 'Drafted by the agent from a meeting.' : 'A draft.'} Check it{canManage ? ' and save to confirm' : ''}.
-                </div>
-              )}
-              {editModal.source_meeting_id && (
-                <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 16, lineHeight: 1.5 }}>
-                  <Link href={`/meetings/${editModal.source_meeting_id}`} style={{ color: 'var(--m18, var(--m7))', fontWeight: 600, textDecoration: 'none' }}>📝 From a meeting →</Link>
-                  {editModal.source_item && editModal.source_item !== editModal.title && <> · “{editModal.source_item.slice(0, 200)}”</>}
-                </div>
-              )}
-
-              {/* Notes */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-notes">Notes</label>
-                {canManage || editModal.assignee_id === userId ? (
-                  <textarea id="task-notes" value={editModalNotes} onChange={e => setEditModalNotes(e.target.value)} rows={4} maxLength={5000}
-                    placeholder="What's been done, what's needed, links…" style={{ ...inputStyle, fontSize: 13, resize: 'vertical', lineHeight: 1.5 }} />
-                ) : (
-                  <div style={{ fontSize: 13, color: editModal.notes ? 'var(--ink-2)' : 'var(--ink-4)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{editModal.notes || 'No notes yet.'}</div>
-                )}
-              </div>
-
-              {/* Subscribe toggle */}
-              <div style={{ marginBottom: (() => {
-                const subs = deliverableSubsMap[editModal.id] ?? []
-                return subs.length > 0 ? 12 : 0
-              })() }}>
-                <button
-                  onClick={() => toggleDeliverableSubscription(editModal.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                    background: myDeliverableSubIds.has(editModal.id) ? 'color-mix(in srgb, var(--m7) 12%, var(--surface))' : 'var(--bg-2)',
-                    color: myDeliverableSubIds.has(editModal.id) ? 'var(--m7)' : 'var(--ink-3)',
-                    border: `1px solid ${myDeliverableSubIds.has(editModal.id) ? 'color-mix(in srgb, var(--m7) 35%, var(--rule))' : 'var(--rule)'}`,
-                    cursor: 'pointer', transition: 'all 140ms',
-                  }}
-                >
-                  <BellIcon filled={myDeliverableSubIds.has(editModal.id)} />
-                  {myDeliverableSubIds.has(editModal.id) ? 'Subscribed' : 'Subscribe to updates'}
-                </button>
-              </div>
-
-              {/* Subscriber avatars */}
-              {(() => {
-                const subs = deliverableSubsMap[editModal.id] ?? []
-                if (!subs.length) return null
-                return (
-                  <div style={{ marginTop: 4 }}>
-                    <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
-                      {subs.length} subscriber{subs.length !== 1 ? 's' : ''}
-                    </div>
-                    <SubscriberNames subs={subs} />
-                  </div>
-                )
-              })()}
-            </div>
-
-            {editModalError && <div style={{ fontSize: 12.5, color: '#b91c1c', padding: '0 20px 10px' }}>{editModalError}</div>}
-            {/* The assignee (not a lead): status and notes only */}
-            {!canManage && editModal.assignee_id === userId && (
-              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8, position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px' }}>
-                <button onClick={() => closeEditModal()} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={saveMyTask} disabled={editModalSaving} style={{ background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: editModalSaving ? 'wait' : 'pointer' }}>{editModalSaving ? 'Saving…' : 'Save'}</button>
-              </div>
-            )}
-            {/* Modal footer */}
-            {canManage && (
-              <div style={{
-                padding: '14px 20px', borderTop: '1px solid var(--rule)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px',
-              }}>
-                <button
-                  onClick={deleteDeliverableFromModal}
-                  style={{ background: 'none', border: '1px solid #fecaca', color: '#dc2626', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}
-                >
-                  Delete subtask
-                </button>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => closeEditModal()}
-                    style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={saveDeliverableEdit}
-                    disabled={editModalSaving || !editModalTitle.trim()}
-                    style={{
-                      background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600,
-                      padding: '7px 18px', borderRadius: 8, border: 'none',
-                      cursor: editModalSaving || !editModalTitle.trim() ? 'not-allowed' : 'pointer',
-                      opacity: editModalSaving || !editModalTitle.trim() ? 0.65 : 1,
-                    }}
-                  >
-                    {editModalSaving ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+          onDeleted={id => { setDeliverables(prev => prev.filter(d => d.id !== id)); setEditModal(null) }}
+          onSubscribersChange={subs => setDeliverableSubsMap(prev => ({ ...prev, [editModal.id]: subs }))}
+        />
       )}
 
     </div>

@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.34.0',
+    date: '2026-11-18',
+    title: 'Tasks without a project',
+    items: [
+      'A task doesn’t need a project any more: it sits on the main board with its circle. The hidden “chores” projects are gone, and their tasks are on the board.',
+      'A task’s pop-up opens right on the board. It shows which project the task is in, and you can move it to another project, take it out of one, or give it to one of its circle’s teams.',
+    ],
+  },
+  {
     version: 'v4.33.6',
     date: '2026-11-18',
     title: 'Paused projects on the board',

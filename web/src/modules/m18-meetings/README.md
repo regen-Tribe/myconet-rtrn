@@ -63,7 +63,7 @@ the AI themselves: a Worker gets only about 30 s after replying, too little for 
    - **The tasks:** one per agreed piece of work, from the action items, summary and transcript (first 40k
      characters); adds what was agreed but missed by Fireflies, skips what's on the board. **Each task has its
      own circle**, a person, a date/time if one was said (relative to the meeting day, in
-     `COMMUNITY_TIME_ZONE`), and goes on the **main board** tagged with its circle (in that circle's **Chores**, shown on the board as cards of their own since v4.24.0), or in an open project of the same circle **only when the agent is very sure** it's part of that project's work, with its reason logged (`project_reason` in `agent_actions`, v4.24.3). Drafts: `needs_review=true`, `source='meeting'`, `source_meeting_id`, `source_item`.
+     `COMMUNITY_TIME_ZONE`), and goes on the **main board** tagged with its circle (no project since v4.34.0; before that, the circle's hidden Chores project), or in an open project of the same circle **only when the agent is very sure** it's part of that project's work, with its reason logged (`project_reason` in `agent_actions`, v4.24.3). Drafts: `needs_review=true`, `source='meeting'`, `source_meeting_id`, `source_item`.
    - Without the AI (no key, over budget, unreadable): the action items go on as they are, but only when a
      person set the circle; otherwise the meeting waits for a lead.
 2. **People:** `lib/people.ts` matches the name to a member (full name, username, a first name only one
@@ -122,5 +122,5 @@ under `next dev` a send reports an error.
 Migration `supabase/migrations/20261121000000_meetings.sql`: `meeting_transcripts` (read: joining members
 and above; writes through the server routes) and the private `meeting-audio` bucket (each person's own folder).
 Migration `20261124000000_meeting_pipeline.sql`: meeting `visibility` + pipeline columns, `private.in_circle()`
-and the Circle-only policy, `meeting_action_links`, `agent_actions`, `chores_project_for_server()` (service role).
+and the Circle-only policy, `meeting_action_links`, `agent_actions` (service role).
 Migration `20261125000000_meeting_fireflies_notes.sql`: `fireflies_notes` jsonb (the documents' tabs).

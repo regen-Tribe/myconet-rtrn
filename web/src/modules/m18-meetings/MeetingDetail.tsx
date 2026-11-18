@@ -218,14 +218,14 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {tasks.map(t => (
-                <Link key={t.deliverable_id} href={`/ops/${t.project_id}?task=${t.deliverable_id}&back=1`} style={{ textDecoration: 'none' }}>
+                <Link key={t.deliverable_id} href={t.project_id ? `/ops/${t.project_id}?task=${t.deliverable_id}` : `/ops?task=${t.deliverable_id}`} style={{ textDecoration: 'none' }}>
                   <div style={{ border: '1px solid var(--rule)', borderRadius: 10, padding: '10px 14px', background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>
                         {t.needs_review && <DraftSwipe taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => router.refresh()} onDeclined={() => router.refresh()} />}
                         {t.title}
                       </span>
-                      <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t.project_title ?? ''} ↗</span>
+                      <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t.project_title ?? 'On the board'} ↗</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
                       {t.assignee ?? (t.person_name ? `${t.person_name} (not on MyCoNet yet)` : 'No one assigned')}

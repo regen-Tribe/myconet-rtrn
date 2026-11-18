@@ -41,7 +41,7 @@ export async function requestBoardReview(admin: SupabaseClient, circles: string[
 }
 
 interface Task {
-  id: string; title: string; project_id: string; assignee_id: string | null; due_date: string | null
+  id: string; title: string; project_id: string | null; assignee_id: string | null; due_date: string | null
   /** Someone not on MyCoNet yet (a typed name) */
   assignee_name?: string | null
   priority?: string | null
@@ -165,7 +165,8 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
 
   const T = (ref: unknown) => (typeof ref === 'string' && /^T\d+$/.test(ref) ? tasks[+ref.slice(1) - 1] ?? null : null)
   const P = (ref: unknown) => (typeof ref === 'string' && /^P\d+$/.test(ref) ? projects[+ref.slice(1) - 1] ?? null : null)
-  const isChores = (t: Task) => !!projects.find(p => p.id === t.project_id)?.is_chores
+  // On the board with no project (v4.34.0; before that, in the circle's chores project)
+  const isChores = (t: Task) => !t.project_id || !!projects.find(p => p.id === t.project_id)?.is_chores
   const agentDraft = (t: Task) => t.needs_review && t.source === 'meeting'
   const gone = new Set<string>()
   const dropped = new Set<string>()
@@ -268,7 +269,7 @@ function buildBoardNote(n: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const line = (t: Task) => {
     const who = n.nameOf(t.assignee_id) ?? (t.assignee_name ? `${t.assignee_name} (not on MyCoNet yet)` : null)
-    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''}${t.priority && t.priority !== 'none' ? ` · ${t.priority} priority` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}/ops/${t.project_id}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
+    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''}${t.priority && t.priority !== 'none' ? ` · ${t.priority} priority` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}${t.project_id ? `/ops/${t.project_id}` : '/ops'}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
   }
   const out = [
     '---',
@@ -287,7 +288,7 @@ function buildBoardNote(n: {
     '## Status', '', n.status || '_No status yet._', '',
   ]
   const byProject = new Map<string, Task[]>()
-  for (const t of n.tasks) byProject.set(t.project_id, [...(byProject.get(t.project_id) ?? []), t])
+  for (const t of n.tasks) if (t.project_id) byProject.set(t.project_id, [...(byProject.get(t.project_id) ?? []), t])
   for (const p of n.projects.filter(p => !p.is_chores)) {
     const list = byProject.get(p.id) ?? []
     out.push(`## ${p.title}`, '', ...(p.description ? [`_${p.description.replace(/\s+/g, ' ').trim()}_`, ''] : []), ...(list.length ? list.map(line) : ['_No open tasks._']), '')

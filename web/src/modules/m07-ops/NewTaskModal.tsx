@@ -6,15 +6,13 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import { CalendarPicker } from './CalendarPicker'
 
 /**
- * "+ Task" on the board: a one-off task for a circle (kitchen clean-up, a repair…).
- * It goes into the circle's Chores project, made the first time (`chores_project()`).
- * Tasks for a real project are added on that project's page.
+ * "+ Task" on the board: a task for a circle (kitchen clean-up, a repair…), on the board with no project
+ * (v4.34.0). Its pop-up can file it into a project later; tasks for a project can also be added on its page.
  */
 export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
   defaultCircle: string | null
   onClose: () => void
-  /** The chores project the task went into */
-  onAdded: (projectId: string, taskId: string) => void
+  onAdded: (taskId: string) => void
 }) {
   const circles = useCircles()
   const [title, setTitle] = useState('')
@@ -29,14 +27,8 @@ export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
     setSaving(true)
     setError(null)
     const supabase = createClient()
-    const { data: projectId, error: rpcErr } = await supabase.rpc('chores_project', { p_circle: circle })
-    if (rpcErr || !projectId) {
-      setError(rpcErr?.message ?? 'Couldn’t find this circle’s chores.')
-      setSaving(false)
-      return
-    }
     const { data, error: insErr } = await supabase.from('deliverables').insert({
-      project_id: projectId as string,
+      project_id: null,
       title: title.trim(),
       circle,
       due_date: date,
@@ -49,7 +41,7 @@ export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
       setSaving(false)
       return
     }
-    onAdded(projectId as string, data.id)
+    onAdded(data.id as string)
   }
 
   const label: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }
@@ -90,7 +82,7 @@ export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
               {date && <input type="time" value={time} onChange={e => setTime(e.target.value)} aria-label="Time (optional)" style={{ ...input, width: 130 }} />}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>
-              It goes on the board under the circle’s chores. With a date it also shows on the calendar.
+              It goes on the main board, tagged with its circle. With a date it also shows on the calendar.
             </div>
           </div>
           {error && <p style={{ fontSize: 12, color: '#ef4444', margin: 0 }}>{error}</p>}

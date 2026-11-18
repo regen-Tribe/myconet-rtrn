@@ -6,6 +6,7 @@ import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import type { Deliverable, ProjectSummary } from './types'
 import { NameTag } from './NameTag'
 import { PriorityBadge } from './Priority'
+import { taskHref } from './TaskModal'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
   backlog:     { label: 'Backlog',     color: 'var(--ink-4)', bg: 'var(--bg-3)' },
@@ -14,7 +15,7 @@ const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> 
   done:        { label: 'Done',        color: 'var(--m5)',    bg: '#15803d18' },
 }
 
-export function DeliverablesTab({ deliverables: all, projects, draftsOnly = false, onDraftsOnly, canDecide, onDecided }: {
+export function DeliverablesTab({ deliverables: all, projects, draftsOnly = false, onDraftsOnly, canDecide, onDecided, onOpen }: {
   deliverables: Deliverable[]
   projects: ProjectSummary[]
   /** Only drafts (e.g. from meetings) waiting for a lead */
@@ -23,6 +24,8 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
   /** May this person approve or decline a draft from its pill (a lead of its circle or project, or an admin) */
   canDecide?: (d: Deliverable) => boolean
   onDecided?: () => void
+  /** Opens a task with no project in its pop-up, here on the board */
+  onOpen?: (d: Deliverable) => void
 }) {
   const projectMap = Object.fromEntries(projects.map(p => [p.id, p.title]))
   const draftCount = all.filter(d => d.needs_review).length
@@ -82,10 +85,12 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
                 <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>
                   {d.needs_review && <DraftSwipe taskId={d.id} canDecide={!!canDecide?.(d)} onApproved={onDecided} onDeclined={onDecided} />}
                   <PriorityBadge priority={d.priority} />{d.priority && d.priority !== 'none' ? ' ' : ''}
-                  <Link href={`/ops/${d.project_id}?task=${d.id}&back=1`} style={{ color: 'inherit', textDecoration: 'none' }}>{d.title}</Link>
+                  {d.project_id || !onOpen
+                    ? <Link href={taskHref(d)} style={{ color: 'inherit', textDecoration: 'none' }}>{d.title}</Link>
+                    : <button type="button" onClick={() => onOpen(d)} style={{ all: 'unset', cursor: 'pointer' }}>{d.title}</button>}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-                  {projectMap[d.project_id] ?? '—'}
+                  {(d.project_id && projectMap[d.project_id]) || 'No project'}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
                   {d.assignee_username ?? (d.assignee_name ? <NameTag name={d.assignee_name} /> : '—')}

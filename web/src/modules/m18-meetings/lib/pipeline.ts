@@ -117,7 +117,8 @@ export async function processMeeting(
     if (!fixedCircle) await log('choose_circle', { circle: meetingCircle, reason: read.reason })
     if (title !== m.title) await log('name_meeting', { title, was: m.title })
 
-    // 2. The tasks, each in its circle's project or Chores. Written in batches: a Worker may make only
+    // 2. The tasks: on the main board tagged with their circle, or in a project when the agent is very sure
+    // (v4.34.0: a task needs no project). Written in batches: a Worker may make only
     // 50 outside calls per request (Cloudflare free plan), so no per-task round trips.
     let added = 0
     const seen = new Set<string>()
@@ -135,25 +136,14 @@ export async function processMeeting(
         .upsert(wanted.map(w => linkRow(w)), { onConflict: 'meeting_id,item_key', ignoreDuplicates: true }).select('item_key')
       if (claimErr) errors.push(`link: ${claimErr.message}`)
       const claimedKeys = new Set((claimedRows ?? []).map(r => r.item_key as string))
-      let mine = wanted.filter(w => claimedKeys.has(w.key))
+      const mine = wanted.filter(w => claimedKeys.has(w.key))
       const unclaim = (keys: string[]) => keys.length
         ? admin.from('meeting_action_links').delete().eq('meeting_id', meetingId).in('item_key', keys).is('deliverable_id', null).then(() => {})
         : Promise.resolve()
 
-      // Each circle's Chores project, once per circle
-      const chores = new Map<string, string>()
-      for (const c of [...new Set(mine.filter(w => !w.d.project_id).map(w => w.d.circle))]) {
-        const { data, error } = await admin.rpc('chores_project_for_server', { p_circle: c })
-        if (error || !data) errors.push(`chores (${c}): ${error?.message ?? 'none'}`)
-        else chores.set(c, data as string)
-      }
-      const noProject = mine.filter(w => !w.d.project_id && !chores.has(w.d.circle))
-      await unclaim(noProject.map(w => w.key))
-      mine = mine.filter(w => w.d.project_id || chores.has(w.d.circle))
-
       // Someone without an account gets a name tag on the task (assignee_name), so a lead can pass it on
       const rows = mine.map(w => ({
-        w, title: w.d.title, projectId: w.d.project_id ?? chores.get(w.d.circle)!,
+        w, title: w.d.title, projectId: w.d.project_id ?? null,
         name: w.d.person && !w.person ? w.d.person.slice(0, 80) : null,
       }))
       if (rows.length) {
@@ -190,7 +180,7 @@ export async function processMeeting(
       return {
         // Tasks before v4.32.0 had "(for Luis)" in the title; the note and email show the person already
         title: (t.title as string).replace(/ \(for [^)]+\)$/, ''), person: (l.person_name as string | null), onMyCoNet: !!l.assignee_id || !l.person_name,
-        url: `${appUrl}/ops/${t.project_id}?task=${t.id}`, draft: !!t.needs_review, circle: t.circle as string | null,
+        url: t.project_id ? `${appUrl}/ops/${t.project_id}?task=${t.id}` : `${appUrl}/ops?task=${t.id}`, draft: !!t.needs_review, circle: t.circle as string | null,
         circleName: circleName(t.circle), when: t.due_date ? fmtTaskWhen(t.due_date, t.due_time) : null,
       }
     }).filter((t): t is NonNullable<typeof t> => !!t)

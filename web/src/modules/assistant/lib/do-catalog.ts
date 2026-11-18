@@ -11,7 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type FieldType =
   | { t: 'text'; max: number } | { t: 'enum'; values: string[] } | { t: 'bool' } | { t: 'date' } | { t: 'time' }
-  | { t: 'person' } | { t: 'circle' } | { t: 'circles' } | { t: 'project' } | { t: 'archived' }
+  | { t: 'person' } | { t: 'circle' } | { t: 'circles' } | { t: 'project' } | { t: 'team' } | { t: 'archived' }
 
 interface TableDef {
   /** What the agent calls it, and the table */
@@ -78,6 +78,7 @@ export const CATALOG: Record<string, TableDef> = {
       priority: { label: 'priority', type: { t: 'enum', values: ['none', 'low', 'medium', 'high'] } },
       circle: { label: 'circle', type: { t: 'circle' } },
       project_id: { label: 'project', type: { t: 'project' } },
+      team_id: { label: 'team', type: { t: 'team' } },
       needs_review: { label: 'draft', type: { t: 'bool' } },
       notes: { label: 'notes', type: { t: 'text', max: 5000 } },
     },
@@ -114,7 +115,7 @@ export async function loadRefs(admin: SupabaseClient, board: { projects: { id: s
 export function catalogPrompt(r: Refs): string {
   const fields = Object.entries(CATALOG).map(([k, d]) => `- ${k} (${d.label}): ${Object.entries(d.fields).map(([f, x]) => {
     const t = x.type
-    const how = t.t === 'enum' ? t.values.join('|') : t.t === 'circles' ? '{"add":["C1"],"remove":["C2"]}' : t.t === 'person' ? 'U-ref or null' : t.t === 'circle' ? 'C-ref or null' : t.t === 'project' ? 'P-ref' : t.t === 'archived' ? 'true|false' : t.t
+    const how = t.t === 'enum' ? t.values.join('|') : t.t === 'circles' ? '{"add":["C1"],"remove":["C2"]}' : t.t === 'person' ? 'U-ref or null' : t.t === 'circle' ? 'C-ref or null' : t.t === 'project' ? 'P-ref or null (null: no project, on the main board)' : t.t === 'team' ? 'O-ref of a team, or null' : t.t === 'archived' ? 'true|false' : t.t
     return `${f}=${how}`
   }).join(', ')}`).join('\n')
   const unitName = (u: Refs['units'][number]) => `${u.kind === 'circle' ? 'circle' : 'team'} ${u.name}${u.kind !== 'circle' ? ` (in ${r.circles.find(c => c.slug === u.circle)?.name ?? u.circle})` : ''}`
@@ -167,7 +168,8 @@ export function resolveGeneral(raw: Record<string, unknown>, r: Refs, P: (ref: u
     else if (t.t === 'time') { if (v === null || (typeof v === 'string' && /^\d{1,2}:\d{2}$/.test(v))) set[f] = v === null ? null : String(v).padStart(5, '0') }
     else if (t.t === 'person') { const id = v === null ? null : U(v); if (id !== undefined) set[f] = id }
     else if (t.t === 'circle') { const s = v === null ? null : C(v); if (s !== undefined) set[f] = s }
-    else if (t.t === 'project') { const id = P(v); if (id) set[f] = id }
+    else if (t.t === 'project') { const id = v === null ? null : P(v); if (id !== undefined) set[f] = id }
+    else if (t.t === 'team') { const id = v === null ? null : O(v); if (id !== undefined && (id === null || r.units.find(u => u.id === id)?.kind === 'team')) set[f] = id }
     else if (t.t === 'circles') {
       const ops = v as { add?: unknown[]; remove?: unknown[] } | unknown[]
       const list = (xs: unknown) => (Array.isArray(xs) ? xs.map(C).filter((x): x is string => !!x) : [])
@@ -219,11 +221,13 @@ export async function describeGeneral(admin: SupabaseClient, a: GeneralAction, r
   const after = toColumns(def, before, a.set)
   const show = (f: string, v: unknown) => {
     const t = def.fields[f].type
+    if ((v === null || v === undefined) && t.t === 'project') return 'no project (the main board)'
     if (v === null || v === undefined || (Array.isArray(v) && !v.length)) return '—'
     if (t.t === 'person') return person(v)
     if (t.t === 'circle') return circle(v)
     if (t.t === 'circles') return (v as string[]).map(circle).join(', ')
     if (t.t === 'project') return r.projects.find(p => p.id === v)?.title ?? 'a project'
+    if (t.t === 'team') return r.units.find(u => u.id === v)?.name ?? 'a team'
     if (t.t === 'archived') return v ? 'yes' : 'no'
     if (t.t === 'bool') return v ? 'yes' : 'no'
     return String(v).replace(/_/g, ' ')

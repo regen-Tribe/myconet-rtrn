@@ -24,6 +24,7 @@ import { DraftSwipe } from './DraftSwipe'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
 import { ProjectManagerPanel } from './ProjectManagerPanel'
 import { NameTag } from './NameTag'
+import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
 import { PriorityBadge } from './Priority'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -52,6 +53,12 @@ interface OpsClientProps {
   initialCircle: string | null
   pmSuggestions: AgentSuggestion[]
   pmActions: PmAction[]
+  /** Open this task's pop-up on arrival (/ops?task=<id>) */
+  initialTaskId?: string | null
+  /** For the task pop-up */
+  people?: TaskPerson[]
+  projectOptions?: TaskProjectOption[]
+  teams?: TaskTeamOption[]
 }
 
 type OpsTab = 'board' | 'deliverables' | 'updates' | 'circles'
@@ -193,11 +200,11 @@ function ProjectKanbanCard({
 }
 
 // ─── Task Kanban Card ────────────────────────────────────────────────────────
-// A circle's one-off task (it lives in the circle's Chores project) shown on the main board on its own,
-// tagged with its circle, instead of inside a "Chores" project card.
+// A task with no project (v4.34.0): on the main board on its own, tagged with its circle. It opens in its pop-up
+// right here on the board.
 
-function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, isDragging, onApproved, onDeclined }: {
-  task: Deliverable; canMove: boolean
+function TaskKanbanCard({ task, canMove, onOpen, onDragStart, onDragEnd, onBlockedDrag, isDragging, onApproved, onDeclined }: {
+  task: Deliverable; canMove: boolean; onOpen: () => void
   /** A draft was approved or declined from its pill */
   onApproved?: () => void; onDeclined?: () => void
   onDragStart?: (id: string) => void; onDragEnd?: () => void; onBlockedDrag?: () => void; isDragging?: boolean
@@ -206,7 +213,12 @@ function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, 
   const meta = task.circle && circles.has(task.circle) ? circles.meta(task.circle) : null
   const late = isTaskOverdue(task.due_date, task.due_time, task.status)
   return (
-    <Link href={`/ops/${task.project_id}?task=${task.id}&back=1`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+    <div
+      role="button" tabIndex={0} aria-label={task.title}
+      onClick={onOpen}
+      onKeyDown={e => { if (e.key === 'Enter') onOpen() }}
+      style={{ display: 'block', marginBottom: 8 }}
+    >
       <div
         draggable={canMove || !!onBlockedDrag}
         onDragStart={(e) => {
@@ -243,7 +255,7 @@ function TaskKanbanCard({ task, canMove, onDragStart, onDragEnd, onBlockedDrag, 
           )}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
 
@@ -254,7 +266,7 @@ export default function OpsClient({
   activeCount, deliverableCount, doneCount, atRiskCount,
   isAdmin, userId, userRole, leadCircles, sprintName,
   projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
-  initialCircle, pmSuggestions, pmActions,
+  initialCircle, pmSuggestions, pmActions, initialTaskId = null, people = [], projectOptions = [], teams = [],
 }: OpsClientProps) {
   const circles = useCircles()
   const router = useRouter()
@@ -274,15 +286,26 @@ export default function OpsClient({
   const [draftsOnly, setDraftsOnly] = useState(false)
   const [boardTasks, setBoardTasks] = useState<Deliverable[]>(initialDeliverables)
   const draftCount = initialDeliverables.filter(d => d.needs_review).length
-  // Chores projects hold a circle's one-off tasks: on the board their tasks are cards of their own
-  const choresById = new Map(boardProjects.filter(p => p.is_chores).map(p => [p.id, p]))
   const projectsById = new Map(boardProjects.map(p => [p.id, p]))
+  // Who may change a task: its project's leads, or for a task with no project the same rule by its circle
+  // (core/lib/ops-permissions.ts; the database checks it again)
+  const taskRef = (t: Deliverable) => (t.project_id && projectsById.get(t.project_id)) || { circle: t.circle ?? null, created_by: t.created_by ?? null, lead_user_id: null }
+  const canEditTask = (t: Deliverable) => canMoveProject(taskRef(t), userId, userRole, leadCircles, circles)
+
+  // The task pop-up, on the board (a task with no project; /ops?task=<id> opens it too)
+  const [openTask, setOpenTask] = useState<Deliverable | null>(() => (initialTaskId ? initialDeliverables.find(d => d.id === initialTaskId) ?? null : null))
+  function closeTask() {
+    setOpenTask(null)
+    // Leave the board's address as it was, without ?task=
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('task')) { url.searchParams.delete('task'); window.history.replaceState(null, '', url.toString()) }
+  }
 
   async function moveTask(taskId: string, newStatus: string) {
     const t = boardTasks.find(x => x.id === taskId)
-    const p = t ? choresById.get(t.project_id) : null
     // Tasks have no Ideas column
-    if (!t || !p || t.status === newStatus || newStatus === 'pending') return
+    if (!t || t.project_id || t.status === newStatus || newStatus === 'pending') return
+    const p = taskRef(t)
     const block = projectEditBlock(p, userId, userRole, leadCircles, circles)
     if (block) { setNotice(block); return }
     setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: newStatus } : x))
@@ -327,6 +350,7 @@ export default function OpsClient({
 
   const subtasksByProject = new Map<string, { total: number; done: number }>()
   for (const d of initialDeliverables) {
+    if (!d.project_id) continue
     const e = subtasksByProject.get(d.project_id) ?? { total: 0, done: 0 }
     e.total += 1
     if (d.status === 'done') e.done += 1
@@ -336,12 +360,12 @@ export default function OpsClient({
   const overdueToday = new Date(); overdueToday.setHours(0, 0, 0, 0)
   const overdueProjectIds = new Set(
     initialDeliverables
-      .filter(d => d.due_date && !['done', 'review'].includes(d.status) && taskDate(d.due_date) < overdueToday)
-      .map(d => d.project_id)
+      .filter(d => d.project_id && d.due_date && !['done', 'review'].includes(d.status) && taskDate(d.due_date) < overdueToday)
+      .map(d => d.project_id as string)
   )
 
   const myAssignedProjectIds = new Set(
-    userId ? initialDeliverables.filter(d => d.assignee_id === userId).map(d => d.project_id) : []
+    userId ? initialDeliverables.filter(d => d.assignee_id === userId && d.project_id).map(d => d.project_id as string) : []
   )
   const mySubscribedProjectIds = new Set(
     userId ? Object.entries(projectSubscribers).filter(([, subs]) => subs.some(s => s.user_id === userId)).map(([id]) => id) : []
@@ -361,15 +385,15 @@ export default function OpsClient({
     return true
   })
 
+  // Tasks with no project are cards of their own; a project's tasks are inside its card
   const filteredTasks = boardTasks.filter(t => {
-    const p = choresById.get(t.project_id)
-    if (!p) return false
-    const circle = t.circle ?? p.circle
+    if (t.project_id) return false
+    const circle = t.circle ?? null
     if (overdueOnly && !isTaskOverdue(t.due_date, t.due_time, t.status)) return false
     if (selectedCircle && circle !== selectedCircle) return false
     if (myRole === 'lead') return !!circle && leadCircles.includes(circle)
     if (myRole === 'member') return t.assignee_id === userId
-    if (myRole === 'subscriber') return mySubscribedProjectIds.has(p.id)
+    if (myRole === 'subscriber') return false
     return true
   })
 
@@ -615,12 +639,13 @@ export default function OpsClient({
                       />
                     )
                   }).concat(taskCards.map(t => {
-                    const p = choresById.get(t.project_id)!
+                    const p = taskRef(t)
                     return (
                       <TaskKanbanCard
                         key={t.id}
                         task={t}
                         canMove={canMoveProject(p, userId, userRole, leadCircles, circles)}
+                        onOpen={() => setOpenTask(t)}
                         onDragStart={(id) => setDraggingId(id)}
                         onBlockedDrag={userId ? () => setNotice(projectEditBlock(p, userId, userRole, leadCircles, circles)) : undefined}
                         onDragEnd={() => { setDraggingId(null); setDropTarget(null) }}
@@ -641,7 +666,8 @@ export default function OpsClient({
       {activeTab === 'deliverables' && (
         <DeliverablesTab
           deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly}
-          canDecide={d => { const p = projectsById.get(d.project_id); return !!p && canMoveProject(p, userId, userRole, leadCircles, circles) }}
+          canDecide={canEditTask}
+          onOpen={setOpenTask}
           onDecided={() => router.refresh()}
         />
       )}
@@ -667,7 +693,20 @@ export default function OpsClient({
         <NewTaskModal
           defaultCircle={selectedCircle ?? leadCircles[0] ?? null}
           onClose={() => setNewTask(false)}
-          onAdded={(projectId, taskId) => router.push(`/ops/${projectId}?task=${taskId}&back=1`)}
+          onAdded={() => { setNewTask(false); router.refresh() }}
+        />
+      )}
+      {openTask && (
+        <TaskModal
+          task={openTask}
+          canManage={canEditTask(openTask)}
+          userId={userId}
+          people={people}
+          projects={projectOptions}
+          teams={teams}
+          onClose={closeTask}
+          onSaved={t => { setBoardTasks(prev => prev.map(x => (x.id === t.id ? t : x))); closeTask(); router.refresh() }}
+          onDeleted={id => { setBoardTasks(prev => prev.filter(x => x.id !== id)); closeTask(); router.refresh() }}
         />
       )}
     </div>

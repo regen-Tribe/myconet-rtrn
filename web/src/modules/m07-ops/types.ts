@@ -26,7 +26,11 @@ export interface Deliverable {
   /** Free notes on the task (v4.31.0) */
   notes?: string | null
   id: string
-  project_id: string
+  /** null: a task on its own, on the main board (v4.34.0) */
+  project_id: string | null
+  /** A team within its circle (org_units, kind 'team'), v4.34.0 */
+  team_id?: string | null
+  created_by?: string | null
   title: string
   status: string
   due_date: string | null

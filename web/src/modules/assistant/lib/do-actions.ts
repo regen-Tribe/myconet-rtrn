@@ -25,7 +25,7 @@ export interface DoAction {
 
 export interface Board {
   projects: { id: string; title: string; description: string | null; circle: string | null; status: string; is_chores: boolean; lead_user_id: string | null; created_by: string | null }[]
-  tasks: { id: string; title: string; project_id: string; circle: string | null; assignee_id: string | null; due_date: string | null; due_time: string | null; status: string; needs_review: boolean }[]
+  tasks: { id: string; title: string; project_id: string | null; circle: string | null; assignee_id: string | null; due_date: string | null; due_time: string | null; status: string; needs_review: boolean }[]
   people: { id: string; name: string }[]
   circles: { slug: string; name: string }[]
 }
@@ -185,14 +185,12 @@ export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: 
       }
       case 'move_tasks': {
         if (a.to) { await moveAll(a.tasks ?? [], a.to); break }
-        // Onto the main board: each task into its circle's Chores
+        // Onto the main board: out of its project (v4.34.0), keeping its circle
         for (const id of a.tasks ?? []) {
           const t = T(id)
-          const circle = t.circle ?? P(t.project_id)?.circle
-          if (!circle) throw new Error(`${t.title} has no circle`)
-          const { data, error } = await admin.rpc('chores_project_for_server', { p_circle: circle })
-          if (error || !data) throw new Error(error?.message ?? 'no Chores project')
-          await upd('deliverables', id, { project_id: t.project_id }, { project_id: data })
+          const circle = t.circle ?? P(t.project_id)?.circle ?? null
+          await upd('deliverables', id, { project_id: t.project_id, circle: t.circle }, { project_id: null, circle })
+          t.project_id = null; t.circle = circle
         }
         break
       }
