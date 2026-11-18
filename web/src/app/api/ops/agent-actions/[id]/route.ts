@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/core/lib/supabase/service'
 import { circleDecider } from '@/modules/m07-ops/lib/pm-access'
 import { undoRows } from '@/modules/assistant/lib/do-actions'
+import { undoGeneral } from '@/modules/assistant/lib/do-catalog'
+import { createClient } from '@/core/lib/supabase/server'
 
 // Undo one of the agent's changes ({ action: 'undo' }): a circle's leads or an admin; a Do change also
 // by the person who asked for it.
@@ -23,7 +25,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!mine && !me.canDecide(d.circle ?? null)) return NextResponse.json({ error: 'Only this circle’s leads and admins can undo it.' }, { status: 403 })
 
   if (String(a.action).startsWith('do_')) {
-    try { await undoRows(admin, d) } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 500 }) }
+    // A general change is undone as the person, like it was made
+    try { if (d.as_user) await undoGeneral(await createClient(), d.general_rows ?? []); else await undoRows(admin, d) } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 500 }) }
     await admin.from('agent_actions').update({ undone_at: new Date().toISOString(), undone_by: me.user.id }).eq('id', id)
     return NextResponse.json({ ok: true })
   }

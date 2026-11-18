@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.29.0 — 2026-11-17
+
+- **Ask / Do: anything the person may do** (Oscar: "the MyCoNet agent should be able to do anything on MyCoNet that
+  that user's permissions allow"; it couldn't assign a circle lead). New general changes (`lib/do-catalog.ts`):
+  update any catalogued field (people's role and `lead_circles`, circles, org-chart units, projects, tasks) and
+  add / remove org-chart members. Made **with the person's own Supabase session**, so RLS and the profile guard
+  trigger decide; the card shows before → after; Undo restores as the person. Logged `do_update` /
+  `do_add_member` / `do_remove_member` with `as_user`. Next for the catalogue: events, bookings, governance.
+
 ## v4.28.0 — 2026-11-17
 
 - **Ask / Do: create a circle** (asked for in Protopia): admins **and circle leads** can tell the agent to create a
