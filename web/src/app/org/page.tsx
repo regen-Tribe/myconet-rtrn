@@ -5,6 +5,7 @@ import OrgChartClient from '@/modules/m17-org/OrgChartClient'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import { MEMBER_SELECT, toMember, toPerson } from '@/modules/m17-org/lib/org'
 import type { OrgPerson, OrgUnit } from '@/modules/m17-org/types'
+import type { JoinRequest } from '@/modules/m17-org/JoinRequests'
 
 /** M17 Org chart — public; admins, circle leads and team leads edit their parts. */
 export default async function OrgPage() {
@@ -38,6 +39,17 @@ export default async function OrgPage() {
     const { data } = await supabase.from('user_profiles').select('id, first_name, last_name, username').order('first_name')
     people = (data ?? []).map(toPerson).filter((p): p is OrgPerson => !!p)
   }
+  // People asking to join a circle: the database shows each lead only their circles' requests (admins: all)
+  let joinRequests: JoinRequest[] = []
+  if (user && (role === 'admin' || role === 'circle_lead')) {
+    const { data } = await supabase.from('circle_join_requests')
+      .select('id, circle, user_id, note, created_at, person:user_profiles!circle_join_requests_user_id_fkey(id, first_name, last_name, username)')
+      .eq('status', 'pending').order('created_at')
+    joinRequests = (data ?? []).map((r: any) => ({
+      id: r.id, circle: r.circle, user_id: r.user_id, note: r.note, created_at: r.created_at,
+      name: toPerson(Array.isArray(r.person) ? r.person[0] : r.person)?.name ?? 'Someone',
+    }))
+  }
 
   return (
     <OrgChartClient
@@ -45,6 +57,7 @@ export default async function OrgPage() {
       initialMembers={members}
       directory={directory}
       people={people}
+      joinRequests={joinRequests}
       userId={user?.id ?? null}
       role={role}
       leadCircles={leadCircles}

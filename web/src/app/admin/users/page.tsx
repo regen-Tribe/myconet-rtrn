@@ -28,5 +28,25 @@ export default async function AdminUsersPage() {
     .select('id', { count: 'exact', head: true })
     .eq('answered', false).eq('status', 'open')
 
-  return <UsersAdminClient initialUsers={(users ?? []) as AdminUserRow[]} openQuestions={openQuestions ?? 0} />
+  // Circle membership (org_unit_members of each circle's unit), v4.35.0
+  const { data: units } = await supabase.from('org_units').select('id, circle').eq('kind', 'circle')
+  const unitIds = (units ?? []).map(u => u.id as string)
+  const { data: memberRows } = unitIds.length
+    ? await supabase.from('org_unit_members').select('unit_id, user_id').in('unit_id', unitIds)
+    : { data: [] }
+  const circleOf = new Map((units ?? []).map(u => [u.id as string, u.circle as string]))
+  const memberOf: Record<string, string[]> = {}
+  for (const m of memberRows ?? []) {
+    const c = circleOf.get(m.unit_id as string)
+    if (c) (memberOf[m.user_id as string] ??= []).push(c)
+  }
+
+  return (
+    <UsersAdminClient
+      initialUsers={(users ?? []) as AdminUserRow[]}
+      openQuestions={openQuestions ?? 0}
+      circleUnits={(units ?? []) as { id: string; circle: string }[]}
+      initialMemberOf={memberOf}
+    />
+  )
 }

@@ -24,6 +24,8 @@ export const circleFolder = (c: Pick<CircleRow, 'slug' | 'brain_folder'>) => (c.
 
 export async function updateCircleSpace(admin: SupabaseClient, c: CircleRow, opts: {
   purpose: string | null; leads: string[]; projects: { title: string; open: number; url: string }[]; paths: Set<string>
+  /** Who's in the circle, and its teams with their people (v4.35.0) */
+  members?: string[]; teams?: { name: string; people: string[] }[]
 }): Promise<{ folder: string; created: boolean }> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const folder = circleFolder(c)
@@ -41,6 +43,8 @@ export async function updateCircleSpace(admin: SupabaseClient, c: CircleRow, opt
     `[Board status](board.md) · [Open the board](${appUrl}/ops?circle=${c.slug}) · [Meeting notes](${appUrl}/meetings?circle=${c.slug})`,
     '',
     ...(opts.purpose ? [`**Purpose:** ${opts.purpose.replace(/\s+/g, ' ').trim()}`, ''] : []),
+    ...(opts.members?.length ? [`**Members:** ${opts.members.join(', ')}`, ''] : []),
+    ...(opts.teams?.length ? ['**Teams:**', ...opts.teams.map(t => `- ${t.name}${t.people.length ? `: ${t.people.join(', ')}` : ''}`), ''] : []),
     '### Projects',
     '',
     ...(opts.projects.length ? opts.projects.map(p => `- [${p.title}](${p.url}) · ${p.open} open task${p.open === 1 ? '' : 's'}`) : ['_No projects yet._']),

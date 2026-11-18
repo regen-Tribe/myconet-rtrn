@@ -111,13 +111,20 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
     if (!secondBrainOn()) return null
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
-      const [paths, unit] = await Promise.all([
+      const [paths, unitsRes] = await Promise.all([
         listPaths(),
-        admin.from('org_units').select('description').eq('kind', 'circle').eq('circle', circle).maybeSingle(),
+        // The circle's place in the org chart and its teams, with their people
+        admin.from('org_units').select('id, kind, name, description, members:org_unit_members(user_id)').eq('circle', circle).order('sort_order'),
       ])
+      const units = (unitsRes.data ?? []) as { id: string; kind: string; name: string; description: string | null; members: { user_id: string }[] }[]
+      const unit = { data: units.find(u => u.kind === 'circle') ?? null }
+      const nameById = (id: string) => { const p = everyone.find(x => x.id === id); return p ? displayName(p) : null }
+      const names = (u: (typeof units)[number]) => u.members.map(m => nameById(m.user_id)).filter((n): n is string => !!n)
       const leads = everyone.filter(p => ((p as PersonProfile & { lead_circles?: string[] }).lead_circles ?? []).includes(circle)).map(displayName)
       const { folder } = await updateCircleSpace(admin, circleRow, {
         purpose: (unit.data?.description as string | null) ?? null, leads, paths,
+        members: unit.data ? names(unit.data) : [],
+        teams: units.filter(u => u.kind === 'team').map(u => ({ name: u.name, people: names(u) })),
         projects: projects.filter(p => !p.is_chores).map(p => ({ title: p.title, open: left.filter(t => t.project_id === p.id).length, url: `${appUrl}/ops/${p.id}` })),
       })
       const saved = await saveNote(`${folder}/board.md`, buildBoardNote({ circle, circleName, status, projects, tasks: left, nameOf, suggestions }), `Board status: ${circleName}`)

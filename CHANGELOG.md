@@ -5,6 +5,24 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.35.0 — 2026-11-18
+
+- **Circle members, in four places** (Oscar: "a way to include users as circle member"; "add members on the circle
+  page similar to how you can add team"). A circle's members are `org_unit_members` of its circle unit, as before;
+  the database decides who adds them (admins and the circle's leads).
+  - **Circles page** (`/org`): "+ Add member" under each circle's members, like "+ Add team"
+    (`m17-org/AddCircleMember.tsx`, a quick people search).
+  - **Ops › Circles**: each circle shows its members, with the same "+ Add member" for its leads and admins.
+  - **Admin › Users**: "Member of" circle chips per person, saved straight away.
+  - **Ask to join**: "My circles" on your own profile (`m17-org/MyCircles.tsx`) shows your circles and lets you
+    ask to join another (with a line for the leads) or withdraw. The circle's leads and admins see the requests on
+    the Circles page (`JoinRequests.tsx`) and approve (they become a member) or decline: `decide_circle_join()`.
+- **The second brain knows who's in each circle**: the circle's README lists its members and its teams with their
+  people, and joining or leaving refreshes it on the next board review (trigger on `org_unit_members`).
+- **Migration** `20261205000000_circle_join_requests.sql` (`circle_join_requests`, `decide_circle_join()`, the
+  trigger). Dry run on Protopia (rolled back) as real roles: an explorer asks and can't approve their own request;
+  the circle's lead sees and approves it; the explorer becomes a member; the second-brain refresh is queued.
+
 ## v4.34.0 — 2026-11-18
 
 - **A task needs no project** (Oscar: "its better that a task can be created without having any project assigned").
