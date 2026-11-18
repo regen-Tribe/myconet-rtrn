@@ -5,6 +5,12 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.2 — 2026-11-18
+
+- **Slide a draft on the meeting page too** (Oscar): the tasks under a meeting get the same Draft pill as the board
+  (right to approve, left to decline, with Undo). Only an admin, the project's circle lead or its project lead can
+  slide it (worked out in `app/meetings/[id]/page.tsx`, as `core/lib/ops-permissions.ts` does on the board).
+
 ## v4.33.1 — 2026-11-18
 
 - **The 🧭 Project manager panel starts collapsed** on the operations page (Oscar); **Show** opens it. A circle
