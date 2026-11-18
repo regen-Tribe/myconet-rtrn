@@ -1,5 +1,5 @@
 'use client'
-import { DraftBadge } from '@/core/components/DraftBadge'
+import { DraftSwipe } from './DraftSwipe'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { fmtTaskWhen, isTaskOverdue, toTimeInput } from '@/core/lib/tasks'
@@ -837,7 +837,11 @@ export default function ProjectDetailClient({
                               opacity: d.status === 'done' ? 0.6 : 1,
                             }}>
                               {d.needs_review && (
-                                <DraftBadge />
+                                <DraftSwipe
+                                  taskId={d.id} canDecide={canManage}
+                                  onApproved={() => setDeliverables(prev => prev.map(x => (x.id === d.id ? { ...x, needs_review: false } : x)))}
+                                  onDeclined={() => setDeliverables(prev => prev.filter(x => x.id !== d.id))}
+                                />
                               )}
                               {d.title}
                             </div>

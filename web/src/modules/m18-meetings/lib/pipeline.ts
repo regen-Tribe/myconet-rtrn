@@ -96,9 +96,12 @@ export async function processMeeting(
     if (read.note) errors.push(read.note)
 
     if (!read.isCommunity) {
-      // Not this community's meeting, or the agent can't tell: wait for a lead
-      await release({ needs_review: true, agent_note: read.reason, processing_error: errors.join(' · ') || null, processed_at: new Date().toISOString() })
-      await log('skip_meeting', { reason: read.reason, by: read.by })
+      // Not this community's meeting, or the agent can't tell: wait for a lead. When the AI gave no
+      // answer at all (too slow, down, unreadable), the meeting stays unprocessed so the sweep tries
+      // again (at most 3 times, sweep_attempts); a lead can still choose its circle meanwhile.
+      const retry = read.by === 'none' && !!read.note
+      await release({ needs_review: true, agent_note: read.reason, processing_error: errors.join(' · ') || null, processed_at: retry ? null : new Date().toISOString() })
+      await log('skip_meeting', { reason: read.reason, by: read.by, retry })
       return { ok: true, skipped: read.reason ?? 'Not a community meeting', added: 0, circle: null, by: read.by, errors }
     }
     const meetingCircle = read.circle

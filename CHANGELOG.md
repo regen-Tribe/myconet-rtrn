@@ -5,6 +5,37 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.33.0 — 2026-11-18
+
+- **Approve or decline a draft from its pill** (Oscar: "slide left to decline, slide right to approve"). On the board,
+  the task list and the project page, a lead or admin slides a task's **Draft** pill right to approve it (it stays,
+  no longer a draft) or left to decline it (deleted after 5 seconds, with **Undo**); the arrow keys do the same.
+  Sliding the pill doesn't drag the card or open the task. Everyone else sees the plain pill (`m07-ops/DraftSwipe.tsx`).
+- **A declined or deleted task stays gone**: its meeting link now stays without a task, so running the meeting
+  again (e.g. when Fireflies' summary arrives) doesn't draft it again. **Migration**
+  `20261203000000_declined_drafts_stay_declined.sql` (`meeting_action_links.deliverable_id` → on delete set null).
+- **Sign-up says when an address already has an account** (Sonia, #29; two Protopia people said "the link never came"):
+  instead of "Check your inbox" (Supabase sends nothing then), it offers **Sign in** and **Send me a reset link**.
+  "Check your inbox" gets **Send it again**, and sign-in's "Email not confirmed" offers to resend the link. A resent
+  link (no PKCE code, `#access_token=`) signs in on `/auth/login`, as `/auth/reset-password` does. No migration.
+
+## v4.32.1 — 2026-11-18
+
+- **The meeting agent runs only in the sweep, with its full time** (Sonia; a 40-minute Protopia meeting timed out and
+  waited for a lead). The three Fireflies routes (`/api/fireflies-ingest`, `/api/fireflies-webhook`,
+  `/api/fireflies-events`) no longer run the pipeline in `after()` with 22 s for the AI: they save the notes and the
+  meeting waits (`processed_at` null, `sweep_attempts` 0; `queueForAgent()` in `lib/refresh.ts`). The sweep gives the AI
+  150 s (was 90 s) and runs **every 2 minutes** (was 10). A lead's "let the agent read it" gets 120 s (was 60 s).
+- **A meeting the AI couldn't read is tried again**: when the AI gives no answer (too slow, down, unreadable), the
+  pipeline leaves `processed_at` null instead of parking the meeting, so the sweep tries again, at most 3 times in all.
+  A meeting the agent judged not a community meeting still waits for a lead as before.
+- **`/api/fireflies-ingest` refreshes a meeting it already has** instead of skipping it: an upload (its id as
+  `client_reference_id`) or the same Fireflies id gets the newest notes, and the agent reads it again when the summary is
+  new. A community filter in front of the ingest (Protopia: Sonia's divider) can then be the only webhook Fireflies needs;
+  `/api/fireflies-events` stays for communities that use it.
+- The meetings list shows **Agent reading soon** for a meeting that has just come in. **Migration**
+  `20261202000000_meetings_sweep_every_2_min.sql` (reschedules `myconet-meetings-sweep`).
+
 ## v4.32.0 — 2026-11-18
 
 - **`npm run upstream` no longer corrupts a patch** (Sonia): the script trimmed the diff, which could cut a last

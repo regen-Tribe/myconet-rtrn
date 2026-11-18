@@ -16,7 +16,11 @@ export async function GET(request: NextRequest) {
       const dest = onboarding ? '/profile/edit' : redirectTo
       return NextResponse.redirect(`${origin}${dest}`)
     }
+    return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`)
   }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`)
+  // No ?code=: a link Supabase sent without PKCE (a resent confirmation) carries
+  // #access_token= instead, which only the browser sees. The browser keeps the #part
+  // across this redirect, and the sign-in page finishes signing in from it.
+  return NextResponse.redirect(`${origin}/auth/login${onboarding ? '?onboarding=1' : ''}`)
 }

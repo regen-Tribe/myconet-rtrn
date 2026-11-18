@@ -3,6 +3,26 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.33.0',
+    date: '2026-11-18',
+    title: 'Slide a draft to approve or decline it',
+    items: [
+      'Leads can slide a task’s Draft pill right to approve it or left to decline it, on the board, the task list and the project page. A declined task can be brought back with Undo for a few seconds.',
+      'A task you decline or delete doesn’t come back when its meeting is processed again.',
+      'Signing up with an address that already has an account now says so, with links to sign in or reset your password. If the confirmation email doesn’t arrive, you can have it sent again.',
+    ],
+  },
+  {
+    version: 'v4.32.1',
+    date: '2026-11-18',
+    title: 'The meeting agent gets the time it needs',
+    items: [
+      'A new meeting is read by the agent within about 2 minutes, with enough time for long meetings. Before, a long meeting could run out of time and wait for a lead.',
+      'If the AI still can’t read a meeting, the agent tries again by itself, up to 3 times. A lead can also choose its circle meanwhile.',
+      'The meetings list shows “Agent reading soon” for a meeting that has just come in.',
+    ],
+  },
+  {
     version: 'v4.32.0',
     date: '2026-11-18',
     title: 'Task priority, and names without an account',

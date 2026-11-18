@@ -134,6 +134,7 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       {m.visibility === 'circle' && <Pill label="🔒 Circle only" color="#64748b" />}
                       {m.status !== 'done' ? <Pill label={s.label} color={s.color} />
+                        : m.needs_review && !m.processed_at && !m.agent_note ? <Pill label="Agent reading soon" color="#64748b" />
                         : m.needs_review && !m.processed_at ? <Pill label="Needs review" color="#b45309" />
                         : t?.drafts ? <Pill label={`${t.drafts} to confirm`} color="#b45309" />
                         : null}
