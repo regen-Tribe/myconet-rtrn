@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.35.0',
+    date: '2026-11-18',
+    title: 'Circle members',
+    items: [
+      'Circle leads and admins add members with “+ Add member” on the Circles page and in Ops › Circles; admins can also set them in Admin › Users.',
+      'On your own profile, “My circles” shows the circles you’re in and lets you ask to join another. Its leads approve on the Circles page.',
+    ],
+  },
+  {
     version: 'v4.34.0',
     date: '2026-11-18',
     title: 'Tasks without a project',

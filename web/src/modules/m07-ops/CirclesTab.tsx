@@ -10,6 +10,9 @@ import { isActiveProject } from '@/core/lib/project-status'
 import { ROLE_LABELS } from '@/core/lib/roles'
 import { type CircleDirectory, type PersonRef } from '@/core/lib/ops-permissions'
 import type { Project } from './types'
+import { useState } from 'react'
+import { AddCircleMember } from '@/modules/m17-org/AddCircleMember'
+import type { OrgMember, OrgPerson } from '@/modules/m17-org/types'
 
 function PersonChip({ person, isMe }: { person: PersonRef; isMe: boolean }) {
   return (
@@ -31,6 +34,7 @@ function PersonChip({ person, isMe }: { person: PersonRef; isMe: boolean }) {
 /** Who leads each circle, and where the signed-in user fits in. */
 export function CirclesTab({
   directory, projects, userId, userRole, leadCircles, involvedProjectIds, meetingCounts, pmCounts,
+  circleUnits = [], circleMembers: initialCircleMembers = [], people = [],
 }: {
   directory: CircleDirectory
   projects: Project[]
@@ -43,8 +47,13 @@ export function CirclesTab({
   meetingCounts?: Record<string, number> | null
   /** Open project-manager suggestions per circle, counted only for circles this person decides */
   pmCounts?: Record<string, number>
+  /** Each circle's place in the org chart, its members, and everyone for "+ Add member" (v4.35.0) */
+  circleUnits?: { id: string; circle: string }[]
+  circleMembers?: OrgMember[]
+  people?: OrgPerson[]
 }) {
   const circles = useCircles()
+  const [members, setMembers] = useState(initialCircleMembers)
   const isAdmin = userRole === 'admin'
   const steward = circles.list.find(c => c.is_steward) ?? null
   const myLeadCircles = circles.slugs.filter(c => userRole === 'circle_lead' && leadCircles.includes(c))
@@ -115,6 +124,28 @@ export function CirclesTab({
                 {leads.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{leads.map(p => <PersonChip key={p.id} person={p} isMe={p.id === userId} />)}</div>}
                 {!leads.length && !circles.get(c)?.leads_to_assign && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No lead yet — {steward && steward.slug !== c ? `${steward.name} looks after it` : 'admins look after this circle'}.</div>}
               </div>
+
+              {(() => {
+                const unit = circleUnits.find(u => u.circle === c)
+                const mine = unit ? members.filter(m => m.unit_id === unit.id && m.person) : []
+                const canAdd = !!unit && (isAdmin || iLead)
+                if (!mine.length && !canAdd) return null
+                return (
+                  <>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Members</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      {mine.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{mine.map(m => <PersonChip key={m.user_id} person={m.person!} isMe={m.user_id === userId} />)}</div>}
+                      {canAdd && (
+                        <AddCircleMember
+                          unitId={unit!.id} color={meta.color} people={people}
+                          existing={[...mine.map(m => m.user_id), ...leads.map(l => l.id)]}
+                          onAdded={m => setMembers(prev => [...prev, m])}
+                        />
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
 
               <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
                 {circleProjects.length} project{circleProjects.length === 1 ? '' : 's'} · {active} active

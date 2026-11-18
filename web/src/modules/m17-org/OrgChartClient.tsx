@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { MeetingNotesLink } from '@/modules/m18-meetings/MeetingNotesLink'
 import { PmLink } from '@/modules/m07-ops/PmLink'
 import { AddCircleButton } from '@/modules/m04-blueprint/AddCircleButton'
+import { AddCircleMember } from './AddCircleMember'
+import { JoinRequests, type JoinRequest } from './JoinRequests'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
@@ -41,7 +43,7 @@ const label: React.CSSProperties = {
 }
 
 export default function OrgChartClient({
-  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts,
+  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts, joinRequests = [],
 }: {
   initialUnits: OrgUnit[]
   initialMembers: OrgMember[]
@@ -55,6 +57,8 @@ export default function OrgChartClient({
   meetingCounts?: Record<string, number> | null
   /** Open project-manager suggestions per circle this person decides */
   pmCounts?: Record<string, number>
+  /** Open requests to join a circle, for its leads and admins (v4.35.0) */
+  joinRequests?: JoinRequest[]
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -63,6 +67,7 @@ export default function OrgChartClient({
   const columnSlugs = circles.slugs.filter(c => c !== steward?.slug)
   const [units, setUnits] = useState(initialUnits)
   const [members, setMembers] = useState(initialMembers)
+  const [requests, setRequests] = useState(joinRequests)
   const [editing, setEditing] = useState<{ unit: OrgUnit | null; circle: CircleSlug } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -233,10 +238,33 @@ export default function OrgChartClient({
                 </div>
               </div>
 
-              {circleMembers.length > 0 && (
+              {canLead && (
+                <JoinRequests
+                  requests={requests.filter(r => r.circle === c)}
+                  color={meta.color}
+                  onDecided={(id, approved) => {
+                    const r = requests.find(x => x.id === id)
+                    setRequests(prev => prev.filter(x => x.id !== id))
+                    if (approved && r && cu) {
+                      setMembers(prev => [...prev, { unit_id: cu.id, user_id: r.user_id, role: 'member', title: null, person: people.find(p => p.id === r.user_id) ?? { id: r.user_id, name: r.name, username: null } }])
+                      setToast(`${r.name} joined ${meta.label}`)
+                    }
+                  }}
+                />
+              )}
+              {(circleMembers.length > 0 || (canLead && cu)) && (
                 <div>
                   <div style={label}>Members</div>
-                  {peopleRow(circleMembers.filter(m => m.person).map(m => ({ ...m.person!, note: m.title })))}
+                  {circleMembers.length > 0 && peopleRow(circleMembers.filter(m => m.person).map(m => ({ ...m.person!, note: m.title })))}
+                  {canLead && cu && (
+                    <div style={{ marginTop: circleMembers.length ? 8 : 0 }}>
+                      <AddCircleMember
+                        unitId={cu.id} color={meta.color} people={people}
+                        existing={[...circleMembers.map(m => m.user_id), ...leads.map(l => l.id)]}
+                        onAdded={m => { setMembers(prev => [...prev, m]); setToast(`${m.person?.name ?? 'They'} joined ${meta.label}`) }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

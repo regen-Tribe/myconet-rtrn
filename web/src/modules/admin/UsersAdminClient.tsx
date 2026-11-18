@@ -32,7 +32,12 @@ function userDisplayName(u: AdminUserRow): string {
   return fl || u.username || 'Unnamed user'
 }
 
-export default function UsersAdminClient({ initialUsers, openQuestions = 0 }: { initialUsers: AdminUserRow[]; openQuestions?: number }) {
+export default function UsersAdminClient({ initialUsers, openQuestions = 0, circleUnits = [], initialMemberOf = {} }: {
+  initialUsers: AdminUserRow[]; openQuestions?: number
+  /** Each circle's org-chart unit, and the circles each person is a member of (v4.35.0) */
+  circleUnits?: { id: string; circle: string }[]
+  initialMemberOf?: Record<string, string[]>
+}) {
   const circles = useCircles()
   const supabase = createClient()
   const [users, setUsers] = useState<AdminUserRow[]>(initialUsers)
@@ -40,6 +45,22 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0 }: { 
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedId, setSavedId] = useState<string | null>(null)
   const [errorId, setErrorId] = useState<{ id: string; msg: string } | null>(null)
+  const [memberOf, setMemberOf] = useState(initialMemberOf)
+
+  // Member of a circle: saved straight away (it isn't part of the role's Save)
+  async function toggleMember(id: string, circle: CircleSlug) {
+    const unit = circleUnits.find(u => u.circle === circle)
+    if (!unit) return
+    const isIn = (memberOf[id] ?? []).includes(circle)
+    setMemberOf(prev => ({ ...prev, [id]: isIn ? (prev[id] ?? []).filter(c => c !== circle) : [...(prev[id] ?? []), circle] }))
+    const { error } = isIn
+      ? await supabase.from('org_unit_members').delete().eq('unit_id', unit.id).eq('user_id', id)
+      : await supabase.from('org_unit_members').insert({ unit_id: unit.id, user_id: id, role: 'member' })
+    if (error) {
+      setMemberOf(prev => ({ ...prev, [id]: isIn ? [...(prev[id] ?? []), circle] : (prev[id] ?? []).filter(c => c !== circle) }))
+      setErrorId({ id, msg: error.message })
+    }
+  }
 
   const filtered = users.filter(u => {
     if (!filter.trim()) return true
@@ -95,7 +116,7 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0 }: { 
           Users
         </h1>
         <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>
-          Edit role and lead circles for any user. {users.length} total.
+          Edit role, lead circles and circle membership for any user. {users.length} total.
         </p>
       </div>
 
@@ -158,6 +179,25 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0 }: { 
                             cursor: 'pointer',
                           }}
                         >
+                          {meta.emoji} {meta.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                {circleUnits.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, marginTop: 8 }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-4)', marginRight: 2 }}>Member of</span>
+                    {circles.slugs.filter(p => circleUnits.some(u => u.circle === p)).map(p => {
+                      const meta = circles.meta(p)
+                      const on = (memberOf[u.id] ?? []).includes(p)
+                      return (
+                        <button key={p} type="button" onClick={() => toggleMember(u.id, p)} title={on ? `Remove from ${meta.label}` : `Add to ${meta.label}`} style={{
+                          fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, cursor: 'pointer',
+                          background: on ? `color-mix(in srgb, ${meta.color} 14%, var(--surface))` : 'var(--surface)',
+                          color: on ? meta.color : 'var(--ink-4)',
+                          border: `1px ${on ? 'solid' : 'dashed'} ${on ? meta.color : 'var(--rule)'}`,
+                        }}>
                           {meta.emoji} {meta.label}
                         </button>
                       )

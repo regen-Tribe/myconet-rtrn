@@ -59,6 +59,9 @@ interface OpsClientProps {
   people?: TaskPerson[]
   projectOptions?: TaskProjectOption[]
   teams?: TaskTeamOption[]
+  /** Ops › Circles: each circle's org-chart unit and its members (v4.35.0) */
+  circleUnits?: { id: string; circle: string }[]
+  circleMembers?: import('@/modules/m17-org/types').OrgMember[]
 }
 
 type OpsTab = 'board' | 'deliverables' | 'updates' | 'circles'
@@ -267,6 +270,7 @@ export default function OpsClient({
   isAdmin, userId, userRole, leadCircles, sprintName,
   projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
   initialCircle, pmSuggestions, pmActions, initialTaskId = null, people = [], projectOptions = [], teams = [],
+  circleUnits = [], circleMembers = [],
 }: OpsClientProps) {
   const circles = useCircles()
   const router = useRouter()
@@ -685,6 +689,9 @@ export default function OpsClient({
           involvedProjectIds={myInvolvedProjectIds}
           meetingCounts={meetingCounts}
           pmCounts={pmCounts}
+          circleUnits={circleUnits}
+          circleMembers={circleMembers}
+          people={people}
         />
       )}
 

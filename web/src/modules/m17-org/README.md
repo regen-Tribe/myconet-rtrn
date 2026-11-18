@@ -20,6 +20,9 @@ Each circle has two kinds of lead. The **lead name** (`circles.leads_to_assign`)
 |------|---------|
 | `OrgChartClient.tsx` | Stewards node, one column per circle with leads, members and teams; save/delete |
 | `UnitEditModal.tsx` | Edit a circle (purpose + members) or a team (name, description, leads/members, titles) |
+| `AddCircleMember.tsx` | "+ Add member" under a circle (Circles page, Ops › Circles), v4.35.0 |
+| `JoinRequests.tsx` | Requests to join a circle, for its leads and admins: Approve / Decline (`decide_circle_join()`) |
+| `MyCircles.tsx` | "My circles" on your own profile: your circles, ask to join, withdraw |
 | `lib/org.ts` | `canLeadCircle`, `canEditUnit` (mirror the DB), `MEMBER_SELECT`, normalizers |
 | `app/org/page.tsx` | Loads units, members, the circle directory, and (for editors) everyone for the picker |
 
@@ -30,6 +33,7 @@ Migration: `supabase/migrations/20261103_m17_org_chart.sql`.
 | Table | Notes |
 |-------|-------|
 | `org_units` | `kind` circle (one per pillar, seeded) or team; `circle`, `name`, `description`, `sort_order` |
-| `org_unit_members` | `(unit_id, user_id)`, `role` lead/member, optional `title` |
+| `org_unit_members` | `(unit_id, user_id)`, `role` lead/member, optional `title`. A circle's members are the members of its circle unit; a change queues the circle's second-brain refresh (v4.35.0) |
+| `circle_join_requests` | v4.35.0: someone asks to join a circle (`pending` → `approved` / `declined`). The person sees and withdraws their own; the circle's leads and admins see them and decide through `decide_circle_join(request, approve)`, which adds the member |
 
 Read is public. Writes go through `private.can_lead_circle(circle)` (admin or circle lead of that circle) and `private.can_edit_org_unit(unit)` (that, or a lead of the team). Teams can't be moved into a circle you don't lead.

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase, Pencil, Sparkles, Lock, Globe, AtSign } from 'lucide-react'
 import { socialLinks } from '@/core/lib/public-profile'
+import { MyCircles } from '@/modules/m17-org/MyCircles'
 
 interface ProfileData {
   id: string; username: string; first_name: string | null; last_name: string | null
@@ -268,6 +269,9 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
           </div>
         </div>
       </div>
+
+      {/* Your circles, and asking to join one (v4.35.0) */}
+      {isOwn && <MyCircles userId={p.id} />}
 
       {!signedIn && growth && <div style={{ marginBottom: 14 }}><GrowthCard growth={growth} isOwn={false} /></div>}
       {!signedIn ? (

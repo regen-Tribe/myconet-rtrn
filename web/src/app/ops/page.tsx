@@ -9,6 +9,7 @@ import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import type { SubscriberProfile } from '@/modules/m07-ops/types'
 import { loadProjectManager } from '@/modules/m07-ops/lib/pm-data'
 import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
+import { MEMBER_SELECT, toMember } from '@/modules/m17-org/lib/org'
 
 const OPS_TABS = ['board', 'deliverables', 'updates', 'circles'] as const
 
@@ -145,7 +146,16 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
       pmSuggestions={pm.suggestions}
       pmActions={pm.actions}
       initialTaskId={task ?? null}
+      {...await loadCircleMembers(supabase)}
       {...await loadTaskOptions(supabase)}
     />
   )
+}
+
+// Ops › Circles: each circle's place in the org chart and who's in it (v4.35.0)
+async function loadCircleMembers(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data: units } = await supabase.from('org_units').select('id, circle').eq('kind', 'circle')
+  const ids = (units ?? []).map(u => u.id as string)
+  const { data: rows } = ids.length ? await supabase.from('org_unit_members').select(MEMBER_SELECT).in('unit_id', ids) : { data: [] }
+  return { circleUnits: (units ?? []) as { id: string; circle: string }[], circleMembers: (rows ?? []).map(toMember) }
 }
