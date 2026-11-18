@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.33.6',
+    date: '2026-11-18',
+    title: 'Paused projects on the board',
+    items: [
+      'The main board has a Paused column: drag a project there to pause it, or back out to restart it.',
+    ],
+  },
+  {
     version: 'v4.33.5',
     date: '2026-11-18',
     title: 'Back to the board after a task',
