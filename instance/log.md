@@ -753,3 +753,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-18 — Core v4.33.4 (deployed, 04d377a2)
 - Oscar: "send it" (previewed locally first). Update PR #54 merged; no migration. The task pop-up fits the screen
   (middle scrolls, header and buttons stay), lighter blurred backdrop; minimal, Apple-like is now design principle 0.
+
+## 2026-11-18 — Core v4.33.5 (deployed, b891074d)
+- Oscar: no local test needed, push it. Update PR #55 merged; no migration. Closing a loose task goes back to where it
+  was opened (the board), not the chores page; a chores page on its own redirects to the board.
