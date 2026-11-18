@@ -703,3 +703,10 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ### 2026-11-12 — core v4.12.0 deployed
 - Daily events, categories, linked-calendar sorting rules.
+
+## 2026-11-17 — Core v4.21.1 → v4.28.0 (deployed, 7894b8a9)
+- Oscar: "yes do the merge". Update PR #45 (core-update/v4.28.0, core files only) merged; migrations applied through the
+  Supabase MCP: `meeting_fireflies_notes`, `meeting_names_and_sweep`, `meetings_sweep_per_meeting`, `board_review`
+  (checked: 4 columns, 2 tables, cron jobs `myconet-meetings-sweep` + `myconet-board-review`, both no-ops here: no Vault secrets).
+- RTRN has Meetings off, so the meeting/sweep parts do nothing; it gets: tasks as main-board cards, Ask / Do (incl. create a
+  circle for admins + circle leads), + Add circle, the project-manager panel (empty until reviews run), the work-log rules.
