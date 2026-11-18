@@ -710,3 +710,8 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
   (checked: 4 columns, 2 tables, cron jobs `myconet-meetings-sweep` + `myconet-board-review`, both no-ops here: no Vault secrets).
 - RTRN has Meetings off, so the meeting/sweep parts do nothing; it gets: tasks as main-board cards, Ask / Do (incl. create a
   circle for admins + circle leads), + Add circle, the project-manager panel (empty until reviews run), the work-log rules.
+
+## 2026-11-18 — Core v4.28.0 → v4.30.0 (deployed)
+- Oscar: "merge". Update PR #47 (v4.30.0, core files only) merged; #46 (v4.29.0) closed as superseded. Migration
+  `circle_folders` applied through the Supabase MCP. RTRN has no `knowledge.repo`, so circle spaces aren't written here;
+  it gets Ask / Do general changes (v4.29.0: roles, circle leads, org chart… with the person's own rights).
