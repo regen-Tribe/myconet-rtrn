@@ -3,6 +3,15 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.31.0',
+    date: '2026-11-18',
+    title: 'More in the task pop-up',
+    items: [
+      'A task’s pop-up now has its status, who it’s assigned to, and notes. Saving a draft from a meeting still confirms it.',
+      'The person a task is assigned to can update its status and notes themselves.',
+    ],
+  },
+  {
     version: 'v4.30.0',
     date: '2026-11-17',
     title: 'Every circle has its space in the second brain',

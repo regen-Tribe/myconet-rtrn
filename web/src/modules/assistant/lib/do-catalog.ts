@@ -76,6 +76,7 @@ export const CATALOG: Record<string, TableDef> = {
       circle: { label: 'circle', type: { t: 'circle' } },
       project_id: { label: 'project', type: { t: 'project' } },
       needs_review: { label: 'draft', type: { t: 'bool' } },
+      notes: { label: 'notes', type: { t: 'text', max: 5000 } },
     },
   },
 }

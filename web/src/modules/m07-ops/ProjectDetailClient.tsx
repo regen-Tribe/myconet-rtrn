@@ -73,9 +73,11 @@ export default function ProjectDetailClient({
   deliverables: initialDeliverables, myProposal: initialMyProposal, userId, userRole, leadCircles, circleDirectory, isAdmin, isProjectCreator,
   projectSubscribers: initialProjectSubscribers, isProjectSubscribed: initialIsProjectSubscribed,
   deliverableSubscribers: initialDeliverableSubscribers,
-  leadProfile, creatorProfile, projectEvents, initialTaskId,
+  leadProfile, creatorProfile, projectEvents, initialTaskId, people = [],
 }: {
   project: Project
+  /** Who a task can be given to (the task pop-up's Assigned to) */
+  people?: { id: string; name: string; username: string | null }[]
   updates: ProjectUpdate[]
   pendingProposals: CollaborationAgreement[]
   deliverables: Deliverable[]
@@ -154,6 +156,10 @@ export default function ProjectDetailClient({
   const [editModalDue, setEditModalDue] = useState<string | null>(null)
   const [editModalTime, setEditModalTime] = useState('')
   const [editModalCircle, setEditModalCircle] = useState<string>('')
+  const [editModalStatus, setEditModalStatus] = useState('backlog')
+  const [editModalAssignee, setEditModalAssignee] = useState('')
+  const [editModalNotes, setEditModalNotes] = useState('')
+  const [editModalError, setEditModalError] = useState('')
   const [editModalSaving, setEditModalSaving] = useState(false)
 
   useEffect(() => {
@@ -191,6 +197,10 @@ export default function ProjectDetailClient({
     setEditModalDue(d.due_date)
     setEditModalTime(toTimeInput(d.due_time))
     setEditModalCircle(d.circle ?? project.circle ?? '')
+    setEditModalStatus(d.status ?? 'backlog')
+    setEditModalAssignee(d.assignee_id ?? '')
+    setEditModalNotes(d.notes ?? '')
+    setEditModalError('')
   }
 
   async function toggleProjectSubscription() {
@@ -283,6 +293,17 @@ export default function ProjectDetailClient({
     await supabase.from('deliverables').update({ status: newStatus }).eq('id', taskId)
   }
 
+  // The person a task is assigned to (not a lead): its status and notes, through update_my_task()
+  async function saveMyTask() {
+    if (!editModal) return
+    setEditModalSaving(true); setEditModalError('')
+    const { error } = await supabase.rpc('update_my_task', { p_task: editModal.id, p_status: editModalStatus, p_notes: editModalNotes.trim() })
+    setEditModalSaving(false)
+    if (error) { setEditModalError(error.message); return }
+    setDeliverables(prev => prev.map(d => (d.id === editModal.id ? { ...d, status: editModalStatus, notes: editModalNotes.trim() || null } : d)))
+    setEditModal(null)
+  }
+
   async function saveDeliverableEdit() {
     if (!editModal || !editModalTitle.trim()) return
     setEditModalSaving(true)
@@ -291,13 +312,17 @@ export default function ProjectDetailClient({
       due_date: editModalDue,
       due_time: editModalDue && editModalTime ? editModalTime : null,
       circle: editModalCircle || null,
+      status: editModalStatus,
+      assignee_id: editModalAssignee || null,
+      notes: editModalNotes.trim() || null,
       // Saving a draft (e.g. from a meeting) confirms it
       needs_review: false,
     }
     const { error } = await supabase.from('deliverables').update(changes).eq('id', editModal.id)
+    setEditModalError(error ? error.message : '')
     if (!error) {
       setDeliverables(prev => prev.map(d =>
-        d.id === editModal.id ? { ...d, ...changes } : d
+        d.id === editModal.id ? { ...d, ...changes, user_profiles: (() => { const p = people.find(x => x.id === changes.assignee_id); return p ? { first_name: p.name.split(' ')[0], username: p.username } : null })() } as Deliverable : d
       ))
       setEditModal(null)
     }
@@ -1044,6 +1069,42 @@ export default function ProjectDetailClient({
                 )}
               </div>
 
+              {/* Status and who has it */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-status">Status</label>
+                  {canManage || editModal.assignee_id === userId ? (
+                    <select id="task-status" value={editModalStatus} onChange={e => setEditModalStatus(e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}>
+                      <option value="backlog">Backlog</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="review">Review</option>
+                      <option value="done">Done</option>
+                    </select>
+                  ) : (
+                    <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{({ backlog: 'Backlog', in_progress: 'In progress', review: 'Review', done: 'Done' } as Record<string, string>)[editModal.status] ?? editModal.status}</div>
+                  )}
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-assignee">Assigned to</label>
+                  {canManage ? (
+                    <select id="task-assignee" value={editModalAssignee} onChange={e => setEditModalAssignee(e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}>
+                      <option value="">Nobody yet</option>
+                      {userId && <option value={userId}>Me</option>}
+                      {people.filter(p => p.id !== userId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  ) : (
+                    <div style={{ fontSize: 13, color: editModal.assignee_id ? 'var(--ink-2)' : 'var(--ink-4)' }}>
+                      {people.find(p => p.id === editModal.assignee_id)?.name ?? (editModal.assignee_id ? 'Someone' : 'Nobody yet')}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {editModal.needs_review && editModal.title.match(/\(for ([^)]+)\)$/) && !editModalAssignee && (
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: -8, marginBottom: 16 }}>
+                  The meeting named {editModal.title.match(/\(for ([^)]+)\)$/)![1]}, who isn’t on MyCoNet yet: pick someone, or leave it for them.
+                </div>
+              )}
+
               {/* Due date */}
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
@@ -1105,6 +1166,17 @@ export default function ProjectDetailClient({
                 </div>
               )}
 
+              {/* Notes */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }} htmlFor="task-notes">Notes</label>
+                {canManage || editModal.assignee_id === userId ? (
+                  <textarea id="task-notes" value={editModalNotes} onChange={e => setEditModalNotes(e.target.value)} rows={4} maxLength={5000}
+                    placeholder="What's been done, what's needed, links…" style={{ ...inputStyle, fontSize: 13, resize: 'vertical', lineHeight: 1.5 }} />
+                ) : (
+                  <div style={{ fontSize: 13, color: editModal.notes ? 'var(--ink-2)' : 'var(--ink-4)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{editModal.notes || 'No notes yet.'}</div>
+                )}
+              </div>
+
               {/* Subscribe toggle */}
               <div style={{ marginBottom: (() => {
                 const subs = deliverableSubsMap[editModal.id] ?? []
@@ -1141,6 +1213,14 @@ export default function ProjectDetailClient({
               })()}
             </div>
 
+            {editModalError && <div style={{ fontSize: 12.5, color: '#b91c1c', padding: '0 20px 10px' }}>{editModalError}</div>}
+            {/* The assignee (not a lead): status and notes only */}
+            {!canManage && editModal.assignee_id === userId && (
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button onClick={() => setEditModal(null)} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveMyTask} disabled={editModalSaving} style={{ background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: editModalSaving ? 'wait' : 'pointer' }}>{editModalSaving ? 'Saving…' : 'Save'}</button>
+              </div>
+            )}
             {/* Modal footer */}
             {canManage && (
               <div style={{

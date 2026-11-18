@@ -32,7 +32,7 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       .eq('status', 'pending')
       .order('created_at', { ascending: false }),
     supabase.from('deliverables')
-      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
+      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, notes, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
       .eq('project_id', id)
       .order('created_at', { ascending: true }),
     supabase.from('project_subscriptions')
@@ -54,6 +54,11 @@ export default async function ProjectDetailPage({ params, searchParams }: {
     (memberProfilesData ?? []).map((p: any) => [p.id, { first_name: p.first_name ?? null, username: p.username ?? null }])
   )
   const leadProfile = leadUserId ? (memberProfileMap[leadUserId] ?? null) : null
+  // Everyone a task can be given to, for the task pop-up's "Assigned to" (shared admin accounts left out)
+  const { data: peopleRows } = await supabase.from('user_profiles').select('id, first_name, last_name, username').order('first_name')
+  const people = (peopleRows ?? [])
+    .map((p: any) => ({ id: p.id as string, name: [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || (p.username as string) || 'Member', username: (p.username ?? null) as string | null }))
+    .filter(p => !/admin/i.test(`${p.name} ${p.username ?? ''}`))
   const creatorProfile = creatorId && creatorId !== leadUserId ? (memberProfileMap[creatorId] ?? null) : null
 
   // Deliverable subscribers — public
@@ -141,6 +146,7 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       creatorProfile={creatorProfile}
       projectEvents={(eventRows ?? []).map(toEvent)}
       initialTaskId={task ?? null}
+      people={people}
     />
   )
 }

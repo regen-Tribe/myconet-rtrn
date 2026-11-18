@@ -23,6 +23,8 @@ export interface Project {
 export type ProjectSummary = Pick<Project, 'id' | 'title'>
 
 export interface Deliverable {
+  /** Free notes on the task (v4.31.0) */
+  notes?: string | null
   id: string
   project_id: string
   title: string
