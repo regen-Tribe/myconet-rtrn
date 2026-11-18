@@ -6,7 +6,9 @@
  *      each in its own circle's best-matching project or that circle's Chores. Not a community
  *      meeting, or not sure → nothing else happens; a lead can set the circle to go on.
  *   2. the tasks go on the board as drafts (needs_review);
- *   3. the notes go to the second brain (lib/second-brain.ts): summary + tasks, never the transcript;
+ *   3. the meeting gets its name ("17.11.2026 Kitchen lead handover": the title people gave, made to
+ *      say what it was about) and goes to the second brain (lib/second-brain.ts): a note with the
+ *      summary, Fireflies' notes and the tasks, and the transcript in its own file;
  *   4. the leads of the circles involved get the notes by email (lib/notes-email.ts);
  *   5. each step is logged in agent_actions.
  * Running it again adds only tasks that aren't there yet (meeting_action_links), rewrites the note,
@@ -16,9 +18,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { fmtTaskWhen } from '@/core/lib/tasks'
 import { one } from '@/core/lib/rows'
 import type { ActionItem, MeetingVisibility } from '../types'
-import { draftTasks, localDay } from './draft-tasks'
+import { draftTasks, localDay, meetingName } from './draft-tasks'
 import { itemKey, matchPerson, displayName, type PersonProfile } from './people'
-import { buildNote, notePath, saveNote, secondBrainOn } from './second-brain'
+import { buildNote, buildTranscript, deleteFile, legacyNotePaths, listPaths, notePath, NOTES_VERSION, saveNote, secondBrainOn, transcriptPath } from './second-brain'
+import type { FirefliesNotes } from './fireflies'
+import { requestBoardReview } from '@/modules/m07-ops/lib/board-review'
 import { buildNotesEmail, notesEmailOn, notesRecipients, sendEmails } from './notes-email'
 
 const ACTOR = 'meeting-pipeline'
@@ -55,7 +59,7 @@ export async function processMeeting(
     .update({ processing_started_at: now.toISOString() })
     .eq('id', meetingId).eq('status', 'done')
     .or(`processing_started_at.is.null,processing_started_at.lt."${new Date(now.getTime() - STALE_MS).toISOString()}"`)
-    .select('id, title, meeting_date, created_at, attendees, summary, action_items, transcript, circle, circle_source, visibility, notes_emailed_at')
+    .select('id, title, original_title, meeting_date, created_at, attendees, summary, action_items, transcript, fireflies_notes, circle, circle_source, visibility, notes_path, notes_emailed_at')
   const m = claimed?.[0]
   if (!m) return { ok: false, skipped: 'Not ready (no notes yet), or already running', added: 0, errors }
 
@@ -85,61 +89,94 @@ export async function processMeeting(
 
     // 1. The agent reads the meeting
     const read = await draftTasks({
-      meeting: { title: m.title, date: m.meeting_date ?? m.created_at, summary: m.summary, transcript: m.transcript, action_items: items, attendees: (m.attendees ?? []) as string[] },
+      // What people called it, not the agent's earlier name for it
+      meeting: { title: m.original_title ?? m.title, date: m.meeting_date ?? m.created_at, summary: m.summary, transcript: m.transcript, action_items: items, attendees: (m.attendees ?? []) as string[] },
       fixedCircle, circles, projects, openTasks, people: people.map(displayName), community, timeZone,
     }, { timeoutMs: opts.timeoutMs })
     if (read.note) errors.push(read.note)
 
     if (!read.isCommunity) {
       // Not this community's meeting, or the agent can't tell: wait for a lead
-      await release({ needs_review: true, agent_note: read.reason, processing_error: errors.join(' · ') || null })
+      await release({ needs_review: true, agent_note: read.reason, processing_error: errors.join(' · ') || null, processed_at: new Date().toISOString() })
       await log('skip_meeting', { reason: read.reason, by: read.by })
       return { ok: true, skipped: read.reason ?? 'Not a community meeting', added: 0, circle: null, by: read.by, errors }
     }
     const meetingCircle = read.circle
+    const day = localDay(m.meeting_date ?? m.created_at, timeZone)
+    // Its name: the date, then the agent's title from the content (kept as it was without the AI)
+    const title = read.title ? meetingName(day.date, read.title) : (m.title as string)
     await admin.from('meeting_transcripts').update({
       circle: meetingCircle, circle_source: fixedCircle ? 'person' : 'agent', agent_note: read.reason, needs_review: false,
+      ...(title !== m.title ? { title, original_title: m.original_title ?? m.title } : {}),
       // A circle-only meeting needs a circle
       ...(m.visibility === 'circle' && !meetingCircle ? { visibility: 'community' } : {}),
     }).eq('id', meetingId)
     if (!fixedCircle) await log('choose_circle', { circle: meetingCircle, reason: read.reason })
+    if (title !== m.title) await log('name_meeting', { title, was: m.title })
 
-    // 2. The tasks, each in its circle's project or Chores
+    // 2. The tasks, each in its circle's project or Chores. Written in batches: a Worker may make only
+    // 50 outside calls per request (Cloudflare free plan), so no per-task round trips.
     let added = 0
-    const chores = new Map<string, string>()
-    for (const d of read.tasks) {
-      const key = itemKey(d.title)
-      if (!key) continue
-      const person = matchPerson(d.person, people)
-      // Claim the item first: a re-run (or a second webhook) can't add it twice
-      const { error: claimErr } = await admin.from('meeting_action_links').insert({
-        meeting_id: meetingId, item_key: key, item_index: d.item_index, item_text: d.source_text,
-        person_name: d.person, assignee_id: person?.id ?? null, added_by: opts.requestedBy,
+    const seen = new Set<string>()
+    const wanted = read.tasks.map(d => ({ d, key: itemKey(d.title), person: matchPerson(d.person, people) }))
+      .filter(w => w.key && !seen.has(w.key) && seen.add(w.key))
+    if (wanted.length) {
+      const linkRow = (w: typeof wanted[number], deliverableId: string | null = null) => ({
+        meeting_id: meetingId, item_key: w.key, item_index: w.d.item_index, item_text: w.d.source_text,
+        person_name: w.d.person, assignee_id: w.person?.id ?? null, added_by: opts.requestedBy,
+        ...(deliverableId ? { deliverable_id: deliverableId } : {}),
       })
-      if (claimErr) { if (claimErr.code !== '23505') errors.push(`link: ${claimErr.message}`); continue }
-      const unclaim = () => admin.from('meeting_action_links').delete().eq('meeting_id', meetingId).eq('item_key', key)
+      // Claim the items first: only the ones claimed now are written, so a re-run (or a second
+      // webhook at the same time) can't add a task twice
+      const { data: claimedRows, error: claimErr } = await admin.from('meeting_action_links')
+        .upsert(wanted.map(w => linkRow(w)), { onConflict: 'meeting_id,item_key', ignoreDuplicates: true }).select('item_key')
+      if (claimErr) errors.push(`link: ${claimErr.message}`)
+      const claimedKeys = new Set((claimedRows ?? []).map(r => r.item_key as string))
+      let mine = wanted.filter(w => claimedKeys.has(w.key))
+      const unclaim = (keys: string[]) => keys.length
+        ? admin.from('meeting_action_links').delete().eq('meeting_id', meetingId).in('item_key', keys).is('deliverable_id', null).then(() => {})
+        : Promise.resolve()
 
-      let projectId = d.project_id
-      if (!projectId) {
-        if (!chores.has(d.circle)) {
-          const { data, error } = await admin.rpc('chores_project_for_server', { p_circle: d.circle })
-          if (error || !data) { errors.push(`chores (${d.circle}): ${error?.message ?? 'none'}`); await unclaim(); continue }
-          chores.set(d.circle, data as string)
-        }
-        projectId = chores.get(d.circle)!
+      // Each circle's Chores project, once per circle
+      const chores = new Map<string, string>()
+      for (const c of [...new Set(mine.filter(w => !w.d.project_id).map(w => w.d.circle))]) {
+        const { data, error } = await admin.rpc('chores_project_for_server', { p_circle: c })
+        if (error || !data) errors.push(`chores (${c}): ${error?.message ?? 'none'}`)
+        else chores.set(c, data as string)
       }
+      const noProject = mine.filter(w => !w.d.project_id && !chores.has(w.d.circle))
+      await unclaim(noProject.map(w => w.key))
+      mine = mine.filter(w => w.d.project_id || chores.has(w.d.circle))
+
       // Someone without an account keeps their name in the title, so a lead can pass it on
-      const title = d.person && !person ? `${d.title} (for ${d.person})` : d.title
-      const { data: task, error: taskErr } = await admin.from('deliverables').insert({
-        project_id: projectId, title: title.slice(0, 300), assignee_id: person?.id ?? null, circle: d.circle,
-        due_date: d.due_date, due_time: d.due_date ? d.due_time : null, status: 'backlog', progress: 0,
-        source: 'meeting', source_meeting_id: meetingId, source_item: d.source_text, needs_review: true,
-        created_by: opts.requestedBy,
-      }).select('id').single()
-      if (taskErr || !task) { errors.push(`task: ${taskErr?.message ?? 'not created'}`); await unclaim(); continue }
-      await admin.from('meeting_action_links').update({ deliverable_id: task.id }).eq('meeting_id', meetingId).eq('item_key', key)
-      await log('create_task', { title, circle: d.circle, project_id: projectId, person: d.person, assignee_id: person?.id ?? null, due_date: d.due_date, due_time: d.due_time, by: read.by }, { table: 'deliverables', id: task.id })
-      added++
+      const rows = mine.map(w => {
+        const title = w.d.person && !w.person ? `${w.d.title} (for ${w.d.person})` : w.d.title
+        return {
+          w, title, projectId: w.d.project_id ?? chores.get(w.d.circle)!,
+        }
+      })
+      if (rows.length) {
+        const { data: made, error: taskErr } = await admin.from('deliverables').insert(rows.map(r => ({
+          project_id: r.projectId, title: r.title.slice(0, 300), assignee_id: r.w.person?.id ?? null, circle: r.w.d.circle,
+          due_date: r.w.d.due_date, due_time: r.w.d.due_date ? r.w.d.due_time : null, status: 'backlog', progress: 0,
+          source: 'meeting', source_meeting_id: meetingId, source_item: r.w.d.source_text, needs_review: true,
+          created_by: opts.requestedBy,
+        }))).select('id')
+        if (taskErr || !made || made.length !== rows.length) {
+          errors.push(`tasks: ${taskErr?.message ?? 'not created'}`)
+          await unclaim(rows.map(r => r.w.key))
+        } else {
+          // PostgREST returns inserted rows in the order sent
+          await admin.from('meeting_action_links')
+            .upsert(rows.map((r, i) => linkRow(r.w, made[i].id as string)), { onConflict: 'meeting_id,item_key' })
+          await admin.from('agent_actions').insert(rows.map((r, i) => ({
+            actor: ACTOR, requested_by: opts.requestedBy, action: 'create_task', meeting_id: meetingId,
+            target_table: 'deliverables', target_id: made[i].id,
+            detail: { title: r.title, circle: r.w.d.circle, project_id: r.projectId, project_reason: r.w.d.project_reason, person: r.w.d.person, assignee_id: r.w.person?.id ?? null, due_date: r.w.d.due_date, due_time: r.w.d.due_time, by: read.by },
+          })))
+          added = rows.length
+        }
+      }
     }
 
     // Every task this meeting has on the board (this run and earlier ones), for the note and email
@@ -158,26 +195,45 @@ export async function processMeeting(
     }).filter((t): t is NonNullable<typeof t> => !!t)
     const notOnMyCoNet = [...new Set(tasks.filter(t => t.person && !t.onMyCoNet).map(t => t.person as string))]
     const involved = [...new Set([meetingCircle, ...tasks.map(t => t.circle)].filter((c): c is string => !!c))]
-    const day = localDay(m.meeting_date ?? m.created_at, timeZone)
+    // New tasks: the project manager reviews those circles' boards on the next sweep (m07-ops/lib/board-review.ts)
+    if (added > 0) await requestBoardReview(admin, involved)
     const visibility = (meetingCircle ? m.visibility : 'community') as MeetingVisibility
 
-    // 3. The second brain note
+    // 3. The second brain: the note, and the transcript beside it
     let note: PipelineResult['note'] = null
     let notesUrl: string | null = null
     if (secondBrainOn()) {
-      const path = notePath(day.date, m.title)
+      const path = notePath(day.date, title)
+      const fileName = path.split('/').pop()!
       try {
-        const content = buildNote({
-          id: meetingId, title: m.title, date: day.date,
+        const base = {
+          id: meetingId, title, date: day.date,
           circle: meetingCircle ? { slug: meetingCircle, name: circleName(meetingCircle) } : null,
-          circles: involved.map(c => ({ slug: c, name: circleName(c) })), visibility,
-          attendees: (m.attendees ?? []) as string[], summary: m.summary, action_items: items, tasks, appUrl,
+          circles: involved.map(c => ({ slug: c, name: circleName(c) })), visibility, appUrl,
+        }
+        if (m.transcript) {
+          await saveNote(transcriptPath(path), buildTranscript(base, m.transcript, fileName), `Meeting transcript: ${title}`)
+        }
+        const content = buildNote({
+          ...base, attendees: (m.attendees ?? []) as string[], summary: m.summary, action_items: items, tasks,
+          fireflies: (m.fireflies_notes ?? null) as FirefliesNotes | null,
+          transcriptLink: m.transcript ? `transcripts/${fileName}` : null,
         })
-        const saved = await saveNote(path, content, `Meeting notes: ${m.title} (${day.date})`)
+        const saved = await saveNote(path, content, `Meeting notes: ${title}`)
         notesUrl = saved.url
         note = saved
-        await admin.from('meeting_transcripts').update({ notes_path: path, notes_url: saved.url }).eq('id', meetingId)
-        await log('save_note', { path, url: saved.url })
+        // Renamed (or the folder moved): remove the old copies, so each meeting is one note
+        const old = [...new Set([m.notes_path as string | null, ...legacyNotePaths(day.date, [m.original_title, m.title])])]
+          .filter((p): p is string => !!p && p !== path)
+        const removed: string[] = []
+        if (old.length) {
+          const inRepo = await listPaths()
+          for (const f of old.flatMap(p => [p, transcriptPath(p)]).filter(f => inRepo.has(f))) {
+            if (await deleteFile(f, `Meeting renamed: ${title}`)) removed.push(f)
+          }
+        }
+        await admin.from('meeting_transcripts').update({ notes_path: path, notes_url: saved.url, notes_version: NOTES_VERSION }).eq('id', meetingId)
+        await log('save_note', { path, url: saved.url, transcript: m.transcript ? transcriptPath(path) : null, removed })
       } catch (e) {
         note = { error: (e as Error).message }
         errors.push(`second brain: ${(e as Error).message}`)
@@ -193,7 +249,7 @@ export async function processMeeting(
       } else {
         const when = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(m.meeting_date ?? m.created_at))
         const mail = buildNotesEmail({
-          id: meetingId, title: m.title, when,
+          id: meetingId, title, when,
           circleName: meetingCircle ? circleName(meetingCircle) : null,
           summary: m.summary, tasks, notOnMyCoNet, notesUrl, appUrl,
         })

@@ -91,7 +91,7 @@ function publicEnv(cfg) {
     COMMUNITY_TIME_ZONE: cfg.timeZone ?? 'UTC',
     // The community's second brain on GitHub (meeting notes are saved there); the token is the
     // SECOND_BRAIN_GITHUB_TOKEN secret
-    ...(cfg.knowledge?.repo ? { KNOWLEDGE_REPO: cfg.knowledge.repo, KNOWLEDGE_BRANCH: cfg.knowledge.branch ?? 'main' } : {}),
+    ...(cfg.knowledge?.repo ? { KNOWLEDGE_REPO: cfg.knowledge.repo, KNOWLEDGE_BRANCH: cfg.knowledge.branch ?? 'main', KNOWLEDGE_MEETINGS_FOLDER: cfg.knowledge.meetingsFolder ?? 'operations/meetings', KNOWLEDGE_BOARD_FOLDER: cfg.knowledge.boardFolder ?? 'operations/board' } : {}),
     // Meeting notes email (needs the MEETINGS_SMTP_PASSWORD secret)
     ...(cfg.meetings?.notesEmail ? {
       MEETINGS_EMAIL_FROM: cfg.meetings.notesEmail.from,

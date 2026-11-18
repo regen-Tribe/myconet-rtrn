@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { fmtTaskWhen } from '@/core/lib/tasks'
+import NotesText from './NotesText'
 import type { Meeting, MeetingTask } from './types'
 
 const sectionStyle: React.CSSProperties = {
@@ -104,13 +105,60 @@ function LeadBar({ m, drafts, emailOn, secondBrainOn }: { m: Meeting; drafts: nu
   )
 }
 
-export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, secondBrainOn }: {
-  meeting: Meeting; tasks: MeetingTask[]; canManage: boolean; emailOn: boolean; secondBrainOn: boolean
+const box: React.CSSProperties = { background: 'color-mix(in srgb, var(--ink) 4%, var(--surface))', padding: '16px 18px', borderRadius: 12 }
+const chip: React.CSSProperties = { fontSize: 13, color: 'var(--ink-2)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 999, padding: '3px 10px' }
+
+/** The meeting's documents, one tab each: Fireflies' notes, the second-brain note, the transcript */
+function DocTabs({ m, brainNote }: { m: Meeting; brainNote: string | null }) {
+  const f = m.fireflies_notes ?? {}
+  const tabs: { key: string; label: string; body: React.ReactNode }[] = []
+  if (f.notes) tabs.push({ key: 'notes', label: 'Notes', body: <NotesText text={f.notes} /> })
+  if (f.outline) tabs.push({ key: 'outline', label: 'Outline', body: <NotesText text={f.outline} /> })
+  if (f.bullet_gist || f.shorthand_bullet) tabs.push({
+    key: 'bullets', label: 'Bullet points',
+    body: <>{f.bullet_gist && <NotesText text={f.bullet_gist} />}{f.bullet_gist && f.shorthand_bullet && <hr style={{ border: 0, borderTop: '1px solid var(--rule)', margin: '14px 0' }} />}{f.shorthand_bullet && <NotesText text={f.shorthand_bullet} />}</>,
+  })
+  if (f.topics?.length || f.keywords?.length) tabs.push({
+    key: 'topics', label: 'Topics & keywords',
+    body: <>{[['Topics discussed', f.topics], ['Keywords', f.keywords]].filter(([, v]) => (v as string[] | undefined)?.length).map(([label, v]) => (
+      <div key={label as string} style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>{label as string}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(v as string[]).map(x => <span key={x} style={chip}>{x}</span>)}</div>
+      </div>
+    ))}</>,
+  })
+  if (brainNote) tabs.push({
+    key: 'brain', label: 'Second brain',
+    body: <><NotesText text={brainNote} />{m.notes_url && <a href={m.notes_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--m18)' }}>Open in the second brain ↗</a>}</>,
+  })
+  if (m.transcript) tabs.push({
+    key: 'transcript', label: 'Transcript',
+    body: <pre style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--ink-2)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'var(--mono, ui-monospace, monospace)', margin: 0 }}>{m.transcript}</pre>,
+  })
+  // The first document opens; the transcript (long) only when asked. The open tab again closes it.
+  const [open, setOpen] = useState<string | null>(tabs[0] && tabs[0].key !== 'transcript' ? tabs[0].key : null)
+  if (!tabs.length) return null
+  const current = tabs.find(t => t.key === open)
+  return (
+    <>
+      <div style={sectionStyle}>Meeting documents</div>
+      <div role="tablist" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {tabs.map(t => (
+          <button key={t.key} role="tab" aria-selected={open === t.key} onClick={() => setOpen(o => (o === t.key ? null : t.key))}
+            style={{ ...btn(open === t.key), fontSize: 13, padding: '6px 12px' }}>{t.label}</button>
+        ))}
+      </div>
+      {current && <div role="tabpanel" style={box}>{current.body}</div>}
+    </>
+  )
+}
+
+export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, secondBrainOn, brainNote }: {
+  meeting: Meeting; tasks: MeetingTask[]; canManage: boolean; emailOn: boolean; secondBrainOn: boolean; brainNote: string | null
 }) {
   const circles = useCircles()
   const meta = m.circle && circles.has(m.circle) ? circles.meta(m.circle) : null
   const drafts = tasks.filter(t => t.needs_review).length
-  const [showTranscript, setShowTranscript] = useState(false)
 
   const byPerson: Record<string, string[]> = {}
   for (const item of m.action_items ?? []) (byPerson[item.speaker || 'Action items'] ??= []).push(item.text)
@@ -122,6 +170,9 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
         {meta && <Link href={`/meetings?circle=${m.circle}`} style={{ color: meta.color, textDecoration: 'none' }}>{meta.emoji} {meta.label} meetings</Link>}
       </div>
       <h1 style={{ fontFamily: 'var(--display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, margin: '16px 0 8px' }}>{m.title}</h1>
+      {m.original_title && m.original_title !== m.title && (
+        <div style={{ fontSize: 12, color: 'var(--ink-4)', marginBottom: 6 }}>Recorded as “{m.original_title}”</div>
+      )}
       <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
         {fmtDay(m.meeting_date ?? m.created_at)}
         {meta ? <> · <span style={{ color: meta.color, fontWeight: 600 }}>{meta.emoji} {meta.label}</span>{m.circle_source === 'agent' && <span title={m.agent_note ?? ''}> (chosen by the agent)</span>}</>
@@ -199,19 +250,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
             </>
           )}
 
-          {m.transcript && (
-            <>
-              <div style={{ ...sectionStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Transcript</span>
-                <button onClick={() => setShowTranscript(v => !v)} style={{ ...btn(), fontSize: 12, padding: '4px 10px', textTransform: 'none', letterSpacing: 0 }}>{showTranscript ? 'Hide' : 'Show'}</button>
-              </div>
-              {showTranscript && (
-                <pre style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--ink-2)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'var(--mono, ui-monospace, monospace)', background: 'color-mix(in srgb, var(--ink) 4%, var(--surface))', padding: '16px 18px', borderRadius: 12, margin: 0 }}>
-                  {m.transcript}
-                </pre>
-              )}
-            </>
-          )}
+          <DocTabs m={m} brainNote={brainNote} />
         </>
       )}
     </div>

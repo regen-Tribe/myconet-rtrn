@@ -2,12 +2,19 @@
  * Meeting notes in the community's second brain (a GitHub repo) — server only.
  * On when instance/config.jsonc sets knowledge.repo (→ KNOWLEDGE_REPO, KNOWLEDGE_BRANCH) and the
  * SECOND_BRAIN_GITHUB_TOKEN secret exists: a fine-grained token for that repo only, Contents r/w.
- * The note has the summary and action items with links to their tasks; never the transcript.
+ * Each meeting is a note (summary, Fireflies' notes, action items, tasks with their links) in
+ * knowledge.meetingsFolder (→ KNOWLEDGE_MEETINGS_FOLDER), and its transcript in transcripts/ beside it,
+ * linked from the note. Renamed meetings move: the old files are removed, never left as duplicates.
  */
 import type { ActionItem, MeetingVisibility, NotesTask } from '../types'
+import type { FirefliesNotes } from './fireflies'
 
 export const secondBrainOn = () => Boolean(process.env.KNOWLEDGE_REPO && process.env.SECOND_BRAIN_GITHUB_TOKEN)
 
+/** Bumped when the note's shape changes: the sweep rewrites older notes */
+export const NOTES_VERSION = 2
+
+const meetingsFolder = () => (process.env.KNOWLEDGE_MEETINGS_FOLDER || 'operations/meetings').replace(/^\/+|\/+$/g, '')
 
 export interface NoteInput {
   id: string
@@ -21,13 +28,28 @@ export interface NoteInput {
   attendees: string[]
   summary: string | null
   action_items: ActionItem[]
+  /** Fireflies' other notes (the meeting page's tabs) */
+  fireflies: FirefliesNotes | null
+  /** The transcript file, relative to the note; null without a transcript */
+  transcriptLink: string | null
   tasks: NotesTask[]
   appUrl: string
 }
 
 const safe = (s: string) => s.replace(/[\\/:*?"<>|#^[\]]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Meeting'
 
-export const notePath = (date: string, title: string) => `operations/meetings/${date} ${safe(title)}.md`
+// A date at the start of the title (the meeting's name has one) isn't repeated in the file name
+const withoutDate = (title: string) => title.replace(/^\s*\d{1,2}[./ -]\d{1,2}[./ -]\d{4}\s*[-–·:]?\s*/, '')
+
+/** "<folder>/2026-11-17 Kitchen lead handover.md": sorts by date in the folder */
+export const notePath = (date: string, title: string) => `${meetingsFolder()}/${date} ${safe(withoutDate(title))}.md`
+
+/** The note's transcript: "<folder>/transcripts/<same name>" */
+export const transcriptPath = (path: string) => path.replace(/\/([^/]+)$/, '/transcripts/$1')
+
+/** Where this community's agent may have written notes before: the folder (and its old name) */
+export const legacyNotePaths = (date: string, titles: (string | null)[]) =>
+  [...new Set(titles.filter((t): t is string => !!t).flatMap(t => [notePath(date, t), `operations/meetings/${date} ${safe(t)}.md`, `${meetingsFolder()}/${date} ${safe(t)}.md`]))]
 
 export function buildNote(n: NoteInput): string {
   const meetingUrl = `${n.appUrl}/meetings/${n.id}`
@@ -49,11 +71,21 @@ export function buildNote(n: NoteInput): string {
     '',
     `# ${n.title}`,
     '',
-    `*${n.date} · ${n.circle ? `${n.circle.name} circle` : 'community-wide'}${n.visibility === 'circle' ? ' · circle only' : ''}. Notes from Fireflies, saved by the MyCoNet agent. [Open in the portal](${meetingUrl}) for the full transcript.*`,
+    `*${n.date} · ${n.circle ? `${n.circle.name} circle` : 'community-wide'}${n.visibility === 'circle' ? ' · circle only' : ''}. Notes from Fireflies, saved by the MyCoNet agent. [Open in the portal](${meetingUrl})${n.transcriptLink ? ` · [Transcript](<${n.transcriptLink}>)` : ''}.*`,
     '',
   ]
+  const f = n.fireflies ?? {}
   if (n.attendees.length) lines.push(`**Who was there:** ${n.attendees.join(', ')}`, '')
+  if (f.topics?.length) lines.push(`**Topics:** ${f.topics.join(' · ')}`, '')
+  if (f.keywords?.length) lines.push(`**Keywords:** ${f.keywords.join(' · ')}`, '')
   lines.push('## Summary', '', n.summary?.trim() || '_No summary._', '')
+  // Fireflies' own notes, as it wrote them (their headings become one level lower)
+  const section = (heading: string, text?: string) => {
+    if (text?.trim()) lines.push(`## ${heading}`, '', text.trim().replace(/^(#{1,4}) /gm, '$1## '), '')
+  }
+  section('Bullet points', [f.bullet_gist, f.shorthand_bullet].filter(Boolean).join('\n\n'))
+  section('Notes', f.notes)
+  section('Outline', f.outline)
   lines.push('## Tasks on the board', '')
   if (n.tasks.length) {
     // Grouped by circle when the meeting touched several
@@ -79,8 +111,93 @@ export function buildNote(n: NoteInput): string {
   return lines.join('\n')
 }
 
+/** The transcript file: the same front matter, then "[mm:ss] Speaker: text" lines */
+export function buildTranscript(n: Pick<NoteInput, 'id' | 'title' | 'date' | 'circle' | 'circles' | 'visibility' | 'appUrl'>, transcript: string, noteName: string): string {
+  return [
+    '---',
+    `title: ${JSON.stringify(`${n.title} (transcript)`)}`,
+    `date: ${n.date}`,
+    `circle: ${n.circle?.slug ?? 'community'}`,
+    `circles: [${n.circles.map(c => c.slug).join(', ')}]`,
+    `visibility: ${n.visibility === 'circle' ? 'circle' : 'members'}`,
+    'source: myconet-meeting-transcript',
+    `meeting: ${n.appUrl}/meetings/${n.id}`,
+    `updated: ${new Date().toISOString().slice(0, 10)}`,
+    '---',
+    '',
+    `# ${n.title} (transcript)`,
+    '',
+    `*Fireflies' transcript, saved by the MyCoNet agent. The notes: [${noteName.replace(/\.md$/, '')}](<../${noteName}>).*`,
+    '',
+    transcript.trim(),
+    '',
+  ].join('\n')
+}
+
 const enc = (p: string) => p.split('/').map(encodeURIComponent).join('/')
 const b64 = (s: string) => Buffer.from(s, 'utf8').toString('base64')
+
+/** The note as it is in the repo now (people may have edited it), without its front matter; null if none */
+export async function readNote(path: string): Promise<string | null> {
+  if (!secondBrainOn()) return null
+  const branch = process.env.KNOWLEDGE_BRANCH || 'main'
+  try {
+    const res = await fetch(`https://api.github.com/repos/${process.env.KNOWLEDGE_REPO}/contents/${enc(path)}?ref=${encodeURIComponent(branch)}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.SECOND_BRAIN_GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github.raw+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'myconet-agent',
+      },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    return (await res.text()).replace(/^---\n[\s\S]*?\n---\n/, '').trim() || null
+  } catch {
+    return null
+  }
+}
+
+const gh = () => ({
+  repo: process.env.KNOWLEDGE_REPO!,
+  branch: process.env.KNOWLEDGE_BRANCH || 'main',
+  headers: {
+    Authorization: `Bearer ${process.env.SECOND_BRAIN_GITHUB_TOKEN}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'myconet-agent',
+  },
+})
+
+/** Every file path in the repo, in one call (to find a renamed meeting's old files cheaply) */
+export async function listPaths(): Promise<Set<string>> {
+  const { repo, branch, headers } = gh()
+  const res = await fetch(`https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`, { headers })
+  if (!res.ok) throw new Error(`GitHub ${res.status}: ${(await res.text()).slice(0, 200)}`)
+  const data = await res.json() as { tree?: { path: string; type: string }[] }
+  return new Set((data.tree ?? []).filter(t => t.type === 'blob').map(t => t.path))
+}
+
+/**
+ * Removes a file the agent wrote earlier (a renamed meeting's old note); false if it's gone. Only the
+ * agent's own files (source: myconet-meeting…): a note a person wrote is never removed.
+ */
+export async function deleteFile(path: string, message: string): Promise<boolean> {
+  const { repo, branch, headers } = gh()
+  const api = `https://api.github.com/repos/${repo}/contents/${enc(path)}`
+  const existing = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers })
+  if (!existing.ok) return false
+  const { sha, content } = (await existing.json()) as { sha?: string; content?: string }
+  const text = content ? Buffer.from(content, 'base64').toString('utf8') : ''
+  if (!sha || !/^source: myconet-meeting/m.test(text.split('\n---')[0])) return false
+  const res = await fetch(api, {
+    method: 'DELETE',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, branch, sha, committer: { name: 'MyCoNet agent', email: 'myconet-agent@users.noreply.github.com' } }),
+  })
+  if (!res.ok) throw new Error(`GitHub ${res.status}: ${(await res.text()).slice(0, 200)}`)
+  return true
+}
 
 /** Creates or updates the note; returns its GitHub link */
 export async function saveNote(path: string, content: string, message: string): Promise<{ url: string }> {

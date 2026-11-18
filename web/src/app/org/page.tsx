@@ -1,4 +1,5 @@
 import { meetingCountsByCircle } from '@/modules/m18-meetings/lib/counts'
+import { suggestionCountsByCircle } from '@/modules/m07-ops/lib/pm-data'
 import { createClient } from '@/core/lib/supabase/server'
 import OrgChartClient from '@/modules/m17-org/OrgChartClient'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
@@ -18,12 +19,15 @@ export default async function OrgPage() {
     leadCircles = profile?.lead_circles ?? []
   }
 
-  const [unitsRes, membersRes, directory, meetingCounts] = await Promise.all([
+  const [unitsRes, membersRes, directory, meetingCounts, allPm] = await Promise.all([
     supabase.from('org_units').select('id, kind, circle, name, description, sort_order').order('sort_order'),
     supabase.from('org_unit_members').select(MEMBER_SELECT),
     fetchCircleDirectory(supabase),
     user ? meetingCountsByCircle(supabase) : Promise.resolve(null),
+    user ? suggestionCountsByCircle(supabase) : Promise.resolve({} as Record<string, number>),
   ])
+  // The Project manager button only for the circles this person decides (admins: all)
+  const pmCounts = Object.fromEntries(Object.entries(allPm).filter(([c]) => role === 'admin' || (role === 'circle_lead' && leadCircles.includes(c))))
   const members = (membersRes.data ?? []).map(toMember)
 
   // The member picker needs everyone — only for people who might edit (admins,
@@ -45,6 +49,7 @@ export default async function OrgPage() {
       role={role}
       leadCircles={leadCircles}
       meetingCounts={meetingCounts}
+      pmCounts={pmCounts}
     />
   )
 }
