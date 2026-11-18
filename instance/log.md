@@ -734,3 +734,8 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-18 — Core v4.32.0: task priority, names without an account (deployed, 3d534b96)
 - Update PR #49 merged; migration `20261201000000_task_name_tag_priority.sql` applied through the Supabase MCP and checked
   (both columns, the trigger; no tasks had "(for …)" titles here) before the deploy.
+
+## 2026-11-18 — Core v4.32.1 + v4.33.0 (deployed, 4bfef90f)
+- Update PR #50 merged; migrations `meetings_sweep_every_2_min` and `declined_drafts_stay_declined` applied through the
+  Supabase MCP and checked (sweep `*/2 * * * *`, link FK on delete set null) before the deploy. The sweep sends nothing
+  here until RTRN's sweep secrets are set (still waiting on Oz).
