@@ -85,7 +85,7 @@ export default function EventsClient({
   // A board task opens on the board; everything else opens the event pop-up
   function open(id: string) {
     const task = taskEvents.find(e => e.id === id)?.board
-    if (task) router.push(`/ops/${task.projectId}?task=${task.taskId}&back=1`)
+    if (task) router.push(task.projectId ? `/ops/${task.projectId}?task=${task.taskId}` : `/ops?task=${task.taskId}`)
     else setOpenId(id)
   }
 

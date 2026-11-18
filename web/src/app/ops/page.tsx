@@ -8,11 +8,12 @@ import { isActiveProject } from '@/core/lib/project-status'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import type { SubscriberProfile } from '@/modules/m07-ops/types'
 import { loadProjectManager } from '@/modules/m07-ops/lib/pm-data'
+import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
 
 const OPS_TABS = ['board', 'deliverables', 'updates', 'circles'] as const
 
-export default async function OpsPage({ searchParams }: { searchParams: Promise<{ tab?: string; circle?: string }> }) {
-  const { tab, circle } = await searchParams
+export default async function OpsPage({ searchParams }: { searchParams: Promise<{ tab?: string; circle?: string; task?: string }> }) {
+  const { tab, circle, task } = await searchParams
   const initialTab = OPS_TABS.find(t => t === tab) ?? 'board'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -39,13 +40,20 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
 
   const { data: deliverablesRaw } = await supabase
     .from('deliverables')
-    .select('id, project_id, title, assignee_id, assignee_name, priority, due_date, due_time, circle, needs_review, status, progress, user_profiles(username)')
+    .select('id, project_id, title, assignee_id, assignee_name, team_id, created_by, priority, due_date, due_time, circle, needs_review, status, progress, notes, source, source_meeting_id, source_item, user_profiles(username, first_name)')
     .order('due_date', { ascending: true })
 
   const deliverables = (deliverablesRaw ?? []).map((d: any) => ({
     id: d.id as string,
-    project_id: d.project_id as string,
+    project_id: (d.project_id ?? null) as string | null,
     title: d.title as string,
+    team_id: (d.team_id ?? null) as string | null,
+    created_by: (d.created_by ?? null) as string | null,
+    notes: (d.notes ?? null) as string | null,
+    source: d.source ?? undefined,
+    source_meeting_id: (d.source_meeting_id ?? null) as string | null,
+    source_item: (d.source_item ?? null) as string | null,
+    user_profiles: d.user_profiles ? { first_name: d.user_profiles.first_name ?? null, username: d.user_profiles.username ?? null } : null,
     assignee_id: d.assignee_id as string | null,
     assignee_name: d.assignee_name as string | null,
     priority: (d.priority as string) ?? 'none',
@@ -136,6 +144,8 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
       initialCircle={circle ?? null}
       pmSuggestions={pm.suggestions}
       pmActions={pm.actions}
+      initialTaskId={task ?? null}
+      {...await loadTaskOptions(supabase)}
     />
   )
 }

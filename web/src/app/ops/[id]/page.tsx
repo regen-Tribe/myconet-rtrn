@@ -1,5 +1,6 @@
 import { createClient } from '@/core/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
+import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
 import ProjectDetailClient from '@/modules/m07-ops/ProjectDetailClient'
 import { isOpsAdmin } from '@/core/lib/roles'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
@@ -8,10 +9,10 @@ import type { Project, ProjectUpdate, CollaborationAgreement, SubscriberProfile 
 
 export default async function ProjectDetailPage({ params, searchParams }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ task?: string; back?: string }>
+  searchParams: Promise<{ task?: string }>
 }) {
   const { id } = await params
-  const { task, back } = await searchParams
+  const { task } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -32,7 +33,7 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       .eq('status', 'pending')
       .order('created_at', { ascending: false }),
     supabase.from('deliverables')
-      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, assignee_name, priority, notes, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
+      .select('id, project_id, title, status, due_date, due_time, circle, source, needs_review, source_meeting_id, source_item, assignee_id, assignee_name, team_id, created_by, priority, notes, progress, from_agreement_id, user_profiles!deliverables_assignee_id_fkey(first_name, username)')
       .eq('project_id', id)
       .order('created_at', { ascending: true }),
     supabase.from('project_subscriptions')
@@ -42,8 +43,9 @@ export default async function ProjectDetailPage({ params, searchParams }: {
 
   if (!projectRes.data) notFound()
   const project = projectRes.data as Project
-  // A circle's chores project is only where its loose tasks are kept: it has no page of its own, the board is its page
-  if (project.is_chores && !task) redirect(`/ops${project.circle ? `?circle=${project.circle}` : ''}`)
+  const { people, projectOptions, teams } = await loadTaskOptions(supabase)
+  // A task can stay in this project even when it isn't open any more
+  if (!projectOptions.some(p => p.id === project.id)) projectOptions.unshift({ id: project.id, title: project.title, circle: project.circle ?? null })
 
   // Lead/creator display names — public
   const leadUserId = project.lead_user_id ?? project.created_by
@@ -56,11 +58,6 @@ export default async function ProjectDetailPage({ params, searchParams }: {
     (memberProfilesData ?? []).map((p: any) => [p.id, { first_name: p.first_name ?? null, username: p.username ?? null }])
   )
   const leadProfile = leadUserId ? (memberProfileMap[leadUserId] ?? null) : null
-  // Everyone a task can be given to, for the task pop-up's "Assigned to" (shared admin accounts left out)
-  const { data: peopleRows } = await supabase.from('user_profiles').select('id, first_name, last_name, username').order('first_name')
-  const people = (peopleRows ?? [])
-    .map((p: any) => ({ id: p.id as string, name: [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || (p.username as string) || 'Member', username: (p.username ?? null) as string | null }))
-    .filter(p => !/admin/i.test(`${p.name} ${p.username ?? ''}`))
   const creatorProfile = creatorId && creatorId !== leadUserId ? (memberProfileMap[creatorId] ?? null) : null
 
   // Deliverable subscribers — public
@@ -148,7 +145,8 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       creatorProfile={creatorProfile}
       projectEvents={(eventRows ?? []).map(toEvent)}
       initialTaskId={task ?? null}
-      backOnClose={back === '1'}
+      projectOptions={projectOptions}
+      teams={teams}
       people={people}
     />
   )

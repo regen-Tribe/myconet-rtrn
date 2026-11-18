@@ -36,7 +36,7 @@ export function boardTaskEvent(t: BoardTask): CalendarEvent {
     project_id: t.project_id, proposal_id: null, created_by: '',
     feed_id: null, notes: null, notes_at: null, notes_author: null,
     times_set_at: null, times_author: null, creator: null,
-    project: t.project_title ? { id: t.project_id, title: t.project_title } : null,
+    project: t.project_id && t.project_title ? { id: t.project_id, title: t.project_title } : null,
     proposal: null,
     board: { taskId: t.id, projectId: t.project_id, status: t.status, assignee: t.assignee },
   }
