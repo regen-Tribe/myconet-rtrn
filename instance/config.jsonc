@@ -17,5 +17,10 @@
   "supabase": {
     "url": "https://vzgoulsqmhvhbjhzlzkf.supabase.co",
     "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z291bHNxbWh2aGJqaHpsemtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2ODY1MjMsImV4cCI6MjA5MzI2MjUyM30.q3YfwcTFGv6U5eN1Sj031Ia1V-tMtcboZ82PWFQuXg4"
-  }
+  },
+
+  // RTRN's own second brain (not rt-brain, which is the Regen Tribe collective's). MyCoNet keeps a folder per circle
+  // there (README + board.md). Off until the SECOND_BRAIN_GITHUB_TOKEN secret exists (fine-grained, this repo only,
+  // Contents read/write).
+  "knowledge": { "repo": "regen-Tribe/rtrn-second-brain", "branch": "main", "meetingsFolder": "operations/meetings" }
 }

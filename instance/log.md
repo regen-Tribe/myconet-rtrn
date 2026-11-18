@@ -718,3 +718,11 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - Correction: the first `apply_migration` call's confirmation **expired** and the deploy (77845003) went out before the
   column existed; the migration was applied about a minute later and checked (brain_folder column + trigger present).
   Lesson: check the migration result before deploying.
+
+## 2026-11-18 — RTRN's own second brain started
+- Oscar: rt-brain is the Regen Tribe collective's second brain; RTRN needs its own. New private repo
+  `regen-Tribe/rtrn-second-brain` (README, AGENTS.md, a folder per circle with the MyCoNet README part, sources/);
+  vault submodule at `projects/active/rtrn/RTRN second brain`.
+- `knowledge.repo` set in instance/config.jsonc (no deploy yet). **Waiting on Oscar:** a fine-grained GitHub token for
+  that repo only (Contents read/write) in Bitwarden → Worker secret `SECOND_BRAIN_GITHUB_TOKEN`; then deploy, and the
+  sweep secrets (Worker `MEETINGS_SWEEP_SECRET` + Vault `myconet_url`, `meetings_sweep_secret`) so reviews run here.
