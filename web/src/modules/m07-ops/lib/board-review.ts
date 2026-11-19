@@ -95,7 +95,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
     admin.from('deliverables').select('id, title, project_id, assignee_id, assignee_name, priority, due_date, status, needs_review, source, source_meeting_id, notes')
       .eq('circle', circle).neq('status', 'done').order('created_at').limit(MAX_TASKS),
     admin.from('user_profiles').select('id, first_name, last_name, username, role, lead_circles'),
-    admin.from('agent_suggestions').select('kind, payload, status').eq('circle', circle).in('status', ['dismissed']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
+    admin.from('agent_suggestions').select('kind, payload, status, decided_note').eq('circle', circle).in('status', ['dismissed']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
   ])
   if (!circleRes.data) return { ok: false, merged: 0, moved: 0, suggested: 0, note: null, errors: ['no such circle'] }
   const circleName = circleRes.data.name as string
@@ -137,7 +137,8 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
       return null
     }
   }
-  const dismissed = (sugRes.data ?? []).map(s => `${s.kind}: ${(s.payload as { title?: string; label?: string }).title ?? (s.payload as { label?: string }).label ?? ''}`).slice(0, 30)
+  // What leads turned down, and what they asked for instead (v4.36.0)
+  const dismissed = (sugRes.data ?? []).map(s => `${s.kind}: ${(s.payload as { title?: string; label?: string }).title ?? (s.payload as { label?: string }).label ?? ''}${s.decided_note ? ` (the lead wanted instead: "${String(s.decided_note).slice(0, 200)}")` : ''}`).slice(0, 30)
   // No open tasks (a new circle): nothing for the AI, but the circle still gets its space
   if (!tasks.length || circleRow.archived_at) {
     const note = await writeSpace(circleRow.archived_at ? '- This circle is retired.' : '- No open tasks yet.', tasks, [])

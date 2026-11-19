@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { AgentSuggestion, PmAction } from './types'
+import { instructAgent } from '@/core/lib/agent-context'
 
 const KIND: Record<string, string> = { merge: 'Merge duplicates', move: 'Into a project', new_project: 'New project', assign: 'Who could take it' }
 const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a project', pm_assign: 'Assigned' }
@@ -32,6 +33,15 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
+  // "Tell the agent…" on a suggestion: what the lead wants instead (v4.36.0)
+  const [telling, setTelling] = useState<string | null>(null)
+  const [told, setTold] = useState('')
+  function tell(s: AgentSuggestion) {
+    if (!told.trim()) return
+    instructAgent(told.trim(), { suggestion_id: s.id })
+    setTelling(null); setTold('')
+    setMsg(null)
+  }
   // null until the person toggles it: collapsed, unless the page was opened at #pm
   const [toggled, setToggled] = useState<boolean | null>(null)
   const linkedHere = useSyncExternalStore(onHash, atPm, () => false)
@@ -82,10 +92,19 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 )}
                 {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{s.reason}</div>}
                 {mayDecide && (
-                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'accept', s.id)} style={btn(true)}>{busy === s.id ? '…' : 'Accept'}</button>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'dismiss', s.id)} style={btn()}>Dismiss</button>
+                    <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the agent…</button>
                   </div>
+                )}
+                {mayDecide && telling === s.id && (
+                  <form onSubmit={e => { e.preventDefault(); tell(s) }} style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <input autoFocus value={told} onChange={e => setTold(e.target.value)} maxLength={2000}
+                      placeholder="What should happen instead? e.g. add these to the Incubator cacao project"
+                      style={{ flex: 1, minWidth: 0, fontSize: 13, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit' }} />
+                    <button type="submit" disabled={!told.trim()} style={btn(true)}>Send</button>
+                  </form>
                 )}
               </div>
             )

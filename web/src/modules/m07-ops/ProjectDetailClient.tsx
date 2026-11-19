@@ -1,6 +1,7 @@
 'use client'
 import { DraftSwipe } from './DraftSwipe'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { setAgentContext } from '@/core/lib/agent-context'
 import { createClient } from '@/core/lib/supabase/client'
 import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import { isJoiningOrAbove } from '@/core/lib/roles'
@@ -121,6 +122,11 @@ export default function ProjectDetailClient({
 
   // ── The task pop-up (TaskModal) ──────────────────────────────────────────
   const [editModal, setEditModal] = useState<Deliverable | null>(() => (initialTaskId ? initialDeliverables.find(x => x.id === initialTaskId) ?? null : null))
+  // The agent knows which project this page is ("move these tasks here")
+  useEffect(() => {
+    setAgentContext('project', { project_id: project.id })
+    return () => setAgentContext('project', null)
+  }, [project.id])
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const myDeliverableSubIds = new Set(
