@@ -5,6 +5,12 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.38.2 — 2026-11-19
+
+- **Clicking the module you're in reloads it** (Oscar). In the side menu, the module you're already on now loads
+  afresh: its front page, filters and pop-ups reset, the latest data. Cmd/Ctrl-click still opens a new tab. No
+  migration.
+
 ## v4.38.1 — 2026-11-19
 
 - **A circle's leads are its members** (Oscar: "if you are a lead of a circle, you are automatically a member").
