@@ -7,12 +7,41 @@ import type { AgentSuggestion, PmAction } from './types'
 import { instructAgent } from '@/core/lib/agent-context'
 import Link from 'next/link'
 
-const KIND: Record<string, string> = { merge: 'Merge duplicates', move: 'Into a project', new_project: 'New project', assign: 'Who could take it' }
+const KIND: Record<string, string> = { merge: 'Same task twice', move: 'Belongs in a project', new_project: 'Start a project', assign: 'Who could take it' }
 const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a project', pm_assign: 'Assigned' }
 
 // Arriving from a circle page's "🧭 Project manager" button (/ops?circle=…#pm) opens the panel
 const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
 const atPm = () => window.location.hash === '#pm'
+
+type Payload = { label?: string; title?: string; description?: string; tasks?: string[]; keep?: string; drop?: string; task?: string; project?: string; person?: string }
+const q = (t: string | undefined) => (t ? <strong style={{ fontWeight: 600 }}>{t}</strong> : 'a task')
+
+/**
+ * What accepting does, in plain words (v4.38.4: Oscar found "A ⟵ B" and "A → B" unclear), and the button that says it.
+ * The labels the agent wrote ("A → B") are only the fallback for a task or project that's no longer here.
+ */
+function explain(s: AgentSuggestion, title: (id?: string) => string | undefined, projectTitle: (id?: string) => string | undefined): { what: React.ReactNode; button: string } {
+  const p = s.payload as Payload
+  const [left, right] = (p.label ?? '').split(/ [⟵→] /)
+  if (s.kind === 'merge') return {
+    what: <>These look like the same piece of work. Keep {q(title(p.keep) ?? left)} and fold {q(title(p.drop) ?? right)} into it: its person, date and meeting link carry over, and it leaves the board.</>,
+    button: 'Merge them',
+  }
+  if (s.kind === 'move') return {
+    what: <>Move the task {q(title(p.task) ?? left)} into the project {q(projectTitle(p.project) ?? right)}.</>,
+    button: 'Move it',
+  }
+  if (s.kind === 'assign') return {
+    what: <>Give the task {q(title(p.task) ?? left)} to {q(p.person ?? right)}.</>,
+    button: `Give it to ${(p.person ?? right ?? 'them').split(' ')[0]}`,
+  }
+  const tasks = (p.tasks ?? []).map(id => title(id)).filter((t): t is string => !!t)
+  return {
+    what: <>Start a new project {q(p.title)}{p.description ? <> ({p.description})</> : null} and move {tasks.length === 1 ? 'this task' : `these ${tasks.length} tasks`} into it: {tasks.map((t, i) => <span key={i}>{i ? ' · ' : ''}{t}</span>)}.</>,
+    button: 'Create the project',
+  }
+}
 
 const btn = (primary = false): React.CSSProperties => ({
   fontSize: 12, fontWeight: 600, borderRadius: 8, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap',
@@ -103,20 +132,15 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
           {sugs.map(s => {
             const p = s.payload as { label?: string; title?: string; description?: string; tasks?: string[] }
             const mayDecide = canDecide(s.circle)
+            const plain = explain(s, id => (id ? taskTitles[id] : undefined), id => projects.find(x => x.id === id)?.title)
             return (
               <div key={s.id} style={{ borderTop: '1px solid var(--rule)', padding: '10px 0 2px', marginTop: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{KIND[s.kind] ?? s.kind}</span>
                   {tag(s.circle)}
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4 }}>{s.kind === 'new_project' ? p.title : p.label}</div>
-                {s.kind === 'new_project' && (
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)', margin: '3px 0' }}>
-                    {p.description && <div>{p.description}</div>}
-                    <div>{(p.tasks ?? []).map(id => taskTitles[id]).filter(Boolean).join(' · ')}</div>
-                  </div>
-                )}
-                {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{s.reason}</div>}
+                <div style={{ fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5 }}>{plain.what}</div>
+                {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}><span style={{ fontWeight: 600 }}>Why:</span> {s.reason}</div>}
                 {mayDecide && (s.kind === 'new_project' || s.kind === 'move') && (() => {
                   const v = where[s.id] ?? ''
                   const n = s.kind === 'new_project' ? (p.tasks ?? []).length : 1
@@ -153,7 +177,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 {mayDecide && (
                   <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'accept', s.id, s)} style={btn(true)}>
-                      {busy === s.id ? '…' : where[s.id]?.startsWith('p:') ? 'Move them in' : 'Accept'}
+                      {busy === s.id ? '…' : where[s.id]?.startsWith('p:') ? 'Move them in' : plain.button}
                     </button>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'dismiss', s.id)} style={btn()}>Dismiss</button>
                     <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the agent…</button>

@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.38.4',
+    date: '2026-11-19',
+    title: 'Clearer suggestions',
+    items: [
+      'Each project manager suggestion now says in plain words what will happen, and its button names the action (for example “Give it to Sonia” or “Merge them”).',
+    ],
+  },
+  {
     version: 'v4.38.3',
     date: '2026-11-19',
     title: 'Choose where a suggestion goes',

@@ -5,6 +5,14 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.38.4 — 2026-11-19
+
+- **Suggestions say what accepting does** (Oscar: "its not clear to me what the suggested action is"). Each
+  project-manager suggestion is now a plain sentence ("Give the task *Create a recruitment project space* to *Sonia
+  Wendorff*"; "These look like the same piece of work. Keep *A* and fold *B* into it…"), the reason follows as "Why:",
+  and the button names the action: **Give it to Sonia**, **Merge them**, **Move it**, **Create the project**. Clearer
+  headings: Same task twice · Belongs in a project · Start a project · Who could take it. No migration.
+
 ## v4.38.3 — 2026-11-19
 
 - **Put a suggestion somewhere else before accepting it** (Oscar). On a project-manager suggestion for a new
