@@ -132,7 +132,8 @@ export function CirclesTab({
 
               {(() => {
                 const unit = circleUnits.find(u => u.circle === c)
-                const mine = unit ? members.filter(m => m.unit_id === unit.id && m.person) : []
+                // Members, not the leads (listed above; members too since v4.38.1)
+                const mine = unit ? members.filter(m => m.unit_id === unit.id && m.person && m.role !== 'lead') : []
                 const canAdd = !!unit && (isAdmin || iLead)
                 if (!mine.length && !canAdd) return null
                 return (
@@ -143,7 +144,7 @@ export function CirclesTab({
                       {canAdd && (
                         <AddCircleMember
                           unitId={unit!.id} color={meta.color} people={people}
-                          existing={[...mine.map(m => m.user_id), ...leads.map(l => l.id)]}
+                          existing={[...members.filter(m => m.unit_id === unit!.id).map(m => m.user_id), ...leads.map(l => l.id)]}
                           onAdded={m => setMembers(prev => [...prev, m])}
                         />
                       )}

@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.38.1',
+    date: '2026-11-19',
+    title: 'Leads are members',
+    items: [
+      'A circle’s leads are now members of that circle automatically. If someone stops leading a circle, they stay a member.',
+    ],
+  },
+  {
     version: 'v4.38.0',
     date: '2026-11-19',
     title: 'All tasks on the board',

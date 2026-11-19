@@ -210,7 +210,8 @@ export default function OrgChartClient({
           const meta = circles.meta(c)
           const cu = circleUnit(c)
           const leads: PersonRef[] = directory.leads[c]
-          const circleMembers = cu ? membersOf(cu.id) : []
+          // Members, not the leads (they're listed above, and are members too since v4.38.1)
+          const circleMembers = cu ? membersOf(cu.id).filter(m => m.role !== 'lead') : []
           const teams = teamsOf(c)
           const canLead = canLeadCircle(c, role, leadCircles)
           return (
@@ -262,7 +263,7 @@ export default function OrgChartClient({
                     <div style={{ marginTop: circleMembers.length ? 8 : 0 }}>
                       <AddCircleMember
                         unitId={cu.id} color={meta.color} people={people}
-                        existing={[...circleMembers.map(m => m.user_id), ...leads.map(l => l.id)]}
+                        existing={[...(cu ? membersOf(cu.id) : []).map(m => m.user_id), ...leads.map(l => l.id)]}
                         onAdded={m => { setMembers(prev => [...prev, m]); setToast(`${m.person?.name ?? 'They'} joined ${meta.label}`) }}
                       />
                     </div>
