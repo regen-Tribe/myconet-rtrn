@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.38.0',
+    date: '2026-11-19',
+    title: 'All tasks on the board',
+    items: [
+      'The board has a Projects | All tasks switch. All tasks shows every task as a card, including the ones inside projects, each tagged with its project. Projects shows the projects and the tasks with no project yet.',
+    ],
+  },
+  {
     version: 'v4.37.0',
     date: '2026-11-19',
     title: 'Projects and teams',

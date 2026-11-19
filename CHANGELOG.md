@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.38.0 — 2026-11-19
+
+- **Two board views** (Oscar: see just tasks, all of them even those in projects; or the projects, with the tasks that
+  have no project yet). A **Projects | All tasks** switch at the top of the board. **Projects** is the board as before:
+  project cards, plus the tasks with no project. **All tasks** shows every task as its own card, each tagged with its
+  project (▣), in Backlog / In progress / Review / Done; drag them between columns and open them in their pop-up right
+  there. The circle, role and overdue filters work in both. The view is in the address (`/ops?view=tasks`), so a
+  reload or a shared link keeps it. No migration.
+
 ## v4.37.0 — 2026-11-19
 
 - **Projects belong to a team, or to the whole circle** (Oscar: "a link between the teams that are added to circles

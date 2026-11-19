@@ -13,8 +13,8 @@ import { MEMBER_SELECT, toMember } from '@/modules/m17-org/lib/org'
 
 const OPS_TABS = ['board', 'deliverables', 'updates', 'circles'] as const
 
-export default async function OpsPage({ searchParams }: { searchParams: Promise<{ tab?: string; circle?: string; task?: string }> }) {
-  const { tab, circle, task } = await searchParams
+export default async function OpsPage({ searchParams }: { searchParams: Promise<{ tab?: string; circle?: string; task?: string; view?: string }> }) {
+  const { tab, circle, task, view } = await searchParams
   const initialTab = OPS_TABS.find(t => t === tab) ?? 'board'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -146,6 +146,7 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
       pmSuggestions={pm.suggestions}
       pmActions={pm.actions}
       initialTaskId={task ?? null}
+      initialView={view === 'tasks' ? 'tasks' : 'projects'}
       {...await loadCircleMembers(supabase)}
       {...await loadTaskOptions(supabase)}
     />
