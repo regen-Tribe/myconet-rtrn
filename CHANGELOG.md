@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.38.1 — 2026-11-19
+
+- **A circle's leads are its members** (Oscar: "if you are a lead of a circle, you are automatically a member").
+  Trigger `circle_leads_are_members` on `user_profiles`: whoever leads a circle (role circle_lead + lead_circles) is in
+  its circle unit as 'lead'; a circle they stop leading keeps them as a member. Today's leads were added (Protopia: 41
+  memberships). The member lists on the Circles page and in Ops › Circles show the other members (leads have their own
+  row); Admin › Users, My circles and the second brain count leads as members. **Migration**
+  `20261208000000_leads_are_members.sql`.
+
 ## v4.38.0 — 2026-11-19
 
 - **Two board views** (Oscar: see just tasks, all of them even those in projects; or the projects, with the tasks that
