@@ -779,3 +779,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - Oscar: "ship it". Update PR #60 merged; migration `20261207000000_project_teams.sql` applied and checked before the
   deploy (projects.team_id, both triggers). Accepted suggestions stay until reload; projects belong to a team or the
   whole circle; Ops › Circles opens each circle's projects.
+
+## 2026-11-19 — Core v4.38.0 (deployed, ff67ec0b)
+- Oscar: "ship it". Update PR #61 merged; no migration. The board has Projects | All tasks views.
