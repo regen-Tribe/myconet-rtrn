@@ -33,7 +33,15 @@ function NavItem({ num, name, color, href, active, onClick }: {
   if (!href) return <div style={{ cursor: 'default' }}>{inner}</div>
 
   return (
-    <Link href={href} onClick={onClick} style={{ textDecoration: 'none', display: 'block' }} className="sh-nav-item">
+    <Link
+      href={href}
+      onClick={e => {
+        onClick?.()
+        // The module you're already in: load it fresh, its front page with the latest data (v4.38.2)
+        if (active && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); window.location.assign(href) }
+      }}
+      style={{ textDecoration: 'none', display: 'block' }} className="sh-nav-item"
+    >
       {inner}
     </Link>
   )
