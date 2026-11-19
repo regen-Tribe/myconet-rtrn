@@ -6,13 +6,18 @@ import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
 import { CalendarPicker } from './CalendarPicker'
+import { TeamPicker } from './TeamPicker'
+import type { TaskTeamOption } from './TaskModal'
 
 export default function NewProjectClient({
   userId,
   isOpsAdmin,
+  teams = [],
 }: {
   userId: string
   isOpsAdmin: boolean
+  /** The circles' teams, so a project can belong to one (v4.37.0) */
+  teams?: TaskTeamOption[]
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -21,6 +26,7 @@ export default function NewProjectClient({
   const [description, setDescription] = useState('')
   const [openForCollab, setOpenForCollab] = useState(true)
   const [circle, setCircle] = useState<CircleSlug | ''>('')
+  const [teamId, setTeamId] = useState('')
   const [deadline, setDeadline] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -37,6 +43,7 @@ export default function NewProjectClient({
         description: description.trim() || null,
         open_for_collaborators: openForCollab,
         circle: circle || null,
+        team_id: teamId || null,
         deadline: deadline || null,
         created_by: userId,
         // OpsAdmins create directly into backlog; regular members propose (pending)
@@ -121,7 +128,7 @@ export default function NewProjectClient({
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setCircle(active ? '' : p)}
+                  onClick={() => { setCircle(active ? '' : p); setTeamId('') }}
                   style={{
                     fontSize: 13, fontWeight: 600,
                     padding: '7px 14px', borderRadius: 20,
@@ -137,6 +144,15 @@ export default function NewProjectClient({
             })}
           </div>
         </div>
+
+        {circle && teams.some(t => t.circle === circle) && (
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+              Team <span style={{ fontWeight: 400, color: 'var(--ink-4)' }}>— the whole circle, or one of its teams?</span>
+            </label>
+            <TeamPicker circle={circle} teams={teams} value={teamId} onChange={setTeamId} color={circles.meta(circle).color} />
+          </div>
+        )}
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
           <input

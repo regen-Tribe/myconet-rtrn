@@ -5,6 +5,27 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.37.0 — 2026-11-19
+
+- **Projects belong to a team, or to the whole circle** (Oscar: "a link between the teams that are added to circles
+  and projects… tagged to a team in a circle or the circle alone"). `projects.team_id` → `org_units` (teams only;
+  trigger `projects_team_circle`: a team sets the circle, another circle takes it off the team), chosen with chips
+  ("Whole circle" or a team) on the new-project form and in the project's settings (`m07-ops/TeamPicker.tsx`). The
+  team shows on the board card and the project page; a new task in a project starts on its team (trigger
+  `deliverables_default_team`). Team cards on the Circles page list their projects, and each circle's README in the
+  second brain lists each team's projects. Ask / Do can set a project's team.
+- **Ops › Circles: open a circle to see its projects** (Oscar), grouped into the whole circle's and each team's,
+  each linked with its status.
+- **Migration** `20261207000000_project_teams.sql`. Dry run on Protopia (rolled back): giving a project the Website
+  team put it in Marketing; a new task in it started on Website; another circle took it off the team; a whole circle
+  was refused as a team.
+
+## v4.36.1 — 2026-11-19
+
+- **An accepted suggestion stays until you reload** (Oscar: leave it as accepted so you can click it and open the
+  project; after a refresh it doesn't have to come back). Accepting marks it **✓ Accepted** in place with
+  **Open project →** (or **Open task →**) to where it went; the accept route now returns that (`result`). No migration.
+
 ## v4.36.0 — 2026-11-19
 
 - **Tell the agent what to do instead of a suggestion** (Oscar: on "cacao import and export operations" he wants to

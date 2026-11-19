@@ -97,10 +97,12 @@ function StatCard({ label, value, delta, valueColor = 'var(--ink)', onClick, act
 // ─── Project Kanban Card ─────────────────────────────────────────────────────
 
 function ProjectKanbanCard({
-  project, subtaskCount, doneCount, canMove, subscribers, leadName,
+  project, subtaskCount, doneCount, canMove, subscribers, leadName, teamName,
   onDragStart, onDragEnd, onBlockedDrag, isDragging,
 }: {
   project: Project; subtaskCount: number; doneCount: number; canMove: boolean
+  /** The circle team it belongs to, if any (v4.37.0) */
+  teamName?: string | null
   subscribers: SubscriberProfile[]
   leadName: string | null
   onDragStart?: (id: string) => void; onDragEnd?: () => void; isDragging?: boolean
@@ -155,9 +157,9 @@ function ProjectKanbanCard({
             {circleMeta.emoji} {circleMeta.label}
           </div>
         )}
-        {project.is_chores && (
+        {teamName && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 600, color: 'var(--ink-3)', background: 'var(--bg-2)', padding: '1px 6px', borderRadius: 20, marginBottom: 5, marginLeft: circleMeta ? 4 : 0 }}>
-            🧹 One-off tasks
+            {teamName}
           </div>
         )}
 
@@ -636,6 +638,7 @@ export default function OpsClient({
                         canMove={canMoveProject(p, userId, userRole, leadCircles, circles)}
                         subscribers={subs}
                         leadName={leadName}
+                        teamName={teams.find(t => t.id === p.team_id)?.name ?? null}
                         onDragStart={(id) => setDraggingId(id)}
                         onBlockedDrag={userId ? () => setNotice(projectEditBlock(p, userId, userRole, leadCircles, circles)) : undefined}
                         onDragEnd={() => { setDraggingId(null); setDropTarget(null) }}
@@ -692,6 +695,7 @@ export default function OpsClient({
           circleUnits={circleUnits}
           circleMembers={circleMembers}
           people={people}
+          teams={teams}
         />
       )}
 

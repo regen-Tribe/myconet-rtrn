@@ -29,6 +29,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   // The tasks must still be this circle's
   const taskIds = [p.keep, p.drop, p.task, ...(p.tasks ?? [])].filter(Boolean) as string[]
+  // Where the change went, for the panel's link once accepted (v4.36.1)
+  let result: { project_id?: string | null; task_id?: string | null } = {}
   const { data: rows } = await admin.from('deliverables').select('id, title, project_id, assignee_id, due_date, circle').in('id', taskIds)
   const task = (tid: string) => rows?.find(r => r.id === tid && r.circle === s.circle)
 
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const r = await mergeTasks(admin, keep, drop)
     if (r.error) return NextResponse.json({ error: r.error }, { status: 500 })
     await admin.from('agent_actions').insert(logRow('pm_merge', keep.id, { kept: keep.title, dropped: r.dropped, links: r.links, filled: r.filled }))
+    result = { task_id: keep.id, project_id: keep.project_id }
   } else if (s.kind === 'move' || s.kind === 'new_project') {
     let projectId = p.project as string | undefined
     if (s.kind === 'new_project') {
@@ -54,12 +57,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const list = (s.kind === 'move' ? [p.task] : p.tasks as string[]).map(task).filter((t): t is NonNullable<ReturnType<typeof task>> => !!t)
     if (list.length) await admin.from('deliverables').update({ project_id: projectId }).in('id', list.map(t => t.id))
     await admin.from('agent_actions').insert(list.map(t => logRow('pm_move', t.id, { title: t.title, from: t.project_id, to: projectId, ...(s.kind === 'new_project' ? { new_project: projectId } : {}) })))
+    result = { project_id: projectId ?? null }
   } else if (s.kind === 'assign') {
     const t = task(p.task)
     if (!t) { await close('stale'); return NextResponse.json({ error: 'The task is gone.' }, { status: 409 }) }
     await admin.from('deliverables').update({ assignee_id: p.person_id }).eq('id', t.id)
     await admin.from('agent_actions').insert(logRow('pm_assign', t.id, { title: t.title, from: t.assignee_id, to: p.person_id, person: p.person }))
+    result = { task_id: t.id, project_id: t.project_id }
   }
   await close('accepted')
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, result })
 }

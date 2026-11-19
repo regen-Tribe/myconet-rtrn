@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { AgentSuggestion, PmAction } from './types'
 import { instructAgent } from '@/core/lib/agent-context'
+import Link from 'next/link'
 
 const KIND: Record<string, string> = { merge: 'Merge duplicates', move: 'Into a project', new_project: 'New project', assign: 'Who could take it' }
 const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a project', pm_assign: 'Assigned' }
@@ -33,6 +34,8 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
+  // Accepted here: they stay, marked accepted and linked to where they went, until the page is reloaded (v4.36.1)
+  const [accepted, setAccepted] = useState<{ s: AgentSuggestion; href: string | null }[]>([])
   // "Tell the agent…" on a suggestion: what the lead wants instead (v4.36.0)
   const [telling, setTelling] = useState<string | null>(null)
   const [told, setTold] = useState('')
@@ -46,17 +49,25 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   const [toggled, setToggled] = useState<boolean | null>(null)
   const linkedHere = useSyncExternalStore(onHash, atPm, () => false)
   const open = toggled ?? linkedHere
-  const sugs = suggestions.filter(s => !circle || s.circle === circle)
+  const acceptedIds = new Set(accepted.map(a => a.s.id))
+  const sugs = suggestions.filter(s => (!circle || s.circle === circle) && !acceptedIds.has(s.id))
+  const acceptedShown = accepted.filter(a => !circle || a.s.circle === circle)
   const done = actions.filter(a => !circle || a.circle === circle)
-  if (!sugs.length && !done.length) return null
+  if (!sugs.length && !done.length && !acceptedShown.length) return null
 
-  async function post(url: string, action: string, key: string) {
+  async function post(url: string, action: string, key: string, accepting?: AgentSuggestion) {
     setBusy(key); setMsg(null)
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
-    const data = await res.json().catch(() => ({})) as { error?: string }
+    const data = await res.json().catch(() => ({})) as { error?: string; result?: { project_id?: string | null; task_id?: string | null } }
     setBusy(null)
-    if (!res.ok) setMsg(data.error ?? 'That didn’t work.')
-    else router.refresh()
+    if (!res.ok) { setMsg(data.error ?? 'That didn’t work.'); return }
+    if (accepting) {
+      // Where it went: the project, else the task (opened on the board when it has no project)
+      const r = data.result ?? {}
+      const href = r.project_id ? `/ops/${r.project_id}${r.task_id ? `?task=${r.task_id}` : ''}` : r.task_id ? `/ops?task=${r.task_id}` : null
+      setAccepted(prev => [...prev, { s: accepting, href }])
+    }
+    router.refresh()
   }
 
   const tag = (c: string) => {
@@ -68,7 +79,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
     <div id="pm" style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderTop: '3px solid var(--m7)', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>🧭 Project manager</span>
-        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{sugs.length} suggestion{sugs.length === 1 ? '' : 's'}{done.length ? ` · ${done.length} change${done.length === 1 ? '' : 's'} made` : ''}</span>
+        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{sugs.length} suggestion{sugs.length === 1 ? '' : 's'}{acceptedShown.length ? ` · ${acceptedShown.length} accepted` : ''}{done.length ? ` · ${done.length} change${done.length === 1 ? '' : 's'} made` : ''}</span>
         <button onClick={() => setToggled(!open)} style={{ ...btn(), marginLeft: 'auto', padding: '3px 10px' }}>{open ? 'Hide' : 'Show'}</button>
       </div>
       {open && (
@@ -93,7 +104,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{s.reason}</div>}
                 {mayDecide && (
                   <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'accept', s.id)} style={btn(true)}>{busy === s.id ? '…' : 'Accept'}</button>
+                    <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'accept', s.id, s)} style={btn(true)}>{busy === s.id ? '…' : 'Accept'}</button>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'dismiss', s.id)} style={btn()}>Dismiss</button>
                     <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the agent…</button>
                   </div>
@@ -106,6 +117,17 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                     <button type="submit" disabled={!told.trim()} style={btn(true)}>Send</button>
                   </form>
                 )}
+              </div>
+            )
+          })}
+          {acceptedShown.map(({ s, href }) => {
+            const p = s.payload as { label?: string; title?: string }
+            return (
+              <div key={s.id} style={{ borderTop: '1px solid var(--rule)', padding: '10px 0 2px', marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>✓ Accepted</span>
+                <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{s.kind === 'new_project' ? p.title : p.label}</span>
+                {tag(s.circle)}
+                {href && <Link href={href} style={{ ...btn(true), marginLeft: 'auto', textDecoration: 'none' }}>Open {href.startsWith('/ops/') ? 'project' : 'task'} →</Link>}
               </div>
             )
           })}
