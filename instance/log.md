@@ -789,3 +789,6 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ## 2026-11-19 — Core v4.38.2 (deployed, c4e0871f)
 - Oscar: "ship it". Update PR #63 merged; no migration. Clicking the module you're in reloads it.
+
+## 2026-11-19 — Core v4.38.3 (deployed, f81fbe4e)
+- Oscar: "ship it". Update PR #64 merged; no migration. "Put it in…" on project-manager suggestions.
