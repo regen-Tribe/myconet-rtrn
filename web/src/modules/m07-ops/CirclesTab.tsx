@@ -6,7 +6,7 @@ import { PmLink } from './PmLink'
 import { AddCircleButton } from '@/modules/m04-blueprint/AddCircleButton'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
-import { isActiveProject } from '@/core/lib/project-status'
+import { isActiveProject, PROJECT_STATUS_META } from '@/core/lib/project-status'
 import { ROLE_LABELS } from '@/core/lib/roles'
 import { type CircleDirectory, type PersonRef } from '@/core/lib/ops-permissions'
 import type { Project } from './types'
@@ -34,7 +34,7 @@ function PersonChip({ person, isMe }: { person: PersonRef; isMe: boolean }) {
 /** Who leads each circle, and where the signed-in user fits in. */
 export function CirclesTab({
   directory, projects, userId, userRole, leadCircles, involvedProjectIds, meetingCounts, pmCounts,
-  circleUnits = [], circleMembers: initialCircleMembers = [], people = [],
+  circleUnits = [], circleMembers: initialCircleMembers = [], people = [], teams = [],
 }: {
   directory: CircleDirectory
   projects: Project[]
@@ -51,9 +51,14 @@ export function CirclesTab({
   circleUnits?: { id: string; circle: string }[]
   circleMembers?: OrgMember[]
   people?: OrgPerson[]
+  /** The circles' teams, to group each circle's projects (v4.37.0) */
+  teams?: { id: string; name: string; circle: string }[]
 }) {
   const circles = useCircles()
   const [members, setMembers] = useState(initialCircleMembers)
+  // Circles opened to show their projects
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toggle = (c: string) => setExpanded(prev => { const n = new Set(prev); if (n.has(c)) n.delete(c); else n.add(c); return n })
   const isAdmin = userRole === 'admin'
   const steward = circles.list.find(c => c.is_steward) ?? null
   const myLeadCircles = circles.slugs.filter(c => userRole === 'circle_lead' && leadCircles.includes(c))
@@ -147,10 +152,41 @@ export function CirclesTab({
                 )
               })()}
 
-              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                {circleProjects.length} project{circleProjects.length === 1 ? '' : 's'} · {active} active
-                {userId && mine > 0 && <> · <span style={{ color: 'var(--ink-2)', fontWeight: 600 }}>you’re in {mine}</span></>}
-              </div>
+              <button
+                type="button" onClick={() => toggle(c)} disabled={!circleProjects.length} aria-expanded={expanded.has(c)}
+                style={{ all: 'unset', cursor: circleProjects.length ? 'pointer' : 'default', fontSize: 12, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}
+              >
+                <span>
+                  {circleProjects.length} project{circleProjects.length === 1 ? '' : 's'} · {active} active
+                  {userId && mine > 0 && <> · <span style={{ color: 'var(--ink-2)', fontWeight: 600 }}>you’re in {mine}</span></>}
+                </span>
+                {circleProjects.length > 0 && <span style={{ marginLeft: 'auto', color: meta.color, fontWeight: 700 }}>{expanded.has(c) ? 'Hide ▴' : 'Show ▾'}</span>}
+              </button>
+              {expanded.has(c) && (() => {
+                // The whole circle's projects first, then each team's (v4.37.0)
+                const groups = [
+                  { name: 'Whole circle', list: circleProjects.filter(p => !p.team_id || !teams.some(t => t.id === p.team_id)) },
+                  ...teams.filter(t => t.circle === c).map(t => ({ name: t.name, list: circleProjects.filter(p => p.team_id === t.id) })),
+                ].filter(g => g.list.length)
+                return (
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {groups.map(g => (
+                      <div key={g.name}>
+                        {(groups.length > 1 || g.name !== 'Whole circle') && <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-4)', marginBottom: 3 }}>{g.name}</div>}
+                        {g.list.map(p => {
+                          const st = PROJECT_STATUS_META[p.status]
+                          return (
+                            <Link key={p.id} href={`/ops/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', textDecoration: 'none', borderTop: '1px solid var(--rule-soft, var(--rule))' }}>
+                              <span style={{ fontSize: 13, color: 'var(--ink)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 600, color: st?.color ?? 'var(--ink-4)', whiteSpace: 'nowrap' }}>{st?.label ?? p.status}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           )
         })}

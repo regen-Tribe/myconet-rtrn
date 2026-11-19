@@ -58,6 +58,7 @@ export default async function OrgPage() {
       directory={directory}
       people={people}
       joinRequests={joinRequests}
+      teamProjects={((await supabase.from('projects').select('id, title, team_id').not('team_id', 'is', null).in('status', ['pending', 'backlog', 'in_progress', 'review'])).data ?? []) as { id: string; title: string; team_id: string }[]}
       userId={user?.id ?? null}
       role={role}
       leadCircles={leadCircles}

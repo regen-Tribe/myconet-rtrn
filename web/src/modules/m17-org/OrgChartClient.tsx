@@ -43,7 +43,7 @@ const label: React.CSSProperties = {
 }
 
 export default function OrgChartClient({
-  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts, joinRequests = [],
+  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts, joinRequests = [], teamProjects = [],
 }: {
   initialUnits: OrgUnit[]
   initialMembers: OrgMember[]
@@ -59,6 +59,8 @@ export default function OrgChartClient({
   pmCounts?: Record<string, number>
   /** Open requests to join a circle, for its leads and admins (v4.35.0) */
   joinRequests?: JoinRequest[]
+  /** Open projects that belong to a team (v4.37.0), listed on the team's card */
+  teamProjects?: { id: string; title: string; team_id: string }[]
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -285,6 +287,13 @@ export default function OrgChartClient({
                         {tLeads.length > 0 && <div style={{ marginBottom: 5 }}>{peopleRow(tLeads.map(m => ({ ...m.person!, note: m.title ?? 'Lead' })), meta.color)}</div>}
                         {tMembers.length > 0 && peopleRow(tMembers.map(m => ({ ...m.person!, note: m.title })))}
                         {tm.length === 0 && <div style={{ fontSize: 11.5, color: 'var(--ink-4)' }}>No one on this team yet.</div>}
+                        {teamProjects.some(p => p.team_id === t.id) && (
+                          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {teamProjects.filter(p => p.team_id === t.id).map(p => (
+                              <Link key={p.id} href={`/ops/${p.id}`} style={{ fontSize: 11.5, fontWeight: 600, color: meta.color, textDecoration: 'none', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 20, padding: '2px 8px' }}>{p.title}</Link>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )
                   })}

@@ -36,7 +36,7 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
 
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, title, description, status, open_for_collaborators, circle, is_chores, needs, deadline, sprint_name, created_at, created_by, lead_user_id')
+    .select('id, title, description, status, open_for_collaborators, circle, team_id, is_chores, needs, deadline, sprint_name, created_at, created_by, lead_user_id')
     .order('created_at', { ascending: false })
 
   const { data: deliverablesRaw } = await supabase

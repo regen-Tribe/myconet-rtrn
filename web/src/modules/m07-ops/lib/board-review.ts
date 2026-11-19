@@ -48,7 +48,7 @@ interface Task {
   status: string; needs_review: boolean; source: string | null; source_meeting_id: string | null
   notes?: string | null
 }
-interface Project { id: string; title: string; description: string | null; is_chores: boolean; status: string }
+interface Project { id: string; title: string; description: string | null; is_chores: boolean; status: string; team_id?: string | null }
 
 const str = (v: unknown, max: number): string | null =>
   typeof v === 'string' && v.trim() ? v.replace(/\s+/g, ' ').trim().slice(0, max) : null
@@ -91,7 +91,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   const log = (rows: object[]) => rows.length ? admin.from('agent_actions').insert(rows).then(({ error }) => { if (error) errors.push(`log: ${error.message}`) }) : Promise.resolve()
   const [circleRes, projRes, taskRes, peopleRes, sugRes] = await Promise.all([
     admin.from('circles').select('slug, name, emoji, archived_at, brain_folder, leads_to_assign').eq('slug', circle).maybeSingle(),
-    admin.from('projects').select('id, title, description, is_chores, status').eq('circle', circle).in('status', ['pending', 'backlog', 'in_progress', 'review']),
+    admin.from('projects').select('id, title, description, is_chores, status, team_id').eq('circle', circle).in('status', ['pending', 'backlog', 'in_progress', 'review']),
     admin.from('deliverables').select('id, title, project_id, assignee_id, assignee_name, priority, due_date, status, needs_review, source, source_meeting_id, notes')
       .eq('circle', circle).neq('status', 'done').order('created_at').limit(MAX_TASKS),
     admin.from('user_profiles').select('id, first_name, last_name, username, role, lead_circles'),
@@ -124,7 +124,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
       const { folder } = await updateCircleSpace(admin, circleRow, {
         purpose: (unit.data?.description as string | null) ?? null, leads, paths,
         members: unit.data ? names(unit.data) : [],
-        teams: units.filter(u => u.kind === 'team').map(u => ({ name: u.name, people: names(u) })),
+        teams: units.filter(u => u.kind === 'team').map(u => ({ name: u.name, people: names(u), projects: projects.filter(p => p.team_id === u.id).map(p => p.title) })),
         projects: projects.filter(p => !p.is_chores).map(p => ({ title: p.title, open: left.filter(t => t.project_id === p.id).length, url: `${appUrl}/ops/${p.id}` })),
       })
       const saved = await saveNote(`${folder}/board.md`, buildBoardNote({ circle, circleName, status, projects, tasks: left, nameOf, suggestions }), `Board status: ${circleName}`)

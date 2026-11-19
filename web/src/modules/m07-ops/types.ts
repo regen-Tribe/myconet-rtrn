@@ -11,6 +11,8 @@ export interface Project {
   circle?: string | null
   /** The circle's standing project for one-off tasks */
   is_chores?: boolean
+  /** A team of its circle, or null for the whole circle (v4.37.0) */
+  team_id?: string | null
   needs?: string[] | string | null
   deadline?: string | null
   sprint_name?: string | null

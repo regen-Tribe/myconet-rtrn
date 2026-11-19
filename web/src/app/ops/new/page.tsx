@@ -19,5 +19,6 @@ export default async function NewProjectPage() {
   // Only joining+ users can propose/create projects
   if (!isJoiningOrAbove(role)) redirect('/ops')
 
-  return <NewProjectClient userId={user.id} isOpsAdmin={isOpsAdmin(role)} />
+  const { data: teams } = await supabase.from('org_units').select('id, name, circle').eq('kind', 'team').order('sort_order')
+  return <NewProjectClient userId={user.id} isOpsAdmin={isOpsAdmin(role)} teams={teams ?? []} />
 }

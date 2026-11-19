@@ -60,6 +60,7 @@ export const CATALOG: Record<string, TableDef> = {
       description: { label: 'description', type: { t: 'text', max: 2000 } },
       status: { label: 'status', type: { t: 'enum', values: ['pending', 'backlog', 'in_progress', 'review', 'done', 'paused'] } },
       circle: { label: 'circle', type: { t: 'circle' } },
+      team_id: { label: 'team', type: { t: 'team' } },
       lead_user_id: { label: 'lead', type: { t: 'person' } },
       deadline: { label: 'deadline', type: { t: 'date' } },
       open_for_collaborators: { label: 'open for collaborators', type: { t: 'bool' } },

@@ -14,6 +14,7 @@ import { isActiveProject, isOpenForProposals, PROJECT_STATUS_META, PROJECT_KANBA
 import { CalendarPicker } from './CalendarPicker'
 import { NameTag } from './NameTag'
 import { TaskModal, BellIcon, SubscriberNames, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
+import { TeamPicker } from './TeamPicker'
 import { PriorityBadge } from './Priority'
 import { PermissionNoticeModal } from './PermissionNoticeModal'
 import { LinkedEventsList } from '@/modules/m14-events/LinkedEventsList'
@@ -99,6 +100,7 @@ export default function ProjectDetailClient({
   const [editStatus, setEditStatus] = useState(project.status)
   const [editOpenCollab, setEditOpenCollab] = useState(project.open_for_collaborators)
   const [editCircle, setEditCircle] = useState<CircleSlug | ''>(circles.has(project.circle) ? project.circle : '')
+  const [editTeam, setEditTeam] = useState(project.team_id ?? '')
   const [editDeadline, setEditDeadline] = useState<string | null>(project.deadline ?? null)
   const [savingSettings, setSavingSettings] = useState(false)
 
@@ -324,6 +326,7 @@ export default function ProjectDetailClient({
       status: editStatus,
       open_for_collaborators: editOpenCollab,
       circle: editCircle || null,
+      team_id: editTeam || null,
       deadline: editDeadline || null,
     }).eq('id', project.id).select('id')
     setSavingSettings(false)
@@ -368,7 +371,7 @@ export default function ProjectDetailClient({
                 const m = circles.meta(project.circle)
                 return (
                   <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: m.color, background: `${m.color}15`, padding: '3px 10px', borderRadius: 20 }}>
-                    {m.emoji} {m.label}
+                    {m.emoji} {m.label}{teams.find(t => t.id === project.team_id) ? ` · ${teams.find(t => t.id === project.team_id)!.name}` : ''}
                   </span>
                 )
               })()}
@@ -879,7 +882,7 @@ export default function ProjectDetailClient({
                           const next = active ? '' : p
                           const block = settingsBlock ?? circleChangeBlock(next, userRole, leadCircles, circles)
                           if (block) setNotice(block)
-                          else setEditCircle(next)
+                          else { setEditCircle(next); if (next !== editCircle) setEditTeam('') }
                         }}
                         style={{
                           fontSize: 11, fontWeight: 600, padding: '4px 9px', borderRadius: 20,
@@ -895,6 +898,13 @@ export default function ProjectDetailClient({
                   })}
                 </div>
               </div>
+
+              {editCircle && teams.some(t => t.circle === editCircle) && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>Team</label>
+                  <TeamPicker circle={editCircle} teams={teams} value={editTeam} onChange={setEditTeam} color={circles.meta(editCircle).color} size="sm" />
+                </div>
+              )}
 
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 14 }}>
                 <input type="checkbox" checked={editOpenCollab} onChange={e => setEditOpenCollab(e.target.checked)} style={{ accentColor: '#4338ca' }} />
