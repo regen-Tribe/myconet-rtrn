@@ -774,3 +774,8 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-19 — Core v4.36.0 (deployed, 7df10b90)
 - Oscar: "ship it". Update PR #59 merged; migration `20261206000000_suggestion_notes.sql` applied and checked before the
   deploy (agent_suggestions.decided_note). The agent is a floating dot that sees the page; Tell the agent on suggestions.
+
+## 2026-11-19 — Core v4.36.1 + v4.37.0 (deployed, c7cb8972)
+- Oscar: "ship it". Update PR #60 merged; migration `20261207000000_project_teams.sql` applied and checked before the
+  deploy (projects.team_id, both triggers). Accepted suggestions stay until reload; projects belong to a team or the
+  whole circle; Ops › Circles opens each circle's projects.
