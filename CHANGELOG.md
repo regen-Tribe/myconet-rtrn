@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.38.3 — 2026-11-19
+
+- **Put a suggestion somewhere else before accepting it** (Oscar). On a project-manager suggestion for a new
+  project, **Put it in…** offers a new project in another circle or one of its teams, or adding the tasks to an
+  existing project. Choosing a project warns first ("No new project: these 3 tasks move into Cacao Pilot
+  Initiative"), and Accept becomes **Move them in**. A "move into a project" suggestion can pick a different project.
+  The tasks' circle and team follow the project they land in; only leads of the target circle (and admins) can put
+  them there. Undo puts the tasks back in their project and circle. No migration.
+
 ## v4.38.2 — 2026-11-19
 
 - **Clicking the module you're in reloads it** (Oscar). In the side menu, the module you're already on now loads

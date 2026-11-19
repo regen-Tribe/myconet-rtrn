@@ -26,14 +26,21 @@ const btn = (primary = false): React.CSSProperties => ({
  * leads and admins decide. Filtered by the board's circle filter. Starts collapsed (v4.33.1), except when the
  * page was opened at #pm.
  */
-export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide }: {
+export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide, projects = [], teams = [] }: {
   suggestions: AgentSuggestion[]; actions: PmAction[]; taskTitles: Record<string, string>
   circle: string | null; canDecide: (circle: string) => boolean
+
+  /** Where a suggestion can be put instead (v4.38.3): open projects, and the circles' teams */
+  projects?: { id: string; title: string; circle: string | null }[]
+  teams?: { id: string; name: string; circle: string }[]
 }) {
   const circles = useCircles()
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
+  // "Put it in…": a suggestion's other place, per suggestion. '' = as suggested; 'c:<circle>' / 't:<team>' = a new
+  // project there; 'p:<project>' = into that existing project (its tasks move in)
+  const [where, setWhere] = useState<Record<string, string>>({})
   // Accepted here: they stay, marked accepted and linked to where they went, until the page is reloaded (v4.36.1)
   const [accepted, setAccepted] = useState<{ s: AgentSuggestion; href: string | null }[]>([])
   // "Tell the agent…" on a suggestion: what the lead wants instead (v4.36.0)
@@ -55,9 +62,17 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   const done = actions.filter(a => !circle || a.circle === circle)
   if (!sugs.length && !done.length && !acceptedShown.length) return null
 
+  const overrides = (v: string | undefined) => {
+    if (!v) return {}
+    if (v.startsWith('c:')) return { circle: v.slice(2) }
+    if (v.startsWith('t:')) { const t = teams.find(x => x.id === v.slice(2)); return t ? { circle: t.circle, team_id: t.id } : {} }
+    if (v.startsWith('p:')) return { project_id: v.slice(2) }
+    return {}
+  }
+
   async function post(url: string, action: string, key: string, accepting?: AgentSuggestion) {
     setBusy(key); setMsg(null)
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...(accepting ? overrides(where[accepting.id]) : {}) }) })
     const data = await res.json().catch(() => ({})) as { error?: string; result?: { project_id?: string | null; task_id?: string | null } }
     setBusy(null)
     if (!res.ok) { setMsg(data.error ?? 'That didn’t work.'); return }
@@ -102,9 +117,44 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                   </div>
                 )}
                 {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{s.reason}</div>}
+                {mayDecide && (s.kind === 'new_project' || s.kind === 'move') && (() => {
+                  const v = where[s.id] ?? ''
+                  const n = s.kind === 'new_project' ? (p.tasks ?? []).length : 1
+                  const into = v.startsWith('p:') ? projects.find(x => x.id === v.slice(2)) : null
+                  return (
+                    <div style={{ marginTop: 8 }}>
+                      <select
+                        value={v} onChange={e => setWhere(prev => ({ ...prev, [s.id]: e.target.value }))} aria-label="Put it in"
+                        style={{ fontSize: 12.5, padding: '5px 8px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', maxWidth: '100%' }}
+                      >
+                        <option value="">{s.kind === 'new_project' ? 'Put it in: as suggested' : 'Into: the suggested project'}</option>
+                        {s.kind === 'new_project' && (
+                          <optgroup label="A new project in…">
+                            {circles.slugs.map(c => [
+                              <option key={c} value={`c:${c}`}>{circles.meta(c).emoji} {circles.meta(c).label}</option>,
+                              ...teams.filter(t => t.circle === c).map(t => <option key={t.id} value={`t:${t.id}`}>{'    '}{circles.meta(c).label} › {t.name}</option>),
+                            ])}
+                          </optgroup>
+                        )}
+                        <optgroup label={s.kind === 'new_project' ? 'Or add the tasks to a project' : 'Another project'}>
+                          {projects.map(x => <option key={x.id} value={`p:${x.id}`}>{x.title}{x.circle && circles.has(x.circle) ? ` · ${circles.meta(x.circle).label}` : ''}</option>)}
+                        </optgroup>
+                      </select>
+                      {into && (
+                        <div style={{ fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '6px 10px', marginTop: 6 }}>
+                          {s.kind === 'new_project'
+                            ? <>No new project: {n === 1 ? 'this task moves' : `these ${n} tasks move`} into <strong>{into.title}</strong>{into.circle && into.circle !== s.circle && circles.has(into.circle) ? <> (and to {circles.meta(into.circle).label})</> : null}.</>
+                            : <>The task moves into <strong>{into.title}</strong> instead.</>}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
                 {mayDecide && (
                   <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'accept', s.id, s)} style={btn(true)}>{busy === s.id ? '…' : 'Accept'}</button>
+                    <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'accept', s.id, s)} style={btn(true)}>
+                      {busy === s.id ? '…' : where[s.id]?.startsWith('p:') ? 'Move them in' : 'Accept'}
+                    </button>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'dismiss', s.id)} style={btn()}>Dismiss</button>
                     <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the agent…</button>
                   </div>

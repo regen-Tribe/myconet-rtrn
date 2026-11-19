@@ -3,6 +3,14 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.38.3',
+    date: '2026-11-19',
+    title: 'Choose where a suggestion goes',
+    items: [
+      'On the project manager’s suggestions, “Put it in…” lets you make the new project in another circle or team, or add its tasks to an existing project. It tells you first when the tasks will move into another project.',
+    ],
+  },
+  {
     version: 'v4.38.2',
     date: '2026-11-19',
     title: 'Click a module again to refresh it',

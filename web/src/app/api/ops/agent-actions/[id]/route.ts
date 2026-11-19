@@ -32,7 +32,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (a.action === 'pm_move') {
-    await admin.from('deliverables').update({ project_id: d.from }).eq('id', a.target_id).eq('project_id', d.to)
+    // Back to its project, and its circle when the move changed it (v4.38.3)
+    await admin.from('deliverables').update({ project_id: d.from, ...(d.from_circle !== undefined ? { circle: d.from_circle } : {}) }).eq('id', a.target_id).eq('project_id', d.to)
     if (d.new_project) {
       const { count } = await admin.from('deliverables').select('id', { count: 'exact', head: true }).eq('project_id', d.new_project)
       if (!count) await admin.from('projects').delete().eq('id', d.new_project)

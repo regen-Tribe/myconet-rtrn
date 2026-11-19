@@ -11,7 +11,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   const me = await circleDecider()
   if (!me) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 })
-  const { action, note } = await req.json().catch(() => ({})) as { action?: string; note?: string }
+  // Accepting can put it somewhere else (v4.38.3): a new project in another circle or team ({ circle, team_id }),
+  // or an existing project instead ({ project_id }: the suggestion's tasks move into it)
+  const { action, note, circle: toCircle, team_id: toTeam, project_id: toProject } = await req.json().catch(() => ({})) as {
+    action?: string; note?: string; circle?: string; team_id?: string | null; project_id?: string
+  }
   const admin = createServiceClient()
   const { data: s } = await admin.from('agent_suggestions').select('*').eq('id', id).maybeSingle()
   if (!s || s.status !== 'open') return NextResponse.json({ error: 'This suggestion is no longer open.' }, { status: 409 })
@@ -42,21 +46,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await admin.from('agent_actions').insert(logRow('pm_merge', keep.id, { kept: keep.title, dropped: r.dropped, links: r.links, filled: r.filled }))
     result = { task_id: keep.id, project_id: keep.project_id }
   } else if (s.kind === 'move' || s.kind === 'new_project') {
-    let projectId = p.project as string | undefined
-    if (s.kind === 'new_project') {
+    let projectId = (toProject ?? p.project) as string | undefined
+    // Where the tasks end up: their circle and team follow the project
+    let target: { circle: string | null; team_id: string | null } = { circle: s.circle, team_id: null }
+    if (s.kind === 'new_project' && !toProject) {
+      // A new project, in the suggested circle or the one the lead picked (and maybe one of its teams)
+      const circle = toCircle || s.circle
+      if (circle !== s.circle && !me.canDecide(circle)) return NextResponse.json({ error: 'Only that circle’s leads and admins can put a project there.' }, { status: 403 })
+      let teamId: string | null = null
+      if (toTeam) {
+        const { data: team } = await admin.from('org_units').select('id, circle, kind').eq('id', toTeam).maybeSingle()
+        if (!team || team.kind !== 'team' || team.circle !== circle) return NextResponse.json({ error: 'That team isn’t in this circle.' }, { status: 400 })
+        teamId = team.id
+      }
       const { data: proj, error } = await admin.from('projects').insert({
-        title: p.title, description: p.description ?? null, circle: s.circle, status: 'backlog',
+        title: p.title, description: p.description ?? null, circle, team_id: teamId, status: 'backlog',
         created_by: me.user.id, lead_user_id: me.user.id,
       }).select('id').single()
       if (error || !proj) return NextResponse.json({ error: error?.message ?? 'Project not created' }, { status: 500 })
       projectId = proj.id
+      target = { circle, team_id: teamId }
     } else {
-      const { data: proj } = await admin.from('projects').select('id, circle').eq('id', projectId!).maybeSingle()
-      if (!proj || proj.circle !== s.circle) { await close('stale'); return NextResponse.json({ error: 'The project is gone.' }, { status: 409 }) }
+      const { data: proj } = await admin.from('projects').select('id, circle, team_id, status').eq('id', projectId!).maybeSingle()
+      if (!proj || (!toProject && proj.circle !== s.circle)) { await close('stale'); return NextResponse.json({ error: 'The project is gone.' }, { status: 409 }) }
+      // Into a project the lead picked: it must be open, and theirs to decide
+      if (toProject && (proj.status === 'done' || !me.canDecide(proj.circle))) return NextResponse.json({ error: 'Pick an open project in a circle you lead.' }, { status: 403 })
+      target = { circle: proj.circle, team_id: proj.team_id ?? null }
     }
     const list = (s.kind === 'move' ? [p.task] : p.tasks as string[]).map(task).filter((t): t is NonNullable<ReturnType<typeof task>> => !!t)
-    if (list.length) await admin.from('deliverables').update({ project_id: projectId }).in('id', list.map(t => t.id))
-    await admin.from('agent_actions').insert(list.map(t => logRow('pm_move', t.id, { title: t.title, from: t.project_id, to: projectId, ...(s.kind === 'new_project' ? { new_project: projectId } : {}) })))
+    if (list.length) await admin.from('deliverables').update({ project_id: projectId, circle: target.circle, team_id: target.team_id }).in('id', list.map(t => t.id))
+    await admin.from('agent_actions').insert(list.map(t => logRow('pm_move', t.id, { title: t.title, from: t.project_id, to: projectId, from_circle: t.circle, ...(s.kind === 'new_project' ? { new_project: projectId } : {}) })))
     result = { project_id: projectId ?? null }
   } else if (s.kind === 'assign') {
     const t = task(p.task)

@@ -607,6 +607,7 @@ export default function OpsClient({
 
         <ProjectManagerPanel
           suggestions={pmSuggestions} actions={pmActions} circle={selectedCircle} canDecide={canDecide}
+          projects={projectOptions} teams={teams}
           taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
         />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
