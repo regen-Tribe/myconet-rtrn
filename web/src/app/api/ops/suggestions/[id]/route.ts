@@ -5,18 +5,21 @@ import { mergeTasks } from '@/modules/m07-ops/lib/board-review'
 
 // A circle lead (or an admin) accepts or dismisses one of the project manager's suggestions:
 //   { action: 'accept' | 'dismiss' }. Accepting does the change and logs it in agent_actions, so it
-//   can be undone from the board like the agent's own changes.
+//   can be undone from the board like the agent's own changes. { action: 'redirect', note } closes it after the
+//   lead told the agent what to do instead (v4.36.0; the agent made those changes through Ask / Do).
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const me = await circleDecider()
   if (!me) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 })
-  const { action } = await req.json().catch(() => ({})) as { action?: string }
+  const { action, note } = await req.json().catch(() => ({})) as { action?: string; note?: string }
   const admin = createServiceClient()
   const { data: s } = await admin.from('agent_suggestions').select('*').eq('id', id).maybeSingle()
   if (!s || s.status !== 'open') return NextResponse.json({ error: 'This suggestion is no longer open.' }, { status: 409 })
   if (!me.canDecide(s.circle)) return NextResponse.json({ error: 'Only this circle’s leads and admins decide its suggestions.' }, { status: 403 })
-  const close = (status: string) => admin.from('agent_suggestions').update({ status, decided_by: me.user.id, decided_at: new Date().toISOString() }).eq('id', id)
+  const close = (status: string, decided_note: string | null = null) => admin.from('agent_suggestions').update({ status, decided_by: me.user.id, decided_at: new Date().toISOString(), decided_note }).eq('id', id)
   if (action === 'dismiss') { await close('dismissed'); return NextResponse.json({ ok: true }) }
+  // Done another way: kept as dismissed (not suggested again) with what the lead wanted instead
+  if (action === 'redirect') { await close('dismissed', typeof note === 'string' ? note.trim().slice(0, 2000) || null : null); return NextResponse.json({ ok: true }) }
   if (action !== 'accept') return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 
   const p = s.payload as Record<string, any>

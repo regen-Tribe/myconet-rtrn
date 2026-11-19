@@ -5,6 +5,22 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.36.0 — 2026-11-19
+
+- **Tell the agent what to do instead of a suggestion** (Oscar: on "cacao import and export operations" he wants to
+  say "add this to the incubator cacao project tasks"). Each project-manager suggestion gets **✦ Tell the agent…**
+  next to Accept and Dismiss: the lead's words go to the agent with the suggestion attached (what it proposed, its
+  tasks, its reason), the agent shows the changes on its confirm card, and once they're made the suggestion is closed
+  with the instruction kept (`agent_suggestions.decided_note`). The project manager reads those notes, so it learns
+  what each circle wanted.
+- **The agent is a floating dot on every page** (Oscar: "always talk with the myconet agent to instruct it to do
+  things… a floating dot people can click to interact with things on the page theyre seeing"). The "Ask …" pill is
+  now a small ✦ dot; signed in, it opens on Do. Every Do request says what's on screen (`core/lib/agent-context.ts`
+  → `assistant/lib/do-context.ts`): the page, the project page you're on, the task whose pop-up is open, the meeting
+  and its tasks, the circle the board is filtered to. So "give this to Sonia", "move these here" and "confirm the
+  drafts from this meeting" work. `instructAgent()` lets any page hand it an instruction.
+- **Migration** `20261206000000_suggestion_notes.sql` (`agent_suggestions.decided_note`).
+
 ## v4.35.0 — 2026-11-18
 
 - **Circle members, in four places** (Oscar: "a way to include users as circle member"; "add members on the circle

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { getAgentContext, INSTRUCT_EVENT, type AgentContext } from '@/core/lib/agent-context'
 
 /**
  * "Ask <community>" chat, on every portal page. Answers come from /api/assistant
@@ -11,13 +12,18 @@ import { COMMUNITY_NAME } from '@/core/lib/instance'
  * Visitors get two questions before signing in. Signed in, the Do tab lets a person tell the agent to
  * change the board ("merge the 4 elements project into 5 senses"): /api/agent/plan proposes the changes
  * on a confirm card, /api/agent/do makes them with the person's own rights, each with an Undo.
+ * Since v4.36.0 it's a small floating dot that opens on Do for people who are signed in, and every Do request says
+ * what the person is looking at (core/lib/agent-context.ts: the page, the open task or project), so "this" works.
+ * Other parts of the portal hand it an instruction with instructAgent() (e.g. "Tell the agent" on a suggestion).
  */
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
 interface Change { action: Record<string, unknown>; summary: string; blocked: string | null }
 interface DoResult { summary: string; ok: boolean; error?: string; undo?: string; undone?: boolean }
-interface DoMessage { role: 'user' | 'assistant'; content: string; instruction?: string; changes?: Change[]; state?: 'proposed' | 'doing' | 'done' | 'cancelled'; results?: DoResult[] }
+interface DoMessage { role: 'user' | 'assistant'; content: string; instruction?: string; changes?: Change[]; state?: 'proposed' | 'doing' | 'done' | 'cancelled'; results?: DoResult[]
+  /** A project-manager suggestion this answers: closed once the changes are made */
+  suggestionId?: string }
 const DO_KEY = 'myconet-agent-do'
 const DO_EXAMPLES = [
   'Merge the 4 elements project into the 5 senses project',
@@ -93,7 +99,8 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [error, setError] = useState('')
   const [needLogin, setNeedLogin] = useState(false)
   const [remaining, setRemaining] = useState<number | null>(null)
-  const [mode, setMode] = useState<'ask' | 'do'>('ask')
+  // Signed in, the agent opens on Do: telling it what to change is what people come for (v4.36.0)
+  const [mode, setMode] = useState<'ask' | 'do'>(isLoggedIn ? 'do' : 'ask')
   const [doMessages, setDoMessages] = useState<DoMessage[]>([])
   const router = useRouter()
   const listRef = useRef<HTMLDivElement>(null)
@@ -155,7 +162,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
     setBusy(false)
   }
 
-  const instruct = async (text: string) => {
+  const instruct = async (text: string, extra: AgentContext = {}) => {
     const t = text.trim()
     if (!t || busy) return
     setError(''); setInput('')
@@ -163,10 +170,12 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
     setDoMessages(prev => [...prev, { role: 'user', content: t }])
     setBusy(true)
     try {
-      const resp = await fetch('/api/agent/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instruction: t, history }) })
+      // What's on screen: the address, plus what the page and its pop-ups say they show
+      const context = { path: window.location.pathname + window.location.search, ...getAgentContext(), ...extra }
+      const resp = await fetch('/api/agent/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instruction: t, history, context }) })
       const data = await resp.json().catch(() => ({})) as { reply?: string; changes?: Change[]; error?: string }
       if (!resp.ok) throw new Error(data.error ?? 'The agent is not available right now.')
-      setDoMessages(prev => [...prev, { role: 'assistant', content: data.reply ?? '', instruction: t, changes: data.changes ?? [], state: data.changes?.length ? 'proposed' : undefined }])
+      setDoMessages(prev => [...prev, { role: 'assistant', content: data.reply ?? '', instruction: t, changes: data.changes ?? [], state: data.changes?.length ? 'proposed' : undefined, suggestionId: extra.suggestion_id }])
     } catch (e) {
       setError((e as Error).message)
     }
@@ -182,6 +191,10 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
       const data = await resp.json().catch(() => ({})) as { results?: DoResult[]; error?: string }
       if (!resp.ok) throw new Error(data.error ?? 'The changes didn’t go through.')
       patchDo(i, { state: 'done', results: data.results ?? [] })
+      // It answered a project-manager suggestion: close it, keeping what the lead asked for instead
+      if (m.suggestionId && (data.results ?? []).some(r => r.ok)) {
+        await fetch(`/api/ops/suggestions/${m.suggestionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'redirect', note: m.instruction }) }).catch(() => {})
+      }
       router.refresh()
     } catch (e) {
       patchDo(i, { state: 'proposed' }); setError((e as Error).message)
@@ -196,21 +209,30 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
   }
 
   askRef.current = ask
+  const instructRef = useRef<(t: string, c?: AgentContext) => void>(() => {})
+  instructRef.current = instruct
   useEffect(() => {
-    const onAsk = (e: Event) => { setOpen(true); askRef.current(String((e as CustomEvent).detail ?? '')) }
+    const onAsk = (e: Event) => { setOpen(true); setMode('ask'); askRef.current(String((e as CustomEvent).detail ?? '')) }
+    const onInstruct = (e: Event) => {
+      const d = (e as CustomEvent).detail as { text?: string; ctx?: AgentContext } | undefined
+      setOpen(true); setMode('do'); instructRef.current(String(d?.text ?? ''), d?.ctx ?? {})
+    }
     window.addEventListener(ASK_EVENT, onAsk)
-    return () => window.removeEventListener(ASK_EVENT, onAsk)
+    window.addEventListener(INSTRUCT_EVENT, onInstruct)
+    return () => { window.removeEventListener(ASK_EVENT, onAsk); window.removeEventListener(INSTRUCT_EVENT, onInstruct) }
   }, [])
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} aria-label={`Ask ${COMMUNITY_NAME}`} style={{
-        position: 'fixed', right: 20, bottom: 20, zIndex: 150, display: 'flex', alignItems: 'center', gap: 8,
-        padding: '11px 16px', borderRadius: 999, border: 'none', cursor: 'pointer',
-        background: 'var(--accent-color)', color: '#fff', fontSize: 14, fontWeight: 700,
+      // A small floating dot (v4.36.0): ask, or tell the agent to do something with what's on this page
+      <button onClick={() => setOpen(true)} aria-label={isLoggedIn ? 'Ask or tell the MyCoNet agent' : `Ask ${COMMUNITY_NAME}`} title={isLoggedIn ? 'Ask or tell the agent' : `Ask ${COMMUNITY_NAME}`} style={{
+        position: 'fixed', right: 20, bottom: 20, zIndex: 150, width: 52, height: 52,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: '50%', border: 'none', cursor: 'pointer',
+        background: 'var(--accent-color)', color: '#fff', fontSize: 22,
         boxShadow: '0 6px 20px rgba(0,0,0,.18)',
       }}>
-        <span aria-hidden>💬</span> Ask {COMMUNITY_NAME}
+        <span aria-hidden>✦</span>
       </button>
     )
   }
@@ -223,8 +245,8 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid var(--rule)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>{mode === 'do' ? 'Ask the agent to do something' : `Ask ${COMMUNITY_NAME}`}</div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{mode === 'do' ? 'Changes to the board, with your own rights; you confirm each one' : 'Answers from the community’s Blueprint and documents'}</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>{mode === 'do' ? 'Tell the agent' : `Ask ${COMMUNITY_NAME}`}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{mode === 'do' ? 'It sees what’s on this page, works with your own rights, and you confirm each change' : 'Answers from the community’s Blueprint and documents'}</div>
         </div>
         {isLoggedIn && (
           <div role="tablist" style={{ display: 'flex', border: '1px solid var(--rule)', borderRadius: 8, overflow: 'hidden' }}>
@@ -247,7 +269,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
         {mode === 'do' && doMessages.length === 0 && (
           <div>
             <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: '0 0 12px' }}>
-              Tell me what to change on the board: merge or rename projects, move tasks, give a task to someone, set dates, confirm drafts. I&rsquo;ll show you exactly what I&rsquo;ll do first.
+              Tell me what to change: merge or rename projects, move tasks, give a task to someone, set dates, confirm drafts, add people to circles. I see what&rsquo;s on this page, so &ldquo;this task&rdquo; or &ldquo;these&rdquo; works. I&rsquo;ll show you exactly what I&rsquo;ll do first.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {DO_EXAMPLES.map(s => (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
+import { setAgentContext } from '@/core/lib/agent-context'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { fmtTaskWhen, toTimeInput } from '@/core/lib/tasks'
 import { CalendarPicker } from './CalendarPicker'
@@ -99,6 +100,12 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
   const [subs, setSubs] = useState<SubscriberProfile[]>([])
   const mine = task.assignee_id === userId && !!userId
   const subscribed = subs.some(s => s.user_id === userId)
+
+  // The agent knows which task is open ("give this to Sonia")
+  useEffect(() => {
+    setAgentContext('task', { task_id: task.id })
+    return () => setAgentContext('task', null)
+  }, [task.id])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }

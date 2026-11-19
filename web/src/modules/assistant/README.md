@@ -42,6 +42,16 @@ change on the board in plain words ("merge the 4 elements project into the 5 sen
 | `rename_task`, `assign_task`, `confirm_drafts` | the task's circle or project leads |
 | `set_task_date`, `set_task_status` | also the person on the task |
 
+### What's on screen, and instructions from other pages (v4.36.0)
+
+The chat is a small floating ✦ dot; signed in, it opens on Do. Each Do request sends `context`: the address, plus
+what pages and pop-ups set with `setAgentContext()` (`core/lib/agent-context.ts`: a project page its `project_id`,
+the task pop-up its `task_id`). `lib/do-context.ts` turns it into lines for the planner with the same T/P
+references (the project or task open, a meeting and its tasks, the board's circle filter). Any page can hand the
+agent an instruction with `instructAgent(text, ctx)`; the project manager's **✦ Tell the agent…** sends one with
+`suggestion_id`, and once the changes are made the suggestion is closed as `dismissed` with the instruction in
+`agent_suggestions.decided_note` (the project manager reads those notes).
+
 ### General changes: anything the person may do (v4.29.0)
 
 "The agent can do anything on MyCoNet this person's permissions allow." Besides the board changes above, the agent
