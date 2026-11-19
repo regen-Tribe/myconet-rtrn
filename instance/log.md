@@ -782,3 +782,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ## 2026-11-19 — Core v4.38.0 (deployed, ff67ec0b)
 - Oscar: "ship it". Update PR #61 merged; no migration. The board has Projects | All tasks views.
+
+## 2026-11-19 — Core v4.38.1 (deployed, 66e95c44)
+- Oscar: "ship it". Update PR #62 merged; migration `20261208000000_leads_are_members.sql` applied and checked before
+  the deploy (trigger in place; 4 lead memberships). A circle's leads are its members.
