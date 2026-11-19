@@ -770,3 +770,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - Oscar: "ship it". Update PR #58 merged; migration `20261205000000_circle_join_requests.sql` applied and checked before
   the deploy (table, decide_circle_join, trigger). Circle members: + Add member on the Circles page and Ops › Circles,
   Member of in Admin › Users, ask to join from your profile (leads approve on the Circles page).
+
+## 2026-11-19 — Core v4.36.0 (deployed, 7df10b90)
+- Oscar: "ship it". Update PR #59 merged; migration `20261206000000_suggestion_notes.sql` applied and checked before the
+  deploy (agent_suggestions.decided_note). The agent is a floating dot that sees the page; Tell the agent on suggestions.
