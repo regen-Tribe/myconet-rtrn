@@ -1,5 +1,5 @@
 'use client'
-import { Button, PageHeader } from '@/core/components/v4'
+import { Button, Icon, PageHeader, StatusPill as V4Pill } from '@/core/components/v4'
 import { DESIGN } from '@/core/lib/instance'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
@@ -304,8 +304,11 @@ export default function AgreementsClient({
 
 {DESIGN === 'v4' ? (
         <PageHeader eyebrow="Working together" title="Agreements"
-          subtitle="Propose exactly what you’ll contribute to a project, and exactly what you expect in return."
-          actions={<Button icon="plus" onClick={() => setShowNewProject(true)}>Propose a new project</Button>} />
+          subtitle="An agreement is an offer to help on a task: what you give, and what you’d like back."
+          actions={<>
+            <Button variant="secondary" icon="plus" onClick={() => setShowNewProject(true)}>Suggest a task</Button>
+            <Button variant="next" onClick={() => setView('browse')}>Find a task</Button>
+          </>} />
       ) : (<>
       {/* Page head */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24, flexWrap: 'wrap' as const }}>
@@ -330,6 +333,12 @@ export default function AgreementsClient({
       </>)}
 
       {/* Tab row */}
+      {(DESIGN as string) === 'v4' ? (
+        <div className="v4-chiprow" role="tablist">
+          <button type="button" role="tab" aria-selected={view === 'mine'} className={`v4-chip${view === 'mine' ? ' v4-chip--on' : ''}`} onClick={() => setView('mine')}>Yours{myAgreements.length ? <span className="v4-chip__count">{myAgreements.length}</span> : null}</button>
+          <button type="button" role="tab" aria-selected={view === 'browse'} className={`v4-chip${view === 'browse' ? ' v4-chip--on' : ''}`} onClick={() => setView('browse')}>Find a project<span className="v4-chip__count">{openProjects.length}</span></button>
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--rule)', paddingBottom: 0 }}>
         {([['mine', 'My Agreements'], ['browse', 'Browse & Propose']] as const).map(([v, label]) => (
           <button
@@ -348,9 +357,40 @@ export default function AgreementsClient({
           </button>
         ))}
       </div>
+      )}
+
+      {/* ── MY AGREEMENTS VIEW (the v4 look: rows as in the prototype) ── */}
+      {view === 'mine' && (DESIGN as string) === 'v4' && (
+        myAgreements.length === 0 ? (
+          <div className="v4-empty"><span className="v4-empty__art"><Icon name="handshake" size={30} /></span><b>No agreements yet</b>
+            <p>Find a task you’d like to help on and offer what you can give.</p>
+            <Button onClick={() => setView('browse')}>Find a task →</Button></div>
+        ) : (
+          <div className="ag6-list">
+            <div className="v4-list">
+              {myAgreements.map(a => {
+                const proj = projects.find(p => p.id === a.project_id)
+                const st = a.status === 'accepted' || a.status === 'active' ? 'done' : a.status === 'completed' ? 'idea' : a.status === 'rejected' ? 'no' : a.status === 'draft' ? 'idea' : 'review'
+                const label = ({ accepted: 'Accepted', active: 'Active', completed: 'Completed', rejected: 'Declined', pending: 'Waiting for an answer', draft: 'Draft' } as Record<string, string>)[a.status] ?? a.status
+                return (
+                  <div key={a.id} className="v4-row ag6-row">
+                    <span className="v4-row__lead"><span className="v4-tile v4-tile--yellow"><Icon name="handshake" /></span></span>
+                    <span className="v4-row__main">
+                      <b>{proj?.title ?? 'Task'}: {a.work_description}</b>
+                      <small>You offer{a.expected_reward ? ` · in return: ${a.expected_reward}` : ''} · {new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</small>
+                    </span>
+                    <span className="v4-row__trail"><V4Pill status={st} label={label} /></span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="v4-mt"><Button variant="secondary" icon="plus" onClick={() => setView('browse')}>Offer on another task</Button></p>
+          </div>
+        )
+      )}
 
       {/* ── MY AGREEMENTS VIEW ─────────────────────────────────── */}
-      {view === 'mine' && (
+      {view === 'mine' && (DESIGN as string) !== 'v4' && (
         <div>
           {myAgreements.length === 0 ? (
             <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 12, padding: '48px 28px', textAlign: 'center' as const, maxWidth: 480 }}>
@@ -377,7 +417,7 @@ export default function AgreementsClient({
                 return (
                   <div key={a.id} style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '16px 20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{proj?.title ?? 'Project'}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{proj?.title ?? 'Task'}</div>
                       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color, background: `${color}18`, padding: '3px 10px', borderRadius: 20, flexShrink: 0, whiteSpace: 'nowrap' as const }}>
                         {a.status}
                       </span>
@@ -421,7 +461,7 @@ export default function AgreementsClient({
           <div style={{ display: 'flex', gap: 6, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' as const }}>
             <FilterChip label={`Open · ${openProjects.length}`} active={filter === 'open'} onClick={() => setFilter('open')} />
             <FilterChip label="Mine" active={filter === 'mine'} onClick={() => setFilter('mine')} />
-            <FilterChip label="All projects" active={filter === 'all'} onClick={() => setFilter('all')} />
+            <FilterChip label="All tasks" active={filter === 'all'} onClick={() => setFilter('all')} />
             <div style={{ flex: 1 }} />
             <FilterChip label="↕ Soonest deadline" dashed />
           </div>
@@ -431,7 +471,7 @@ export default function AgreementsClient({
             {filteredProjects.length === 0 ? (
               <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 10, padding: '32px 20px', textAlign: 'center' as const }}>
                 <p style={{ fontSize: 13, color: 'var(--ink-4)', margin: 0 }}>
-                  {filter === 'mine' ? "You haven't proposed on any projects yet." : 'No projects open for collaboration right now.'}
+                  {filter === 'mine' ? "You haven't offered help on any tasks yet." : 'No tasks open for help right now.'}
                 </p>
               </div>
             ) : (
@@ -608,7 +648,7 @@ export default function AgreementsClient({
                   /* Existing proposal — prevent duplicate submission */
                   (() => {
                     const STATUS_INFO: Record<string, { label: string; color: string; desc: string }> = {
-                      pending:   { label: 'Under review',  color: '#f59e0b', desc: 'Your proposal is waiting for the project lead to review it.' },
+                      pending:   { label: 'Under review',  color: '#f59e0b', desc: 'Your proposal is waiting for the task lead to review it.' },
                       accepted:  { label: 'Accepted',      color: '#22c55e', desc: 'Your proposal was accepted. Keep an eye on Operations for next steps.' },
                       active:    { label: 'Active',        color: '#3b82f6', desc: 'This collaboration is active. Deliver what you promised!' },
                       completed: { label: 'Completed',     color: '#94a3b8', desc: 'This collaboration is marked complete. Well done.' },

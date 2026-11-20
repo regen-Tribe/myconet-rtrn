@@ -40,7 +40,7 @@ export const KIND_META: Record<EventKind, {
     label: 'Core events',
     short: 'Core',
     color: '#4f46e5',
-    blurb: 'Official community events posted by members, circle leads and project leads.',
+    blurb: 'Official community events posted by members, circle leads and task leads.',
     rsvpHeading: 'Who’s coming', goingLabel: 'Going', goingCount: 'going', youGoing: '✓ You’re going', noneYet: 'No one has RSVP’d yet.',
   },
   community: {

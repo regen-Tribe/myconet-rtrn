@@ -29,6 +29,7 @@ import { PriorityBadge } from './Priority'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
 import { Button, Chip, ChipRow, PageHeader } from '@/core/components/v4'
+import './ops-v4.css'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -261,7 +262,7 @@ function TaskKanbanCard({ task, canMove, onOpen, projectTitle, onDragStart, onDr
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <PriorityBadge priority={task.priority} />
-          {projectTitle && <span title="Project" style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink-3)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '0 6px', borderRadius: 20, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>▣ {projectTitle}</span>}
+          {projectTitle && <span title="Part of task" style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink-3)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '0 6px', borderRadius: 20, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>▣ {projectTitle}</span>}
           {meta && (
             <span style={{ fontSize: 9, fontWeight: 600, color: meta.color, background: `${meta.color}15`, padding: '1px 6px', borderRadius: 20 }}>
               {meta.emoji} {meta.label}
@@ -274,6 +275,115 @@ function TaskKanbanCard({ task, canMove, onOpen, projectTitle, onDragStart, onDr
               {fmtTaskWhen(task.due_date, task.due_time)}
             </span>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── v4 cards (Task board, v4.62.0) ──────────────────────────────────────────
+// On screen a project is a "task" and its deliverables are its "subtasks" (LEXICON, 20 Nov); a deliverable with no
+// project is a task of its own. Same drag rules as the cards above.
+
+type Person = { id?: string | null; name: string }
+
+function initials(name: string) {
+  const parts = name.replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/).filter(Boolean)
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?'
+}
+
+function Avatars({ people, max = 3 }: { people: Person[]; max?: number }) {
+  if (!people.length) return null
+  return (
+    <span className="ops4-avs" title={people.map(p => p.name).join(', ')}>
+      {people.slice(0, max).map((p, i) => <span key={(p.id ?? p.name) + i} className="ops4-av">{initials(p.name)}</span>)}
+      {people.length > max && <span className="ops4-av ops4-av--more">+{people.length - max}</span>}
+    </span>
+  )
+}
+
+function dragProps(id: string, canMove: boolean, onDragStart?: (id: string) => void, onDragEnd?: () => void, onBlockedDrag?: () => void) {
+  return {
+    draggable: canMove || !!onBlockedDrag,
+    onDragStart: (e: React.DragEvent) => {
+      if (!canMove) { e.preventDefault(); onBlockedDrag?.(); return }
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', id)
+      onDragStart?.(id)
+    },
+    onDragEnd: canMove ? () => onDragEnd?.() : undefined,
+    title: canMove ? undefined : "You can't move this card. Drag it to see why",
+  }
+}
+
+function V4ProjectCard({ project, subtaskCount, doneCount, canMove, people, watchers, teamName, onDragStart, onDragEnd, onBlockedDrag, isDragging }: {
+  project: Project; subtaskCount: number; doneCount: number; canMove: boolean
+  /** The lead first, then whoever has a subtask */
+  people: Person[]
+  watchers: SubscriberProfile[]
+  teamName?: string | null
+  onDragStart?: (id: string) => void; onDragEnd?: () => void; onBlockedDrag?: () => void; isDragging?: boolean
+}) {
+  const circles = useCircles()
+  const meta = project.circle && circles.has(project.circle) ? circles.meta(project.circle) : null
+  const deadline = project.deadline ? new Date(project.deadline + 'T00:00:00') : null
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const late = !!deadline && deadline < today && project.status !== 'done'
+  const pct = subtaskCount ? Math.round((doneCount / subtaskCount) * 100) : 0
+  const isIdea = project.status === 'pending'
+  const watchNames = watchers.map(s => s.first_name ?? s.username ?? 'Member')
+  return (
+    <Link href={`/operations/${project.id}`} className="ops4-link">
+      <div className={`ops-card ops4-card${isDragging ? ' is-dragging' : ''}${canMove ? ' can-move' : ''}`} {...dragProps(project.id, canMove, onDragStart, onDragEnd, onBlockedDrag)}>
+        <b className="ops4-title">{project.title}</b>
+        {(meta || teamName) && (
+          <div className="ops4-circ">
+            {meta && <span className="v4-dot" style={{ background: meta.color }} />}
+            {meta?.label}{teamName ? `${meta ? ' · ' : ''}${teamName}` : ''}
+          </div>
+        )}
+        {!isIdea && subtaskCount > 0 && (
+          <div className="ops4-prog" role="img" aria-label={`${doneCount} of ${subtaskCount} subtasks done`}><i style={{ width: `${pct}%` }} /></div>
+        )}
+        <div className="ops4-foot">
+          <small>
+            {subtaskCount === 0 ? (isIdea ? 'Task idea' : 'No subtasks yet') : `${doneCount}/${subtaskCount} subtasks`}
+            {deadline && <span className={late ? 'ops4-late' : undefined}> · {late ? 'late · ' : ''}{deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+            {watchNames.length > 0 && <span className="ops4-watch" title={`Watching: ${watchNames.join(', ')}`}> · {watchNames.length} watching</span>}
+          </small>
+          <Avatars people={people} />
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function V4TaskCard({ task, canMove, onOpen, projectTitle, onDragStart, onDragEnd, onBlockedDrag, isDragging, onApproved, onDeclined }: {
+  task: Deliverable; canMove: boolean; onOpen: () => void
+  /** In the Subtasks view: the task it belongs to */
+  projectTitle?: string | null
+  onApproved?: () => void; onDeclined?: () => void
+  onDragStart?: (id: string) => void; onDragEnd?: () => void; onBlockedDrag?: () => void; isDragging?: boolean
+}) {
+  const circles = useCircles()
+  const meta = task.circle && circles.has(task.circle) ? circles.meta(task.circle) : null
+  const late = isTaskOverdue(task.due_date, task.due_time, task.status)
+  const who = task.user_profiles?.first_name ?? task.assignee_username ?? (!task.assignee_id ? task.assignee_name : null) ?? null
+  return (
+    <div role="button" tabIndex={0} aria-label={task.title} onClick={onOpen} onKeyDown={e => { if (e.key === 'Enter') onOpen() }} className="ops4-link">
+      <div className={`ops-card ops4-card ops4-card--task${isDragging ? ' is-dragging' : ''}${canMove ? ' can-move' : ''}`} style={{ ['--c' as string]: meta?.color ?? 'var(--ink-4)' }}
+        {...dragProps(`task:${task.id}`, canMove, onDragStart, onDragEnd, onBlockedDrag)}>
+        <span className="ops4-kind">{projectTitle ? `Subtask · ${projectTitle}` : 'Task of its own'}</span>
+        <b className="ops4-title">
+          {task.needs_review && <DraftSwipe taskId={task.id} canDecide={canMove} onApproved={onApproved} onDeclined={onDeclined} />}{task.title}
+        </b>
+        <div className="ops4-foot">
+          <small>
+            <PriorityBadge priority={task.priority} />
+            {meta && !projectTitle ? <>{meta.label}</> : null}
+            {task.due_date && <span className={late ? 'ops4-late' : undefined}>{meta && !projectTitle ? ' · ' : ''}{late ? 'late · ' : ''}{fmtTaskWhen(task.due_date, task.due_time)}</span>}
+          </small>
+          {who && <Avatars people={[{ id: task.assignee_id, name: who }]} />}
         </div>
       </div>
     </div>
@@ -453,12 +563,12 @@ export default function OpsClient({
     <div className={DESIGN === 'v4' ? 'v4-page v4-page--wide v4-ops' : undefined} style={DESIGN === 'v4' ? undefined : { padding: '26px 32px 60px' }}>
 
 {DESIGN === 'v4' ? (
-        <PageHeader eyebrow="Working together" title={sprintLabel}
-          subtitle={<><b>{activeCount} active</b> · {deliverableCount} task{deliverableCount !== 1 ? 's' : ''} · {doneCount} done</>}
+        <PageHeader eyebrow={sprintName ? `Working together · ${sprintName}` : 'Working together'} title="Task board"
+          subtitle={<><b>{activeCount} task{activeCount !== 1 ? 's' : ''} on the go</b> · {deliverableCount - doneCount} open subtask{deliverableCount - doneCount !== 1 ? 's' : ''} · {doneCount} done</>}
           actions={<>
-            {canPropose && !isAdmin && <Button variant="secondary" href="/operations/new" icon="plus">Suggest a project</Button>}
-            {isAdmin && <Button variant="secondary" icon="plus" onClick={() => setNewTask(true)}>Task</Button>}
-            {isAdmin && <Button href="/operations/new" icon="plus">Project</Button>}
+            {isAdmin && <Button variant="secondary" icon="plus" onClick={() => setNewTask(true)}>Task of its own</Button>}
+            {isAdmin && <Button variant="next" href="/operations/new">New task</Button>}
+            {canPropose && !isAdmin && <Button variant="next" href="/operations/new">Suggest a task</Button>}
           </>} />
 ) : (<>
       {/* ── Page Head ─────────────────────────────────────────────────── */}
@@ -511,11 +621,11 @@ export default function OpsClient({
       </div>
 </>)}
 
-      {/* ── Stat Cards ────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 18 }}>
+      {/* ── Stat Cards (v4: the summary line in the header, Late and Drafts as chips) ── */}
+      {DESIGN !== 'v4' && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 18 }}>
         <StatCard label="Active" value={activeCount} delta={`+${activeCount} this sprint`} />
         <StatCard label="Tasks" value={deliverableCount} delta={`${doneCount} done · ${deliverableCount - doneCount} to go`} />
-        <StatCard label="On track" value={onTrackCount} valueColor="var(--m5)" delta="across active projects" />
+        <StatCard label="On track" value={onTrackCount} valueColor="var(--m5)" delta="across active tasks" />
         <StatCard
           label="At risk" value={atRiskCount}
           valueColor={atRiskCount > 0 ? '#f59e0b' : 'var(--ink)'}
@@ -523,7 +633,7 @@ export default function OpsClient({
           active={overdueOnly}
           onClick={atRiskCount > 0 ? () => { setOverdueOnly(v => !v); setActiveTab('board') } : undefined}
         />
-        <StatCard label="Projects" value={totalProjects} delta={`${totalProjects} total`} />
+        <StatCard label="Tasks" value={totalProjects} delta={`${totalProjects} total`} />
         {draftCount > 0 && (
           <StatCard
             label="Drafts" value={draftCount} valueColor="#b45309"
@@ -531,13 +641,19 @@ export default function OpsClient({
             onClick={() => { setDraftsOnly(true); setActiveTab('tasks') }}
           />
         )}
-      </div>
+      </div>}
 
 {DESIGN === 'v4' ? (
         <ChipRow>
-          {(['board', 'tasks', 'updates', 'circles'] as const).map(t => (
-            <Chip key={t} on={activeTab === t} onClick={() => setActiveTab(t)}>{({ board: 'Board', tasks: 'Tasks', updates: 'Updates', circles: 'Circles' } as const)[t]}</Chip>
-          ))}
+          {/* One row for what the page shows: the board of tasks, the board of every subtask, the list, … */}
+          <Chip on={activeTab === 'board' && view === 'projects'} onClick={() => { setActiveTab('board'); pickView('projects') }}>Tasks</Chip>
+          <Chip on={activeTab === 'board' && view === 'tasks'} onClick={() => { setActiveTab('board'); pickView('tasks') }}>All subtasks</Chip>
+          <Chip on={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')}>List</Chip>
+          <Chip on={activeTab === 'updates'} onClick={() => setActiveTab('updates')}>Updates</Chip>
+          <Chip on={activeTab === 'circles'} onClick={() => setActiveTab('circles')}>Circles</Chip>
+          {draftCount > 0 && (
+            <Chip on={activeTab === 'tasks' && draftsOnly} count={draftCount} onClick={() => { setDraftsOnly(true); setActiveTab('tasks') }}>Drafts to confirm</Chip>
+          )}
         </ChipRow>
 ) : (<>
       {/* ── Tab Row ───────────────────────────────────────────────────── */}
@@ -553,14 +669,14 @@ export default function OpsClient({
       {activeTab === 'board' && (
         <>
           {/* Overdue filter banner */}
-          {overdueOnly && (
+          {overdueOnly && DESIGN !== 'v4' && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10,
               background: 'color-mix(in srgb, #f59e0b 10%, var(--surface))',
               border: '1px solid #f59e0b', borderRadius: 8,
               padding: '8px 14px', marginBottom: 12,
             }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#b45309' }}>⚠ Showing only projects with overdue tasks</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#b45309' }}>⚠ Showing only tasks with late subtasks</span>
               <button
                 onClick={() => setOverdueOnly(false)}
                 style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
@@ -570,23 +686,17 @@ export default function OpsClient({
             </div>
           )}
 {DESIGN === 'v4' ? (
-          <div className="v4-opsfilters">
-            <span className="v4-seg" role="tablist" aria-label="Board view">
-              {([['projects', 'Projects'], ['tasks', 'All tasks']] as const).map(([v, label]) => (
-                <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => pickView(v)}>{label}</button>
-              ))}
-            </span>
-            <div className="v4-chiprow" role="group" aria-label="Circle">
-              {[null, ...circles.slugs].map(circle => {
-                const meta = circle ? circles.meta(circle) : null
-                const on = selectedCircle === circle
-                return (
-                  <button key={circle ?? 'all'} type="button" aria-pressed={on} className={`v4-chip${on ? ' v4-chip--on' : ''}`} onClick={() => setSelectedCircle(circle)}>
-                    {meta && <span className="v4-dot" style={{ background: meta.color, width: 8, height: 8 }} />}{meta ? meta.label : 'All circles'}
-                  </button>
-                )
-              })}
-            </div>
+          <div className="v4-opsfilters ops4-filters">
+            <select className="v4-select" aria-label="Circle" value={selectedCircle ?? ''} onChange={e => setSelectedCircle(e.target.value || null)}>
+              <option value="">All circles</option>
+              {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).label}</option>)}
+            </select>
+            {atRiskCount > 0 && (
+              <button type="button" aria-pressed={overdueOnly} className={`v4-chip ops4-latechip${overdueOnly ? ' v4-chip--on' : ''}`} onClick={() => setOverdueOnly(v => !v)}>
+                {atRiskCount} late{overdueOnly ? ' ✕' : ''}
+              </button>
+            )}
+            <span className="ops4-spacer" />
             {userId && (
               <span className="v4-seg" role="group" aria-label="My role">
                 {(['all', 'lead', 'member', 'subscriber'] as const).map(r => (
@@ -602,7 +712,7 @@ export default function OpsClient({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
             {/* What the board shows: projects (and tasks with no project yet), or every task */}
             <div role="tablist" aria-label="Board view" style={{ display: 'inline-flex', alignSelf: 'flex-start', background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 9, padding: 2, gap: 2 }}>
-              {([['projects', 'Projects'], ['tasks', 'All tasks']] as const).map(([v, label]) => (
+              {([['projects', 'Tasks'], ['tasks', 'All subtasks']] as const).map(([v, label]) => (
                 <button key={v} role="tab" aria-selected={view === v} onClick={() => pickView(v)} style={{
                   fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
                   background: view === v ? 'var(--surface)' : 'transparent', color: view === v ? 'var(--ink)' : 'var(--ink-3)',
@@ -669,7 +779,7 @@ export default function OpsClient({
           projects={projectOptions} teams={teams}
           taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
         />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+        <div className={DESIGN === 'v4' ? 'ops4-board' : undefined} style={DESIGN === 'v4' ? undefined : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {columns.map(col => {
             const cards = grouped[col.key] ?? []
             const taskCards = groupedTasks[col.key] ?? []
@@ -700,8 +810,8 @@ export default function OpsClient({
                   transition: 'background 120ms, border-color 120ms',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{col.label}</span>
+                <div className="ops4-colhead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{col.label}{DESIGN === 'v4' && col.key === 'paused' && <small className="ops4-colnote"> · not for a task of its own</small>}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{cards.length + taskCards.length}</span>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: col.color }} />
@@ -709,7 +819,7 @@ export default function OpsClient({
                 </div>
 
                 {cards.length + taskCards.length === 0 ? (
-                  <div style={{ fontSize: 11, color: 'var(--ink-4)', padding: '12px 4px', textAlign: 'center' }}>Empty</div>
+                  <div className="ops4-empty" style={DESIGN === 'v4' ? undefined : { fontSize: 11, color: 'var(--ink-4)', padding: '12px 4px', textAlign: 'center' }}>{DESIGN === 'v4' ? (col.key === 'pending' ? 'No task ideas' : col.key === 'paused' ? 'Nothing paused' : 'Nothing here') : 'Empty'}</div>
                 ) : (
                   cards.map(p => {
                     const stats = subtasksByProject.get(p.id) ?? { total: 0, done: 0 }
@@ -717,6 +827,30 @@ export default function OpsClient({
                     const leadId = p.lead_user_id ?? p.created_by ?? ''
                     const leadProf = userProfiles[leadId]
                     const leadName = leadProf?.first_name ?? leadProf?.username ?? null
+                    if (DESIGN === 'v4') {
+                      // The lead first, then whoever has a subtask on it
+                      const seen = new Set<string>()
+                      const people: Person[] = []
+                      const add = (id: string | null | undefined, name: string | null | undefined) => {
+                        const k = id ?? name ?? ''
+                        if (!name || seen.has(k)) return
+                        seen.add(k); people.push({ id, name })
+                      }
+                      if (leadName) add(leadId, leadName)
+                      for (const d of initialDeliverables) if (d.project_id === p.id) add(d.assignee_id, d.user_profiles?.first_name ?? d.assignee_username ?? (!d.assignee_id ? d.assignee_name : null))
+                      return (
+                        <V4ProjectCard
+                          key={p.id} project={p} subtaskCount={stats.total} doneCount={stats.done}
+                          canMove={canMoveProject(p, userId, userRole, leadCircles, circles)}
+                          people={people} watchers={subs}
+                          teamName={teams.find(t => t.id === p.team_id)?.name ?? null}
+                          onDragStart={(id) => setDraggingId(id)}
+                          onBlockedDrag={userId ? () => setNotice(projectEditBlock(p, userId, userRole, leadCircles, circles)) : undefined}
+                          onDragEnd={() => { setDraggingId(null); setDropTarget(null) }}
+                          isDragging={draggingId === p.id}
+                        />
+                      )
+                    }
                     return (
                       <ProjectKanbanCard
                         key={p.id}
@@ -735,8 +869,9 @@ export default function OpsClient({
                     )
                   }).concat(taskCards.map(t => {
                     const p = taskRef(t)
+                    const Card = DESIGN === 'v4' ? V4TaskCard : TaskKanbanCard
                     return (
-                      <TaskKanbanCard
+                      <Card
                         key={t.id}
                         task={t}
                         canMove={canMoveProject(p, userId, userRole, leadCircles, circles)}
@@ -756,6 +891,11 @@ export default function OpsClient({
             )
           })}
         </div>
+        {DESIGN === 'v4' && (
+          <p className="ops4-hint">
+            {userId ? 'Drag a card to move it. Only a task’s lead or its circle’s lead can move it. A task of its own can’t be paused.' : 'Open a card to see more.'}
+          </p>
+        )}
         </>
       )}
 

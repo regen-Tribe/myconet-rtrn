@@ -23,7 +23,7 @@ function Avatar({ member, size }: { member: Member; size: number }) {
       justifyContent: 'center', border: '2px solid var(--rule)',
     }}>
       {member.avatar_url
-        ? <img src={member.avatar_url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <img loading="lazy" decoding="async" src={member.avatar_url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : <span style={{ fontSize: size * 0.36, fontWeight: 700, color: 'var(--accent)' }}>{init}</span>
       }
     </div>

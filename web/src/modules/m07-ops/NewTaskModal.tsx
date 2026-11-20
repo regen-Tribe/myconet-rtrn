@@ -55,12 +55,12 @@ export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="New task"
+        aria-label="New task of its own"
         onClick={e => e.stopPropagation()}
         style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--rule)', width: '100%', maxWidth: 440, maxHeight: 'calc(100dvh - 24px)', overflowY: 'auto', overscrollBehavior: 'contain', boxShadow: '0 24px 64px rgba(0,0,0,0.22)' }}
       >
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>New task</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>New task of its own</span>
           <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--ink-3)', cursor: 'pointer', lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -94,7 +94,7 @@ export function NewTaskModal({ defaultCircle, onClose, onAdded }: {
             disabled={saving || !title.trim() || !circle}
             style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--m7)', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: saving || !title.trim() || !circle ? 'not-allowed' : 'pointer', opacity: saving || !title.trim() || !circle ? 0.55 : 1 }}
           >
-            {saving ? 'Adding…' : 'Add task'}
+            {saving ? 'Adding…' : 'Add it'}
           </button>
         </div>
       </div>

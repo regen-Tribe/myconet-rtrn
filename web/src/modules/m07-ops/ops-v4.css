@@ -1,0 +1,40 @@
+/* Task board (M07 Operations) in the v4 look, v4.62.0. Only used when "design": "v4". */
+
+.ops4-filters { gap: 8px; }
+.ops4-filters .v4-select { min-width: 150px; }
+.ops4-spacer { flex: 1 1 auto; }
+.ops4-latechip { color: var(--red-ink, #b42318); }
+
+.ops4-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 10px; align-items: start; }
+.ops4-colhead { padding: 2px 4px; }
+.ops4-colnote { font-weight: 500; color: var(--ink-4, #9aa0ab); font-size: 11px; }
+.ops4-empty { font-size: 12px; color: var(--ink-4, #9aa0ab); padding: 14px 4px; text-align: center; }
+.ops4-hint { font-size: 12.5px; color: var(--ink-3, #6b7180); margin: 10px 2px 0; }
+
+.ops4-link { display: block; margin-bottom: 8px; text-decoration: none; color: inherit; }
+.ops4-card { padding: 12px 12px 10px; cursor: pointer; }
+.ops4-card.can-move { cursor: grab; }
+.ops4-card.is-dragging { opacity: .5; }
+.ops4-card--task { box-shadow: inset 3px 0 0 var(--c, transparent), 0 1px 0 rgba(17,19,23,.04) !important; }
+.ops4-title { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--ink, #111317); margin-bottom: 4px; }
+.ops4-kind { display: block; font-size: 10.5px; font-weight: 600; color: var(--ink-4, #9aa0ab); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ops4-circ { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3, #6b7180); margin-bottom: 6px; }
+.ops4-circ .v4-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.ops4-prog { height: 5px; border-radius: 99px; background: var(--bg-2, #eef0f3); overflow: hidden; margin: 4px 0 8px; }
+.ops4-prog i { display: block; height: 100%; border-radius: 99px; background: var(--green, #3aa660); }
+.ops4-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ops4-foot small { font-size: 11.5px; color: var(--ink-3, #6b7180); display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
+.ops4-late { color: var(--red-ink, #b42318); font-weight: 600; }
+.ops4-watch { color: var(--ink-4, #9aa0ab); }
+
+.ops4-avs { display: inline-flex; flex-shrink: 0; }
+.ops4-av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 9.5px; font-weight: 700;
+  background: var(--violet, #e5dcff); color: var(--violet-ink, #5b3fb0); box-shadow: 0 0 0 2px var(--surface, #fff); }
+.ops4-av + .ops4-av { margin-left: -6px; }
+.ops4-av--more { background: var(--bg-2, #eef0f3); color: var(--ink-3, #6b7180); }
+
+/* Phones: the board scrolls sideways one column at a time */
+@media (max-width: 760px) {
+  .ops4-board { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; margin: 0 -16px; padding: 0 16px 6px; scroll-padding: 0 16px; }
+  .ops4-board > .ops-col { flex: 0 0 82%; scroll-snap-align: start; }
+}

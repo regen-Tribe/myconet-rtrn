@@ -18,6 +18,8 @@ import { UnitEditModal, type UnitDraft } from './UnitEditModal'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
 import { PageHeader } from '@/core/components/v4'
+import CirclesV4, { type CircleProject } from './CirclesV4'
+import type { CircleExtras } from './lib/circle-extras'
 
 function Chip({ name, username, note, isMe, accent }: {
   id: string; name: string; username: string | null; note?: string | null; isMe: boolean; accent?: string
@@ -46,7 +48,7 @@ const label: React.CSSProperties = {
 }
 
 export default function OrgChartClient({
-  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts, joinRequests = [], teamProjects = [],
+  initialUnits, initialMembers, directory, people, userId, role, leadCircles, meetingCounts, pmCounts, joinRequests = [], teamProjects = [], projects = [], extras,
 }: {
   initialUnits: OrgUnit[]
   initialMembers: OrgMember[]
@@ -64,6 +66,10 @@ export default function OrgChartClient({
   joinRequests?: JoinRequest[]
   /** Open projects that belong to a team (v4.37.0), listed on the team's card */
   teamProjects?: { id: string; title: string; team_id: string }[]
+  /** Open projects with their circle, for each circle's page in the v4 look */
+  projects?: CircleProject[]
+  /** Photos, open tasks, meetings and guides for the v4 look (v4.63.0) */
+  extras?: CircleExtras
 }) {
   const circles = useCircles()
   const supabase = createClient()
@@ -106,14 +112,14 @@ export default function OrgChartClient({
     if (unit) {
       const { data, error } = await supabase.from('org_units').update({ name: draft.name, description: draft.description }).eq('id', unit.id).select('id, kind, circle, name, description, sort_order')
       if (error) return error.message
-      if (!data?.length) return 'You can’t edit this. Circle leads edit their circle and its teams; team leads edit their team.'
+      if (!data?.length) return 'You can’t edit this. Circle leads edit their circle and its subcircles; subcircle leads edit their subcircle.'
       unit = data[0] as OrgUnit
     } else {
       const nextOrder = Math.max(0, ...teamsOf(editing.circle).map(t => t.sort_order)) + 1
       const { data, error } = await supabase.from('org_units')
         .insert({ kind: 'team', circle: editing.circle, name: draft.name, description: draft.description, sort_order: nextOrder, created_by: userId })
         .select('id, kind, circle, name, description, sort_order').single()
-      if (error) return error.code === '42501' ? 'Only admins and this circle’s leads can add teams.' : error.message
+      if (error) return error.code === '42501' ? 'Only admins and this circle’s leads can add subcircles.' : error.message
       unit = data as OrgUnit
     }
     const saved = unit
@@ -135,7 +141,7 @@ export default function OrgChartClient({
     setUnits(list => (list.some(u => u.id === saved.id) ? list.map(u => (u.id === saved.id ? saved : u)) : [...list, saved]))
     setMembers(list => [...list.filter(m => m.unit_id !== saved.id), ...(fresh ?? []).map(toMember)])
     setEditing(null)
-    setToast(editing.unit ? 'Saved' : 'Team created')
+    setToast(editing.unit ? 'Saved' : 'Subcircle created')
     return null
   }
 
@@ -144,12 +150,63 @@ export default function OrgChartClient({
     if (!unit) return null
     const { data, error } = await supabase.from('org_units').delete().eq('id', unit.id).select('id')
     if (error) return error.message
-    if (!data?.length) return 'Only admins and this circle’s leads can delete teams.'
+    if (!data?.length) return 'Only admins and this circle’s leads can delete subcircles.'
     setUnits(list => list.filter(u => u.id !== unit.id))
     setMembers(list => list.filter(m => m.unit_id !== unit.id))
     setEditing(null)
-    setToast('Team deleted')
+    setToast('Subcircle deleted')
     return null
+  }
+
+  const modals = (
+    <>
+      {editing && (
+        <UnitEditModal
+          unit={editing.unit}
+          circle={editing.circle}
+          members={editing.unit ? membersOf(editing.unit.id) : []}
+          people={people}
+          canDelete={canLeadCircle(editing.circle, role, leadCircles)}
+          onClose={() => setEditing(null)}
+          onSave={saveUnit}
+          onDelete={deleteUnit}
+        />
+      )}
+      {toast && (
+        <div role="status" style={{
+          position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 10000,
+          background: 'var(--ink)', color: 'var(--surface)', fontSize: 13, fontWeight: 600,
+          padding: '10px 18px', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        }}>
+          {toast}
+        </div>
+      )}
+    </>
+  )
+
+  // The v4 look: circle cards and a page per circle (Sonia's prototype)
+  if ((DESIGN as string) === 'v4') {
+    return (
+      <>
+        <CirclesV4
+          units={units} members={members} directory={directory} people={people} userId={userId} role={role}
+          leadCircles={leadCircles} meetingCounts={meetingCounts} pmCounts={pmCounts} requests={requests}
+          teamProjects={teamProjects} projects={projects} extras={extras}
+          onEdit={(unit, circle) => setEditing({ unit, circle })}
+          onMemberAdded={(m, label) => { setMembers(prev => [...prev, m]); setToast(`${m.person?.name ?? 'They'} joined ${label}`) }}
+          onDecided={(id, approved) => {
+            const r = requests.find(x => x.id === id)
+            setRequests(prev => prev.filter(x => x.id !== id))
+            const cu = r ? circleUnit(r.circle) : undefined
+            if (approved && r && cu) {
+              setMembers(prev => [...prev, { unit_id: cu.id, user_id: r.user_id, role: 'member', title: null, person: people.find(p => p.id === r.user_id) ?? { id: r.user_id, name: r.name, username: null } }])
+              setToast(`${r.name} joined ${circles.meta(r.circle).label}`)
+            }
+          }}
+        />
+        {modals}
+      </>
+    )
   }
 
   const editBtn: React.CSSProperties = {
@@ -168,7 +225,7 @@ export default function OrgChartClient({
         <PageHeader
           eyebrow="Community"
           title="Circles"
-          subtitle={<>A circle looks after one area of community life; teams are smaller groups inside it.{mySummary && <> <b>{mySummary}</b></>}</>}
+          subtitle={<>A circle looks after one area of community life; subcircles are smaller groups inside it.{mySummary && <> <b>{mySummary}</b></>}</>}
           actions={role === 'admin' ? <AddCircleButton /> : undefined}
         />
       ) : (<>
@@ -182,7 +239,7 @@ export default function OrgChartClient({
           Who does what
         </h1>
         <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0, maxWidth: '62ch', lineHeight: 1.55 }}>
-          The community’s circles, the teams inside them, and who leads each one.
+          The community’s circles, the subcircles inside them, and who leads each one.
           {mySummary && <> {mySummary}</>}
         </p>
       </div>
@@ -285,7 +342,7 @@ export default function OrgChartClient({
 
               {(teams.length > 0 || canLead) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px dashed var(--rule)', paddingTop: 10 }}>
-                  <div style={{ ...label, marginBottom: 0 }}>Teams</div>
+                  <div style={{ ...label, marginBottom: 0 }}>Subcircles</div>
                   {teams.map(t => {
                     const tm = membersOf(t.id)
                     const tLeads = tm.filter(m => m.role === 'lead' && m.person)
@@ -299,7 +356,7 @@ export default function OrgChartClient({
                         {t.description && <p style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45, margin: '0 0 6px', whiteSpace: 'pre-wrap' }}>{t.description}</p>}
                         {tLeads.length > 0 && <div style={{ marginBottom: 5 }}>{peopleRow(tLeads.map(m => ({ ...m.person!, note: m.title ?? 'Lead' })), meta.color)}</div>}
                         {tMembers.length > 0 && peopleRow(tMembers.map(m => ({ ...m.person!, note: m.title })))}
-                        {tm.length === 0 && <div style={{ fontSize: 11.5, color: 'var(--ink-4)' }}>No one on this team yet.</div>}
+                        {tm.length === 0 && <div style={{ fontSize: 11.5, color: 'var(--ink-4)' }}>No one in this subcircle yet.</div>}
                         {teamProjects.some(p => p.team_id === t.id) && (
                           <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                             {teamProjects.filter(p => p.team_id === t.id).map(p => (
@@ -315,7 +372,7 @@ export default function OrgChartClient({
                       fontSize: 12, fontWeight: 600, color: meta.color, background: 'transparent', cursor: 'pointer',
                       border: `1px dashed color-mix(in srgb, ${meta.color} 45%, var(--rule))`, borderRadius: 8, padding: '7px 10px',
                     }}>
-                      + Add team
+                      + Add subcircle
                     </button>
                   )}
                 </div>
@@ -326,7 +383,7 @@ export default function OrgChartClient({
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 18 }}>
-        Admins edit everything. Circle leads edit their circle and its teams; team leads edit their own team.
+        Admins edit everything. Circle leads edit their circle and its subcircles; subcircle leads edit their own subcircle.
         {!userId && <> <Link href="/auth/login" style={{ color: 'var(--m17)', fontWeight: 600 }}>Sign in</Link> if you lead something.</>}
       </p>
 

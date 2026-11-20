@@ -254,7 +254,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy}
                     onClick={() => setEdit({ slug: r.slug, name: r.name, purpose: purposes[r.slug] ?? '', leads: r.leads_to_assign ?? '', emoji: r.emoji, color: r.color, steward: r.is_steward })}>Edit</button>
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy} onClick={() => setArchived(r.slug, true)}
-                    title="Hide it from pickers; its projects and events keep it">Retire</button>
+                    title="Hide it from pickers; its tasks and events keep it">Retire</button>
                 </div>
               )}
             </div>

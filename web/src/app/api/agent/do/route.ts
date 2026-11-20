@@ -5,6 +5,7 @@ import { doMe } from '@/modules/assistant/lib/do-access'
 import { requestBoardReview } from '@/modules/m07-ops/lib/board-review'
 import { createClient } from '@/core/lib/supabase/server'
 import { CATALOG, describeGeneral, executeGeneral, loadRefs, type GeneralAction } from '@/modules/assistant/lib/do-catalog'
+import { checkEvent, describeEvent, eventBlocked, executeEvent } from '@/modules/assistant/lib/do-events'
 
 // Ask / Do, step 2: the person confirmed the card → { actions, instruction } are made. The board is read
 // again and every change checked again with this person's rights (nothing from the card is trusted);
@@ -22,6 +23,25 @@ export async function POST(req: NextRequest) {
   const mine = await createClient()
   let refs: Awaited<ReturnType<typeof loadRefs>> | null = null
   for (const a of actions.slice(0, 8)) {
+    // A calendar event (v4.65.0): checked again from scratch, made with the person's own session
+    if ((a as { kind: string }).kind === 'change_event') {
+      const clean = checkEvent(a as never)
+      const summary = clean ? await describeEvent(admin, clean) : null
+      if (!clean || !summary) { results.push({ summary: 'An event change that no longer fits', ok: false, error: 'Skipped (nothing to change)' }); continue }
+      const no = await eventBlocked(admin, clean, me)
+      if (no) { results.push({ summary, ok: false, error: no }); continue }
+      const r = await executeEvent(admin, mine, clean, me, req.nextUrl.origin)
+      let undo: string | undefined
+      if (r.undo) {
+        const { data } = await admin.from('agent_actions').insert({
+          actor: 'agent-do', requested_by: me.id, action: 'do_change_event', target_table: 'events', target_id: clean.event,
+          detail: { circle: null, summary, instruction: instruction?.slice(0, 500) ?? null, as_user: true, event_undo: r.undo },
+        }).select('id').single()
+        undo = data?.id
+      }
+      results.push({ summary: r.google ? `${summary} (${r.google})` : summary, ok: !r.error, ...(r.error ? { error: r.error } : {}), undo })
+      continue
+    }
     // A general change: only catalogue fields; made with the person's own session, so the database decides
     const g = a as unknown as GeneralAction
     if (g.kind === 'update' || g.kind === 'add_member' || g.kind === 'remove_member') {

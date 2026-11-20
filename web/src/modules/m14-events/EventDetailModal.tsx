@@ -241,7 +241,7 @@ export function EventDetailModal({
           <div>
             <div style={sectionLabel}>Linked to</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-              {event.project && <Link href={`/operations/${event.project.id}`} style={{ color: 'var(--m7)', fontWeight: 600 }}>⚙️ Project · {event.project.title}</Link>}
+              {event.project && <Link href={`/operations/${event.project.id}`} style={{ color: 'var(--m7)', fontWeight: 600 }}>⚙️ Task · {event.project.title}</Link>}
               {event.proposal && <Link href="/governance" style={{ color: 'var(--m9)', fontWeight: 600 }}>⚖️ Proposal · {event.proposal.title}</Link>}
             </div>
           </div>

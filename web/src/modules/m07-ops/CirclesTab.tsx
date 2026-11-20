@@ -67,12 +67,12 @@ export function CirclesTab({
   const summary = !userId
     ? 'Sign in to see which circles you belong to.'
     : isAdmin
-      ? 'You’re an admin, so you can move and edit projects in every circle.'
+      ? 'You’re an admin, so you can move and edit tasks in every circle.'
       : myLeadCircles.length
         ? `You lead ${myLeadCircles.map(c => circles.label(c)).join(', ')}. You can move and edit projects in ${myLeadCircles.length === 1 ? 'that circle' : 'those circles'}.`
         : userRole === 'project_lead'
-          ? 'You’re a project lead. You can move and edit the projects you created or lead.'
-          : 'You don’t lead a circle. Circle leads and admins move projects on the board.'
+          ? 'You’re a task lead. You can move and edit the tasks you created or lead.'
+          : 'You don’t lead a circle. Circle leads and admins move tasks on the board.'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -89,7 +89,7 @@ export function CirclesTab({
               ? myInvolvedCircles.map(c => (
                   <span key={c} style={{ color: circles.meta(c).color, fontWeight: 600, marginRight: 8 }}>{circles.label(c)}</span>
                 ))
-              : 'no circle projects yet — lead, join or watch a project to get involved.'}
+              : 'no circle tasks yet — lead, join or watch a task to get involved.'}
           </div>
         )}
       </div>
@@ -194,7 +194,7 @@ export function CirclesTab({
       </div>
 
       <Link href="/circles" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--m17)', textDecoration: 'none' }}>
-        See all circles, with the teams inside each one →
+        See all circles, with the subcircles inside each one →
       </Link>
 
       {directory.admins.length > 0 && (

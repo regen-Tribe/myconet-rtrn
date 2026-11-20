@@ -319,7 +319,7 @@ export default function HomeClient({
             { mod: '16', icon: '🔑', text: 'Borrow shared tools & spaces',      target: 'resources', color: 'var(--m16)' },
             { mod: '06', icon: '🤝', text: "Make agreements on how you'll collaborate", target: 'agreements', color: 'var(--m6)' },
             { mod: '17', icon: '🧭', text: 'See who leads what',                target: 'circles', color: 'var(--m17)' },
-            { mod: '07', icon: '⚙️', text: 'Contribute to goals & projects',  target: 'ops',        color: 'var(--m7)' },
+            { mod: '07', icon: '⚙️', text: 'Contribute to goals & tasks',  target: 'ops',        color: 'var(--m7)' },
             ...(moduleOn('points') ? [{ mod: '08', icon: '✦',  text: 'Get rewards for your contributions', target: 'contributions', color: 'var(--m8)' }] : []),
             { mod: '09', icon: '☉',  text: 'Make decisions together',          target: 'governance', color: 'var(--m9)' },
           ].map(({ mod, icon, text, target, color }) => (
@@ -365,7 +365,7 @@ export default function HomeClient({
               step: '01', icon: '👁', label: 'Browse',
               sublabel: 'No account needed',
               color: 'var(--ink-4)',
-              items: ['Read all proposals', 'View member profiles', 'See the Blueprint', 'Explore projects'],
+              items: ['Read all proposals', 'View member profiles', 'See the Blueprint', 'Explore tasks'],
               cta: null, ctaHref: null,
               tier: null,
             },
@@ -381,7 +381,7 @@ export default function HomeClient({
               step: '03', icon: '🏡', label: 'Join the community',
               sublabel: 'Sign the values · M05',
               color: 'var(--m5)',
-              items: ['Vote on proposals', 'Submit proposals', 'Collaborate on projects', 'Earn badges'],
+              items: ['Vote on proposals', 'Submit proposals', 'Help on tasks', 'Earn badges'],
               cta: 'Apply to join', ctaHref: '/join',
               tier: 'joining',
             },
@@ -389,7 +389,7 @@ export default function HomeClient({
               step: '04', icon: '⊕', label: 'Member',
               sublabel: 'Full member',
               color: 'var(--m9)',
-              items: ['All modules active', 'Lead projects', 'Governance rights', 'Build together'],
+              items: ['All modules active', 'Lead tasks', 'Governance rights', 'Build together'],
               cta: null, ctaHref: null,
               tier: 'member',
             },
@@ -502,7 +502,7 @@ export default function HomeClient({
               margin: '0 0 12px', maxWidth: '26ch',
             }}>How this community portal works.</h2>
             <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.7, maxWidth: '56ch', margin: 0 }}>
-              Each module looks after one part of neighborhood life — members, the plan, joining, the calendar, places to stay, shared resources, projects, contributions and decisions. The dashboard ties them together: who's here, what's being built, and what needs your attention, updated live.
+              Each module looks after one part of neighborhood life — members, the plan, joining, the calendar, places to stay, shared resources, tasks, contributions and decisions. The dashboard ties them together: who's here, what's being built, and what needs your attention, updated live.
             </p>
           </div>
           <Link href="/dashboard" style={{
@@ -595,7 +595,7 @@ export default function HomeClient({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
                 {[
                   { label: 'Members', value: memberCount, color: 'var(--m1)', href: '/members' },
-                  { label: 'Active projects', value: activeProjectCount, color: 'var(--m7)', href: '/operations' },
+                  { label: 'Active tasks', value: activeProjectCount, color: 'var(--m7)', href: '/operations' },
                   { label: 'Tasks', value: deliverables.length, color: 'var(--m8)', href: '/operations' },
                 ].map(s => (
                   <Link key={s.label} href={s.href} style={{ textDecoration: 'none' }}>
@@ -629,7 +629,7 @@ export default function HomeClient({
               {/* Active projects */}
               {projects.length > 0 && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Active projects</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Active tasks</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                     {projects.slice(0, 2).map(p => (
                       <Link key={p.id} href={`/operations/${p.id}`} style={{ textDecoration: 'none' }}>
@@ -704,7 +704,7 @@ export default function HomeClient({
                       display: 'grid', placeItems: 'center',
                       color: '#fff', fontSize: 12, fontWeight: 700, overflow: 'hidden',
                     }}>
-                      {m.avatar_url ? <img src={m.avatar_url} alt={fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(fullName)}
+                      {m.avatar_url ? <img loading="lazy" decoding="async" src={m.avatar_url} alt={fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(fullName)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -753,10 +753,10 @@ export default function HomeClient({
             lead="Workdays, circle meetings, potlucks and celebrations all live on one community calendar. Anyone can browse public events. Joining members host their own, and RSVPs show who's coming."
             href="/calendar"
             why={[
-              '<strong>Core events</strong> — official gatherings posted by members, circle leads and project leads.',
+              '<strong>Core events</strong> — official gatherings posted by members, circle leads and task leads.',
               '<strong>Community hosted</strong> — anyone joining the community can put an event on the calendar.',
               '<strong>Tasks</strong> — things the community needs done. Sign up to help.',
-              '<strong>Linked to the work</strong> — tag a circle, an Ops project or a governance proposal.',
+              '<strong>Linked to the work</strong> — tag a circle, a task or a governance proposal.',
             ]}
           />
           <DemoCard>
@@ -892,7 +892,7 @@ export default function HomeClient({
             href="/join"
             why={[
               '<strong>No NDAs, no hidden rules.</strong> What you sign is what\'s in the Blueprint.',
-              '<strong>Application reviewed by a real human</strong> — the project leads, not an algorithm.',
+              '<strong>Application reviewed by a real human</strong> — the circle leads, not an algorithm.',
               '<strong>Unlocks Agreements, Operations, Achievements and Governance.</strong>',
             ]}
           />
@@ -998,7 +998,7 @@ export default function HomeClient({
       <section className={sectionCls} style={sectionW} id="agreements">
         <Split reverse>
           <DemoCard>
-            <DemoHead color="var(--m6)" modLabel="M06" title="Open projects · Propose help" meta={`${projects.length || 3} open`} href="/agreements" />
+            <DemoHead color="var(--m6)" modLabel="M06" title="Open tasks · Propose help" meta={`${projects.length || 3} open`} href="/agreements" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {(projects.length > 0 ? projects : [
                 { id: 'demo1', title: 'Greywater wetlands install', description: 'Build the reed-bed wetland that handles all household greywater for Cluster A.', needs: ['Earthworks', 'Plumbing', '3 weekends'], open_for_collaborators: true },
@@ -1032,7 +1032,7 @@ export default function HomeClient({
                   {pickedProject === i && (
                     <div style={{ marginTop: 12, padding: '12px 14px', background: 'color-mix(in srgb, var(--m6) 5%, var(--surface))', borderRadius: 8, border: '1px dashed color-mix(in srgb, var(--m6) 30%, var(--rule))' }}>
                       {agreementSubmitted ? (
-                        <div style={{ fontSize: 13, color: 'var(--m5)', fontWeight: 600 }}>✓ Submitted for review. The project lead will respond in 48h.</div>
+                        <div style={{ fontSize: 13, color: 'var(--m5)', fontWeight: 600 }}>✓ Submitted for review. The task lead will respond in 48h.</div>
                       ) : (
                         <>
                           <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--m6)', letterSpacing: '0.08em', marginBottom: 8 }}>YOUR PROPOSAL</div>
@@ -1072,7 +1072,7 @@ export default function HomeClient({
           <SectionHead
             mod="06" label="Agreements" color="var(--m6)"
             h="Make visible deals on how you'll support."
-            lead="Browse every active project — the ones quietly building, the ones loudly hiring. Propose exactly what you'll contribute and exactly what you expect in return. The team reviews it. If accepted, your agreement is live and tracked."
+            lead="Browse every active task — the ones quietly building, the ones loudly hiring. Propose exactly what you'll contribute and exactly what you expect in return. The team reviews it. If accepted, your agreement is live and tracked."
             href="/agreements"
             why={[
               '<strong>Clear scope, clear exchange.</strong> Time, skill, goods, money — write it down.',
@@ -1094,8 +1094,8 @@ export default function HomeClient({
               href="/circles"
               why={[
                 '<strong>Leads at a glance</strong> — every circle shows who’s responsible.',
-                '<strong>Teams inside circles</strong> — departments with their own leads and members.',
-                '<strong>Kept current</strong> — circle and team leads edit their own part.',
+                '<strong>Subcircles inside circles</strong>: smaller groups with their own leads and members.',
+                '<strong>Kept current</strong> — circle and subcircle leads edit their own part.',
               ]}
             />
             <CirclesPreview data={previews.circles} />
@@ -1112,8 +1112,8 @@ export default function HomeClient({
             lead="A community lives or dies by what gets done. Operations turns every active agreement into visible tasks — who owns it, when it's due, and whether it's actually happening. No surprises at the next meeting."
             href="/operations"
             why={[
-              '<strong>Live status of every project</strong> — pulled from agreements, not status meetings.',
-              '<strong>Timeline updates</strong> from project leads, threaded into the dashboard.',
+              '<strong>Live status of every task</strong> — pulled from agreements, not status meetings.',
+              '<strong>Timeline updates</strong> from task leads, threaded into the dashboard.',
               '<strong>Drift detection</strong> — when something slips, the community sees it before it becomes a crisis.',
             ]}
           />
@@ -1121,7 +1121,7 @@ export default function HomeClient({
             <DemoHead color="var(--m7)" modLabel="M07" title={`${communityName} · This sprint`} meta="Operations" href="/operations" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10, marginBottom: 16 }}>
               {[
-                { n: activeProjectCount, l: 'Active projects' },
+                { n: activeProjectCount, l: 'Active tasks' },
                 { n: deliverables.length, l: 'Tasks' },
                 { n: deliverables.filter(d => d.status === 'done').length, l: 'Completed' },
               ].map((s, i) => (
@@ -1168,7 +1168,7 @@ export default function HomeClient({
               })}
             </div>
             <div style={{ marginTop: 12, textAlign: 'right' }}>
-              <Link href="/operations" style={{ fontSize: 12.5, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>See all projects →</Link>
+              <Link href="/operations" style={{ fontSize: 12.5, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>See all tasks →</Link>
             </div>
           </DemoCard>
         </Split>

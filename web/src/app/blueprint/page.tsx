@@ -1,6 +1,6 @@
 import { createClient } from '@/core/lib/supabase/server'
 import BlueprintClient from '@/modules/m04-blueprint/BlueprintClient'
-import { isCircleAdmin } from '@/core/lib/roles'
+import { canEditBlueprint } from '@/core/lib/roles'
 
 export default async function BlueprintPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
   const { step } = await searchParams
@@ -15,7 +15,7 @@ export default async function BlueprintPage({ searchParams }: { searchParams: Pr
       .select('role')
       .eq('id', user.id)
       .maybeSingle()
-    isAdmin = isCircleAdmin(profile?.role ?? '')
+    isAdmin = canEditBlueprint(profile?.role ?? '')
     isAdminRole = profile?.role === 'admin'
   }
 

@@ -54,33 +54,33 @@ export function projectEditBlock(
   p: ProjectRef, userId: string | null, userRole: string, leadCircles: string[], circles: CircleSet,
 ): PermissionNotice | null {
   const circle = circles.has(p.circle) ? p.circle : null
-  const title = "You can't move this project"
+  const title = "You can't move this task"
 
-  if (!userId) return { title, message: 'Sign in to move projects on the board.', circle }
+  if (!userId) return { title, message: 'Sign in to move tasks on the board.', circle }
   if (userRole === 'admin') return null
 
   if (userRole === 'project_lead') {
     if (p.created_by === userId || p.lead_user_id === userId) return null
-    return { title, message: 'Project leads can only move projects they created or lead.', circle }
+    return { title, message: 'Task leads can only move tasks they created or lead.', circle }
   }
 
   if (userRole === 'circle_lead') {
     if (circle && leadCircles.includes(circle)) return null
     if (!circle) {
-      return { title, message: "This project isn't in a circle yet, so only an admin can move it.", circle: null }
+      return { title, message: "This task isn't in a circle yet, so only an admin can move it.", circle: null }
     }
     const mine = leadCircleList(circles, leadCircles)
     return {
       title,
       message: mine
-        ? `This project is in ${circles.label(circle)}. You're a lead in ${mine}, so you can only move projects in those circles.`
-        : `This project is in ${circles.label(circle)}. You haven't been assigned to lead any circle yet.`,
+        ? `This task is in ${circles.label(circle)}. You're a lead in ${mine}, so you can only move tasks in those circles.`
+        : `This task is in ${circles.label(circle)}. You haven't been assigned to lead any circle yet.`,
       circle,
     }
   }
 
   const role = ROLE_LABELS[userRole] ?? 'Explorer'
-  return { title, message: `Only admins and circle leads can move projects. You're a ${role}.`, circle }
+  return { title, message: `Only admins and circle leads can move tasks. You're a ${role}.`, circle }
 }
 
 /** null when the user may put the project in `target`; otherwise why not. */
@@ -90,12 +90,12 @@ export function circleChangeBlock(
   if (userRole !== 'circle_lead') return null
   const title = "You can't change the circle"
   if (!target) {
-    return { title, message: 'Only an admin can take a project out of its circle.', circle: null }
+    return { title, message: 'Only an admin can take a task out of its circle.', circle: null }
   }
   if (leadCircles.includes(target)) return null
   return {
     title,
-    message: `You can't move this project into ${circles.label(target)} because you're not a lead in that circle.`,
+    message: `You can't move this task into ${circles.label(target)} because you're not a lead in that circle.`,
     circle: target,
   }
 }

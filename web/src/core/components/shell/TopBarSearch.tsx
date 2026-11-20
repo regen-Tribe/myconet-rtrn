@@ -76,7 +76,7 @@ export default function TopBarSearch() {
       if (cancelled) return
       setHits([
         ...(members.data ?? []).map(m => ({ group: 'Members', label: m.first_name || m.username, detail: m.headline ?? `@${m.username}`, href: `/u/${m.username}` })),
-        ...(projects.data ?? []).map(p => ({ group: 'Projects', label: p.title, detail: p.status?.replace('_', ' '), href: `/operations/${p.id}` })),
+        ...(projects.data ?? []).map(p => ({ group: 'Tasks', label: p.title, detail: p.status?.replace('_', ' '), href: `/operations/${p.id}` })),
         ...(proposals.data ?? []).map(p => ({ group: 'Proposals', label: p.title, detail: p.status, href: '/governance' })),
         ...(events.data ?? []).map(e => ({ group: 'Calendar', label: e.title, detail: new Date(e.starts_at).toLocaleDateString(), href: `/calendar?event=${e.id}` })),
       ])
@@ -105,7 +105,7 @@ export default function TopBarSearch() {
           <circle cx="11" cy="11" r="7" />
           <line x1="20" y1="20" x2="16.6" y2="16.6" />
         </svg>
-        <input ref={inputRef} value={q} placeholder="Search members, projects, events… or ask a question"
+        <input ref={inputRef} value={q} placeholder="Search members, tasks, events… or ask a question"
           aria-label="Search" role="combobox" aria-expanded={open && results.length > 0}
           onChange={e => { setQ(e.target.value); setOpen(true) }} onFocus={() => setOpen(true)}
           onKeyDown={e => {

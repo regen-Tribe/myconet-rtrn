@@ -103,7 +103,8 @@ export function fmtWeekTitle(anchor: Date): string {
   const a = days[0], b = days[6]
   const sameMonth = a.getMonth() === b.getMonth()
   const left = a.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const right = b.toLocaleDateString('en-US', sameMonth ? { day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' })
+  // { day, year } alone prints "2026 (day: 22)" in some browsers, so the same-month end is written by hand
+  const right = sameMonth ? `${b.getDate()}, ${b.getFullYear()}` : b.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   return `${left} – ${right}`
 }
 

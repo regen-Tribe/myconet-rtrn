@@ -72,7 +72,7 @@ const JOURNEY = [
     role: 'joining',
     label: 'Joining',
     color: 'var(--m5)',
-    next: 'Make an agreement to help on a project, or suggest a project in Operations. Once one is accepted, you become a member.',
+    next: 'Make an agreement to help on a task, or suggest a task in Operations. Once one is accepted, you become a member.',
     cta: 'Open Agreements →',
     href: '/agreements',
   },

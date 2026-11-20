@@ -1,14 +1,19 @@
 import { meetingCountsByCircle } from '@/modules/m18-meetings/lib/counts'
 import { suggestionCountsByCircle } from '@/modules/m07-ops/lib/pm-data'
 import { createClient } from '@/core/lib/supabase/server'
+import { DESIGN } from '@/core/lib/instance'
+import { Suspense } from 'react'
 import OrgChartClient from '@/modules/m17-org/OrgChartClient'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import { MEMBER_SELECT, toMember, toPerson } from '@/modules/m17-org/lib/org'
 import type { OrgPerson, OrgUnit } from '@/modules/m17-org/types'
 import type { JoinRequest } from '@/modules/m17-org/JoinRequests'
+import { isJoiningOrAbove } from '@/core/lib/roles'
+import { loadCircleExtras } from '@/modules/m17-org/lib/circle-extras'
 
 /** M17 Org chart — public; admins, circle leads and team leads edit their parts. */
-export default async function OrgPage() {
+export default async function OrgPage({ searchParams }: { searchParams: Promise<{ c?: string }> }) {
+  const { c: openCircle } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -51,19 +56,27 @@ export default async function OrgPage() {
     }))
   }
 
+  // The v4 look also shows photos, each circle's open tasks, meetings and guides (v4.63.0)
+  const peopleIds = [...new Set([...members.map(m => m.user_id), ...Object.values(directory.leads).flat().map(l => l.id), ...directory.admins.map(a => a.id)])]
+  const extras = DESIGN === 'v4' ? await loadCircleExtras(supabase, { signedIn: !!user, canReadGuides: !!user && isJoiningOrAbove(role), peopleIds, openCircle: openCircle ?? null }) : undefined
+
   return (
+    <Suspense>
     <OrgChartClient
       initialUnits={(unitsRes.data ?? []) as OrgUnit[]}
       initialMembers={members}
       directory={directory}
       people={people}
       joinRequests={joinRequests}
+      projects={DESIGN === 'v4' ? (((await supabase.from('projects').select('id, title, status, circle').in('status', ['pending', 'backlog', 'in_progress', 'review', 'paused']).order('title')).data ?? []) as { id: string; title: string; status: string; circle: string | null }[]) : []}
       teamProjects={((await supabase.from('projects').select('id, title, team_id').not('team_id', 'is', null).in('status', ['pending', 'backlog', 'in_progress', 'review'])).data ?? []) as { id: string; title: string; team_id: string }[]}
       userId={user?.id ?? null}
       role={role}
       leadCircles={leadCircles}
       meetingCounts={meetingCounts}
       pmCounts={pmCounts}
+      extras={extras}
     />
+    </Suspense>
   )
 }
