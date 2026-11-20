@@ -795,3 +795,8 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 
 ## 2026-11-19 — Core v4.38.4 (deployed, 3ed203d6)
 - Oscar: "ship it". Update PR #65 merged; no migration. Project-manager suggestions in plain words.
+
+## 2026-11-19 — v4.40.0 deployed (one vocabulary: Sonia's v4 look + lexicon)
+- Core #48 (v4 look, off) + #49 (LEXICON.md, new addresses with 308s, task wording, points log behind `points`, off), released as core #51 / tag v4.40.0.
+- Migration `20261209000000_points_log.sql` applied (dry-run first, rolled back: trigger logs once, admin-only award/undo, members see own rows only, anon none).
+- Update PR #66; deploy 3470a1de; /api/version v4.40.0; /ops → 308 /operations.
