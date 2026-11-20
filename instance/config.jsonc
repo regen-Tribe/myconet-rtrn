@@ -11,6 +11,12 @@
 
   "appUrl": "https://myconet.correa-oscar11.workers.dev",
 
+  // Meetings (2026-11-20, Oscar: "for now just the ones we upload audio for"): uploads only, transcribed by
+  // Fireflies (FIREFLIES_API_KEY + FIREFLIES_WEBHOOK_SECRET). No /api/fireflies-ingest (no PROTOPIA_INGEST_SECRET),
+  // no V2 webhook. Notes go to the second brain (knowledge below). Costa Rica = same offset as Mérida (UTC-6, no DST).
+  "modules": ["meetings"],
+  "timeZone": "America/Costa_Rica",
+
   "cloudflare": {
     // Worker name = the *.workers.dev subdomain and the WORKER_SELF_REFERENCE service
     "workerName": "myconet"
