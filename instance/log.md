@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-20 — Core v4.74.0 via PR #71 (deployed, d0ea8db3): Ask and Do read the second brain
+- `"assistant": { "secondBrain": true }` on (ffec2a0). Tiered: members the meeting notes + boards, leads/admins also
+  the hand-written notes. Includes Sonia's v4.68–v4.73 (Map M19 etc.). Migration `places` applied via MCP (without the
+  drop lines; verified: table, RLS, 4 policies, trigger). Admin to do: site picture + places on the Map.
+
 ## 2026-11-20 — Core v4.67.1 via PR #70 (deployed, f2abcee4) + missing Worker secrets added
 - Operations crashed ("This page couldn't load") for every signed-in person: the Worker had no
   `SUPABASE_SERVICE_ROLE_KEY` (only `CALENDAR_SYNC_SECRET`), and the project manager panel reads `agent_actions`
