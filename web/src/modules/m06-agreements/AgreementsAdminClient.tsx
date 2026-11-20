@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import Link from 'next/link'
+import { modLabel } from '@/core/lib/module-label'
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   pending:   { label: 'Pending',   color: '#f59e0b' },
@@ -82,7 +83,7 @@ export default function AgreementsAdminClient({ agreements: initial }: Props) {
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
         <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 14 }}>
-          M06 · Agreements — Admin Review
+          {modLabel('06', 'Agreements — Admin Review')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', marginBottom: 6 }}>
           Agreements waiting for you

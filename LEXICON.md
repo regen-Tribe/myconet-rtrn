@@ -31,6 +31,25 @@ The old addresses (`/network`, `/ops`, `/contributions`, `/events`, `/stays`, `/
 redirect permanently (`web/next.config.ts`), because notes and emails link to them. Code folders
 (`m01-network`, `m07-ops`…) and table names keep their names.
 
+### With the v4 look: the menu (Sonia, 2026-11-19)
+
+Communities with `"design": "v4"` use the menu from `design/redesign-prototype` (`core/lib/nav.ts › menuGroups`).
+Its groups are **You**, **Community**, **Working together** and **Admin**. On top: **Your next step**.
+Where its names differ from the table above, these win, and each has its own address:
+
+| Say | Address | Instead of |
+|---|---|---|
+| **My dashboard** | `/dashboard` | Dashboard (in the menu; "Dashboard" on the phone tab) |
+| **About {community}** | `/about` | Blueprint as the page's name. "The Blueprint" is the document it's built from ("Edit Blueprint") |
+| **Amenities & tools** | `/amenities` | Accommodation and Resources (one page now), Our place |
+| **Applications** | `/admin/applications` | join applications in the menu, Join › admin review |
+| **Bookings** | `/admin/bookings` | Manage (the booking requests and the inventory) |
+| **Permissions** | `/admin/permissions` | Users (admin) |
+
+With v4, the old addresses (`/blueprint`, `/accommodation`, `/resources`, `/admin/users`) redirect permanently to
+these. Without v4 they stay as they are. Achievements leaves the menu (under your name, until badges show on
+profiles). My tasks isn't a menu item: your open tasks are counted beside My dashboard.
+
 ## Work
 
 | Say | Means | Not |
@@ -56,8 +75,8 @@ redirect permanently (`web/next.config.ts`), because notes and emails link to th
 
 ## Governance
 
-Every proposal gets **4 checks** at once and is **Approved** when enough pass (the screen states the
-real rule). Name each check **who · how**:
+Every proposal gets **4 checks** at once and is **Approved** when 2 of the 3 people checks pass; the
+AI · Blueprint check is advice and doesn't count (decided by Sonia, 2026-11-19). Name each check **who · how**:
 **Circle leads · consent**, **All members · majority vote**, **Admins & advisors · expert review**,
 **AI · Blueprint check**. Statuses: **Approved** / **Not approved**. Say "checks", not "layers";
 never "L1–L4", "CL", "live" or "threshold". "Sociocracy / Democracy / Meritocracy" only in a short

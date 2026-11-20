@@ -1,10 +1,13 @@
 'use client'
+import { Button, PageHeader } from '@/core/components/v4'
+import { DESIGN } from '@/core/lib/instance'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { taskDate } from '@/core/lib/tasks'
 import type { MeetingListItem, MeetingStatus } from './types'
+import { modLabel } from '@/core/lib/module-label'
 
 const STATUS: Record<MeetingStatus, { label: string; color: string }> = {
   processing: { label: 'Transcribing', color: '#b45309' },
@@ -78,21 +81,27 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
   }
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 20px 80px' }}>
+    <div className={DESIGN === 'v4' ? 'v4-page' : undefined} style={DESIGN === 'v4' ? { maxWidth: 900 } : { maxWidth: 860, margin: '0 auto', padding: '48px 20px 80px' }}>
+{DESIGN === 'v4' ? (
+        <PageHeader eyebrow="Working together" title="Meetings"
+          subtitle="Every meeting the community has recorded. The assistant reads each one, chooses its circle, and puts its tasks on the board as drafts for the leads to confirm."
+          actions={<Button href="/meetings/upload" icon="upload">Upload recording</Button>} />
+      ) : (<>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22, flexWrap: 'wrap' }}>
         <div>
           <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--m18)', background: 'color-mix(in srgb, var(--m18) 10%, var(--surface))', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-            M18 · Meetings
+            {modLabel('18', 'Meetings')}
           </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.1, margin: 0 }}>Meeting notes</h1>
           <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '8px 0 0', maxWidth: 520, lineHeight: 1.5 }}>
-            Every meeting the community has recorded. The agent reads each one from Fireflies, chooses its circle, and puts its tasks on the board as drafts for the leads to confirm.
+            Every meeting the community has recorded. The assistant reads each one from Fireflies, chooses its circle, and puts its tasks on the board as drafts for the leads to confirm.
           </p>
         </div>
         <Link href="/meetings/upload" style={{ padding: '10px 16px', borderRadius: 8, background: 'var(--m18)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           Upload recording
         </Link>
       </div>
+      </>)}
 
       <div role="group" aria-label="Show meetings of" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {myCircles.length > 0 && chip('mine', 'My circles')}
@@ -134,7 +143,7 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       {m.visibility === 'circle' && <Pill label="🔒 Circle only" color="#64748b" />}
                       {m.status !== 'done' ? <Pill label={s.label} color={s.color} />
-                        : m.needs_review && !m.processed_at && !m.agent_note ? <Pill label="Agent reading soon" color="#64748b" />
+                        : m.needs_review && !m.processed_at && !m.agent_note ? <Pill label="Assistant reading soon" color="#64748b" />
                         : m.needs_review && !m.processed_at ? <Pill label="Needs review" color="#b45309" />
                         : t?.drafts ? <Pill label={`${t.drafts} to confirm`} color="#b45309" />
                         : null}

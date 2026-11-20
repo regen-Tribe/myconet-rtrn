@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
-import { CLUBHOUSE, MEMBER_MODULES } from '@/core/lib/nav'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { CLUBHOUSE, MEMBER_MODULES, menuGroups } from '@/core/lib/nav'
+import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
 import { ASK_EVENT } from '@/modules/assistant/AssistantChat'
 
 /**
@@ -17,7 +17,16 @@ import { ASK_EVENT } from '@/modules/assistant/AssistantChat'
 
 interface Hit { group: string; label: string; detail?: string; href?: string; ask?: string }
 
-const PAGES = [...CLUBHOUSE, ...MEMBER_MODULES].filter(m => m.href).map(m => ({ name: m.name, href: m.href as string }))
+// The pages the menu shows (the v4 menu's names and addresses with the v4 look). Admin pages
+// stay out: they redirect anyone who can't open them.
+const PAGES = DESIGN === 'v4'
+  ? [
+      ...menuGroups(COMMUNITY_NAME).filter(g => g.label !== 'Admin').flatMap(g => g.items).map(i => ({ name: i.name, href: i.href })),
+      // Off the v4 menu but still pages people look for
+      { name: 'Join', href: '/join' },
+      { name: 'Achievements', href: '/achievements' },
+    ]
+  : [...CLUBHOUSE, ...MEMBER_MODULES].filter(m => m.href).map(m => ({ name: m.name, href: m.href as string }))
 
 export default function TopBarSearch() {
   const router = useRouter()

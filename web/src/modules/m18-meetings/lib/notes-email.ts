@@ -68,7 +68,7 @@ ${m.summary ? `<h3 style="font-size:13px;text-transform:uppercase;letter-spacing
 ${m.tasks.length ? `<ul style="margin:4px 0 0;padding-left:20px">${m.tasks.map(t => `<li><a href="${esc(t.url)}" style="color:#0f766e">${esc(taskLine(t))}</a>${t.draft ? ' <span style="color:#b45309;font-size:12px">draft</span>' : ''}</li>`).join('')}</ul>` : '<p>No tasks came out of this meeting.</p>'}
 ${m.notOnMyCoNet.length ? `<div style="margin-top:18px;padding:12px 14px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:14px"><strong>Not on MyCoNet yet:</strong> ${esc(m.notOnMyCoNet.join(', '))}. Their tasks are on the board without an assignee: pass them on, or invite them to the portal.</div>` : ''}
 <p style="margin-top:28px"><a href="${esc(link)}" style="display:inline-block;padding:10px 16px;border-radius:8px;background:#0f766e;color:#fff;text-decoration:none;font-weight:600">Open the meeting · confirm the tasks</a></p>
-<p style="color:#a1a1aa;font-size:12px">You're getting this because you lead a circle this meeting was about, or get every meeting's notes. The MyCoNet agent chose the circles from what was said; a lead can change them on the meeting page.${m.notesUrl ? ' The notes are also in the second brain.' : ''}</p>
+<p style="color:#a1a1aa;font-size:12px">You're getting this because you lead a circle this meeting was about, or get every meeting's notes. The MyCoNet assistant chose the circles from what was said; a lead can change them on the meeting page.${m.notesUrl ? ' The notes are also in the second brain.' : ''}</p>
 </div>`
 
   const text = [

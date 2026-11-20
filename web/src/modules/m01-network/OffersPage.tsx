@@ -16,6 +16,7 @@ import {
   SelectTrigger, SelectValue,
 } from '@/core/components/ui/select'
 import { Plus, Gift, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { modLabel } from '@/core/lib/module-label'
 
 const CATEGORIES = [
   'Permaculture','Construction','Healing','Education',
@@ -111,7 +112,7 @@ export default function OffersPage() {
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · My offers
+          {modLabel('01', 'My offers')}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>

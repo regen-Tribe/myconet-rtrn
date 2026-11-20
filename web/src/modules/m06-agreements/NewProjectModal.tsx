@@ -4,6 +4,7 @@ import { createClient } from '@/core/lib/supabase/client'
 import { FormField, FocusInput, FocusTextarea, inputStyle } from './AgreementFormFields'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
+import { modLabel } from '@/core/lib/module-label'
 
 interface Props {
   userId: string
@@ -69,7 +70,7 @@ export default function NewProjectModal({ userId, onClose }: Props) {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 4 }}>
-              M06 · Agreements
+              {modLabel('06', 'Agreements')}
             </div>
             <h3 style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', margin: 0 }}>
               Propose a new project

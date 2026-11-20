@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase, Pencil, Sparkles, Lock, Globe, AtSign } from 'lucide-react'
 import { socialLinks } from '@/core/lib/public-profile'
 import { MyCircles } from '@/modules/m17-org/MyCircles'
+import { modLabel } from '@/core/lib/module-label'
 
 interface ProfileData {
   id: string; username: string; first_name: string | null; last_name: string | null
@@ -152,7 +153,7 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
-          M01 · Member Profile
+          {modLabel('01', 'Member Profile')}
         </div>
       </div>
 

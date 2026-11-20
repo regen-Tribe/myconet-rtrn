@@ -1,4 +1,6 @@
 'use client'
+import { Button, PageHeader } from '@/core/components/v4'
+import { DESIGN } from '@/core/lib/instance'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 
@@ -85,6 +87,12 @@ function layerVotes(votes: Vote[], layer: string) {
   }
 }
 
+// Approved when APPROVE_AT of the PEOPLE_CHECKS people checks pass (circle leads, all members,
+// admins & advisors). The screen text below states the same rule: change both together.
+const PEOPLE_CHECKS = 3
+const APPROVE_AT = 2
+const RULE = 'Approved when 2 of the 3 people checks pass. The AI check is advice.'
+
 function evalLayers(p: Proposal) {
   const s = layerVotes(p.votes, 'sociocracy')
   const d = layerVotes(p.votes, 'democracy')
@@ -96,23 +104,21 @@ function evalLayers(p: Proposal) {
   const democPassed = d.total > 0 && d.yes > d.no
   // L3 Meritocracy: at least one expert approved, none rejected
   const meritPassed = m.expertTotal > 0 && m.expertApprove > 0 && m.expertReject === 0
-  // L4 AI: evaluated async, default pending
-  const aiPassed = true
-
-  const passed = [sociocracyPassed, democPassed, meritPassed, aiPassed].filter(Boolean).length
-  return { sociocracyPassed, democPassed, meritPassed, aiPassed, passed, isLive: passed >= 3 }
+  // The AI · Blueprint check is advice only: it isn't saved and doesn't count.
+  const passed = [sociocracyPassed, democPassed, meritPassed].filter(Boolean).length
+  return { sociocracyPassed, democPassed, meritPassed, passed, isLive: passed >= APPROVE_AT }
 }
 
 function StatusPill({ isLive }: { isLive: boolean }) {
   return isLive ? (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, #22c55e 10%, var(--surface))', border: '1px solid color-mix(in srgb, #22c55e 35%, var(--rule))', borderRadius: 20, padding: '4px 12px' }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
-      <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>LIVE</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>Approved</span>
     </div>
   ) : (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, var(--m9) 8%, var(--surface))', border: '1px solid color-mix(in srgb, var(--m9) 25%, var(--rule))', borderRadius: 20, padding: '4px 12px' }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--m9)', flexShrink: 0 }} />
-      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--m9)' }}>Evaluating</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--m9)' }}>Open</span>
     </div>
   )
 }
@@ -151,7 +157,7 @@ export default function GovernanceClient({
   const [newDesc, setNewDesc] = useState('')
   const [newDays, setNewDays] = useState('7')
   const [submitting, setSubmitting] = useState(false)
-  const [aiChecks, setAiChecks] = useState<Record<string, { confidence: number; reasoning: string; loading: boolean }>>({})
+  const [aiChecks, setAiChecks] = useState<Record<string, { confidence: number | null; reasoning: string; loading: boolean }>>({})
 
   useEffect(() => {
     if (!selectedId || comments[selectedId]) return
@@ -180,10 +186,10 @@ export default function GovernanceClient({
     })
       .then(r => r.json())
       .then(data => {
-        setAiChecks(prev => ({ ...prev, [selectedId]: { confidence: data.confidence ?? 75, reasoning: data.reasoning ?? '', loading: false } }))
+        setAiChecks(prev => ({ ...prev, [selectedId]: { confidence: typeof data.confidence === 'number' ? data.confidence : null, reasoning: data.reasoning ?? '', loading: false } }))
       })
       .catch(() => {
-        setAiChecks(prev => ({ ...prev, [selectedId]: { confidence: 75, reasoning: 'Could not evaluate at this time.', loading: false } }))
+        setAiChecks(prev => ({ ...prev, [selectedId]: { confidence: null, reasoning: 'Couldn’t check right now.', loading: false } }))
       })
   }, [selectedId])
 
@@ -261,16 +267,21 @@ export default function GovernanceClient({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div className={DESIGN === 'v4' ? 'v4-gov' : undefined} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
+{DESIGN === 'v4' ? (
+        <div className="v4-govhead"><PageHeader eyebrow="Working together" title="Governance"
+          subtitle={<><b>{proposals.length} proposal{proposals.length !== 1 ? 's' : ''} open</b>{memberCount > 0 && ` · ${memberCount} people can vote`}</>}
+          actions={isFullMember ? <Button icon="plus" onClick={() => setShowNew(true)}>New proposal</Button> : undefined} /></div>
+      ) : (<>
       {/* Page head */}
       <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--m9)', background: 'color-mix(in srgb, var(--m9) 10%, transparent)', padding: '2px 8px', borderRadius: 4 }}>M09</span>
+            <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--m9)', background: 'color-mix(in srgb, var(--m9) 10%, transparent)', padding: '2px 8px', borderRadius: 4 }}>M09</span>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Governance</span>
           </div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>Decide together</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>Governance</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--ink-3)' }}>
             {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} open
             {memberCount > 0 && ` · ${memberCount} eligible voters`}
@@ -280,27 +291,27 @@ export default function GovernanceClient({
           <button onClick={() => setShowNew(true)} style={{ padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, flexShrink: 0, background: 'var(--m9)', color: '#fff', border: 'none', cursor: 'pointer' }}>+ New proposal</button>
         )}
       </div>
+      </>)}
 
       {/* Layer strip */}
       <div style={{ padding: '10px 24px', borderBottom: '1px solid var(--rule)', flexShrink: 0, background: 'var(--bg-2)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase', flexShrink: 0 }}>
-          Every proposal runs through all 4 layers
+          Every proposal gets 4 checks at once
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {[
-            { mark: '☉', name: 'Sociocracy', n: '01', who: 'Circle Leads' },
-            { mark: '☑', name: 'Democracy', n: '02', who: 'All Members' },
-            { mark: '△', name: 'Meritocracy', n: '03', who: 'Admin & Advisors' },
-            { mark: '◇', name: 'AI Facilitation', n: '04', who: 'Automated' },
+            { mark: '☉', name: 'Circle leads · consent', n: '01', who: 'No circle lead objects' },
+            { mark: '☑', name: 'All members · majority vote', n: '02', who: 'More yes than no' },
+            { mark: '△', name: 'Admins & advisors · expert review', n: '03', who: 'At least one approves, none reject' },
+            { mark: '◇', name: 'AI · Blueprint check', n: '04', who: 'Advice only: does it fit the Blueprint and goals?' },
           ].map(l => (
             <span key={l.n} title={l.who} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--ink-3)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 20, padding: '3px 10px' }}>
               <span style={{ fontSize: 12 }}>{l.mark}</span>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)' }}>L{l.n}</span>
               {l.name}
             </span>
           ))}
         </div>
-        <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', flexShrink: 0 }}>3 of 4 → live</span>
+        <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', flexShrink: 0 }}>{RULE}</span>
       </div>
 
       {/* Access banner */}
@@ -343,11 +354,11 @@ export default function GovernanceClient({
               <button key={p.id} onClick={() => setSelectedId(p.id)} style={{ textAlign: 'left', padding: '12px 14px', cursor: 'pointer', borderBottom: '1px solid var(--rule)', background: active ? 'color-mix(in srgb, var(--m9) 6%, var(--surface))' : 'transparent', borderLeft: `3px solid ${active ? 'var(--m9)' : 'transparent'}`, transition: 'background 80ms' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                   <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                    {[0, 1, 2, 3].map(i => (
+                    {Array.from({ length: PEOPLE_CHECKS }, (_, i) => (
                       <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: i < passed ? (isLive ? '#22c55e' : 'var(--m9)') : 'var(--rule)' }} />
                     ))}
                   </div>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: isLive ? '#16a34a' : 'var(--ink-4)', fontWeight: isLive ? 700 : 400 }}>{isLive ? 'live' : `${passed}/4`}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: isLive ? '#16a34a' : 'var(--ink-4)', fontWeight: isLive ? 700 : 400 }}>{isLive ? 'Approved' : `${passed}/${PEOPLE_CHECKS}`}</span>
                   <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>{timeLeft(p.closes_at)}</span>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: 5 }}>{p.title}</div>
@@ -401,13 +412,13 @@ export default function GovernanceClient({
                 {/* Overall progress */}
                 <div style={{ padding: '10px 14px', borderRadius: 10, marginBottom: 16, background: 'var(--bg-2)', border: '1px solid var(--rule)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color: isLive ? '#16a34a' : 'var(--ink-3)' }}>{passed} / 4 layers approved</span>
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>{isLive ? '✓ threshold reached' : 'needs 3 of 4 to go live'}</span>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color: isLive ? '#16a34a' : 'var(--ink-3)' }}>{passed} / {PEOPLE_CHECKS} people checks passed</span>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>{isLive ? '✓ Approved' : `Approved when ${APPROVE_AT} of ${PEOPLE_CHECKS} pass`}</span>
                   </div>
                   <div style={{ position: 'relative', height: 8, background: 'var(--rule)', borderRadius: 4, overflow: 'visible' }}>
-                    <div style={{ height: '100%', borderRadius: 4, transition: 'width 500ms ease, background 400ms', background: isLive ? '#22c55e' : 'var(--m9)', width: `${(passed / 4) * 100}%` }} />
-                    <div style={{ position: 'absolute', top: -3, left: 'calc(75% - 1px)', width: 2, height: 14, background: '#22c55e', borderRadius: 1, opacity: 0.7 }} />
-                    <div style={{ position: 'absolute', top: 14, left: 'calc(75% - 16px)', fontFamily: 'var(--mono)', fontSize: 9, color: '#16a34a', whiteSpace: 'nowrap' }}>3/4 live ↑</div>
+                    <div style={{ height: '100%', borderRadius: 4, transition: 'width 500ms ease, background 400ms', background: isLive ? '#22c55e' : 'var(--m9)', width: `${(passed / PEOPLE_CHECKS) * 100}%` }} />
+                    <div style={{ position: 'absolute', top: -3, left: `calc(${(APPROVE_AT / PEOPLE_CHECKS) * 100}% - 1px)`, width: 2, height: 14, background: '#22c55e', borderRadius: 1, opacity: 0.7 }} />
+                    <div style={{ position: 'absolute', top: 14, left: `calc(${(APPROVE_AT / PEOPLE_CHECKS) * 100}% - 16px)`, fontFamily: 'var(--mono)', fontSize: 9, color: '#16a34a', whiteSpace: 'nowrap' }}>Approved ↑</div>
                   </div>
                 </div>
 
@@ -419,12 +430,12 @@ export default function GovernanceClient({
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
                         <div style={{ fontSize: 18, marginBottom: 2 }}>☉</div>
-                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Layer 01</div>
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Sociocracy</div>
-                        <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Circle Leads vote</div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Circle leads</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Consent</div>
+                        <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Passes when no circle lead objects</div>
                       </div>
                       {s.clTotal === 0
-                        ? <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Awaiting CL</span>
+                        ? <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Waiting for circle leads</span>
                         : sociocracyPassed
                           ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Passed</span>
                           : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--m9)', background: 'color-mix(in srgb, var(--m9) 10%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Objection</span>
@@ -458,7 +469,7 @@ export default function GovernanceClient({
                       </div>
                     )}
                     {!isCircleLead && (
-                      <div style={{ marginTop: 10, fontSize: 11, color: 'var(--ink-4)', fontStyle: 'italic' }}>Circle Leads vote here.</div>
+                      <div style={{ marginTop: 10, fontSize: 11, color: 'var(--ink-4)', fontStyle: 'italic' }}>Circle leads vote here.</div>
                     )}
                   </div>
 
@@ -467,8 +478,8 @@ export default function GovernanceClient({
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
                         <div style={{ fontSize: 18, marginBottom: 2 }}>☑</div>
-                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Layer 02</div>
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Democracy</div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>All members</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Majority vote</div>
                         <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Every member votes</div>
                       </div>
                       {d.total === 0
@@ -512,24 +523,24 @@ export default function GovernanceClient({
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
                         <div style={{ fontSize: 18, marginBottom: 2 }}>△</div>
-                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Layer 03</div>
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Meritocracy</div>
-                        <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Admin & Advisors</div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Admins & advisors</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Expert review</div>
+                        <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>At least one approves, none reject</div>
                       </div>
                       {m.expertTotal === 0
-                        ? <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Awaiting review</span>
+                        ? <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Waiting for an admin or advisor</span>
                         : meritPassed
                           ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Approved</span>
-                          : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--m9)', background: 'color-mix(in srgb, var(--m9) 10%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Rejected</span>
+                          : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--m9)', background: 'color-mix(in srgb, var(--m9) 10%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Not approved</span>
                       }
                     </div>
                     {m.expertTotal > 0 && (
                       <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 8 }}>
-                        {m.expertApprove} approved · {m.expertReject} rejected
+                        {m.expertApprove} approved · {m.expertReject} not approved
                       </div>
                     )}
                     <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: 0, lineHeight: 1.55 }}>
-                      {meritPassed ? 'Domain expert has reviewed and approved this proposal.' : 'Awaiting review from an admin or advisor.'}
+                      {meritPassed ? 'Domain expert has reviewed and approved this proposal.' : 'Waiting for an admin or advisor to review it.'}
                     </p>
                     {isAdvisorOrAdmin && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 10 }}>
@@ -546,18 +557,18 @@ export default function GovernanceClient({
                   </div>
 
                   {/* L4 — AI Facilitation */}
-                  <div style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${aiCheck && !aiCheck.loading ? 'color-mix(in srgb, #22c55e 30%, var(--rule))' : 'var(--rule)'}`, background: aiCheck && !aiCheck.loading ? 'color-mix(in srgb, #22c55e 4%, var(--surface))' : 'var(--surface)' }}>
+                  <div style={{ padding: '14px 16px', borderRadius: 10, border: '1px dashed var(--rule)', background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
                         <div style={{ fontSize: 18, marginBottom: 2 }}>◇</div>
-                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Layer 04</div>
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>AI Facilitation</div>
-                        <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Blueprint alignment</div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>AI</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Blueprint check</div>
+                        <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Advice only: doesn’t count toward approval</div>
                       </div>
                       {aiCheck?.loading
                         ? <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Checking…</span>
                         : aiCheck
-                          ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Cleared</span>
+                          ? <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-3)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>{aiCheck.confidence === null ? 'Couldn’t check' : 'Advice'}</span>
                           : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Loading…</span>
                       }
                     </div>
@@ -565,8 +576,8 @@ export default function GovernanceClient({
                       ? <p style={{ fontSize: 11.5, color: 'var(--ink-4)', margin: 0, lineHeight: 1.55 }}>Checking against community Blueprint and goals…</p>
                       : aiCheck
                         ? <>
-                            <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '0 0 8px', lineHeight: 1.55 }}>{aiCheck.reasoning || 'No blockers detected. Consistent with community Blueprint goals.'}</p>
-                            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Confidence: {aiCheck.confidence}%</div>
+                            <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '0 0 8px', lineHeight: 1.55 }}>{aiCheck.reasoning || 'The AI gave no reasons.'}</p>
+                            {aiCheck.confidence !== null && <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Fits the Blueprint: {aiCheck.confidence}%</div>}
                           </>
                         : <p style={{ fontSize: 11.5, color: 'var(--ink-4)', margin: 0 }}>Loading…</p>
                     }
@@ -577,7 +588,7 @@ export default function GovernanceClient({
                 {isLive && (
                   <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 10, background: 'color-mix(in srgb, #22c55e 7%, var(--surface))', border: '1px solid color-mix(in srgb, #22c55e 25%, var(--rule))', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Proposal approved — work can begin. Agreement auto-created in M06.</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Approved: this proposal is now a decision. Work can begin.</span>
                   </div>
                 )}
 
@@ -624,7 +635,7 @@ export default function GovernanceClient({
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'grid', placeItems: 'center' }} onClick={e => { if (e.target === e.currentTarget) setShowNew(false) }}>
           <div style={{ width: '100%', maxWidth: 520, margin: '0 16px', background: 'var(--surface)', borderRadius: 14, padding: 28, border: '1px solid var(--rule)', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--ink)' }}>New proposal</h2>
-            <p style={{ margin: '0 0 20px', fontSize: 12, color: 'var(--ink-4)' }}>Evaluated by all 4 layers simultaneously. 3 of 4 approvals = live.</p>
+            <p style={{ margin: '0 0 20px', fontSize: 12, color: 'var(--ink-4)' }}>Every proposal gets 4 checks at once. {RULE}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 5 }}>Title</label>
@@ -639,12 +650,12 @@ export default function GovernanceClient({
                 <input type="number" min="1" max="30" value={newDays} onChange={e => setNewDays(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13, border: '1px solid var(--rule)', background: 'var(--bg-2)', color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--rule)' }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 8 }}>Evaluated by all 4 layers</div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 8 }}>The 4 checks</div>
                 {[
-                  { mark: '☉', n: '01', name: 'Sociocracy',     desc: 'Circle Leads · no objections = passes' },
-                  { mark: '☑', n: '02', name: 'Democracy',      desc: 'All Members · majority yes = passes' },
-                  { mark: '△', n: '03', name: 'Meritocracy',    desc: 'Admin & Advisors · expert approval' },
-                  { mark: '◇', n: '04', name: 'AI Facilitation', desc: 'Blueprint alignment check' },
+                  { mark: '☉', n: '01', name: 'Circle leads · consent',            desc: 'passes when no circle lead objects' },
+                  { mark: '☑', n: '02', name: 'All members · majority vote',       desc: 'passes with more yes than no' },
+                  { mark: '△', n: '03', name: 'Admins & advisors · expert review', desc: 'at least one approves, none reject' },
+                  { mark: '◇', n: '04', name: 'AI · Blueprint check',              desc: 'advice only, doesn’t count' },
                 ].map(l => (
                   <div key={l.n} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                     <span style={{ fontSize: 14, width: 20, textAlign: 'center', flexShrink: 0 }}>{l.mark}</span>

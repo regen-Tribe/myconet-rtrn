@@ -3,6 +3,9 @@ import { profileColumns } from '@/core/lib/public-profile'
 import Link from 'next/link'
 import MemberList from '@/modules/m01-network/MemberList'
 import { computeMatch, type Bio, type MatchResult } from '@/modules/m01-network/lib/match-score'
+import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import MembersV4 from '@/modules/m01-network/MembersV4'
 
 export default async function NetworkDashboard() {
   const supabase = await createClient()
@@ -122,6 +125,14 @@ export default async function NetworkDashboard() {
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 10)
 
+  // The v4 look: the same data, laid out as Sonia's prototype (MembersV4)
+  if (DESIGN === 'v4') {
+    return (
+      <MembersV4 supabase={supabase} userId={user?.id ?? null} memberCount={memberCount} profileSteps={profileSteps}
+        profileCompleteness={profileCompleteness} topMatches={topMatches as any} activity={memberActivity} hasBio={!!myBio} />
+    )
+  }
+
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
@@ -131,7 +142,7 @@ export default async function NetworkDashboard() {
       {/* ── Page header ── */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · Members
+          {modLabel('01', 'Members')}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
@@ -233,7 +244,7 @@ export default async function NetworkDashboard() {
           href={user ? '/members/offers' : '/auth/signup'}
         />
         <StatCard
-          label="Your seeks"
+          label="Your requests"
           value={user ? String(seeksCount) : '—'}
           delta={user ? (seeksCount > 0 ? 'live on your profile' : 'add some') : 'sign in to post'}
           href={user ? '/members/requests' : '/auth/signup'}
@@ -281,7 +292,7 @@ export default async function NetworkDashboard() {
         <section style={{ marginBottom: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
-              M01 · Network activity
+              {modLabel('01', 'Network activity')}
             </span>
             <Link href="/members/discover" style={{ fontSize: 12.5, color: 'var(--m1)', fontWeight: 600, textDecoration: 'none' }}>
               Search network →

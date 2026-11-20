@@ -5,7 +5,10 @@ import { ROLE_LABELS, roleAtLeast } from '@/core/lib/roles'
 import { LinkedEventsList } from '@/modules/m14-events/LinkedEventsList'
 import BannerImage from '@/core/components/BannerImage'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
+import { DESIGN } from '@/core/lib/instance'
+import DashboardV4 from './DashboardV4'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/modules/m04-blueprint/lib/blueprint-compute'
+import { modLabel } from '@/core/lib/module-label'
 
 const atLeast = roleAtLeast
 
@@ -102,6 +105,12 @@ export default async function DashboardPage() {
   const phaseProgress = blueprint ? computePhaseProgress(bpAnswers) : null
   const currentPhase = phaseProgress?.find(p => p.ratio < 1)?.name ?? 'SPARK'
   const projectName = (bpAnswers.project_name as string) || 'Our Community'
+
+  // The v4 look has its own dashboard (DESIGN-SYSTEM.md › v4)
+  if (DESIGN === 'v4') {
+    return <DashboardV4 supabase={supabase} userId={user?.id ?? null} role={role} firstName={profile?.first_name || 'there'}
+      communityName={projectName.split(' — ')[0]} application={application} events={upcomingEvents as any} />
+  }
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -249,7 +258,7 @@ export default async function DashboardPage() {
 
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M00 · Dashboard
+          {modLabel('00', 'Dashboard')}
         </div>
         {!user ? (
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -334,7 +343,7 @@ export default async function DashboardPage() {
           <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '16px 18px' }}>
             <LinkedEventsList
               events={upcomingEvents}
-              title="M14 · Coming up on the calendar"
+              title={modLabel('14', 'Coming up on the calendar')}
               viewAllHref="/calendar?view=list"
               addHref={atLeast(role, 'joining') ? '/calendar?new=1' : null}
               limit={4}
@@ -361,7 +370,7 @@ export default async function DashboardPage() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px 10px' }}>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
-                  M01 · Member activity
+                  {modLabel('01', 'Member activity')}
                 </div>
                 <Link href="/members" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--m1)', textDecoration: 'none', fontWeight: 600 }}>Open Members →</Link>
               </div>
@@ -467,7 +476,7 @@ function ModCard({ num, name, desc, color, href, locked, cta }: ModuleCard) {
     }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginTop: 4 }}>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, color, letterSpacing: '0.06em' }}>
+        <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, color, letterSpacing: '0.06em' }}>
           M{num}
         </span>
         {cta && (

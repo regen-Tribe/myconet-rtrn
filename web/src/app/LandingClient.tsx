@@ -14,6 +14,7 @@ import ModuleOverview from '@/modules/home/ModuleOverview'
 import AskSection from '@/modules/home/AskSection'
 import type { GlanceTile } from '@/modules/home/lib/at-a-glance'
 import './landing.css'
+import { modLabel } from '@/core/lib/module-label'
 
 interface Props {
   firstName: string | null; communityPurpose?: string | null; upcomingEvents?: CalendarEvent[]; stats: LandingStats
@@ -107,10 +108,10 @@ const INITIAL_LOG = [
 ]
 
 const LAYERS = [
-  { num: '01', name: 'Consent (Sociocracy)',       desc: 'Move forward if there are no principled objections — not unanimous applause.', mark: '☉' },
-  { num: '02', name: 'Democracy (Majority)',        desc: 'Big shared choices. Open vote, simple majority, public results.',              mark: '☑' },
-  { num: '03', name: 'Meritocracy (Domain expert)', desc: 'Technical calls go to the person with skin in the game.',                    mark: '△' },
-  { num: '04', name: 'AI-mediated facilitation',   desc: 'When things stall, the AI surfaces blockers and finds the next move.',        mark: '◇' },
+  { num: '01', name: 'Circle leads · consent',            desc: 'Move forward if there are no principled objections — not unanimous applause.', mark: '☉' },
+  { num: '02', name: 'All members · majority vote',       desc: 'Big shared choices. Open vote, simple majority, public results.',              mark: '☑' },
+  { num: '03', name: 'Admins & advisors · expert review', desc: 'Technical calls go to the person with skin in the game.',                    mark: '△' },
+  { num: '04', name: 'AI · Blueprint check',              desc: 'Checks that the proposal fits the Blueprint and the community’s goals.',        mark: '◇' },
 ]
 
 /* ── Section header (reused 7×) ── */
@@ -119,7 +120,7 @@ function SectionHead({ mod, label, color, h, lead }: { mod: string; label: strin
     <div>
       <span className="lp-eyebrow" style={{ background: `color-mix(in srgb, ${color} 8%, transparent)`, color }}>
         <span className="lp-mod-dot" style={{ background: color }} />
-        Module {mod} · {label}
+        {modLabel(mod, label, 'Module')}
       </span>
       <h2 className="lp-section-h">{h}</h2>
       <p className="lp-section-lead">{lead}</p>
@@ -208,14 +209,14 @@ function ClubhousePreview({ name, stats }: { name: string | null; stats: Landing
               {CLUBHOUSE.map(m => (
                 <div key={m.num} className={`lp-ch-nav-item${m.num === '00' ? ' is-active' : ''}`}>
                   <span className="lp-swatch" style={{ background: m.color }} />
-                  <span className="lp-mnum">M{m.num}</span> {m.name}
+                  <span className="lp-mnum mod-num">M{m.num}</span> {m.name}
                 </div>
               ))}
               <div className="lp-ch-nav-label">Once you&apos;re in</div>
               {MEMBER_MODULES.map(m => (
                 <div key={m.num} className="lp-ch-nav-item" style={{ opacity: 0.5 }}>
                   <span className="lp-swatch" style={{ background: m.color }} />
-                  <span className="lp-mnum">M{m.num}</span> {m.name}
+                  <span className="lp-mnum mod-num">M{m.num}</span> {m.name}
                 </div>
               ))}
             </div>
@@ -232,7 +233,7 @@ function ClubhousePreview({ name, stats }: { name: string | null; stats: Landing
                   <div className="lp-ch-card" style={{ cursor: 'pointer' }}>
                     <div className="lp-accent-bar" style={{ background: c.color }} />
                     <div className="lp-ch-card-row1">
-                      <span className="lp-mtag" style={{ color: c.color }}>M{c.num}</span>
+                      <span className="lp-mtag mod-num" style={{ color: c.color }}>M{c.num}</span>
                       {c.cta
                         ? <span className="lp-badge" style={{ background: c.color }}>Start</span>
                         : <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>↗</span>}
@@ -277,7 +278,7 @@ function MeetSection() {
         <div className="lp-demo">
           <div className="lp-demo-head">
             <div className="lp-demo-title">
-              <span className="lp-mod-pill" style={{ background: 'var(--m1)' }}>M01</span>
+              <span className="lp-mod-pill mod-num" style={{ background: 'var(--m1)' }}>M01</span>
               <strong>Residents · Top matches for you</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>Example profiles</span>
@@ -326,7 +327,7 @@ function BlueprintSection() {
         <div className="lp-demo">
           <div className="lp-demo-head">
             <div className="lp-demo-title">
-              <span className="lp-mod-pill" style={{ background: 'var(--m4)' }}>M04</span>
+              <span className="lp-mod-pill mod-num" style={{ background: 'var(--m4)' }}>M04</span>
               <strong>Blueprint · {COMMUNITY_NAME}</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>v3.2 · Living doc</span>
@@ -412,7 +413,7 @@ function JoinSection({ values }: { values: { title: string; description: string 
         <div className="lp-demo">
           <div className="lp-demo-head">
             <div className="lp-demo-title">
-              <span className="lp-mod-pill" style={{ background: 'var(--m5)' }}>M05</span>
+              <span className="lp-mod-pill mod-num" style={{ background: 'var(--m5)' }}>M05</span>
               <strong>{values.length ? `${COMMUNITY_NAME}'s values` : 'Example values'}</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: allChecked ? 'var(--m5)' : 'var(--ink-3)' }}>
@@ -458,7 +459,7 @@ function AgreementsSection() {
         <div className="lp-demo">
           <div className="lp-demo-head">
             <div className="lp-demo-title">
-              <span className="lp-mod-pill" style={{ background: 'var(--m6)' }}>M06</span>
+              <span className="lp-mod-pill mod-num" style={{ background: 'var(--m6)' }}>M06</span>
               <strong>Open projects · Propose how you&apos;ll help</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>3 open</span>
@@ -553,7 +554,7 @@ function OpsSection() {
         <div className="lp-demo">
           <div className="lp-demo-head">
             <div className="lp-demo-title">
-              <span className="lp-mod-pill" style={{ background: 'var(--m7)' }}>M07</span>
+              <span className="lp-mod-pill mod-num" style={{ background: 'var(--m7)' }}>M07</span>
               <strong>{COMMUNITY_NAME} · This sprint</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>May→Jun</span>
@@ -601,7 +602,7 @@ function ContributionsSection() {
         <div className="lp-demo">
           <div className="lp-demo-head">
             <div className="lp-demo-title">
-              <span className="lp-mod-pill" style={{ background: 'var(--m8)' }}>M08</span>
+              <span className="lp-mod-pill mod-num" style={{ background: 'var(--m8)' }}>M08</span>
               <strong>Your contribution log</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>Top 25% · Sprint 12</span>
@@ -682,14 +683,14 @@ function GovernanceSection() {
     <section className="lp-section" id="governance">
       <SectionHead
         mod="09" label="Governance" color="var(--m9)"
-        h="Decide together. Four layers, one community."
-        lead="Big questions, small calls, technical judgments, and impossible deadlocks — each deserves a different decision tool. The Governance module gives you four layered modes and one AI facilitator that knows when to use which."
+        h="Decide together. Four checks, one community."
+        lead="Big questions, small calls, technical judgments, and impossible deadlocks — each deserves a different decision tool. Every proposal gets four checks at once: circle leads, all members, admins and advisors, and an AI check against the Blueprint."
       />
       <div className="lp-gov-layers" style={{ marginTop: 32 }}>
         {LAYERS.map((l, i) => (
           <div key={i} className={`lp-gov-layer${i === layer ? ' active' : ''}`} onClick={() => setLayer(i)}>
             <span className="lp-layer-mark">{l.mark}</span>
-            <div className="lp-layer-num">LAYER {l.num}</div>
+            <div className="lp-layer-num">CHECK {l.num}</div>
             <div className="lp-layer-name">{l.name}</div>
             <div className="lp-layer-desc">{l.desc}</div>
           </div>
@@ -698,7 +699,7 @@ function GovernanceSection() {
       <div className="lp-proposal">
         <h4>Proposal · &ldquo;Approve $24k for reed-bed wetland materials&rdquo;</h4>
         <div className="lp-pmeta">
-          Decision mode: <strong>{LAYERS[layer].name}</strong> · Opened by @priya · 2 days left · {total} of 19 members have voted
+          Check: <strong>{LAYERS[layer].name}</strong> · Opened by @priya · 2 days left · {total} of 19 members have voted
         </div>
         <div className="lp-vote-bar">
           <div className="lp-vote-seg yes"     style={{ flex: yes }}>{yes} consent</div>

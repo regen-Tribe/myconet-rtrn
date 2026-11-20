@@ -24,11 +24,13 @@ The wizard structure is derived from four research-backed frameworks. Each step 
 | Route | File |
 |-------|------|
 | `/blueprint` | `app/blueprint/page.tsx` → `BlueprintClient` |
+| `/about` | `app/about/page.tsx`: with the v4 look, `AboutV4` (the Blueprint as a page to read); `?edit=1` or `?step=` opens `BlueprintClient`. Without v4, the wizard |
 
 ## Files
 
 | File | Purpose |
 |------|---------|
+| `AboutV4.tsx` | About {community} in the v4 look: banner, facts, chapters from the answers (`CHAPTERS`), the rest folded under "The whole Blueprint" |
 | `BlueprintClient.tsx` | Full wizard UI — pillar tabs, step fields, AI scan, scoring panels |
 | `BrandingStep.tsx` | Setup step "Look & feel": logo and banner image (`community_settings`, `branding` bucket). Admins only |
 | `lib/site-text.ts` | Server side of the website import (`/api/site-text`): `startSite` reads the home page and lists the site's pages (its links plus robots.txt/sitemap.xml, following sitemap indexes); `readPages` reads a batch of up to 8 (Cloudflare limits fetches per request). Public addresses only (no local names, IP literals or odd ports; redirects re-checked) |

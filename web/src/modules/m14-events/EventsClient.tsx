@@ -17,6 +17,9 @@ import { EventDetailModal } from './EventDetailModal'
 import { EventFormModal, type EventDraft, type EventPayload } from './EventFormModal'
 import { CalendarFeedsModal } from './CalendarFeedsModal'
 import { PhotoImportModal } from './PhotoImportModal'
+import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import { Button, Card, Icon, PageHeader } from '@/core/components/v4'
 
 const VIEWS: { id: EventsView; label: string }[] = [
   { id: 'day', label: 'Day' },
@@ -234,12 +237,89 @@ export default function EventsClient({
   }
 
   return (
-    <div className="ev-page" style={{ padding: '26px 32px 60px' }}>
+    <div className={DESIGN === 'v4' ? 'ev-page v4-page v4-page--wide' : 'ev-page'} style={DESIGN === 'v4' ? undefined : { padding: '26px 32px 60px' }}>
+      {DESIGN === 'v4' ? (
+        <>
+          <PageHeader
+            eyebrow="Community"
+            title="Calendar"
+            subtitle={<>{EVENT_KINDS.filter(k => counts[k] > 0).map(k => `${counts[k]} ${KIND_META[k].short.toLowerCase()}`).join(' · ') || 'Nothing'} coming up</>}
+            actions={<>
+              {initialFeeds && <Button variant="secondary" icon="link" onClick={() => setShowFeeds(true)}>Linked calendars{initialFeeds.length > 0 ? ` · ${initialFeeds.length}` : ''}</Button>}
+              {canAddFromPhoto && userId && <Button variant="secondary" icon="camera" onClick={() => setShowPhoto(true)}>Add from a photo</Button>}
+              {canPostCommunity ? <Button icon="plus" onClick={() => openNew()}>New event</Button>
+                : userId ? <Button variant="quiet" href="/join">Joining members can post events →</Button>
+                : <Button variant="secondary" href="/auth/login">Sign in for member events</Button>}
+            </>}
+          />
+          {!userId && (
+            <Card className="v4-note"><Icon name="lock" /><span>You’re seeing public events. <Link href="/auth/login">Sign in</Link> to see member events and RSVP.</span></Card>
+          )}
+
+          <div className="v4-chiprow" role="group" aria-label="Show these events">
+            {EVENT_KINDS.map(k => {
+              const on = kinds.includes(k)
+              return (
+                <button key={k} type="button" title={KIND_META[k].blurb} aria-pressed={on} className={`v4-chip${on ? ' v4-chip--on' : ''}`} onClick={() => setKinds(list => toggle(list, k))}>
+                  <span className="v4-dot" style={{ background: KIND_META[k].color, width: 8, height: 8 }} />{KIND_META[k].label}
+                  {counts[k] > 0 && <span className="v4-chip__count">{counts[k]}</span>}
+                </button>
+              )
+            })}
+          </div>
+          {categories.length > 0 && (
+            <div className="v4-tags v4-tags--filter" role="group" aria-label="Categories">
+              {categories.map(c => {
+                const on = !hiddenCategories.includes(c)
+                return (
+                  <button key={c} type="button" aria-pressed={on} className={`v4-tag${on ? '' : ' v4-tag--out'}`} onClick={() => setHiddenCategories(list => toggle(list, c))}>
+                    <span className="v4-dot" style={{ background: categoryColor(c) }} />{c}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {kinds.length === 0 && <p className="v4-hint">Pick at least one kind of event to see the calendar.</p>}
+
+          <div className="v4-toolbar v4-caltools">
+            <span className="v4-toolbar__end">
+              {view !== 'list' ? (
+                <>
+                  <span className="v4-seg">
+                    <button type="button" onClick={() => step(-1)} aria-label="Previous"><Icon name="left" size={15} /></button>
+                    <button type="button" onClick={() => now && setAnchor(startOfDay(now))}>Today</button>
+                    <button type="button" onClick={() => step(1)} aria-label="Next"><Icon name="right" size={15} /></button>
+                  </span>
+                  <b className="v4-caltools__title">
+                    {!anchor ? '' : view === 'month' ? fmtMonthTitle(anchor) : view === 'week' ? fmtWeekTitle(anchor)
+                      : `${now && sameDay(anchor, now) ? 'Today · ' : ''}${fmtDayLong(anchor)}`}
+                  </b>
+                </>
+              ) : (
+                <span className="v4-seg">
+                  <button type="button" className={showPast ? '' : 'on'} aria-pressed={!showPast} onClick={() => setShowPast(false)}>Upcoming</button>
+                  <button type="button" className={showPast ? 'on' : ''} aria-pressed={showPast} onClick={() => setShowPast(true)}>Past</button>
+                </span>
+              )}
+            </span>
+            <span className="v4-toolbar__end">
+              <select className="v4-select" value={circleFilter} onChange={e => setCircleFilter(e.target.value as CircleSlug | '')} aria-label="Filter by circle">
+                <option value="">All circles</option>
+                {circles.slugs.map(p => <option key={p} value={p}>{circles.meta(p).label}</option>)}
+              </select>
+              <span className="v4-seg" role="group" aria-label="View">
+                {VIEWS.map(v => <button key={v.id} type="button" className={view === v.id ? 'on' : ''} aria-pressed={view === v.id} onClick={() => setView(v.id)}>{v.label}</button>)}
+              </span>
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
       {/* ── Page head ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, var(--m14) 10%, var(--surface))', color: 'var(--m14)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>
-            Module 14 · Calendar
+            {modLabel('14', 'Calendar', 'Module')}
           </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 8px' }}>
             Community calendar
@@ -354,6 +434,9 @@ export default function EventsClient({
           </div>
         </div>
       </div>
+
+        </>
+      )}
 
       {/* ── Calendar ──────────────────────────────────────────────────── */}
       {!now || !anchor ? (

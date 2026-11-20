@@ -628,6 +628,7 @@ export default function ProjectDetailClient({
                       e.preventDefault()
                       handleDrop(col.key)
                     }}
+                    className="ops-col"
                     style={{
                       background: isTarget ? `${col.color}10` : 'var(--bg-2)',
                       borderRadius: 10, padding: 8,
@@ -655,6 +656,7 @@ export default function ProjectDetailClient({
                         return (
                           <div
                             key={proposal.id}
+                            className="ops-card"
                             draggable={canManage}
                             onDragStart={(e) => {
                               if (!canManage) return
@@ -701,6 +703,7 @@ export default function ProjectDetailClient({
                         return (
                           <div
                             key={d.id}
+                            className="ops-card"
                             draggable={canManage}
                             onDragStart={(e) => {
                               if (!canManage) return

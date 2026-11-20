@@ -6,6 +6,7 @@ export function ModalShell({ title, onClose, children, maxWidth = 520 }: {
 }) {
   return (
     <div
+      className="modal-shell__backdrop"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)',
@@ -13,6 +14,7 @@ export function ModalShell({ title, onClose, children, maxWidth = 520 }: {
       }}
     >
       <div
+        className="modal-shell__dialog"
         role="dialog"
         aria-modal="true"
         onClick={e => e.stopPropagation()}
@@ -22,7 +24,7 @@ export function ModalShell({ title, onClose, children, maxWidth = 520 }: {
           boxShadow: '0 24px 64px rgba(0,0,0,0.22)', animation: 'calFadeIn 160ms ease',
         }}
       >
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div className="modal-shell__head" style={{ padding: '16px 20px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{title}</div>
           <button
             onClick={onClose}

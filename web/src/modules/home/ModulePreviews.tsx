@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleDirectory } from '@/core/lib/ops-permissions'
+import { modLabel } from '@/core/lib/module-label'
 
 /**
  * Live previews of M15 Accommodation, M16 Resources and M17 Circles for the
@@ -85,7 +86,7 @@ function InventoryPreview({ title, items, emptyExamples, href, color, cta: ctaLa
 export function StaysPreview({ items }: { items: PreviewItem[] }) {
   return (
     <InventoryPreview
-      title="M15 · Places to stay"
+      title={modLabel('15', 'Places to stay')}
       items={items.filter(i => i.category === 'accommodation')}
       emptyExamples={['🏡 Guest rooms', '🛖 Cabins', '⛺ Tent sites', '🛏 Bunks for work weeks']}
       href="/accommodation"
@@ -98,7 +99,7 @@ export function StaysPreview({ items }: { items: PreviewItem[] }) {
 export function ResourcesPreview({ items }: { items: PreviewItem[] }) {
   return (
     <InventoryPreview
-      title="M16 · Shared tools & spaces"
+      title={modLabel('16', 'Shared tools & spaces')}
       items={items.filter(i => i.category !== 'accommodation')}
       emptyExamples={['🔧 Power tools', '🚐 Community van', '🍳 Commercial kitchen', '🏛 Great hall', '🎨 Art studio']}
       href="/resources"
@@ -112,7 +113,7 @@ export function CirclesPreview({ data }: { data: CirclesPreviewData }) {
   const circles = useCircles()
   return (
     <div style={card}>
-      <div style={head}>M17 · Who leads what</div>
+      <div style={head}>{modLabel('17', 'Who leads what')}</div>
       {data.directory.admins.length > 0 && (
         <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)', marginBottom: 10 }}>
           <strong style={{ color: 'var(--ink)' }}>Stewards</strong> · {data.directory.admins.map(a => a.name).join(', ')}

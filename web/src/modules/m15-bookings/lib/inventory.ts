@@ -27,14 +27,16 @@ export const STATUS_META: Record<BookingStatus, { label: string; color: string }
   cancelled: { label: 'Cancelled',         color: 'var(--ink-4)' },
 }
 
-/** The two booking pages: accommodation on its own, everything else together. */
-export type BookingScope = 'stays' | 'resources'
+/** The booking pages: accommodation on its own, everything else together, and with the v4 look
+ *  one page for all of it, Amenities & tools (Sonia, 19 Nov). */
+export type BookingScope = 'stays' | 'resources' | 'amenities'
 
 export const SCOPE_META: Record<BookingScope, {
   num: string; label: string; heading: string; path: string; accent: string; categories: BookingCategory[]
 }> = {
   stays:     { num: '15', label: 'Accommodation', heading: 'Stay in the community', path: '/accommodation',    accent: 'var(--m15)', categories: ['accommodation'] },
   resources: { num: '16', label: 'Resources',     heading: 'Community resources',   path: '/resources', accent: 'var(--m16)', categories: ['tools', 'spaces'] },
+  amenities: { num: '',   label: 'Amenities & tools', heading: 'Amenities & tools', path: '/amenities', accent: 'var(--m15)', categories: ['accommodation', 'tools', 'spaces'] },
 }
 
 export const scopeForCategory = (c: BookingCategory): BookingScope => (c === 'accommodation' ? 'stays' : 'resources')

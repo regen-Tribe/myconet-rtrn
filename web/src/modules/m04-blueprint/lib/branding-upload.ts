@@ -6,19 +6,21 @@ import { createClient } from '@/core/lib/supabase/client'
  * file. Admins only (RLS). Used by the Look & feel step and the document import.
  */
 export type BrandingKind = 'logo' | 'banner' | 'share_image'
+/** Also the picture of the land on the Amenities map (v4.43.0), stored the same way */
+type ImageKind = BrandingKind | 'site_map'
 
 const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/gif': 'gif' }
 
 /** "…/storage/v1/object/public/branding/logo-123.png" → "logo-123.png" */
 const pathOf = (url: string | null) => url?.split('/object/public/branding/')[1]?.split('?')[0] ?? null
 
-async function saveUrl(kind: BrandingKind, url: string | null) {
+async function saveUrl(kind: ImageKind, url: string | null) {
   const { error } = await createClient().from('community_settings')
     .upsert({ id: true, [`${kind}_url`]: url }, { onConflict: 'id' })
   if (error) throw new Error(error.message)
 }
 
-export async function setBrandingImage(kind: BrandingKind, image: Blob, oldUrl: string | null) {
+export async function setBrandingImage(kind: ImageKind, image: Blob, oldUrl: string | null) {
   const supabase = createClient()
   // A new name each time, so browsers don't keep showing the old image
   const path = `${kind}-${Date.now()}.${EXT[image.type] ?? 'png'}`
@@ -29,7 +31,7 @@ export async function setBrandingImage(kind: BrandingKind, image: Blob, oldUrl: 
   if (old) await supabase.storage.from('branding').remove([old])
 }
 
-export async function clearBrandingImage(kind: BrandingKind, oldUrl: string | null) {
+export async function clearBrandingImage(kind: ImageKind, oldUrl: string | null) {
   await saveUrl(kind, null)
   const old = pathOf(oldUrl)
   if (old) await createClient().storage.from('branding').remove([old])

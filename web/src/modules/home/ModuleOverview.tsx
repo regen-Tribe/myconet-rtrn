@@ -28,7 +28,7 @@ export default function ModuleOverview() {
         {MODULE_GUIDE.map(m => (
           <div key={m.num} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '14px 16px', borderRadius: 12, border: '1px solid var(--rule)', borderTop: `3px solid ${m.color}`, background: 'var(--surface)' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, fontWeight: 700, color: m.color }}>M{m.num}</span>
+              <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 10.5, fontWeight: 700, color: m.color }}>M{m.num}</span>
               <span style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--ink)' }}>{m.name}</span>
             </div>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, flex: 1 }}>{m.what}</p>

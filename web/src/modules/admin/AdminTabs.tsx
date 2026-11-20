@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { DESIGN } from '@/core/lib/instance'
 
 /** Tabs across the admin pages */
 export default function AdminTabs({ active, openQuestions }: { active: 'users' | 'questions'; openQuestions?: number }) {
@@ -14,7 +15,7 @@ export default function AdminTabs({ active, openQuestions }: { active: 'users' |
   )
   return (
     <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--rule)', marginBottom: 24 }}>
-      {tab('users', '/admin/users', 'Users')}
+      {DESIGN === 'v4' ? tab('users', '/admin/permissions', 'Permissions') : tab('users', '/admin/users', 'Users')}
       {tab('questions', '/admin/questions', 'Questions', openQuestions)}
     </div>
   )

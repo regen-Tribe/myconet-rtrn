@@ -8,6 +8,7 @@ import { CirclesProvider } from '@/core/components/CirclesProvider'
 import { loadBranding } from '@/core/lib/branding-server'
 import { BrandingProvider } from '@/core/components/BrandingProvider'
 import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
+import { loadMenuState } from '@/core/lib/menu-server'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
@@ -40,14 +41,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const [{ data: { user } }, circles, branding] = await Promise.all([supabase.auth.getUser(), loadCircleRows(supabase), loadBranding(supabase)])
 
   let role = 'explorer'
+  let me: { name: string; avatar: string | null; username: string | null } | null = null
   if (user) {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('role, first_name, last_name, username, avatar_url')
       .eq('id', user.id)
       .maybeSingle()
     role = profile?.role ?? 'explorer'
+    me = profile ? {
+      name: [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.username || 'You',
+      avatar: profile.avatar_url ?? null, username: profile.username ?? null,
+    } : null
   }
+  // The v4 menu's next step and counts, and who you are for its foot (only for the v4 look)
+  const menu = DESIGN === 'v4' ? { ...await loadMenuState(supabase, user?.id ?? null, role), me } : null
 
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable}${DESIGN ? ` ${inter.variable} ${interTight.variable}` : ''}`} data-design={DESIGN || undefined} suppressHydrationWarning>
@@ -59,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <BrandingProvider branding={branding}>
           <CirclesProvider rows={circles}>
-            <AppShell role={role} isLoggedIn={!!user}>{children}</AppShell>
+            <AppShell role={role} isLoggedIn={!!user} menu={menu}>{children}</AppShell>
           </CirclesProvider>
         </BrandingProvider>
       </body>

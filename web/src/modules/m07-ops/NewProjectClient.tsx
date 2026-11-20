@@ -8,6 +8,7 @@ import type { CircleSlug } from '@/core/lib/circles'
 import { CalendarPicker } from './CalendarPicker'
 import { TeamPicker } from './TeamPicker'
 import type { TaskTeamOption } from './TaskModal'
+import { modLabel } from '@/core/lib/module-label'
 
 export default function NewProjectClient({
   userId,
@@ -70,7 +71,7 @@ export default function NewProjectClient({
           textTransform: 'uppercase', color: 'var(--m7)', background: 'color-mix(in srgb, var(--m7) 10%, var(--surface))',
           padding: '3px 10px', borderRadius: 20, marginBottom: 12,
         }}>
-          M07 · Operations
+          {modLabel('07', 'Operations')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 8px' }}>
           {isOpsAdmin ? 'New project' : 'Propose a project'}
