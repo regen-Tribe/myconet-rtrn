@@ -804,3 +804,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 ## 2026-11-20 — v4.52.0 deployed (Sonia's v4 releases v4.41.0–v4.52.0; v4 look stays off)
 - Update PR #67 merged (bea44bb). Migrations 20261210000000_amenities_map + 20261210000100_amenities_map_pin_check applied via MCP and verified (3 columns, both-or-neither pin check).
 - Deploy 4112cfad; /api/version v4.52.0; /, /operations, /members, /calendar, /circles 200; /ops 308; no data-design (current look).
+
+## 2026-11-20 — v4.66.0 deployed + Sonia's v4 look ON (Oscar: "make RTRN be fully caught up including looks")
+- Update PR #69 merged (v4.66.0: Sonia's v4.53–v4.66 + the assistant changing calendar events, v4.65.0); #68 (v4.65.0) closed as superseded. No migrations since v4.52.0.
+- `"design": "v4"` in instance/config.jsonc (9f9e011; the first commit ae22790 only had the LOCAL-CHANGES line). Deploy d872baa7; /api/version v4.66.0; live HTML data-design="v4"; /, /operations, /members, /calendar, /circles, /about 200. No custom branding to clash with (community_settings empty). Amenities map has no site picture yet.
