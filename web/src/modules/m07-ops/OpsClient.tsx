@@ -53,7 +53,7 @@ interface OpsClientProps {
   initialCircle: string | null
   pmSuggestions: AgentSuggestion[]
   pmActions: PmAction[]
-  /** Open this task's pop-up on arrival (/ops?task=<id>) */
+  /** Open this task's pop-up on arrival (/operations?task=<id>) */
   initialTaskId?: string | null
   /** For the task pop-up */
   people?: TaskPerson[]
@@ -66,7 +66,7 @@ interface OpsClientProps {
   initialView?: 'projects' | 'tasks'
 }
 
-type OpsTab = 'board' | 'deliverables' | 'updates' | 'circles'
+type OpsTab = 'board' | 'tasks' | 'updates' | 'circles'
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ function ProjectKanbanCard({
   const subNames = subscribers.map(s => s.first_name ?? s.username ?? 'Member')
 
   return (
-    <Link href={`/ops/${project.id}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+    <Link href={`/operations/${project.id}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
       <div
         // Blocked cards stay draggable so the attempt can explain itself
         draggable={canMove || !!onBlockedDrag}
@@ -188,7 +188,7 @@ function ProjectKanbanCard({
         {/* Footer row: subtasks + deadline */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
-            {subtaskCount === 0 ? 'no subtasks' : `${doneCount}/${subtaskCount} done`}
+            {subtaskCount === 0 ? 'no tasks' : `${doneCount}/${subtaskCount} done`}
           </span>
           {deadline && (
             <span style={{
@@ -458,13 +458,13 @@ export default function OpsClient({
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Propose project — visible to joining+ non-admins */}
           {canPropose && !isAdmin && (
-            <Link href="/ops/new" style={{
+            <Link href="/operations/new" style={{
               fontSize: 13, fontWeight: 500, color: 'var(--ink-2)',
               background: 'var(--surface)', border: '1px solid var(--rule)',
               borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
               textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block',
             }}>
-              + Propose project
+              + Suggest a project
             </Link>
           )}
           {/* One-off task for a circle — the same people who can add tasks */}
@@ -479,7 +479,7 @@ export default function OpsClient({
           )}
           {/* Create project — visible to ops admins */}
           {isAdmin && (
-            <Link href="/ops/new" style={{
+            <Link href="/operations/new" style={{
               fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--m7)',
               border: 'none', borderRadius: 8, padding: '8px 16px',
               cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block',
@@ -493,7 +493,7 @@ export default function OpsClient({
       {/* ── Stat Cards ────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 18 }}>
         <StatCard label="Active" value={activeCount} delta={`+${activeCount} this sprint`} />
-        <StatCard label="Deliverables" value={deliverableCount} delta={`${doneCount} done · ${deliverableCount - doneCount} to go`} />
+        <StatCard label="Tasks" value={deliverableCount} delta={`${doneCount} done · ${deliverableCount - doneCount} to go`} />
         <StatCard label="On track" value={onTrackCount} valueColor="var(--m5)" delta="across active projects" />
         <StatCard
           label="At risk" value={atRiskCount}
@@ -506,8 +506,8 @@ export default function OpsClient({
         {draftCount > 0 && (
           <StatCard
             label="Drafts" value={draftCount} valueColor="#b45309"
-            delta="tasks to confirm · click to see" active={activeTab === 'deliverables' && draftsOnly}
-            onClick={() => { setDraftsOnly(true); setActiveTab('deliverables') }}
+            delta="tasks to confirm · click to see" active={activeTab === 'tasks' && draftsOnly}
+            onClick={() => { setDraftsOnly(true); setActiveTab('tasks') }}
           />
         )}
       </div>
@@ -515,7 +515,7 @@ export default function OpsClient({
       {/* ── Tab Row ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--rule)', marginBottom: 18 }}>
         <button onClick={() => setActiveTab('board')} style={tabStyle('board')}>Board</button>
-        <button onClick={() => setActiveTab('deliverables')} style={tabStyle('deliverables')}>Deliverables</button>
+        <button onClick={() => setActiveTab('tasks')} style={tabStyle('tasks')}>Tasks</button>
         <button onClick={() => setActiveTab('updates')} style={tabStyle('updates')}>Updates</button>
         <button onClick={() => setActiveTab('circles')} style={tabStyle('circles')}>Circles</button>
       </div>
@@ -699,7 +699,7 @@ export default function OpsClient({
         </>
       )}
 
-      {activeTab === 'deliverables' && (
+      {activeTab === 'tasks' && (
         <DeliverablesTab
           deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly}
           canDecide={canEditTask}

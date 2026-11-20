@@ -62,7 +62,7 @@ const inputStyle: React.CSSProperties = {
 }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }
 const small: React.CSSProperties = { ...inputStyle, padding: '8px 10px', fontSize: 13 }
-const STATUS_LABEL: Record<string, string> = { backlog: 'Backlog', in_progress: 'In progress', review: 'Review', done: 'Done' }
+const STATUS_LABEL: Record<string, string> = { backlog: 'To do', in_progress: 'In progress', review: 'Review', done: 'Done' }
 
 /**
  * A task's pop-up (v4.34.0), the same on the main board and on a project's page: title, status, who has it,
@@ -319,7 +319,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
                 {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             ) : task.project_id ? (
-              <Link href={`/ops/${task.project_id}`} style={{ fontSize: 13, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>{projectTitle ?? 'Its project'} →</Link>
+              <Link href={`/operations/${task.project_id}`} style={{ fontSize: 13, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>{projectTitle ?? 'Its project'} →</Link>
             ) : (
               <div style={{ fontSize: 13, color: 'var(--ink-4)' }}>No project · on the board</div>
             )}
@@ -351,7 +351,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
 
           {task.needs_review && (
             <div style={{ fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
-              {task.source === 'meeting' ? 'Drafted by the agent from a meeting.' : 'A draft.'} Check it{canManage ? ' and save to confirm' : ''}.
+              {task.source === 'meeting' ? 'Drafted by the assistant from a meeting.' : 'A draft.'} Check it{canManage ? ' and save to confirm' : ''}.
             </div>
           )}
           {task.source_meeting_id && (
@@ -440,4 +440,4 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
 
 /** Where a task opens: its project's page, or the main board for a task with no project (v4.34.0) */
 export const taskHref = (t: { id: string; project_id: string | null }) =>
-  t.project_id ? `/ops/${t.project_id}?task=${t.id}` : `/ops?task=${t.id}`
+  t.project_id ? `/operations/${t.project_id}?task=${t.id}` : `/operations?task=${t.id}`

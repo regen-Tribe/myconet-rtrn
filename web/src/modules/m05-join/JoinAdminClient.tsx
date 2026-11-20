@@ -6,7 +6,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   pending:   { label: 'Pending',    color: '#f59e0b' },
   reviewing: { label: 'Reviewing',  color: '#3b82f6' },
   accepted:  { label: 'Accepted',   color: '#22c55e' },
-  rejected:  { label: 'Rejected',   color: '#ef4444' },
+  rejected:  { label: 'Declined',   color: '#ef4444' },
 }
 
 interface Application {

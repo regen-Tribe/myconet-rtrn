@@ -174,7 +174,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
       const context = { path: window.location.pathname + window.location.search, ...getAgentContext(), ...extra }
       const resp = await fetch('/api/agent/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instruction: t, history, context }) })
       const data = await resp.json().catch(() => ({})) as { reply?: string; changes?: Change[]; error?: string }
-      if (!resp.ok) throw new Error(data.error ?? 'The agent is not available right now.')
+      if (!resp.ok) throw new Error(data.error ?? 'The assistant is not available right now.')
       setDoMessages(prev => [...prev, { role: 'assistant', content: data.reply ?? '', instruction: t, changes: data.changes ?? [], state: data.changes?.length ? 'proposed' : undefined, suggestionId: extra.suggestion_id }])
     } catch (e) {
       setError((e as Error).message)
@@ -225,7 +225,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
   if (!open) {
     return (
       // A small floating dot (v4.36.0): ask, or tell the agent to do something with what's on this page
-      <button onClick={() => setOpen(true)} aria-label={isLoggedIn ? 'Ask or tell the MyCoNet agent' : `Ask ${COMMUNITY_NAME}`} title={isLoggedIn ? 'Ask or tell the agent' : `Ask ${COMMUNITY_NAME}`} style={{
+      <button onClick={() => setOpen(true)} aria-label={isLoggedIn ? 'Ask or tell the assistant' : `Ask ${COMMUNITY_NAME}`} title={isLoggedIn ? 'Ask or tell the assistant' : `Ask ${COMMUNITY_NAME}`} style={{
         position: 'fixed', right: 20, bottom: 20, zIndex: 150, width: 52, height: 52,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: '50%', border: 'none', cursor: 'pointer',
@@ -245,7 +245,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid var(--rule)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>{mode === 'do' ? 'Tell the agent' : `Ask ${COMMUNITY_NAME}`}</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>{mode === 'do' ? 'Tell the assistant' : `Ask ${COMMUNITY_NAME}`}</div>
           <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{mode === 'do' ? 'It sees what’s on this page, works with your own rights, and you confirm each change' : 'Answers from the community’s Blueprint and documents'}</div>
         </div>
         {isLoggedIn && (
@@ -327,7 +327,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
         )}
         <div style={{ fontSize: 10.5, color: 'var(--ink-4)', margin: '0 2px 6px' }}>{mode === 'do' ? 'Each change is logged with your name and can be undone.' : 'Questions are saved so the community can improve its answers.'}</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input value={input} onChange={e => setInput(e.target.value)} placeholder={mode === 'do' ? 'Tell the agent what to change…' : 'Ask a question…'} maxLength={2000} disabled={busy || needLogin}
+          <input value={input} onChange={e => setInput(e.target.value)} placeholder={mode === 'do' ? 'Tell the assistant what to change…' : 'Ask a question…'} maxLength={2000} disabled={busy || needLogin}
             style={{ flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--rule)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 14, outline: 'none' }} />
           <button type="submit" disabled={busy || needLogin || !input.trim()} style={{
             padding: '0 14px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: 13,

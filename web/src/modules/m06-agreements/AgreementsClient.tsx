@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { formatDeadline } from '@/core/lib/format'
+import { moduleOn } from '@/core/lib/modules'
 import NewProjectModal from './NewProjectModal'
 import { FormField, FocusInput, FocusTextarea } from './AgreementFormFields'
 
@@ -540,7 +541,7 @@ export default function AgreementsClient({
                           marginTop: 4,
                         }}
                       >
-                        Join free →
+                        Create account
                       </a>
                     ) : (
                       <a
@@ -639,7 +640,7 @@ export default function AgreementsClient({
                       <FocusTextarea
                         value={expectedReward}
                         onChange={setExpectedReward}
-                        placeholder="e.g. 200 contribution points and public credit…"
+                        placeholder={moduleOn('points') ? 'e.g. 200 contribution points and public credit…' : 'e.g. public credit and a meal on work days…'}
                       />
                     </FormField>
 
@@ -665,7 +666,7 @@ export default function AgreementsClient({
                       }}
                     >
                       <span style={{ marginRight: 6 }}>ℹ</span>
-                      The project lead reviews proposals within 48 hours. If accepted, your agreement is logged and feeds Operations (deliverables) and Contributions (points) automatically.
+                      The project lead reviews proposals within 48 hours. If accepted, your agreement is logged and feeds Operations (tasks) and Contributions (points) automatically.
                     </div>
 
                     {submitError && (

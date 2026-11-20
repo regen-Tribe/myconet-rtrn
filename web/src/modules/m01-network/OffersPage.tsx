@@ -111,7 +111,7 @@ export default function OffersPage() {
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · My Offers
+          M01 · My offers
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
@@ -135,7 +135,7 @@ export default function OffersPage() {
             </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editing ? 'Edit Offer' : 'New Offer'}</DialogTitle>
+              <DialogTitle>{editing ? 'Edit offer' : 'New offer'}</DialogTitle>
               <DialogDescription>Share a service, skill, or resource with the community.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-2">
@@ -172,7 +172,7 @@ export default function OffersPage() {
               <div className="flex gap-2 pt-2">
                 <Button onClick={handleSave} disabled={saving || !title.trim()} className="flex-1">
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editing ? 'Save Changes' : 'Add Offer'}
+                  {editing ? 'Save' : 'Add offer'}
                 </Button>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               </div>

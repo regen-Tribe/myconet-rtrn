@@ -14,7 +14,7 @@
 | M05 — Join | ✅ Live | Application form pulled from Blueprint step 1.4 questions. Explorer gate. Admin review panel. Accept sets user role to `joining`. Guest-browsable (teaser view for non-members). |
 | M06 — Agreements | ✅ Live | Joining+ members submit collaboration proposals. Admin review panel. Status flow: pending → accepted → active → completed. Live count on dashboard. Guest-browsable (open projects visible). |
 | M07 — Operations | ✅ Live | Admin creates projects, posts timeline updates, toggles open-for-collaborators. Project detail shows collaboration proposals inline. Guest-browsable. |
-| M08 — Contribution Tracking | ✅ Live | Achievements catalog at `/contributions`. Profile Pioneer badge at 100% profile. `user_achievements` table with RLS. |
+| M08 — Contribution Tracking | ✅ Live | Achievements catalog at `/achievements`. Profile Pioneer badge at 100% profile. `user_achievements` table with RLS. |
 | M09 — Governance | ✅ Live | Proposals with 4 decision modes. Consent/concern/object voting. Discussion threads. 3 new tables: `proposals`, `proposal_votes`, `proposal_comments`. |
 | M02 — Neighborhood Directory | 🔗 v1 link | Dashboard links out to v1 tribesplatform.app. v2 will be cross-portal opt-in directory. |
 | M03 — Resources & Tools | 🔗 v1 link | Dashboard links out to v1 tribesplatform.app. Building in v2 next. |
@@ -34,7 +34,7 @@
 - `src/lib/module-meta.ts` — single source of truth for all 14 module colors, labels, descriptions
 - `src/components/ModuleHeader.tsx` — colored header band on every module page
 - `src/components/DashCardTooltip.tsx` — hover tooltip on dashboard module cards
-- `src/app/network/MemberList.tsx` — tile/list view toggle (client component)
+- `src/app/members/MemberList.tsx` — tile/list view toggle (client component)
 
 ---
 
@@ -107,7 +107,7 @@ The core loop is proven:
 - Governance vote cast → participation points
 
 **Pages:**
-- `/contributions` — Community leaderboard, badge showcase
+- `/achievements` — Community leaderboard, badge showcase
 - `/dashboard` — Personal points summary added to M00 panel
 
 **DB tables:**

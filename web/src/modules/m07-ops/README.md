@@ -10,9 +10,9 @@ Ideas  →  Backlog  →  In progress  →  Review  →  Done
 
 | Route | File |
 |-------|------|
-| `/ops` | `app/ops/page.tsx` → `OpsClient` (Project Kanban) |
-| `/ops/new` | `app/ops/new/page.tsx` → `NewProjectClient` (admin direct-create) |
-| `/ops/[id]` | `app/ops/[id]/page.tsx` → `ProjectDetailClient` (per-project Kanban) |
+| `/operations` | `app/operations/page.tsx` → `OpsClient` (Project Kanban) |
+| `/operations/new` | `app/operations/new/page.tsx` → `NewProjectClient` (admin direct-create) |
+| `/operations/[id]` | `app/operations/[id]/page.tsx` → `ProjectDetailClient` (per-project Kanban) |
 
 ## Files
 
@@ -47,7 +47,7 @@ them. A review replaces the circle's open suggestions; dismissed ones (60 days) 
 suggestions with **Accept** / **Dismiss** and the agent's changes of the last two weeks with **Undo**, for
 admins and that circle's leads (`lib/pm-access.ts`; routes `/api/ops/suggestions/[id]`,
 `/api/ops/agent-actions/[id]`); everyone else sees them read-only. **On the circles** (Operations › Circles and
-`/org`): a **🧭 Project manager (N)** button for its leads opens `/ops?circle=<slug>#pm`.
+`/circles`): a **🧭 Project manager (N)** button for its leads opens `/operations?circle=<slug>#pm`.
 
 ## The unified Kanban model
 
@@ -71,7 +71,7 @@ pending  →  backlog  →  in_progress  →  review  →  done
    └── (paused — off-board)
 ```
 
-- A project starts in `pending` when proposed via M06's "Propose a new project" modal or when an admin creates it via `/ops/new`.
+- A project starts in `pending` when proposed via M06's "Propose a new project" modal or when an admin creates it via `/operations/new`.
 - Dragging a project from **Ideas → Backlog** on the main board accepts it (or the agreement flow handles activation).
 - From there, anyone with permission to move it drags it rightward as it advances.
 
@@ -80,7 +80,7 @@ pending  →  backlog  →  in_progress  →  review  →  done
 | Table | Notes |
 |-------|-------|
 | `projects` | `status` ∈ `pending | backlog | in_progress | review | done | paused`. `circle` text (one of the 5 pillars from `@/core/lib/pillars`). `created_by`, `lead_user_id` used for permission checks. |
-| `deliverables` | Since v4.34.0: `project_id` is nullable (null: on the main board, opened in `TaskModal.tsx` at `/ops?task=<id>`), and `team_id` → `org_units` (a team of its circle; trigger `deliverables_team_circle`). Since v4.32.0: `priority` (`none | low | medium | high`, default `none`; the pop-up's slider, `Priority.tsx`) and `assignee_name` (someone not on MyCoNet yet, a name tag only; cleared by trigger when `assignee_id` is set; meetings use it instead of "(for …)" in the title). Since v4.31.0: `notes` (free text; under the task in the circle's `board.md`); the assignee updates status and notes through `update_my_task()`, the pop-up's Status / Assigned to / Notes. `status` ∈ `backlog | in_progress | review | done`. `assignee_id` is the contributor. `from_agreement_id` (nullable) links back to the proposal that spawned this deliverable, if any. Since v4.20.0: `due_time` (local time, only with `due_date`), `circle` (defaults to the project's, by trigger), `source` (`person` · `agent` · `meeting`), `source_meeting_id` + `source_item`, `needs_review` (a draft; saving the task pop-up clears it, and since v4.33.0 a lead can slide its Draft pill right to approve or left to decline, `DraftSwipe.tsx`), `created_by`. Dates are local: format them with `core/lib/tasks.ts`, never `new Date('YYYY-MM-DD')`. |
+| `deliverables` | Since v4.34.0: `project_id` is nullable (null: on the main board, opened in `TaskModal.tsx` at `/operations?task=<id>`), and `team_id` → `org_units` (a team of its circle; trigger `deliverables_team_circle`). Since v4.32.0: `priority` (`none | low | medium | high`, default `none`; the pop-up's slider, `Priority.tsx`) and `assignee_name` (someone not on MyCoNet yet, a name tag only; cleared by trigger when `assignee_id` is set; meetings use it instead of "(for …)" in the title). Since v4.31.0: `notes` (free text; under the task in the circle's `board.md`); the assignee updates status and notes through `update_my_task()`, the pop-up's Status / Assigned to / Notes. `status` ∈ `backlog | in_progress | review | done`. `assignee_id` is the contributor. `from_agreement_id` (nullable) links back to the proposal that spawned this deliverable, if any. Since v4.20.0: `due_time` (local time, only with `due_date`), `circle` (defaults to the project's, by trigger), `source` (`person` · `agent` · `meeting`), `source_meeting_id` + `source_item`, `needs_review` (a draft; saving the task pop-up clears it, and since v4.33.0 a lead can slide its Draft pill right to approve or left to decline, `DraftSwipe.tsx`), `created_by`. Dates are local: format them with `core/lib/tasks.ts`, never `new Date('YYYY-MM-DD')`. |
 | `projects.team_id` | v4.37.0: a team of the project's circle (`org_units`, kind team), or null for the whole circle. Trigger `projects_team_circle` keeps circle and team together; new tasks in the project start on its team (`deliverables_default_team`). Picked with `TeamPicker.tsx`. |
 | `projects.is_chores` | Retired in v4.34.0: tasks need no project, so the per-circle chores projects were deleted (their tasks moved onto the board) and `chores_project()` / `chores_project_for_server()` dropped. The column stays, always false. |
 | `project_updates` | Freeform timeline posts per project. |
@@ -119,9 +119,9 @@ Admins set lead-circle assignments at `/admin/users`.
 
 ## Server-side data fetching
 
-`app/ops/page.tsx` fetches projects (with `circle`, `created_by`, `lead_user_id`), all deliverables (for the Deliverables tab and the per-card subtask progress counter), recent updates, the current user's role, and their `lead_circles`. Counts (active, deliverables, done, at-risk) are derived server-side.
+`app/operations/page.tsx` fetches projects (with `circle`, `created_by`, `lead_user_id`), all deliverables (for the Deliverables tab and the per-card subtask progress counter), recent updates, the current user's role, and their `lead_circles`. Counts (active, deliverables, done, at-risk) are derived server-side.
 
-`app/ops/[id]/page.tsx` fetches the single project, its updates, its pending proposals (only used by admin / project creator), its deliverables joined to the assignee's `user_profiles`, and the current user's own proposal (if any) for the inline propose-collaboration form.
+`app/operations/[id]/page.tsx` fetches the single project, its updates, its pending proposals (only used by admin / project creator), its deliverables joined to the assignee's `user_profiles`, and the current user's own proposal (if any) for the inline propose-collaboration form.
 
 ## How to work on this module
 

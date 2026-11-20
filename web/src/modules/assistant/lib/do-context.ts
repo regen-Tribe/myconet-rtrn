@@ -24,11 +24,11 @@ export async function describeContext(admin: SupabaseClient, ctx: PageContext | 
   const path = typeof ctx.path === 'string' ? ctx.path.slice(0, 300) : ''
   if (path) lines.push(`Page: ${path}`)
 
-  // From the address when the page didn't say: /ops/<project>?task=<task>, /ops?circle=…, /meetings/<id>
+  // From the address when the page didn't say: /operations/<project>?task=<task>, /operations?circle=…, /meetings/<id>
   const url = path ? new URL(path, 'https://x') : null
-  const projectId = ctx.project_id ?? (url?.pathname.match(/^\/ops\/([^/]+)$/)?.[1] ?? null)
+  const projectId = ctx.project_id ?? (url?.pathname.match(/^\/(?:operations|ops)\/([^/]+)$/)?.[1] ?? null)
   const taskId = ctx.task_id ?? url?.searchParams.get('task') ?? null
-  const circle = url?.pathname === '/ops' ? url.searchParams.get('circle') : null
+  const circle = url?.pathname === '/operations' ? url.searchParams.get('circle') : null
   if (P(projectId)) lines.push(`Looking at project ${P(projectId)}`)
   if (T(taskId)) lines.push(`Has task ${T(taskId)} open`)
   if (circle) lines.push(`The board is filtered to the ${b.circles.find(c => c.slug === circle)?.name ?? circle} circle`)

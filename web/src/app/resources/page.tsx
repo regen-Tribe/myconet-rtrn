@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation'
+import { renderBookings, type BookingsSearchParams } from '@/modules/m15-bookings/BookingsPage'
 
-// M16 Resources lives at /bookings; /resources is the friendlier address
-export default async function ResourcesAlias({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+/** M16 Resources — tools, spaces and everything else. Accommodation lives at /accommodation (M15). */
+export default async function ResourcesPage({ searchParams }: { searchParams: Promise<BookingsSearchParams> }) {
   const sp = await searchParams
-  const qs = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (Array.isArray(v) ? v : v ? [v] : []).map(x => [k, x])))
-  redirect(`/bookings${qs.size ? `?${qs}` : ''}`)
+  // Old links like /resources?category=accommodation belong on the Accommodation page
+  if (sp.category === 'accommodation') redirect(`/accommodation${sp.item ? `?item=${sp.item}` : ''}`)
+  return renderBookings('resources', sp)
 }

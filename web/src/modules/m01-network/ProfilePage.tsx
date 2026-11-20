@@ -145,7 +145,7 @@ export default function NetworkProfilePage() {
               fontSize: 13, fontWeight: 500, padding: '8px 16px',
               background: 'var(--ink)', color: '#fff', borderRadius: 8, textDecoration: 'none',
             }}>
-              Create Profile
+              Create profile
             </Link>
           </div>
         </SectionCard>
@@ -435,7 +435,7 @@ export default function NetworkProfilePage() {
       {/* Offers tab */}
       {tab === 'offers' && (
         offers.length === 0 ? (
-          <EmptyCard icon={Gift} label="No offers yet" href="/profile/edit" linkLabel="Add Offers" />
+          <EmptyCard icon={Gift} label="No offers yet" href="/profile/edit" linkLabel="+ Add offer" />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
             {offers.map((o: any) => (
@@ -460,7 +460,7 @@ export default function NetworkProfilePage() {
       {/* Seeks tab */}
       {tab === 'seeks' && (
         seeks.length === 0 ? (
-          <EmptyCard icon={HelpCircle} label="No requests yet" href="/profile/edit" linkLabel="Add Requests" />
+          <EmptyCard icon={HelpCircle} label="No requests yet" href="/profile/edit" linkLabel="+ Add request" />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {seeks.map((s: any) => {

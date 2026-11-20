@@ -5,6 +5,37 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.40.0 — 2026-11-19 — one vocabulary (from Protopia, Sonia)
+
+- **`LEXICON.md`**: one word per idea, for screens, emails, agent prompts and the second brain. Approved by Sonia
+  on 2026-11-18. `AGENTS.md`, `CLAUDE.md` and `DOCS.md` point to it.
+- **Every module's address matches its name**: `/members`, `/operations`, `/achievements`, `/calendar`,
+  `/accommodation`, `/resources`, `/circles`; `/network/seeks` becomes `/members/requests`. The old addresses
+  redirect permanently (`web/next.config.ts`), so links in second-brain notes and emails keep working. New links
+  from the project manager and meetings use the new addresses. Profiles stay at `/u/{username}`. The assistant's Do still finds the project from either address.
+- **Task**, not deliverable or subtask: the Operations tab and stat, the project page ("Tasks · N", "New task…"),
+  board cards ("no tasks"), the landing page and home. `?tab=deliverables` still opens the Tasks tab. The table
+  keeps its name.
+- **Words**: board column "Backlog" → "To do" (Paused stays); "Seeks" → Requests; "Community Network" / "Network" → Members;
+  "Contributions" → Achievements as the module name; role labels in sentence case ("Circle lead"); "Collaboration
+  proposals" → "Agreements waiting for you"; "+ Propose project" → "+ Suggest a project"; join applications say
+  "Declined" not "Rejected"; "the agent" → "the assistant" ("Tell the assistant", task drafts, project-manager panel; Meetings not yet) and "library" → Documents on screen; "org chart" →
+  Circles; buttons follow the lexicon ("Start joining →", "Create account", "Open {Page} →", "See all … →").
+- **Points log, off by default**: a new `points` switch in `instance/config.jsonc` `modules`. Points are always
+  recorded in `points_log` (one row per award, undone with `undo_points()`, never deleted); accepting an agreement
+  with a `points_value` logs it. With the switch off, no screen mentions points, reputation or the points demo;
+  with it on, Achievements shows your total (`points_total()`). **Migration** `20261209000000_points_log.sql`.
+
+## v4.39.0 — 2026-11-19
+
+- **A switchable new look, "v4"** (Sonia's redesign; prototype in her UI/UX review). Off by default: a community
+  turns it on with `"design": "v4"` in `instance/config.jsonc` (`NEXT_PUBLIC_DESIGN`, `core/lib/instance.ts › DESIGN`,
+  `data-design="v4"` on `<html>`). It re-points the existing tokens in `globals.css`: a pale blue page with white cards,
+  Inter and Inter Tight (`next/font`), labels in light sans capitals instead of mono, black main buttons, module colours
+  no longer branding modules, pastel primaries for status (`--st-*`), one soft green action colour (`--action`), rounder
+  radii. Pages that hard-code colours and sizes move over module by module in the next releases (DESIGN-SYSTEM.md › v4).
+  Light mode only. No migration.
+
 ## v4.38.4 — 2026-11-19
 
 - **Suggestions say what accepting does** (Oscar: "its not clear to me what the suggested action is"). Each

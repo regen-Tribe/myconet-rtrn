@@ -85,7 +85,7 @@ export default function EventsClient({
   // A board task opens on the board; everything else opens the event pop-up
   function open(id: string) {
     const task = taskEvents.find(e => e.id === id)?.board
-    if (task) router.push(task.projectId ? `/ops/${task.projectId}?task=${task.taskId}` : `/ops?task=${task.taskId}`)
+    if (task) router.push(task.projectId ? `/operations/${task.projectId}?task=${task.taskId}` : `/operations?task=${task.taskId}`)
     else setOpenId(id)
   }
 
@@ -95,7 +95,7 @@ export default function EventsClient({
     params.set('show', kinds.join(','))
     params.set('view', view)
     if (openId) params.set('event', openId)
-    window.history.replaceState(null, '', `/events?${params.toString()}`)
+    window.history.replaceState(null, '', `/calendar?${params.toString()}`)
   }, [kinds, view, openId])
 
   useEffect(() => {

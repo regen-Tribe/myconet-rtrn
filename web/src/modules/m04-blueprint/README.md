@@ -90,4 +90,4 @@ To add a new blueprint field:
 2. Add scoring logic to `lib/blueprint-compute.ts` if it should affect readiness
 3. `BlueprintClient.tsx` auto-renders fields from the wizard data structure
 
-**+ Add circle on the circle pages (v4.27.0):** admins also add a circle from Operations › Circles and the `/org` chart (`AddCircleButton.tsx`): name, one-line purpose (the org-chart description the meeting agent reads), emoji; a free colour; the `circles` trigger makes its org-chart unit. Same rules as here (admins only, RLS `admins add circles`).
+**+ Add circle on the circle pages (v4.27.0):** admins also add a circle from Operations › Circles and the `/circles` chart (`AddCircleButton.tsx`): name, one-line purpose (the org-chart description the meeting agent reads), emoji; a free colour; the `circles` trigger makes its org-chart unit. Same rules as here (admins only, RLS `admins add circles`).

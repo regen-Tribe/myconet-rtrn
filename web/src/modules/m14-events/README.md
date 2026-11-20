@@ -1,10 +1,10 @@
 # M14 — Calendar
 
-The community calendar (labelled "Calendar" in the UI; route `/events`, with `/calendar` redirecting). Three calendars side by side:
+The community calendar (labelled "Calendar" in the UI; route `/calendar`, with `/calendar` redirecting). Three calendars side by side:
 
 - **Core events** — official events, posted by full members, circle leads, project leads, advisors and admins
 - **Community hosted** — events anyone joining or above can post
-- **Tasks** — since v4.20.0 this layer shows **dated tasks from the task board** (`lib/board-tasks.ts`; loaded on the events page, turned into calendar items in the browser, clicking opens `/ops/<project>?task=<id>`). Tasks are added and changed on the board, so new events can't be task-kind; older task-kind events still show and can be edited (RSVP reads "I'll help" / "Who's helping").
+- **Tasks** — since v4.20.0 this layer shows **dated tasks from the task board** (`lib/board-tasks.ts`; loaded on the events page, turned into calendar items in the browser, clicking opens `/operations/<project>?task=<id>`). Tasks are added and changed on the board, so new events can't be task-kind; older task-kind events still show and can be edited (RSVP reads "I'll help" / "Who's helping").
 
 ## What users see here
 
@@ -18,7 +18,7 @@ The community calendar (labelled "Calendar" in the UI; route `/events`, with `/c
 
 | Route | File |
 |-------|------|
-| `/events` | `app/events/page.tsx` → `EventsClient` |
+| `/calendar` | `app/calendar/page.tsx` → `EventsClient` |
 
 Query params: `show=daily,core,community,task` (the ticked kinds, any mix; default all; `tab=<kind>` still works), `view=day|week|month|list` (default `day`: today), `event=<id>` (opens the pop-up), `new=1&project=<id>&proposal=<id>&circle=<pillar>` (opens a pre-filled form).
 
@@ -31,14 +31,14 @@ Query params: `show=daily,core,community,task` (the ticked kinds, any mix; defau
 | `CalendarViews.tsx` | `MonthView`, `WeekView`, `ListView`, `eventColor()` |
 | `EventDetailModal.tsx` | Event pop-up + shared `ModalShell` |
 | `EventFormModal.tsx` | Create/edit form |
-| `LinkedEventsList.tsx` | Upcoming events for another module's page (used on `/ops/[id]`) |
+| `LinkedEventsList.tsx` | Upcoming events for another module's page (used on `/operations/[id]`) |
 | `lib/calendar.ts` | Local-time date math and formatting — call after mount only |
 | `lib/permissions.ts` | `canCreateKind`, `canEditEvent` — mirror the RLS policies |
 | `lib/queries.ts` | `EVENT_SELECT`, `RSVP_SELECT`, `FEED_SELECT`, row normalizers |
 | `CalendarFeedsModal.tsx` | Admins: link, sync and remove outside calendars (🔗 Linked calendars) |
 | `lib/feeds.ts` | `parseFeed()`: iCal → occurrences (repeats expanded, time zones, one-off changes, cancellations), `matchCircle()`. Server only (uses `ical.js`) |
 | `lib/feed-url.ts` | Browser-safe: `normalizeFeedUrl()` (Google share/embed link → iCal address), `FEED_DAYS_AHEAD` |
-| `lib/feed-sync.ts` | `syncCalendarFeeds()`: claims due feeds, fetches, parses, applies. Called after `/events` renders and by `/api/calendar/sync` |
+| `lib/feed-sync.ts` | `syncCalendarFeeds()`: claims due feeds, fetches, parses, applies. Called after `/calendar` renders and by `/api/calendar/sync` |
 
 ## Database tables
 
@@ -63,7 +63,7 @@ Policies use `private.my_role()` / `private.my_lead_circles()` (security definer
 - The page loads events from the last 365 days onward. Older events need a fetch on navigation if that ever matters.
 - Kinds: `daily` (rhythm: meals, movement, focus), `core`, `community`, `task`. `category` is free text within a kind; `categoryColor()` gives known ones fixed colours.
 - Linked calendars: the next 90 days are kept in sync; past occurrences stay. Sync runs after someone
-  opens `/events` and the last sync is over an hour old (no cron), or on "Sync now". All-day dates are
+  opens `/calendar` and the last sync is over an hour old (no cron), or on "Sync now". All-day dates are
   stored at noon UTC so they land on the same day everywhere. Feed events can't be edited here (the
   next sync would undo it): change them in the source calendar. The exception is the time: "Change time"
   (anyone signed in) sets `times_set_by`, and `calendar_feed_apply()` then keeps that event's times

@@ -90,7 +90,7 @@ export function PermissionNoticeModal({
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <Link href="/ops?tab=circles" onClick={onClose} style={{ fontSize: 12, fontWeight: 600, color: 'var(--m7)', textDecoration: 'none' }}>
+            <Link href="/operations?tab=circles" onClick={onClose} style={{ fontSize: 12, fontWeight: 600, color: 'var(--m7)', textDecoration: 'none' }}>
               See all circles and leads →
             </Link>
             <button

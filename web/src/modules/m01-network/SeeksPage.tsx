@@ -100,7 +100,7 @@ export default function SeeksPage() {
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · My Seeks
+          M01 · My requests
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
@@ -124,7 +124,7 @@ export default function SeeksPage() {
             </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editing ? 'Edit Seek' : 'New Seek'}</DialogTitle>
+              <DialogTitle>{editing ? 'Edit request' : 'New request'}</DialogTitle>
               <DialogDescription>Tell the community what you need or are looking for.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-2">
@@ -152,7 +152,7 @@ export default function SeeksPage() {
               <div className="flex gap-2 pt-2">
                 <Button onClick={handleSave} disabled={saving || !requestText.trim()} className="flex-1">
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editing ? 'Save Changes' : 'Post Seek'}
+                  {editing ? 'Save' : 'Add request'}
                 </Button>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               </div>

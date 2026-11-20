@@ -103,7 +103,7 @@ read it / look for new tasks again, confirm all drafts, email again: `POST /api/
 (`private.in_circle()`, restrictive RLS).
 
 **Where people find them:** `/meetings` (circle chips, *My circles*, *All*, search, *Needs review* for leads;
-`?circle=<slug>|mine|all`), a **📝 Meeting notes (N)** button on each circle in `/org` and in Operations ›
+`?circle=<slug>|mine|all`), a **📝 Meeting notes (N)** button on each circle in `/circles` and in Operations ›
 Circles, and a "📝 From a meeting" link in a task's pop-up. The board gets a **Drafts** card that opens the
 Deliverables tab filtered to drafts.
 

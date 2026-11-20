@@ -33,8 +33,8 @@ export type BookingScope = 'stays' | 'resources'
 export const SCOPE_META: Record<BookingScope, {
   num: string; label: string; heading: string; path: string; accent: string; categories: BookingCategory[]
 }> = {
-  stays:     { num: '15', label: 'Accommodation', heading: 'Stay in the community', path: '/stays',    accent: 'var(--m15)', categories: ['accommodation'] },
-  resources: { num: '16', label: 'Resources',     heading: 'Community resources',   path: '/bookings', accent: 'var(--m16)', categories: ['tools', 'spaces'] },
+  stays:     { num: '15', label: 'Accommodation', heading: 'Stay in the community', path: '/accommodation',    accent: 'var(--m15)', categories: ['accommodation'] },
+  resources: { num: '16', label: 'Resources',     heading: 'Community resources',   path: '/resources', accent: 'var(--m16)', categories: ['tools', 'spaces'] },
 }
 
 export const scopeForCategory = (c: BookingCategory): BookingScope => (c === 'accommodation' ? 'stays' : 'resources')

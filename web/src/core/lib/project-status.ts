@@ -1,7 +1,7 @@
 /**
  * Project lifecycle on the Kanban board.
  *
- * Both the main /ops board (cards = projects) and the /ops/[id] detail page
+ * Both the main /operations board (cards = projects) and the /operations/[id] detail page
  * (cards = deliverables, plus pending proposals in the leftmost column) share
  * the same five columns:
  *
@@ -18,7 +18,7 @@ export type ProjectKanbanStatus = typeof PROJECT_KANBAN_STATUSES[number]
 
 export const PROJECT_KANBAN_COLUMNS: { key: ProjectKanbanStatus; label: string; color: string }[] = [
   { key: 'pending',     label: 'Ideas',       color: 'var(--ink-4)' },
-  { key: 'backlog',     label: 'Backlog',     color: '#94a3b8' },
+  { key: 'backlog',     label: 'To do',       color: '#94a3b8' },
   { key: 'in_progress', label: 'In progress', color: '#4338ca' },
   { key: 'review',      label: 'Review',      color: '#f59e0b' },
   { key: 'done',        label: 'Done',        color: '#22c55e' },
@@ -26,7 +26,7 @@ export const PROJECT_KANBAN_COLUMNS: { key: ProjectKanbanStatus; label: string; 
 
 export const PROJECT_STATUS_META: Record<string, { label: string; color: string }> = {
   pending:     { label: 'Idea',        color: 'var(--ink-4)' },
-  backlog:     { label: 'Backlog',     color: '#94a3b8' },
+  backlog:     { label: 'To do',       color: '#94a3b8' },
   in_progress: { label: 'In progress', color: '#4338ca' },
   review:      { label: 'Review',      color: '#f59e0b' },
   done:        { label: 'Done',        color: '#22c55e' },

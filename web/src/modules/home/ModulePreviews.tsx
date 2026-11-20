@@ -88,7 +88,7 @@ export function StaysPreview({ items }: { items: PreviewItem[] }) {
       title="M15 · Places to stay"
       items={items.filter(i => i.category === 'accommodation')}
       emptyExamples={['🏡 Guest rooms', '🛖 Cabins', '⛺ Tent sites', '🛏 Bunks for work weeks']}
-      href="/stays"
+      href="/accommodation"
       color="var(--m15)"
       cta="See places to stay"
     />
@@ -101,7 +101,7 @@ export function ResourcesPreview({ items }: { items: PreviewItem[] }) {
       title="M16 · Shared tools & spaces"
       items={items.filter(i => i.category !== 'accommodation')}
       emptyExamples={['🔧 Power tools', '🚐 Community van', '🍳 Commercial kitchen', '🏛 Great hall', '🎨 Art studio']}
-      href="/bookings"
+      href="/resources"
       color="var(--m16)"
       cta="Browse resources"
     />
@@ -134,7 +134,7 @@ export function CirclesPreview({ data }: { data: CirclesPreviewData }) {
           )
         })}
       </div>
-      <Link href="/org" style={cta('var(--m17)')}>See all circles →</Link>
+      <Link href="/circles" style={cta('var(--m17)')}>See all circles →</Link>
     </div>
   )
 }

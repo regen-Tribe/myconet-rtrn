@@ -28,7 +28,7 @@ export function CommunityGlance({ name, tiles }: { name: string; tiles: GlanceTi
       </div>
       <div style={{ marginTop: 14 }}>
         <Link href="/blueprint" style={{ fontSize: 13, fontWeight: 600, color: 'var(--m4)', textDecoration: 'none' }}>
-          Read the full community plan →
+          Open Blueprint →
         </Link>
       </div>
     </div>

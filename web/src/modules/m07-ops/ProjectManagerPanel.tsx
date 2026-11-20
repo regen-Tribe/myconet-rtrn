@@ -10,7 +10,7 @@ import Link from 'next/link'
 const KIND: Record<string, string> = { merge: 'Same task twice', move: 'Belongs in a project', new_project: 'Start a project', assign: 'Who could take it' }
 const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a project', pm_assign: 'Assigned' }
 
-// Arriving from a circle page's "🧭 Project manager" button (/ops?circle=…#pm) opens the panel
+// Arriving from a circle page's "🧭 Project manager" button (/operations?circle=…#pm) opens the panel
 const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
 const atPm = () => window.location.hash === '#pm'
 
@@ -108,7 +108,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
     if (accepting) {
       // Where it went: the project, else the task (opened on the board when it has no project)
       const r = data.result ?? {}
-      const href = r.project_id ? `/ops/${r.project_id}${r.task_id ? `?task=${r.task_id}` : ''}` : r.task_id ? `/ops?task=${r.task_id}` : null
+      const href = r.project_id ? `/operations/${r.project_id}${r.task_id ? `?task=${r.task_id}` : ''}` : r.task_id ? `/operations?task=${r.task_id}` : null
       setAccepted(prev => [...prev, { s: accepting, href }])
     }
     router.refresh()
@@ -180,7 +180,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                       {busy === s.id ? '…' : where[s.id]?.startsWith('p:') ? 'Move them in' : plain.button}
                     </button>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'dismiss', s.id)} style={btn()}>Dismiss</button>
-                    <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the agent…</button>
+                    <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the assistant…</button>
                   </div>
                 )}
                 {mayDecide && telling === s.id && (
@@ -201,13 +201,13 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>✓ Accepted</span>
                 <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{s.kind === 'new_project' ? p.title : p.label}</span>
                 {tag(s.circle)}
-                {href && <Link href={href} style={{ ...btn(true), marginLeft: 'auto', textDecoration: 'none' }}>Open {href.startsWith('/ops/') ? 'project' : 'task'} →</Link>}
+                {href && <Link href={href} style={{ ...btn(true), marginLeft: 'auto', textDecoration: 'none' }}>Open {href.startsWith('/operations/') ? 'project' : 'task'} →</Link>}
               </div>
             )
           })}
           {done.length > 0 && (
             <div style={{ borderTop: '1px solid var(--rule)', marginTop: 10, paddingTop: 8 }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Done by the agent (last 2 weeks)</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Done by the assistant (last 2 weeks)</div>
               {done.map(a => (
                 <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--ink-2)', padding: '3px 0', flexWrap: 'wrap' }}>
                   <span style={{ color: 'var(--ink-3)' }}>{a.action.startsWith('do_') ? 'Asked for' : DONE[a.action] ?? a.action}:</span>

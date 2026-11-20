@@ -1,10 +1,39 @@
 # MyCoNet — Design System
 
-> Status: v3.44 | Last updated: 2026-05-23
+> Status: v3.44, plus the switchable v4 below | Last updated: 2026-11-19
 
 The visual language used across MyCoNet v2. Modern, sleek, white + grey neutrals with module colors used as accents — think Google Material 3 / Stripe / Linear.
 
-The **canonical reference implementation is `/dashboard`** (M00) — `web/src/modules/m00-dashboard/DashboardPage.tsx`. When in doubt, open that file and match what it does. The **second canonical reference is `/network`** (M01 — "members dashboard") which mirrors M00's pattern with member-specific content.
+The **canonical reference implementation is `/dashboard`** (M00) — `web/src/modules/m00-dashboard/DashboardPage.tsx`. When in doubt, open that file and match what it does. The **second canonical reference is `/members`** (M01 — "members dashboard") which mirrors M00's pattern with member-specific content.
+
+---
+
+## v4: the redesign (switchable, from v4.39.0)
+
+A community turns it on with `"design": "v4"` in `instance/config.jsonc`; everyone else keeps the look described
+in the rest of this file until v4 is finished and becomes the default. Words follow `LEXICON.md`.
+
+**Rules.** (1) One next step per screen, in the soft green action colour (`--action`, text `--action-ink`).
+(2) Main buttons are black pills; secondary buttons are white with a hairline. (3) Colour shows status, never a
+module: To do blue, In progress violet, Review red, Done green, Paused yellow, Ideas grey (`--st-*`). The module
+colours (`--m*`) are black in v4. (4) Labels above headings (eyebrows) are light sans capitals, wide letter-spacing,
+`--ink-4`; no mono font. (5) A pale blue page (`--bg`) with white cards, no shadows; three radii: pill, card 20px,
+inner 12px; six text sizes 11/13/15/18/24/40. (6) One hand-drawn icon set (marker line); no emoji in the interface.
+(7) Drawings (cream on cobalt) only for empty screens and page headers. (8) The board keeps its Paused column
+(Oscar, 2026-11-19), for projects only, after Done.
+
+**How it ships.** Release 1 (v4.39.0) re-points the tokens, so everything that uses them changes at once. Then,
+one release each, behind the same switch:
+1. Shared components in `core/components/ui/`: Button, StatusPill, Chip, Card, ListRow, Icon, PageHeader, NextStep,
+   EmptyState, and `ModalShell` restyled (light blurred backdrop, a bottom sheet on phones).
+2. The shell and menu: You (My dashboard) · Community (About {community}, Members, Calendar, Circles, Amenities &
+   tools) · Working together (Operations, Agreements, Meetings, Governance) · Admin (Applications, Bookings,
+   Permissions). Needs the lexicon's new addresses first. My tasks moves into My dashboard; Achievements into profiles.
+3. My dashboard; 4. About {community} (the Blueprint as a page); 5. Amenities & tools (Accommodation and Resources
+   together, with a map); 6. Admin: Bookings calendar (who stays where) and Permissions; 7. the remaining modules.
+Each release replaces that module's hard-coded colours and sizes with tokens and components.
+
+The prototype these come from: `design/redesign-prototype/app.html` (open it in a browser; sample data, with a "View as" role switch). `index.html` beside it has the rules, colours, icons and drawings.
 
 ---
 
@@ -139,7 +168,7 @@ Three rules:
 A single mono number on a white surface. Clickable when there's a relevant destination.
 
 ```tsx
-<Link href="/network" style={{ textDecoration: 'none', display: 'block' }}>
+<Link href="/members" style={{ textDecoration: 'none', display: 'block' }}>
   <div className="dash-stat-card dash-stat-card--link">
     <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
                   textTransform: 'uppercase', letterSpacing: '0.08em',
@@ -316,7 +345,7 @@ The standard top-down structure of any module page:
 └──────────────────────────────────────────────────────┘
 ```
 
-**Inside the M01 shell** (`/network/*` and `/u/*`): the inner sidebar and right panel already eat ~440px, so the middle column should be **single-column with sections stacked vertically**, not the two-column split.
+**Inside the M01 shell** (`/members/*` and `/u/*`): the inner sidebar and right panel already eat ~440px, so the middle column should be **single-column with sections stacked vertically**, not the two-column split.
 
 ---
 
@@ -340,7 +369,7 @@ What each `--mNN` color means and when to use it:
 
 | Color | When to use as accent | When NOT to use |
 |---|---|---|
-| `--m1` brown | Anywhere on `/network/*` or `/u/*` | Inside other modules' chrome |
+| `--m1` brown | Anywhere on `/members/*` or `/u/*` | Inside other modules' chrome |
 | `--m4` yellow | Blueprint progress bars, "phase" indicators | As a primary CTA — too pale for white text |
 | `--m5` green | Join CTAs, "live" status, accepted state, success | Generic neutrals — use `--accent-color` |
 | `--m6` blue | Agreements, collaboration flow, "submitted" state | Links inside body text |

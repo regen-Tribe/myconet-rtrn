@@ -52,7 +52,7 @@ export default function NewProjectClient({
       .select('id')
       .single()
     if (err) { setError(err.message); setSaving(false); return }
-    router.push('/ops')
+    router.push('/operations')
   }
 
   const inputStyle: React.CSSProperties = {
@@ -77,7 +77,7 @@ export default function NewProjectClient({
         </h1>
         {!isOpsAdmin && (
           <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0, lineHeight: 1.55 }}>
-            Your proposal will appear in the Ideas column for review. Once accepted by a circle or project lead, it moves to Backlog and you can start adding subtasks.
+            Your project idea will appear in the Ideas column for review. Once a circle or project lead accepts it, it moves to To do and you can start adding tasks.
           </p>
         )}
       </div>
@@ -186,7 +186,7 @@ export default function NewProjectClient({
           >
             {saving ? (isOpsAdmin ? 'Creating…' : 'Proposing…') : (isOpsAdmin ? 'Create project' : 'Submit proposal')}
           </button>
-          <Link href="/ops" style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 500, textDecoration: 'none' }}>
+          <Link href="/operations" style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 500, textDecoration: 'none' }}>
             Cancel
           </Link>
         </div>

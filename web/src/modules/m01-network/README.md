@@ -6,12 +6,12 @@ Profile-based member discovery with AI-powered compatibility matching. Members p
 
 | Route | File |
 |-------|------|
-| `/network` | `app/network/page.tsx` → inline (imports `MemberList`) |
-| `/network/discover` | `app/network/discover/page.tsx` → `DiscoverClient` |
-| `/network/matches` | `app/network/matches/page.tsx` → `MatchesTabs` |
-| `/network/offers` | `app/network/offers/page.tsx` → `OffersPage` |
-| `/network/seeks` | `app/network/seeks/page.tsx` → `SeeksPage` |
-| `/network/profile` | `app/network/profile/page.tsx` → `ProfilePage` |
+| `/members` | `app/members/page.tsx` → inline (imports `MemberList`) |
+| `/members/discover` | `app/members/discover/page.tsx` → `DiscoverClient` |
+| `/members/matches` | `app/members/matches/page.tsx` → `MatchesTabs` |
+| `/members/offers` | `app/members/offers/page.tsx` → `OffersPage` |
+| `/members/requests` | `app/members/requests/page.tsx` → `SeeksPage` |
+| `/members/profile` | `app/members/profile/page.tsx` → `ProfilePage` |
 
 ## Files
 
@@ -41,7 +41,7 @@ Profile-based member discovery with AI-powered compatibility matching. Members p
 | Aligned goals | 5 | Shared regenerative keywords in `goals` (`community`, `regenerative`, `sustainable`, `permaculture`, `nature`, `spiritual`) |
 | **Total** | **100** | |
 
-Callers must merge `city` and `country` from `user_profiles` onto the bio object before calling — those fields don't live on `user_bio`. See `web/src/app/network/page.tsx` for the pattern.
+Callers must merge `city` and `country` from `user_profiles` onto the bio object before calling — those fields don't live on `user_bio`. See `web/src/app/members/page.tsx` for the pattern.
 
 ## Database tables
 
@@ -61,4 +61,4 @@ cd web && npm run dev
 
 To modify matching logic, edit `lib/match-score.ts`. The function is pure (no DB calls) and easy to unit-test.
 
-To add a new member card field, update `MemberList.tsx` and the relevant Supabase select query in `app/network/page.tsx`.
+To add a new member card field, update `MemberList.tsx` and the relevant Supabase select query in `app/members/page.tsx`.

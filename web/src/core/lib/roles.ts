@@ -39,10 +39,10 @@ export const roleAtLeast = (role: string, minRole: string): boolean =>
 // Display names for user_profiles.role
 export const ROLE_LABELS: Record<string, string> = {
   explorer: 'Explorer',
-  joining: 'Joining Member',
+  joining: 'Joining member',
   member: 'Member',
-  circle_lead: 'Circle Lead',
-  project_lead: 'Project Lead',
+  circle_lead: 'Circle lead',
+  project_lead: 'Project lead',
   advisor: 'Advisor',
   admin: 'Admin',
 }

@@ -122,7 +122,7 @@ export function catalogPrompt(r: Refs): string {
   const unitName = (u: Refs['units'][number]) => `${u.kind === 'circle' ? 'circle' : 'team'} ${u.name}${u.kind !== 'circle' ? ` (in ${r.circles.find(c => c.slug === u.circle)?.name ?? u.circle})` : ''}`
   return `General changes (made with the person's own rights; the database refuses what they may not do):
 - update {"what":"person|circle|unit|project|task","row":"U1|C1|O1|P1|T1","set":{"field":value,…}}
-- add_member {"unit":"O1","person":"U1","role":"lead|member","title":"optional role title"}: put someone in a circle or team of the org chart
+- add_member {"unit":"O1","person":"U1","role":"lead|member","title":"optional role title"}: put someone in a circle or a team
 - remove_member {"unit":"O1","person":"U1"}
 Fields you may set:
 ${fields}
@@ -249,14 +249,14 @@ export async function executeGeneral(admin: SupabaseClient, mine: SupabaseClient
   if (a.kind === 'add_member') {
     const { data, error } = await mine.from('org_unit_members').insert({ unit_id: a.unit, user_id: a.person, role: a.role, title: a.title }).select('unit_id')
     if (error) return { rows: [], error: error.code === '23505' ? 'They’re already in it.' : error.message }
-    if (!data?.length) return { rows: [], error: 'You can’t change that part of the org chart.' }
+    if (!data?.length) return { rows: [], error: 'You can’t change that circle or team.' }
     return { rows: [{ table: 'org_unit_members', match: { unit_id: a.unit, user_id: a.person }, before: null, inserted: true }] }
   }
   if (a.kind === 'remove_member') {
     const { data: old } = await admin.from('org_unit_members').select('unit_id, user_id, role, title').eq('unit_id', a.unit).eq('user_id', a.person).maybeSingle()
     const { data, error } = await mine.from('org_unit_members').delete().eq('unit_id', a.unit).eq('user_id', a.person).select('unit_id')
     if (error) return { rows: [], error: error.message }
-    if (!data?.length) return { rows: [], error: 'You can’t change that part of the org chart.' }
+    if (!data?.length) return { rows: [], error: 'You can’t change that circle or team.' }
     return { rows: [{ table: 'org_unit_members', match: { unit_id: a.unit, user_id: a.person }, before: old as Before }] }
   }
   const def = CATALOG[a.what]

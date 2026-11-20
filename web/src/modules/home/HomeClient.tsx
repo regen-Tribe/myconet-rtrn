@@ -1,5 +1,6 @@
 'use client'
 import { isTaskOverdue } from '@/core/lib/tasks'
+import { moduleOn } from '@/core/lib/modules'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { isFullMember as checkFullMember, isJoiningOrAbove, ROLE_LABELS } from '@/core/lib/roles'
@@ -317,7 +318,7 @@ export default function HomeClient({
             { mod: '06', icon: '🤝', text: "Make agreements on how you'll collaborate", target: 'agreements', color: 'var(--m6)' },
             { mod: '17', icon: '🧭', text: 'See who leads what',                target: 'circles', color: 'var(--m17)' },
             { mod: '07', icon: '⚙️', text: 'Contribute to goals & projects',  target: 'ops',        color: 'var(--m7)' },
-            { mod: '08', icon: '✦',  text: 'Get rewards for your contributions', target: 'contributions', color: 'var(--m8)' },
+            ...(moduleOn('points') ? [{ mod: '08', icon: '✦',  text: 'Get rewards for your contributions', target: 'contributions', color: 'var(--m8)' }] : []),
             { mod: '09', icon: '☉',  text: 'Make decisions together',          target: 'governance', color: 'var(--m9)' },
           ].map(({ mod, icon, text, target, color }) => (
             <ModulePill key={mod} mod={mod} icon={icon} text={text} target={target} color={color} />
@@ -456,11 +457,11 @@ export default function HomeClient({
                 Welcome to {communityName}, {firstName || 'Member'}! You're now a <span style={{ color: '#d97706' }}>{roleLabel}</span>.
               </div>
               <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                You've earned the <strong>Community Joiner</strong> badge 🏡 — Agreements, Operations, Contributions, and Governance are now unlocked.
+                You've earned the <strong>Community Joiner</strong> badge 🏡 — Agreements, Operations, Achievements and Governance are now unlocked.
               </div>
             </div>
             <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--ink)', padding: '9px 18px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>
-              Go to Dashboard →
+              Open Dashboard →
             </Link>
           </div>
         </div>
@@ -591,9 +592,9 @@ export default function HomeClient({
               {/* Stat row */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
                 {[
-                  { label: 'Members', value: memberCount, color: 'var(--m1)', href: '/network' },
-                  { label: 'Active projects', value: activeProjectCount, color: 'var(--m7)', href: '/ops' },
-                  { label: 'Deliverables', value: deliverables.length, color: 'var(--m8)', href: '/ops' },
+                  { label: 'Members', value: memberCount, color: 'var(--m1)', href: '/members' },
+                  { label: 'Active projects', value: activeProjectCount, color: 'var(--m7)', href: '/operations' },
+                  { label: 'Tasks', value: deliverables.length, color: 'var(--m8)', href: '/operations' },
                 ].map(s => (
                   <Link key={s.label} href={s.href} style={{ textDecoration: 'none' }}>
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '10px 12px', position: 'relative', overflow: 'hidden' }}>
@@ -629,7 +630,7 @@ export default function HomeClient({
                   <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Active projects</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                     {projects.slice(0, 2).map(p => (
-                      <Link key={p.id} href={`/ops/${p.id}`} style={{ textDecoration: 'none' }}>
+                      <Link key={p.id} href={`/operations/${p.id}`} style={{ textDecoration: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 7, padding: '8px 10px' }}>
                           <span style={{ width: 3, height: 28, borderRadius: 2, background: 'var(--m7)', flexShrink: 0 }} />
                           <div style={{ minWidth: 0 }}>
@@ -646,7 +647,7 @@ export default function HomeClient({
               {/* Recent deliverables */}
               {deliverables.length > 0 && (
                 <div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Recent deliverables</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Recent tasks</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {deliverables.slice(0, 3).map(d => {
                       const statusColors: Record<string, string> = { done: '#22c55e', in_progress: '#3b82f6', review: '#f59e0b', backlog: 'var(--ink-4)' }
@@ -671,10 +672,10 @@ export default function HomeClient({
       <section className={sectionCls} style={sectionW} id="meet">
         <Split>
           <SectionHead
-            mod="01" label="Community Network" color="var(--m1)"
+            mod="01" label="Members" color="var(--m1)"
             h="Meet the people gathering around this idea."
             lead="Before anything is built, the right people have to find each other. Browse rich profiles of every member and explorer — sorted by how well your offers, seeks, values, and skills line up."
-            href="/network"
+            href="/members"
             why={[
               '<strong>Real profiles, not posts.</strong> What you bring, what you need, where you\'re headed.',
               '<strong>AI match score</strong> across values, skills, personality, and goals — not just keywords.',
@@ -682,7 +683,7 @@ export default function HomeClient({
             ]}
           />
           <DemoCard>
-            <DemoHead color="var(--m1)" modLabel="M01" title="Residents · Top matches" meta={`${memberCount} members`} href="/network" />
+            <DemoHead color="var(--m1)" modLabel="M01" title="Residents · Top matches" meta={`${memberCount} members`} href="/members" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {members.length > 0 ? members.map((m, i) => {
                 const fullName = [m.first_name, m.last_name].filter(Boolean).join(' ') || m.username || 'Member'
@@ -735,7 +736,7 @@ export default function HomeClient({
               )}
             </div>
             <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--rule)', textAlign: 'right' }}>
-              <Link href="/network" style={{ fontSize: 12.5, color: 'var(--m1)', fontWeight: 600, textDecoration: 'none' }}>View all members →</Link>
+              <Link href="/members" style={{ fontSize: 12.5, color: 'var(--m1)', fontWeight: 600, textDecoration: 'none' }}>See all members →</Link>
             </div>
           </DemoCard>
         </Split>
@@ -748,7 +749,7 @@ export default function HomeClient({
             mod="14" label="Calendar" color="var(--m14)"
             h="Show up. Gather. Celebrate."
             lead="Workdays, circle meetings, potlucks and celebrations all live on one community calendar. Anyone can browse public events. Joining members host their own, and RSVPs show who's coming."
-            href="/events"
+            href="/calendar"
             why={[
               '<strong>Core events</strong> — official gatherings posted by members, circle leads and project leads.',
               '<strong>Community hosted</strong> — anyone joining the community can put an event on the calendar.',
@@ -760,13 +761,13 @@ export default function HomeClient({
             <LinkedEventsList
               events={upcomingEvents}
               title="Coming up"
-              viewAllHref="/events?view=list"
-              addHref={isJoiningPlus ? '/events?new=1' : null}
+              viewAllHref="/calendar?view=list"
+              addHref={isJoiningPlus ? '/calendar?new=1' : null}
               limit={4}
               showKind
               emptyText="Nothing on the calendar yet — check back soon."
             />
-            <Link href="/events" style={{
+            <Link href="/calendar" style={{
               display: 'inline-block', marginTop: 16, fontSize: 13, fontWeight: 700, color: '#fff',
               background: 'var(--m14)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none',
             }}>
@@ -890,7 +891,7 @@ export default function HomeClient({
             why={[
               '<strong>No NDAs, no hidden rules.</strong> What you sign is what\'s in the Blueprint.',
               '<strong>Application reviewed by a real human</strong> — the project leads, not an algorithm.',
-              '<strong>Unlocks Agreements, Operations, Contributions, and Governance.</strong>',
+              '<strong>Unlocks Agreements, Operations, Achievements and Governance.</strong>',
             ]}
           />
           <DemoCard>
@@ -899,7 +900,7 @@ export default function HomeClient({
               {(communityValues.length > 0 ? communityValues : [
                 { id: '1', title: 'Care for the land before yield.', description: 'Decisions are tested against ecological impact first, profit second.', sort_order: 1 },
                 { id: '2', title: 'Consent over consensus.', description: 'We seek no objections, not unanimous applause. Move forward if good enough for now.', sort_order: 2 },
-                { id: '3', title: "Show up, don't just sign up.", description: 'Logged contributions matter more than promises. Reputation is earned in the doing.', sort_order: 3 },
+                { id: '3', title: "Show up, don't just sign up.", description: 'What you do matters more than what you promise.', sort_order: 3 },
                 { id: '4', title: 'Disagree out loud, decide in writing.', description: 'Bring the hard things to the circle. What we decide goes in the Blueprint.', sort_order: 4 },
                 { id: '5', title: 'Leave it better.', description: 'Land, people, money — whatever you touch, leave it more alive than you found it.', sort_order: 5 },
               ]).map((v, i) => (
@@ -959,7 +960,7 @@ export default function HomeClient({
               mod="15" label="Accommodation" color="var(--m15)"
               h="Come stay with us."
               lead="Guest rooms, cabins and tent sites for visits, work weeks and trial stays. Joining members book by the night; some stays are approved by a lead first."
-              href="/stays"
+              href="/accommodation"
               why={[
                 '<strong>See what’s free</strong> — every stay shows its booked nights.',
                 '<strong>Instant or approved</strong> — leads choose which stays need a yes first.',
@@ -979,7 +980,7 @@ export default function HomeClient({
               mod="16" label="Resources" color="var(--m16)"
               h="Share more, own less."
               lead="Tools, vehicles, kitchens and spaces the community shares. Browse what's available, see when it's free, and book it by the hour."
-              href="/bookings"
+              href="/resources"
               why={[
                 '<strong>Tagged and searchable</strong> — find the drill, the van or the great hall fast.',
                 '<strong>Live availability</strong> — see who has it and until when.',
@@ -1049,7 +1050,7 @@ export default function HomeClient({
                               type="text"
                               value={expectation}
                               onChange={e => setExpectation(e.target.value)}
-                              placeholder="Points, skills exchange, future residency..."
+                              placeholder={moduleOn('points') ? 'Points, skills exchange, future residency...' : 'Skills exchange, future residency...'}
                               style={{ width: '100%', boxSizing: 'border-box', fontSize: 12, padding: '7px 10px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
@@ -1074,7 +1075,7 @@ export default function HomeClient({
             why={[
               '<strong>Clear scope, clear exchange.</strong> Time, skill, goods, money — write it down.',
               '<strong>Every agreement is public</strong> — no side deals, no resentment.',
-              '<strong>Auto-feeds Operations and Contributions</strong> — once accepted, the work shows up everywhere it should.',
+              '<strong>Auto-feeds Operations and Achievements</strong> — once accepted, the work shows up everywhere it should.',
             ]}
           />
         </Split>
@@ -1088,7 +1089,7 @@ export default function HomeClient({
               mod="17" label="Circles" color="var(--m17)"
               h="Know who does what."
               lead="Every circle in the community, with its purpose, leads, members and roles. See who to talk to about anything, from the kitchen to the website."
-              href="/org"
+              href="/circles"
               why={[
                 '<strong>Leads at a glance</strong> — every circle shows who’s responsible.',
                 '<strong>Teams inside circles</strong> — departments with their own leads and members.',
@@ -1105,9 +1106,9 @@ export default function HomeClient({
         <Split>
           <SectionHead
             mod="07" label="Operations" color="var(--m7)"
-            h="See every promise. Watch every deliverable."
-            lead="A community lives or dies by what gets done. Operations turns every active agreement into visible deliverables — who owns it, when it's due, and whether it's actually happening. No surprises at the next meeting."
-            href="/ops"
+            h="See every promise. Watch every task."
+            lead="A community lives or dies by what gets done. Operations turns every active agreement into visible tasks — who owns it, when it's due, and whether it's actually happening. No surprises at the next meeting."
+            href="/operations"
             why={[
               '<strong>Live status of every project</strong> — pulled from agreements, not status meetings.',
               '<strong>Timeline updates</strong> from project leads, threaded into the dashboard.',
@@ -1115,11 +1116,11 @@ export default function HomeClient({
             ]}
           />
           <DemoCard>
-            <DemoHead color="var(--m7)" modLabel="M07" title={`${communityName} · This sprint`} meta="Operations" href="/ops" />
+            <DemoHead color="var(--m7)" modLabel="M07" title={`${communityName} · This sprint`} meta="Operations" href="/operations" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10, marginBottom: 16 }}>
               {[
                 { n: activeProjectCount, l: 'Active projects' },
-                { n: deliverables.length, l: 'Deliverables' },
+                { n: deliverables.length, l: 'Tasks' },
                 { n: deliverables.filter(d => d.status === 'done').length, l: 'Completed' },
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--bg-2)', borderRadius: 8 }}>
@@ -1165,13 +1166,14 @@ export default function HomeClient({
               })}
             </div>
             <div style={{ marginTop: 12, textAlign: 'right' }}>
-              <Link href="/ops" style={{ fontSize: 12.5, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>View all operations →</Link>
+              <Link href="/operations" style={{ fontSize: 12.5, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>See all projects →</Link>
             </div>
           </DemoCard>
         </Split>
       </section>
 
-      {/* ── M08 — Contributions ─────────────────────────────── */}
+      {/* ── M08 — Achievements: the points demo, only where the community has points on ── */}
+      {moduleOn('points') && (
       <section className={sectionCls} style={sectionW} id="contributions">
         <Split reverse>
           <DemoCard>
@@ -1227,7 +1229,7 @@ export default function HomeClient({
             ))}
           </DemoCard>
           <SectionHead
-            mod="08" label="Contributions" color="var(--m8)"
+            mod="08" label="Achievements" color="var(--m8)"
             h="Log your effort. The community sees it. You're rewarded."
             lead="Volunteer work goes invisible. Not here. Log every hour, every facilitated meeting, every batch of bread. Earn points, unlock badges, build a reputation that means something beyond this project."
             href="/dashboard"
@@ -1239,6 +1241,7 @@ export default function HomeClient({
           />
         </Split>
       </section>
+      )}
 
       {/* ── M09 — Governance ────────────────────────────────── */}
       <section className={sectionCls} style={sectionW} id="governance">
@@ -1468,9 +1471,9 @@ export default function HomeClient({
               fontSize: 14, fontWeight: 700, color: '#fff',
               background: 'var(--ink)', padding: '12px 26px', borderRadius: 9, textDecoration: 'none',
             }}>
-              Begin joining →
+              Start joining →
             </Link>
-            <Link href="/network" style={{
+            <Link href="/members" style={{
               fontSize: 14, fontWeight: 600, color: 'var(--ink)',
               background: 'var(--surface)', border: '1px solid var(--rule)',
               padding: '12px 26px', borderRadius: 9, textDecoration: 'none',

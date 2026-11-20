@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { isJoiningOrAbove } from '@/core/lib/roles'
+import { moduleOn } from '@/core/lib/modules'
 import { createClient } from '@/core/lib/supabase/client'
 import Link from 'next/link'
 
@@ -72,7 +73,7 @@ const ROLE_MAP = [
   },
   {
     role: 'joining',
-    label: 'Joining Member',
+    label: 'Joining member',
     color: '#f59e0b',
     how: 'Complete the M05 Join application: sign the community values, get matched with a buddy, and submit.',
     access: [
@@ -89,7 +90,7 @@ const ROLE_MAP = [
     access: [
       'Make binding collaboration agreements',
       'Vote and submit proposals in Governance',
-      'Earn contribution points and build your reputation',
+      ...(moduleOn('points') ? ['Earn contribution points'] : []),
       'Full network access — offers, seeks, and direct matching',
     ],
   },
@@ -102,7 +103,7 @@ const ROLE_MAP = [
       'Everything a Member can do',
       'Manage the full Operations panel',
       'Create and lead community projects',
-      'Review and update deliverables',
+      'Review and update tasks',
     ],
   },
   {
@@ -111,7 +112,7 @@ const ROLE_MAP = [
     color: '#ec4899',
     how: 'Appointed by an admin to steward a key area of the community.',
     access: [
-      'Everything a Project Lead can do',
+      'Everything a project lead can do',
       'Manage the Blueprint and community values',
       'Review and accept Join applications',
       'Manage collaboration agreements and their status',
@@ -564,7 +565,7 @@ function RoleRoadmap({ currentRole, milestones, applicationStatus, onApply, onRe
           </div>
           <div style={{ display: 'flex', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
             <Link href="/auth/signup" style={{ background: M5, color: '#fff', fontSize: 14, fontWeight: 700, padding: '11px 26px', borderRadius: 9, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-              Create free account →
+              Create account
             </Link>
             <Link href="/auth/login" style={{ background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 14, fontWeight: 500, padding: '11px 20px', borderRadius: 9, textDecoration: 'none', border: '1px solid var(--rule)', whiteSpace: 'nowrap' }}>
               Sign in

@@ -464,7 +464,7 @@ export default function ProfileWizard() {
   async function handleNext() {
     await save()
     if (step < STEPS.length) setStep(s => s + 1)
-    else router.push('/network/profile')
+    else router.push('/members/profile')
   }
 
   if (loading) return (
@@ -508,10 +508,10 @@ export default function ProfileWizard() {
               Achievement unlocked — Profile Pioneer
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-              You completed your full member profile. Badge added to your Contributions record.
+              You completed your full member profile. Badge added to your Achievements.
             </div>
           </div>
-          <a href="/contributions" style={{
+          <a href="/achievements" style={{
             fontSize: 12, fontWeight: 600, color: 'var(--m1)',
             textDecoration: 'none', whiteSpace: 'nowrap',
             padding: '6px 12px', borderRadius: 8,
@@ -905,7 +905,7 @@ export default function ProfileWizard() {
               </div>
               <Button variant="outline" className="w-full"
                 onClick={() => update('offers', [...form.offers, { title: '', description: '', category: '', compensation_model: 'Other', price: '' }])}>
-                <Plus className="mr-2 h-4 w-4" />Add Offer
+                <Plus className="mr-2 h-4 w-4" />Add offer
               </Button>
             </>
           )}
