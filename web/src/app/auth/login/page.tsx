@@ -251,7 +251,7 @@ export default function AuthPage() {
                   "👋 Meet the people involved and see who's building this",
                   '📋 Read the community documentation and neighborhood plan',
                   '🌱 Join the group if you align with the values',
-                  '⚙️ Contribute to shared goals and projects',
+                  '⚙️ Contribute to shared goals and tasks',
                   '☉ Participate in decisions together',
                 ].map(item => (
                   <li key={item}><span>{item}</span></li>
@@ -353,7 +353,7 @@ export default function AuthPage() {
             {[
               { icon: '👤', title: 'Deep profiles', desc: 'Share your values, skills, and goals. Get matched with people who align.' },
               { icon: '🗳️', title: 'Four checks on every proposal', desc: 'Circle leads, all members, admins and advisors, and an AI Blueprint check.' },
-              { icon: '⚙️', title: 'Real project ops', desc: 'Suggest projects, make agreements, track tasks together.' },
+              { icon: '⚙️', title: 'Real operations', desc: 'Suggest tasks, make agreements, track subtasks together.' },
             ].map(f => (
               <div key={f.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>{f.icon}</div>

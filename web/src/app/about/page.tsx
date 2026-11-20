@@ -2,7 +2,7 @@ import BlueprintPage from '../blueprint/page'
 import BlueprintLayout from '../blueprint/layout'
 import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
 import { createClient } from '@/core/lib/supabase/server'
-import { isCircleAdmin } from '@/core/lib/roles'
+import { canEditBlueprint } from '@/core/lib/roles'
 import AboutV4 from '@/modules/m04-blueprint/AboutV4'
 
 /**
@@ -18,7 +18,7 @@ export default async function AboutPage(props: { searchParams: Promise<{ step?: 
       ? await supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle()
       : { data: null }
     const role = profile?.role ?? 'explorer'
-    return <AboutV4 supabase={supabase} communityName={COMMUNITY_NAME} role={role} canEdit={isCircleAdmin(role)} />
+    return <AboutV4 supabase={supabase} communityName={COMMUNITY_NAME} role={role} canEdit={canEditBlueprint(role)} />
   }
   return <BlueprintLayout>{await BlueprintPage({ searchParams: Promise.resolve({ step: sp.step }) })}</BlueprintLayout>
 }

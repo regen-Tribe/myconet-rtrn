@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { modLabel } from '@/core/lib/module-label'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; desc: string }> = {
-  pending:   { label: 'Pending review', color: '#f59e0b', desc: 'Your proposal is waiting for the team to review it.' },
+  pending:   { label: 'Pending review', color: '#f59e0b', desc: 'Your offer is waiting for the task lead to review it.' },
   accepted:  { label: 'Accepted',       color: '#22c55e', desc: 'Your collaboration agreement was accepted!' },
   active:    { label: 'Active',         color: '#3b82f6', desc: 'Your collaboration is underway.' },
   rejected:  { label: 'Not accepted',   color: '#ef4444', desc: 'This proposal was not accepted at this time.' },
@@ -97,7 +97,7 @@ export default function AgreementFormClient({ project, userId, existing }: {
         <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, marginBottom: 12 }}>Proposal submitted</h1>
         <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.65, marginBottom: 32 }}>
-          The team will review your proposal for <strong>{project.title}</strong> and get back to you.
+          The task lead will review your offer for <strong>{project.title}</strong> and get back to you.
         </p>
         <Link href="/agreements" style={{ display: 'inline-block', background: '#1d4ed8', color: '#fff', fontSize: 14, fontWeight: 600, padding: '10px 24px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
           Back to agreements

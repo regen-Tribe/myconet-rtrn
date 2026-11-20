@@ -5,6 +5,9 @@ import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase,
 import { socialLinks } from '@/core/lib/public-profile'
 import { MyCircles } from '@/modules/m17-org/MyCircles'
 import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import { useCircles } from '@/core/components/CirclesProvider'
+import { Button, Icon as V4Icon, Tag } from '@/core/components/v4'
 
 interface ProfileData {
   id: string; username: string; first_name: string | null; last_name: string | null
@@ -34,6 +37,8 @@ interface Props {
   /** Fears and traumas, when this person shares them with the viewer */
   growth: { fears: string | null; traumas: string | null; visibility: string } | null
   match?: { score: number; reasons: string[] } | null
+  /** The v4 look: this person's circles (lead or member) */
+  circles?: { slug: string; lead: boolean }[]
 }
 
 const OCEAN_TRAITS = [
@@ -137,8 +142,10 @@ function UrgencyColor(urgency: string) {
 
 const LINK_ICONS: Record<string, any> = { website: Globe, instagram: AtSign, linkedin: AtSign, twitter: AtSign }
 
-export default function UserProfileClient({ profile: p, bio, offers, requests, isOwn, signedIn, growth, match }: Props) {
+export default function UserProfileClient({ profile: p, bio, offers, requests, isOwn, signedIn, growth, match, circles: theirCircles = [] }: Props) {
   const [tab, setTab] = useState('about')
+  const circleSet = useCircles()
+  const V4 = (DESIGN as string) === 'v4'
 
   const displayName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
   const initial = displayName[0]?.toUpperCase() ?? '?'
@@ -149,8 +156,63 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
   const hasOcean = pd?.ocean && Object.values(pd.ocean).some(v => v != null)
   const links = socialLinks(p)
 
+  const v4Head = (
+    <>
+      <Link href="/members" className="v4-back"><V4Icon name="left" size={14} />Members</Link>
+      <div className="pf4-head">
+        {p.avatar_url ? <img src={p.avatar_url} alt="" className="pf4-av" /> : <span className="pf4-av">{initial}</span>}
+        <div className="pf4-who">
+          <h1 className="v4-ph__title">{displayName}</h1>
+          <div className="pf4-user">@{p.username}{location ? ` · ${location}` : ''}</div>
+          <div className="v4-tags pf4-tags">
+            {(p.user_types ?? []).map(t => <Tag key={t}>{t}</Tag>)}
+            {theirCircles.filter(c => circleSet.has(c.slug)).length > 4 && <Tag>{theirCircles.filter(c => circleSet.has(c.slug)).length} circles</Tag>}
+            {theirCircles.filter(c => circleSet.has(c.slug)).length <= 4 && theirCircles.filter(c => circleSet.has(c.slug)).map(c => (
+              <span key={c.slug} className="v4-tag"><i className="pf4-dot" style={{ background: circleSet.meta(c.slug).color }} />{circleSet.meta(c.slug).label}{c.lead ? ' · lead' : ''}</span>
+            ))}
+            {!isOwn && match && <Tag icon="spark">{match.score}% match{match.reasons[0] ? ` · ${match.reasons[0]}` : ''}</Tag>}
+          </div>
+        </div>
+        <div className="pf4-acts">
+          {isOwn ? <Button variant="secondary" icon="pencil" href="/profile/edit">Edit profile</Button>
+            : signedIn ? <Button variant="secondary" icon="users" href="/members/matches">Your matches</Button> : null}
+        </div>
+      </div>
+      {(p.headline || p.public_bio || links.length > 0) && (
+        <div className="v4-card pf4-about">
+          {p.headline && <b className="pf4-headline">{p.headline}</b>}
+          {p.public_bio && <p className="pf4-prose">{p.public_bio}</p>}
+          {links.length > 0 && (
+            <div className="v4-tags">
+              {links.map(l => { const I = LINK_ICONS[l.key]; return <a key={l.key} href={l.href} target="_blank" rel="noopener noreferrer nofollow" className="v4-tag"><I style={{ width: 13, height: 13 }} />{l.label}</a> })}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+  const v4Side = (
+    <aside className="pf4-side">
+      <div className="v4-sec"><h2>{isOwn ? 'My circles' : 'Circles'}</h2><Link href="/circles">All circles →</Link></div>
+      {theirCircles.filter(c => circleSet.has(c.slug)).length ? (
+        <div className="v4-list">
+          {theirCircles.filter(c => circleSet.has(c.slug)).map(c => (
+            <Link key={c.slug} href={`/circles?c=${encodeURIComponent(c.slug)}`} className="v4-row v4-row--click">
+              <span className="v4-row__lead"><span className="pf4-cdot" style={{ background: circleSet.meta(c.slug).color }} /></span>
+              <span className="v4-row__main"><b>{circleSet.meta(c.slug).label}</b><small>{c.lead ? 'Circle lead' : 'Member'}</small></span>
+              <V4Icon name="right" size={16} />
+            </Link>
+          ))}
+        </div>
+      ) : <p className="v4-hint">{isOwn ? 'You’re not in a circle yet.' : 'Not in a circle yet.'}</p>}
+      {isOwn && <div className="pf4-ask"><MyCircles userId={p.id} /></div>}
+    </aside>
+  )
+
   return (
-    <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
+    <div className={V4 ? 'v4-page v4-page--wide pf4' : undefined} style={V4 ? undefined : { maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
+      {V4 && v4Head}
+      {!V4 && (<>
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
           {modLabel('01', 'Member Profile')}
@@ -273,7 +335,9 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
 
       {/* Your circles, and asking to join one (v4.35.0) */}
       {isOwn && <MyCircles userId={p.id} />}
+      </>)}
 
+      {(() => { const body = (<>
       {!signedIn && growth && <div style={{ marginBottom: 14 }}><GrowthCard growth={growth} isOwn={false} /></div>}
       {!signedIn ? (
         <div style={{ position: 'relative' }}>
@@ -309,6 +373,14 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
         </div>
       ) : (<>
       {/* Custom tab bar */}
+      {V4 ? (
+        <div className="v4-chiprow" role="tablist">
+          {TABS.map(t => {
+            const count = t.key === 'offers' ? offers.length : t.key === 'requests' ? requests.length : null
+            return <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={`v4-chip${tab === t.key ? ' v4-chip--on' : ''}`} onClick={() => setTab(t.key)}>{t.label}{count ? <span className="v4-chip__count">{count}</span> : null}</button>
+          })}
+        </div>
+      ) : (
       <div style={{
         display: 'flex', gap: 4, padding: '4px', background: 'var(--bg-2)',
         borderRadius: 10, border: '1px solid var(--rule)', marginBottom: 20,
@@ -331,6 +403,7 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
           )
         })}
       </div>
+      )}
 
       {/* About tab */}
       {tab === 'about' && (
@@ -563,6 +636,8 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
         )
       )}
       </>)}
+      </>)
+      return V4 ? <div className="pf4-split"><div className="pf4-main">{body}</div>{v4Side}</div> : body })()}
     </div>
   )
 }

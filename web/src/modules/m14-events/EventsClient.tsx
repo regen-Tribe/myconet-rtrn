@@ -147,7 +147,7 @@ export default function EventsClient({
     if (error) {
       return error.code === '42501'
         ? payload.kind === 'core'
-          ? 'Only full members, circle leads and project leads can post core events.'
+          ? 'Only full members, circle leads and task leads can post core events.'
           : 'Only joining members and above can post events.'
         : error.message
     }
@@ -243,11 +243,11 @@ export default function EventsClient({
           <PageHeader
             eyebrow="Community"
             title="Calendar"
-            subtitle={<>{EVENT_KINDS.filter(k => counts[k] > 0).map(k => `${counts[k]} ${KIND_META[k].short.toLowerCase()}`).join(' · ') || 'Nothing'} coming up</>}
+            subtitle={<>What’s on, and what you can join. <b>{EVENT_KINDS.filter(k => k !== 'task').reduce((n, k) => n + counts[k], 0)} events</b> coming up.</>}
             actions={<>
               {initialFeeds && <Button variant="secondary" icon="link" onClick={() => setShowFeeds(true)}>Linked calendars{initialFeeds.length > 0 ? ` · ${initialFeeds.length}` : ''}</Button>}
               {canAddFromPhoto && userId && <Button variant="secondary" icon="camera" onClick={() => setShowPhoto(true)}>Add from a photo</Button>}
-              {canPostCommunity ? <Button icon="plus" onClick={() => openNew()}>New event</Button>
+              {canPostCommunity ? <Button variant="next" className="ev4-add" onClick={() => openNew()}>+ Add event</Button>
                 : userId ? <Button variant="quiet" href="/join">Joining members can post events →</Button>
                 : <Button variant="secondary" href="/auth/login">Sign in for member events</Button>}
             </>}
@@ -256,7 +256,7 @@ export default function EventsClient({
             <Card className="v4-note"><Icon name="lock" /><span>You’re seeing public events. <Link href="/auth/login">Sign in</Link> to see member events and RSVP.</span></Card>
           )}
 
-          <div className="v4-chiprow" role="group" aria-label="Show these events">
+          <div className="v4-chiprow ev4-filters" role="group" aria-label="Show these events">
             {EVENT_KINDS.map(k => {
               const on = kinds.includes(k)
               return (
@@ -266,19 +266,16 @@ export default function EventsClient({
                 </button>
               )
             })}
+            {categories.length > 0 && <span className="ev4-sep" aria-hidden="true" />}
+            {categories.map(c => {
+              const on = !hiddenCategories.includes(c)
+              return (
+                <button key={c} type="button" aria-pressed={on} aria-label={`Category ${c}`} className={`v4-tag ev4-cat${on ? '' : ' v4-tag--out'}`} onClick={() => setHiddenCategories(list => toggle(list, c))}>
+                  <span className="v4-dot" style={{ background: categoryColor(c) }} />{c}
+                </button>
+              )
+            })}
           </div>
-          {categories.length > 0 && (
-            <div className="v4-tags v4-tags--filter" role="group" aria-label="Categories">
-              {categories.map(c => {
-                const on = !hiddenCategories.includes(c)
-                return (
-                  <button key={c} type="button" aria-pressed={on} className={`v4-tag${on ? '' : ' v4-tag--out'}`} onClick={() => setHiddenCategories(list => toggle(list, c))}>
-                    <span className="v4-dot" style={{ background: categoryColor(c) }} />{c}
-                  </button>
-                )
-              })}
-            </div>
-          )}
           {kinds.length === 0 && <p className="v4-hint">Pick at least one kind of event to see the calendar.</p>}
 
           <div className="v4-toolbar v4-caltools">

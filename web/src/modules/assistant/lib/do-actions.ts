@@ -68,13 +68,13 @@ export function describe(a: DoAction, b: Board): string | null {
       const n = b.tasks.filter(t => t.project_id === from.id).length
       return `Merge ${q(from.title)} (${n} task${n === 1 ? '' : 's'}) into ${q(into.title)}${a.title && a.title !== into.title ? `, renamed ${q(a.title)}` : ''}; ${q(from.title)} is set aside`
     }
-    case 'rename_project': { const p = P(a.project); return p && a.title ? `Rename the project ${q(p.title)} to ${q(a.title)}` : null }
+    case 'rename_project': { const p = P(a.project); return p && a.title ? `Rename the task ${q(p.title)} to ${q(a.title)}` : null }
     case 'create_project':
-      return a.title && a.circle && b.circles.some(c => c.slug === a.circle) ? `Create the project ${q(a.title)} in ${circleName(a.circle)}${tasks.length ? ` with ${list(tasks)}` : ''}` : null
+      return a.title && a.circle && b.circles.some(c => c.slug === a.circle) ? `Create the task ${q(a.title)} in ${circleName(a.circle)}${tasks.length ? ` with ${list(tasks)}` : ''}` : null
     case 'move_tasks': {
       if (!tasks.length) return null
       if (a.to) { const p = P(a.to); return p ? `Move ${list(tasks)} into ${q(p.title)}` : null }
-      return `Move ${list(tasks)} out of their project, onto the main board`
+      return `Move ${list(tasks)} out of their task, onto the main board`
     }
     case 'rename_task': { const t = T(a.tasks?.[0]); return t && a.title ? `Rename the task ${q(t.title)} to ${q(a.title)}` : null }
     case 'assign_task': {
@@ -111,16 +111,16 @@ export function blocked(a: DoAction, b: Board, me: Me): string | null {
   const no = (who: string) => `Only ${who} can do this.`
   switch (a.kind) {
     case 'create_circle': return me.role === 'circle_lead' ? null : no('admins and circle leads')
-    case 'merge_projects': return leadsProject(a.project) && leadsProject(a.into) ? null : no('the leads of both projects (or their circle) and admins')
-    case 'rename_project': return leadsProject(a.project) ? null : no('the project’s lead, its circle’s leads and admins')
+    case 'merge_projects': return leadsProject(a.project) && leadsProject(a.into) ? null : no('the leads of both tasks (or their circle) and admins')
+    case 'rename_project': return leadsProject(a.project) ? null : no('the task’s lead, its circle’s leads and admins')
     case 'create_project': return leads(a.circle) && tasks.every(leadsTask) ? null : no('the circle’s leads and admins')
-    case 'move_tasks': return tasks.every(leadsTask) && (!a.to || leadsProject(a.to)) ? null : no('the leads of the tasks’ circle or project, and admins')
+    case 'move_tasks': return tasks.every(leadsTask) && (!a.to || leadsProject(a.to)) ? null : no('the leads of the subtasks’ circle or task, and admins')
     case 'set_task_status':
     case 'set_task_date': {
       const t = tasks[0]
       return t && (leadsTask(t) || t.assignee_id === me.id) ? null : no('the person on the task, its leads and admins')
     }
-    default: return tasks.length && tasks.every(leadsTask) ? null : no('the leads of the task’s circle or project, and admins')
+    default: return tasks.length && tasks.every(leadsTask) ? null : no('the leads of the subtask’s circle or task, and admins')
   }
 }
 
@@ -177,7 +177,7 @@ export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: 
         const { data, error } = await admin.from('projects').insert({
           title: a.title!.slice(0, 300), description: a.description ?? null, circle: a.circle, status: 'backlog', created_by: me.id, lead_user_id: me.id,
         }).select('id').single()
-        if (error || !data) throw new Error(error?.message ?? 'Project not created')
+        if (error || !data) throw new Error(error?.message ?? 'Task not created')
         created.push({ table: 'projects', id: data.id as string, before: {} })
         b.projects.push({ id: data.id as string, title: a.title!, description: a.description ?? null, circle: a.circle!, status: 'backlog', is_chores: false, lead_user_id: me.id, created_by: me.id })
         await moveAll(a.tasks ?? [], data.id as string)

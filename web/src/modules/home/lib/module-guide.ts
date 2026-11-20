@@ -12,9 +12,9 @@ export const MODULE_GUIDE: ModuleGuide[] = [
   { num: '05', name: 'Join',          color: 'var(--m5)',   href: '/join',          anchor: 'join',          what: 'How to become part of it: sign the values, meet a buddy, answer a few questions.' },
   { num: '15', name: 'Accommodation', color: 'var(--m15)',  href: '/accommodation',         anchor: 'stays',         what: 'Rooms, cabins and beds to book by the night for visits, retreats and work stays.' },
   { num: '16', name: 'Resources',     color: 'var(--m16)',  href: '/resources',      anchor: 'resources',     what: 'Shared tools, vehicles and spaces to borrow or book by the hour or day.' },
-  { num: '06', name: 'Agreements',    color: 'var(--m6)',   href: '/agreements',    anchor: 'agreements',    what: 'Offer help on an open project and agree up front what you give and what you get.' },
-  { num: '17', name: 'Circles',       color: 'var(--m17)',  href: '/circles',           anchor: 'circles',       what: 'Who does what: the working circles, their roles, leads and teams.' },
-  { num: '07', name: 'Operations',    color: 'var(--m7)',   href: '/operations',           anchor: 'ops',           what: 'Every project and task on one board, from idea to done, with updates along the way.' },
+  { num: '06', name: 'Agreements',    color: 'var(--m6)',   href: '/agreements',    anchor: 'agreements',    what: 'Offer help on an open task and agree up front what you give and what you get.' },
+  { num: '17', name: 'Circles',       color: 'var(--m17)',  href: '/circles',           anchor: 'circles',       what: 'Who does what: the working circles, their roles, leads and subcircles.' },
+  { num: '07', name: 'Operations',    color: 'var(--m7)',   href: '/operations',           anchor: 'ops',           what: 'Every task and subtask on one board, from idea to done, with updates along the way.' },
   { num: '08', name: 'Achievements',  color: 'var(--m8)',   href: '/achievements', anchor: 'contributions', what: 'The badges each person has earned for what they have given to the community.' },
   { num: '09', name: 'Governance',    color: 'var(--m9)',   href: '/governance',    anchor: 'governance',    what: 'Proposals and decisions, by consent, vote or expert advice, with an AI check against the plan.' },
 ]

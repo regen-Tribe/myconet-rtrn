@@ -6,6 +6,7 @@
 import { localDay } from '@/modules/m18-meetings/lib/draft-tasks'
 import { type Board, type DoAction, type DoKind, TASK_STATUSES } from './do-actions'
 import { catalogPrompt, resolveGeneral, type GeneralAction, type Refs } from './do-catalog'
+import { eventsPrompt, resolveEvent, type EventAction, type EventRef } from './do-events'
 
 const MODEL = 'MiniMax-M3.1-Flash'
 const MAX_ACTIONS = 8
@@ -13,7 +14,7 @@ const KINDS: DoKind[] = ['create_circle', 'merge_projects', 'rename_project', 'c
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
 
-function prompt(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, meName: string, community: string, context = '') {
+function prompt(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, events: EventRef[], meName: string, community: string, context = '') {
   const open = b.tasks.filter(t => t.status !== 'done')
   const pRef = new Map(b.projects.map((p, i) => [p.id, `P${i + 1}`]))
   const person = (id: string | null) => b.people.find(p => p.id === id)?.name ?? null
@@ -25,6 +26,8 @@ function prompt(instruction: string, history: { role: string; content: string }[
   }).join('\n')
   const { date, weekday } = localDay(new Date().toISOString(), process.env.COMMUNITY_TIME_ZONE || 'UTC')
   return `You are the MyCoNet agent of ${community}. ${meName} is signed in and asks you to change something in MyCoNet. You may do anything they may do themselves: turn the request into changes from the lists below (the board's own changes first when one fits, else a general change). People use loose names ("the 4 elements project" can mean "Elemental Community Ceremony"): match by meaning. If the request is unclear, could mean several things, or isn't possible with these changes, make no changes and ask one short question in "reply". Never invent projects, tasks or people. Today is ${weekday} ${date}.
+
+Words (the community's lexicon, 20 Nov): a P-row is a **task** (it can have subtasks), a T-row is a **subtask** of its P, or a task of its own when it has no P, and a circle's team is a **subcircle**. Say task, subtask and subcircle in everything you write back; never project or team.
 
 Changes you can make:
 - create_circle {"name":"…","purpose":"one line: what this circle looks after","emoji":"one emoji, or null"}: a new circle of the community, only when asked to create one; if what it looks after isn't clear from the request, ask instead
@@ -39,6 +42,8 @@ Changes you can make:
 - confirm_drafts {"tasks":["T1",…]}
 
 ${catalogPrompt(refs)}
+
+${eventsPrompt(events)}
 
 Return JSON only: {"reply":"one or two friendly sentences: what you'll do, or your question","actions":[{"kind":"…",…}]}
 
@@ -55,7 +60,7 @@ ${context ? `\nWhat ${meName} is looking at right now ("this", "here" and "these
 ${meName}'s request: ${instruction}`
 }
 
-export async function planChanges(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, meName: string, context = ''): Promise<{ reply: string; actions: (DoAction | GeneralAction)[] }> {
+export async function planChanges(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, events: EventRef[], meName: string, context = ''): Promise<{ reply: string; actions: (DoAction | GeneralAction | EventAction)[] }> {
   const apiKey = process.env.MINIMAX_API_KEY
   if (!apiKey) throw new Error('The agent isn’t set up (MINIMAX_API_KEY).')
   const ctrl = new AbortController()
@@ -65,7 +70,7 @@ export async function planChanges(instruction: string, history: { role: string; 
     const res = await fetch('https://api.minimax.io/v1/chat/completions', {
       method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: MODEL, reasoning_effort: 'low', max_completion_tokens: 4000, messages: [{ role: 'user', content: prompt(instruction, history, b, refs, meName, process.env.NEXT_PUBLIC_COMMUNITY_NAME || 'the community', context) }] }),
+      body: JSON.stringify({ model: MODEL, reasoning_effort: 'low', max_completion_tokens: 4000, messages: [{ role: 'user', content: prompt(instruction, history, b, refs, events, meName, process.env.NEXT_PUBLIC_COMMUNITY_NAME || 'the community', context) }] }),
     })
     if (!res.ok) throw new Error(`The agent is busy (AI ${res.status}). Try again in a moment.`)
     const data = await res.json() as { choices?: { message?: { content?: string } }[] }
@@ -91,8 +96,13 @@ export async function planChanges(instruction: string, history: { role: string; 
     const first = b.people.filter(p => norm(p.name).split(' ')[0] === n.split(' ')[0])
     return first.length === 1 ? first[0].id : undefined
   }
-  const actions: (DoAction | GeneralAction)[] = []
+  const actions: (DoAction | GeneralAction | EventAction)[] = []
   for (const r of (Array.isArray(raw.actions) ? raw.actions : []).slice(0, MAX_ACTIONS) as Record<string, unknown>[]) {
+    if (r.kind === 'change_event') {
+      const e = resolveEvent(r, events)
+      if (e) actions.push(e)
+      continue
+    }
     if (r.kind === 'update' || r.kind === 'add_member' || r.kind === 'remove_member') {
       const g = resolveGeneral(r, refs, P, T)
       if (g) actions.push(g)

@@ -57,7 +57,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
         borderRadius: 10, padding: '40px 24px', textAlign: 'center',
         color: 'var(--ink-4)', fontSize: 13,
       }}>
-        {draftsOnly ? 'No drafts to confirm.' : 'No tasks yet.'}
+        {draftsOnly ? 'No drafts to confirm.' : 'Nothing to do yet.'}
       </div></>
     )
   }
@@ -69,8 +69,8 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr>
-            <th style={thStyle}>Task</th>
-            <th style={thStyle}>Project</th>
+            <th style={thStyle}>Subtask or task</th>
+            <th style={thStyle}>Part of</th>
             <th style={thStyle}>Assignee</th>
             <th style={thStyle}>Due</th>
             <th style={thStyle}>Status</th>
@@ -90,7 +90,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
                     : <button type="button" onClick={() => onOpen(d)} style={{ all: 'unset', cursor: 'pointer' }}>{d.title}</button>}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-                  {(d.project_id && projectMap[d.project_id]) || 'No project'}
+                  {(d.project_id && projectMap[d.project_id]) || 'A task of its own'}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
                   {d.assignee_username ?? (d.assignee_name ? <NameTag name={d.assignee_name} /> : '—')}

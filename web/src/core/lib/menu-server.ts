@@ -61,7 +61,7 @@ export async function loadMenuState(supabase: SupabaseClient, userId: string | n
     return {
       next: waiting
         ? { title: 'Your application is in', line: 'A circle lead reads it and answers you.', href: '/join' }
-        : { title: 'Start joining', line: 'Joining lets you offer help on projects and ask to join a circle.', href: '/join' },
+        : { title: 'Start joining', line: 'Joining lets you offer help on tasks and ask to join a circle.', href: '/join' },
       journey: 0,
       counts,
     }
@@ -73,7 +73,7 @@ export async function loadMenuState(supabase: SupabaseClient, userId: string | n
       .eq('user_id', userId).eq('status', 'pending')
     return {
       next: waiting
-        ? { title: 'Waiting for an answer', line: 'A project lead is reading your agreement.', href: '/agreements' }
+        ? { title: 'Waiting for an answer', line: 'A task lead is reading your agreement.', href: '/agreements' }
         : { title: 'Your first agreement', line: 'One accepted agreement makes you a member.', href: '/operations' },
       journey: 1,
       counts,
@@ -99,5 +99,5 @@ export async function loadMenuState(supabase: SupabaseClient, userId: string | n
       counts,
     }
   }
-  return { next: { title: 'Find a project to help on', line: 'Offer what you can give.', href: '/operations' }, journey: 2, counts }
+  return { next: { title: 'Find a task to help on', line: 'Offer what you can give.', href: '/operations' }, journey: 2, counts }
 }

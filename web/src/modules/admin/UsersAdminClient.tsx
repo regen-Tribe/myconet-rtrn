@@ -22,7 +22,7 @@ const ROLES = [
   { value: 'joining',      label: 'Joining',      color: 'var(--m5)' },
   { value: 'member',       label: 'Member',       color: 'var(--m9)' },
   { value: 'advisor',      label: 'Advisor',      color: 'var(--m8)' },
-  { value: 'project_lead', label: 'Project lead', color: 'var(--m7)' },
+  { value: 'project_lead', label: 'Task lead', color: 'var(--m7)' },
   { value: 'circle_lead',  label: 'Circle lead',  color: 'var(--m4)' },
   { value: 'admin',        label: 'Admin',        color: '#dc2626' },
 ]
@@ -32,11 +32,11 @@ const ROLE_COLOR: Record<string, string> = Object.fromEntries(ROLES.map(r => [r.
 /** What each role can do (CLAUDE.md › Member role journey; words from LEXICON.md). Shown on Permissions in v4. */
 const ROLE_CAN: Record<string, string> = {
   explorer: 'Invited. Reads About, the members and the calendar.',
-  joining: 'Finished joining. Edits their profile, offers help on projects, proposes projects, books amenities.',
-  member: 'One accepted agreement or an active project. Votes in Governance and earns achievements.',
+  joining: 'Finished joining. Edits their profile, offers help on tasks, suggests tasks, books amenities.',
+  member: 'One accepted agreement or an active task. Votes in Governance and earns achievements.',
   advisor: 'A member who reviews Governance proposals with the admins.',
-  project_lead: 'A member who manages their own projects on the board.',
-  circle_lead: 'A member who manages the circles they lead: projects, Blueprint, join applications, agreements, bookings.',
+  project_lead: 'A member who manages their own tasks on the board.',
+  circle_lead: 'A member who manages the circles they lead: tasks, Blueprint, join applications, agreements, bookings.',
   admin: 'Changes everything, including everyone’s role.',
 }
 

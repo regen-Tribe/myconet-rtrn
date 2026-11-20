@@ -74,11 +74,11 @@ export default function NewProjectClient({
           {modLabel('07', 'Operations')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 8px' }}>
-          {isOpsAdmin ? 'New project' : 'Propose a project'}
+          {isOpsAdmin ? 'New task' : 'Suggest a task'}
         </h1>
         {!isOpsAdmin && (
           <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0, lineHeight: 1.55 }}>
-            Your project idea will appear in the Ideas column for review. Once a circle or project lead accepts it, it moves to To do and you can start adding tasks.
+            Your task idea will appear in the Ideas column for review. Once a circle lead or the task lead accepts it, it moves to To do and you can start adding subtasks.
           </p>
         )}
       </div>
@@ -86,7 +86,7 @@ export default function NewProjectClient({
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
-            Project title <span style={{ color: '#ef4444' }}>*</span>
+            Task title <span style={{ color: '#ef4444' }}>*</span>
           </label>
           <input
             value={title}
@@ -104,7 +104,7 @@ export default function NewProjectClient({
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
-            placeholder="What is this project about? What does success look like?"
+            placeholder="What is this task about? What does done look like?"
             rows={5}
             style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
           />
@@ -149,7 +149,7 @@ export default function NewProjectClient({
         {circle && teams.some(t => t.circle === circle) && (
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
-              Team <span style={{ fontWeight: 400, color: 'var(--ink-4)' }}>— the whole circle, or one of its teams?</span>
+              Subcircle <span style={{ fontWeight: 400, color: 'var(--ink-4)' }}>— the whole circle, or one of its subcircles?</span>
             </label>
             <TeamPicker circle={circle} teams={teams} value={teamId} onChange={setTeamId} color={circles.meta(circle).color} />
           </div>
@@ -185,7 +185,7 @@ export default function NewProjectClient({
               transition: 'opacity 120ms',
             }}
           >
-            {saving ? (isOpsAdmin ? 'Creating…' : 'Proposing…') : (isOpsAdmin ? 'Create project' : 'Submit proposal')}
+            {saving ? (isOpsAdmin ? 'Creating…' : 'Proposing…') : (isOpsAdmin ? 'Create task' : 'Send the task idea')}
           </button>
           <Link href="/operations" style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 500, textDecoration: 'none' }}>
             Cancel

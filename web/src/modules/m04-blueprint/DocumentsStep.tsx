@@ -1,4 +1,5 @@
 'use client'
+import { BLUEPRINT_EDITORS_LABEL } from '@/core/lib/roles'
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
@@ -125,7 +126,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
         ) : (
           <button className="btn" style={{ marginTop: 6 }} onClick={() => setAdding(true)}>+ Add a document</button>
         ))}
-        {!canEdit && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>Admins and circle leads add documents.</p>}
+        {!canEdit && <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>{BLUEPRINT_EDITORS_LABEL} add documents.</p>}
       </div>
 
       <div className="nav-row">

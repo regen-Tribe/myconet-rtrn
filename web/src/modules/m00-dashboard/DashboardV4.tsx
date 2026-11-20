@@ -75,7 +75,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
             ? { title: `Vote on ${toVote.title}`, text: closesIn(toVote.closes_at), href: '/governance' }
             : open[0]
               ? { title: open[0].title, text: `Your task${open[0].projectTitle ? ` on ${open[0].projectTitle}` : ''}${open[0].due ? ` · due ${day(open[0].due)}` : ''}`, href: taskHref(open[0]) }
-              : { title: 'Find a project to help on', text: 'Offer what you can give.', href: '/operations' }
+              : { title: 'Find a task to help on', text: 'Offer what you can give.', href: '/operations' }
 
   return (
     <div className="v4-page">
@@ -96,7 +96,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
               </div>
               <div className="v4-tags">
                 <StatusPill status={statusFromDb(featured.status)} />
-                {mineByProject.get(featured.id) ? <Tag icon="check">{mineByProject.get(featured.id)} of your tasks</Tag> : null}
+                {mineByProject.get(featured.id) ? <Tag icon="check">{mineByProject.get(featured.id)} of your subtasks</Tag> : null}
                 {featured.sprint_name ? <Tag>Sprint · {featured.sprint_name}</Tag> : null}
               </div>
             </Card>

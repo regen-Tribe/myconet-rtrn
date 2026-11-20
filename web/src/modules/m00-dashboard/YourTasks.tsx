@@ -28,7 +28,7 @@ export default function YourTasks({ tasks }: { tasks: DashTask[] }) {
           <ListRow key={t.id} href={t.projectId ? `/operations/${t.projectId}` : `/operations?task=${t.id}`}
             lead={<IconTile name="tasks" tone="grey" />}
             title={t.title}
-            meta={[t.projectTitle ?? 'No project', t.due ? `due ${new Date(t.due + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ')}
+            meta={[t.projectTitle ?? 'On the board', t.due ? `due ${new Date(t.due + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ')}
             trail={<StatusPill status={statusFromDb(t.status)} />} />
         )) : <ListRow title="No tasks with this status" />}
       </List>

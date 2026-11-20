@@ -5,6 +5,184 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.66.0 — 2026-11-20 — a community can make the Blueprint admins-only (from Protopia, Sonia)
+
+Off by default: nothing changes unless a community turns it on.
+- New `"blueprintEditors": "admins"` in `instance/config.jsonc` (`NEXT_PUBLIC_BLUEPRINT_EDITORS`). With it, only
+  admins see Edit Blueprint on About and can edit the wizard (answers, values, documents, circles step); circle
+  leads read it like everyone else. Without it, circle leads and admins edit, as before.
+- `core/lib/roles › canEditBlueprint` and `BLUEPRINT_EDITORS_LABEL` ("Admins edit these" vs "Admins and circle
+  leads edit these") replace `isCircleAdmin` on About and `/blueprint`.
+- The database still allows circle leads unless the community narrows the policies in its own
+  `instance/migrations/` (Protopia: `20261210100000_blueprint_admins_only.sql`).
+
+## v4.65.0 — 2026-11-20
+
+- **The assistant changes calendar events** (Oscar: "we want the agent to be able to change events on the calendar -
+  update time, date, notes in it"). Do gets `change_event` (`modules/assistant/lib/do-events.ts`): date, start, end,
+  all day, title, description (notes), place, online link, in the community's time zone; "move this to 7" works on
+  an event open on the Calendar. Same rules as the Calendar, with the person's own session: anyone joining and up may
+  move an event (`event_set_times`); its details only its host, an admin or a lead of its circle; events from the
+  linked Google calendar take only a new time and notes (`event_set_notes`). Google follows: the push code moved from
+  `/api/calendar-push` to `m14-events/lib/google-push.ts`, shared by both. Undo puts it back, in Google too. No migration.
+
+## v4.64.0 — 2026-11-20 — About shows the whole Blueprint (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: is all the Blueprint on About, and is it the clearest overview?
+- **Nothing hidden any more.** The Blueprint's checklist notes now show: the land's **Day to day** (getting here,
+  internet and work, waste, when the weather turns), the food / water / energy / buildings notes under each
+  system, **How we decide › In practice** (how we meet, how we talk, deciding day to day, when we disagree) and
+  **Living here** (before you join, money, when someone leaves). Answers that only showed when their partner was
+  empty now show beside it (why the world needs it, the personal why, the ecological assessment). The values
+  answer shows in full when the values list is short.
+- **Fact tiles**: the label sits on top, the facts read cleaner ("2 dorms with 4 bunk beds each", "Regenerative
+  farm and co-living laboratory"), and each tile opens to the whole answer.
+- Long mission, vision and why texts open with Read more.
+
+## v4.63.0 — 2026-11-20 — Circles at a glance, and a circle in tabs (from Protopia, Sonia)
+
+Only with the v4 look; the classic org chart keeps working (its words now say subcircle).
+- **/circles**: a card per circle with what matters first: its purpose in one sentence, its lead, its members'
+  photos, and (signed in) its open tasks and meetings with the next date.
+- **A circle's page** (`/circles?c=<slug>&tab=…`) has tabs: **Overview** (lead, members, open tasks, next
+  meeting; its subcircles, first tasks and coming meetings), **Manuals & guides**, **People** (cards with photos
+  and the subcircles each person is in; join requests on top for leads), **Subcircles** (each one a small circle:
+  purpose, lead, people, tasks, Edit), **Tasks** (tasks with their open subtasks, tasks of their own, subtasks due
+  first) and **Meetings** (coming calendar events tagged with the circle, meeting notes).
+- **Manuals & guides** are the notes in the circle's folder of the second brain (`circles.brain_folder`, else the
+  slug; not its README, board or meetings), read inside MyCoNet at `/circles/guide` by joining members and up.
+  Front matter `visibility: circle` / `leads` limits who can open one.
+- Everything stays: Edit, + Add subcircle, + Add member, ask to join / withdraw, accept / decline, the lead name,
+  meeting notes, the project manager, admins.
+- The Circles CSS moves from `globals.css` to `web/src/modules/m17-org/circles-v4.css`.
+
+## v4.62.0 — 2026-11-20 — Operations is the Task board (from Protopia, Sonia)
+
+Only with the v4 look, except the words. Sonia picked option A, "calm Kanban", from three mock-ups.
+- **/operations** is titled **Task board**. One summary line ("N tasks on the go · N open subtasks · N done")
+  replaces the six stat boxes; **Late** and **Drafts to confirm** are chips. One chip row picks what the page shows:
+  Tasks (the board), All subtasks (the board of every subtask), List, Updates, Circles. The circle filter is a
+  dropdown; Everything / I lead / I'm in / I watch stays.
+- **Cards as the prototype**: name, circle dot and subcircle, a progress bar of subtasks, the due date (red when
+  late), the lead and the people with a subtask as avatars, how many watch it. A task of its own says so.
+  Buttons: "New task" (green) and "Task of its own" for admins and leads, "Suggest a task" for others.
+- **Phones**: the board scrolls sideways one column at a time.
+- **Words across Operations** (every look): task, subtask, task of its own, subcircle and "offer to help" on the
+  board, the task page, the pop-up, the suggest form, the List, Circles and the project manager's suggestions.
+- Unchanged: drag-and-drop and its permissions, offers to help → agreements → subtasks, drafts from meetings,
+  the project manager, watching, events, subcircles and deadlines. Styles in `m07-ops/ops-v4.css`.
+
+## v4.61.0 — 2026-11-20 — subcircles, and tasks with subtasks instead of projects (from Protopia, Sonia)
+
+Words only; no table, column, route or data changes. `LEXICON.md` changed first (Sonia, 20 Nov):
+- **team → subcircle**: a smaller, lasting group inside a circle.
+- **project → task**, and a project's tasks → **subtasks**. Projects are parked in a new "For later" section of the
+  lexicon. In the data, the `projects` table holds tasks (the ones that can have subtasks) and `deliverables`
+  holds subtasks; a deliverable with no project is a task of its own. The role label "Project lead" is "Task lead"
+  (the role value `project_lead` stays).
+- Changed in the shared places: menu and next step, top-bar search, board permission messages, Dashboard, Home and
+  the landing page, sign-in, Agreements ("an offer to help on a task", "Find a task", "Suggest a task"), Join,
+  Achievements, Calendar labels, admin role labels, and the assistant (its Do confirmations, and both prompts now
+  use task, subtask and subcircle). The Operations, Circles, Members, Governance and Meetings screens change in
+  their own module releases. "Project" where it means the whole community (the Blueprint's "project document",
+  "where the project stands") stays.
+
+## v4.60.0 — 2026-11-20 — Meetings clear at a glance (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: the circle needs more than a colour, and the list should read at first glance.
+- **/meetings**: each row has a date box (month, day, weekday), the circle as a named tag on its colour (or
+  "Community-wide" / "No circle yet"), the title without a leading date ("19.11.2026 …"), the summary's first
+  point as plain text, and a short counts line (action items, tasks on the board, people; names on hover).
+  Meetings are grouped under This week, Last week, then month. Circle chips carry the circle's dot;
+  **Needs review** is a chip with its count. On phones the status pill moves into the circle line.
+- **Meeting page**: the circle tag in the header uses the same named style.
+- The `.mt4-*` rules moved from `globals.css` to `web/src/modules/m18-meetings/meetings-v4.css`.
+- Second brain: unchanged (display only; meeting notes are written as before).
+
+## v4.59.0 — 2026-11-20 — green actions, soft toggles, and more calendar on the first screen (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: actions stay green and stand out most; tab and filter toggles get a delicate colour,
+not black; Tasks off by default; more of the calendar when you land.
+- **Buttons**: the main action button (`v4-btn--primary`) is green. Selected chips and segmented toggles
+  (`v4-chip--on`, `v4-seg .on`) are soft blue instead of black.
+- **Calendar**: Tasks are off until ticked (`?show=` still wins). The header is shorter, **+ Add event** is the
+  green next-step button, the event kinds and categories share one row, and the week fills the screen and opens
+  at the morning (events before 5 am don't pull it to midnight).
+
+## v4.58.0 — 2026-11-20 — The v4 look on phones (from Protopia, Sonia)
+
+Only with the v4 look, and only at phone widths (a new `web/src/app/v4-mobile.css`, every rule under
+`html[data-design="v4"]` and a max-width media query, imported after `globals.css`).
+- **Kanban boards** (Operations, a project's tasks) scroll sideways inside their own box, one column at a time;
+  each column scrolls on its own.
+- **Off-centre labels** fixed: text-only links stretched to 44px by the tap-size rule get their text centred.
+- **Stacking**: search pills, the project header, Governance's four checks and the Achievements badges.
+- **Fields are 16px** (no iPhone zoom on tap); bottom-sheet modals keep clear of the home bar.
+- **Lighter first load**: the Geist fonts (Blueprint wizard only) are no longer preloaded; avatar lists load lazily.
+
+## v4.57.0 — 2026-11-20 — details the prototype layouts had dropped, back (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: keep the app's important features where the prototype is thinner.
+- **Meetings**: the list shows who was there and how many tasks are still drafts; a meeting's action items show
+  the line from the meeting they came from.
+- **Governance**: the proposal page has the "people checks passed" bar with the approval mark again, the members'
+  vote shows yes and no counts, and each card says who proposed it.
+- **Project page**: an overdue deadline shows as overdue.
+- **Circles**: team members' titles show on the team row.
+
+## v4.56.0 — 2026-11-20 — the calendar opens on the week (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: the calendar as it was is better than the prototype's list; open on the whole week
+with its time slots.
+- The calendar opens on **Week** (Day, Week, Month, List in their usual order). The prototype-style list from
+  v4.53.0 (`AgendaV4`) is removed; List is the calendar's own list again.
+- **List › Upcoming** starts at the beginning of today: events that are already over today stay in place,
+  greyed out. **Past** shows everything over, greyed out.
+- The week title reads "Nov 16 – 22, 2026" (some browsers printed "Nov 16 – 2026 (day: 22)").
+
+## v4.55.0 — 2026-11-20 — Profile, Join and the project page laid out as the prototype (from Protopia, Sonia)
+
+Only with the v4 look; the classic look is unchanged.
+- **Profile** (`/u/<name>`, `pProfile`): back to Members, a big avatar and name with their circles (and match, for
+  others) as tags, Edit profile on your own, the headline and public bio in a card, the About / Personality / Offers
+  / Requests / Travel tabs as chips, and their circles on the right (lead or member; on your own, Ask to join).
+  Visitors still see the public card and the sign-up invitation.
+- **Join** (`pJoin`): the application is one card with "Join · step N of 3", a step bar and the step's title, and the
+  three steps listed beside it. Signing values, the buddy step and sending the application work as before.
+- **Project page** (`pProject`): a hero in the circle's colour with the circle (and team), the lead and the
+  calendar at hand, the big title, tags for status, open for helpers, lead, tasks and due date, and the green
+  **Offer to help · start an agreement** button. The board, updates and settings below are unchanged.
+
+## v4.54.0 — 2026-11-20 — Meetings, Governance and Agreements laid out as the prototype (from Protopia, Sonia)
+
+Only with the v4 look; the classic look is unchanged.
+- **Meetings** (`pMeetings` / `pMeeting`): the list is rows with a chat tile, date, circle, action items and tasks on
+  the board, the summary's first lines and the status (Needs review, to confirm). A meeting's page has circle, date
+  and people tags, the summary in a card, its action items as rows (draft swipe or "On the board"), Fireflies' own
+  list folded, the documents, and on the right the files (notes, transcript), the second-brain link and the leads'
+  tools.
+- **Governance** (`pGovernance` / `pProposal`): proposal cards with their state and a pill per check, then a page
+  per proposal with the description, **Your vote** (yes / no), the discussion, and the **4 checks** as rows with
+  their state, the vote bar, and the same consent and review buttons for circle leads, admins and advisors. The
+  new proposal form opens in the shared pop-up.
+- **Agreements** (`pAgreements`): Yours / Find a project chips; your agreements as rows ("Project: what you give",
+  what you'd like back, status). Finding and offering on a project is unchanged.
+
+## v4.53.0 — 2026-11-20 — Circles and the Calendar list laid out as the prototype (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: compare every page with the prototype.
+- **Circles** (`m17-org/CirclesV4.tsx`, `design/redesign-prototype/app.js › pCircles / pCircle`): a card per circle
+  (its emoji, leads, member and team counts, purpose, avatars, "You're in it", how many are asking to join; the
+  stewards circle first with "Looks after every circle"), the admins below. Each card opens the circle's own page
+  (`/circles?c=slug`): its purpose, Edit, **Ask to join** / withdraw (members), who's asking (Accept / Decline for
+  its leads), members with leads first, + Add member, the lead name, teams (+ Add team, Edit, their projects),
+  the circle's open projects with their status, meeting notes and the project manager. The classic org chart stays
+  for everyone else.
+- **Calendar** (`m14-events/AgendaV4.tsx`, `pCalendar`): opens on the List view. Each event gets a date box, its
+  day, time, place, how many are going and its circle, with a one-tap **RSVP** (tap again to undo). A small month
+  sits beside it with dots on the days that have something; picking a day opens the Day view. Shows 12 at first,
+  "See all" for the rest. Day, Week and Month are unchanged.
+
 ## v4.52.0 — 2026-11-20 — About {community} laid out as the prototype (from Protopia, Sonia)
 
 Only with the v4 look. Sonia: "this is not the design". `AboutV4.tsx` now follows

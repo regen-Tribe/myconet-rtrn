@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter, Inter_Tight } from 'next/font/google'
 import './globals.css'
+// The v4 look on phones; after globals.css so it can adjust it (rules only apply with data-design="v4")
+import './v4-mobile.css'
 import AppShell from '@/core/components/shell/AppShell'
 import { createClient } from '@/core/lib/supabase/server'
 import { loadCircleRows } from '@/core/lib/circles-server'
@@ -10,8 +12,9 @@ import { BrandingProvider } from '@/core/components/BrandingProvider'
 import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
 import { loadMenuState } from '@/core/lib/menu-server'
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
+// Geist is only used by the Blueprint wizard (wizard.css), so it isn't preloaded on every page
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', preload: false })
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', preload: false })
 // The v4 look (DESIGN-SYSTEM.md › v4): Inter for text, Inter Tight for headings
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-inter-tight' })

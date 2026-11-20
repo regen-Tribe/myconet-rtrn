@@ -7,8 +7,8 @@ import type { AgentSuggestion, PmAction } from './types'
 import { instructAgent } from '@/core/lib/agent-context'
 import Link from 'next/link'
 
-const KIND: Record<string, string> = { merge: 'Same task twice', move: 'Belongs in a project', new_project: 'Start a project', assign: 'Who could take it' }
-const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a project', pm_assign: 'Assigned' }
+const KIND: Record<string, string> = { merge: 'Same task twice', move: 'Belongs in a task', new_project: 'Start a task', assign: 'Who could take it' }
+const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a task', pm_assign: 'Assigned' }
 
 // Arriving from a circle page's "🧭 Project manager" button (/operations?circle=…#pm) opens the panel
 const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
@@ -38,8 +38,8 @@ function explain(s: AgentSuggestion, title: (id?: string) => string | undefined,
   }
   const tasks = (p.tasks ?? []).map(id => title(id)).filter((t): t is string => !!t)
   return {
-    what: <>Start a new project {q(p.title)}{p.description ? <> ({p.description})</> : null} and move {tasks.length === 1 ? 'this task' : `these ${tasks.length} tasks`} into it: {tasks.map((t, i) => <span key={i}>{i ? ' · ' : ''}{t}</span>)}.</>,
-    button: 'Create the project',
+    what: <>Start a new task {q(p.title)}{p.description ? <> ({p.description})</> : null} and move {tasks.length === 1 ? 'this one' : `these ${tasks.length}`} into it as subtasks: {tasks.map((t, i) => <span key={i}>{i ? ' · ' : ''}{t}</span>)}.</>,
+    button: 'Create the task',
   }
 }
 
@@ -151,24 +151,24 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                         value={v} onChange={e => setWhere(prev => ({ ...prev, [s.id]: e.target.value }))} aria-label="Put it in"
                         style={{ fontSize: 12.5, padding: '5px 8px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', maxWidth: '100%' }}
                       >
-                        <option value="">{s.kind === 'new_project' ? 'Put it in: as suggested' : 'Into: the suggested project'}</option>
+                        <option value="">{s.kind === 'new_project' ? 'Put it in: as suggested' : 'Into: the suggested task'}</option>
                         {s.kind === 'new_project' && (
-                          <optgroup label="A new project in…">
+                          <optgroup label="A new task in…">
                             {circles.slugs.map(c => [
                               <option key={c} value={`c:${c}`}>{circles.meta(c).emoji} {circles.meta(c).label}</option>,
                               ...teams.filter(t => t.circle === c).map(t => <option key={t.id} value={`t:${t.id}`}>{'    '}{circles.meta(c).label} › {t.name}</option>),
                             ])}
                           </optgroup>
                         )}
-                        <optgroup label={s.kind === 'new_project' ? 'Or add the tasks to a project' : 'Another project'}>
+                        <optgroup label={s.kind === 'new_project' ? 'Or add them to a task' : 'Another task'}>
                           {projects.map(x => <option key={x.id} value={`p:${x.id}`}>{x.title}{x.circle && circles.has(x.circle) ? ` · ${circles.meta(x.circle).label}` : ''}</option>)}
                         </optgroup>
                       </select>
                       {into && (
                         <div style={{ fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '6px 10px', marginTop: 6 }}>
                           {s.kind === 'new_project'
-                            ? <>No new project: {n === 1 ? 'this task moves' : `these ${n} tasks move`} into <strong>{into.title}</strong>{into.circle && into.circle !== s.circle && circles.has(into.circle) ? <> (and to {circles.meta(into.circle).label})</> : null}.</>
-                            : <>The task moves into <strong>{into.title}</strong> instead.</>}
+                            ? <>No new task: {n === 1 ? 'this one moves' : `these ${n} move`} into <strong>{into.title}</strong>{into.circle && into.circle !== s.circle && circles.has(into.circle) ? <> (and to {circles.meta(into.circle).label})</> : null}.</>
+                            : <>It moves into <strong>{into.title}</strong> instead.</>}
                         </div>
                       )}
                     </div>
@@ -186,7 +186,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 {mayDecide && telling === s.id && (
                   <form onSubmit={e => { e.preventDefault(); tell(s) }} style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                     <input autoFocus value={told} onChange={e => setTold(e.target.value)} maxLength={2000}
-                      placeholder="What should happen instead? e.g. add these to the Incubator cacao project"
+                      placeholder="What should happen instead? e.g. add these to the Incubator cacao task"
                       style={{ flex: 1, minWidth: 0, fontSize: 13, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'inherit' }} />
                     <button type="submit" disabled={!told.trim()} style={btn(true)}>Send</button>
                   </form>
@@ -201,7 +201,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>✓ Accepted</span>
                 <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{s.kind === 'new_project' ? p.title : p.label}</span>
                 {tag(s.circle)}
-                {href && <Link href={href} style={{ ...btn(true), marginLeft: 'auto', textDecoration: 'none' }}>Open {href.startsWith('/operations/') ? 'project' : 'task'} →</Link>}
+                {href && <Link href={href} style={{ ...btn(true), marginLeft: 'auto', textDecoration: 'none' }}>Open {href.startsWith('/operations/') ? 'task' : 'it'} →</Link>}
               </div>
             )
           })}

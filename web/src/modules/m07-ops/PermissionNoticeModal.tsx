@@ -84,7 +84,7 @@ export function PermissionNoticeModal({
 
           {directory.admins.length > 0 && (
             <div>
-              <div style={sectionLabel}>Admins — can move any project</div>
+              <div style={sectionLabel}>Admins — can move any task</div>
               <PeopleList people={directory.admins} />
             </div>
           )}

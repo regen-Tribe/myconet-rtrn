@@ -66,7 +66,7 @@ These functions are also imported by `m00-dashboard` and `modules/home` to displ
 
 ## Role gating
 
-- **Admin / circle_lead**: read + write (the page via `isCircleAdmin`; the database via the `blueprints` update policy, `20261117000000_blueprint_leads_edit.sql`)
+- **Admin / circle_lead**: read + write (or admins only when the community sets `"blueprintEditors": "admins"`: `core/lib/roles › canEditBlueprint`, plus its own instance migration) (the page via `isCircleAdmin`; the database via the `blueprints` update policy, `20261117000000_blueprint_leads_edit.sql`)
 - **All other roles** (project leads included): read only
 
 ## AI scanning

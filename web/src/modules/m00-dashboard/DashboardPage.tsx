@@ -140,12 +140,12 @@ export default async function DashboardPage() {
     },
     {
       num: '06', name: 'Agreements',
-      desc: `${activeProjects} open project${activeProjects !== 1 ? 's' : ''} · propose collaboration`,
+      desc: `${activeProjects} open task${activeProjects !== 1 ? 's' : ''} · offer help`,
       color: 'var(--m6)', href: '/agreements', locked: locked('joining'),
     },
     {
       num: '07', name: 'Operations',
-      desc: `${activeProjects} active project${activeProjects !== 1 ? 's' : ''} · tasks on the board`,
+      desc: `${activeProjects} active task${activeProjects !== 1 ? 's' : ''} · subtasks on the board`,
       color: 'var(--m7)', href: '/operations', locked: locked('joining'),
     },
     {
@@ -169,7 +169,7 @@ export default async function DashboardPage() {
     },
     {
       num: '17', name: 'Circles',
-      desc: 'Circles, teams and who leads them',
+      desc: 'Circles, subcircles and who leads them',
       color: 'var(--m17)', href: '/circles', locked: false,
     },
     {
@@ -204,14 +204,14 @@ export default async function DashboardPage() {
     rawFeed.push({ who: name, act: `is looking for — "${title}"`, when: '', color: 'var(--m1)', tag: 'M01', href: p?.username ? `/u/${p.username}` : undefined, ts: new Date(s.created_at).getTime() })
   }
   for (const p of recentProjects) {
-    rawFeed.push({ who: 'New project', act: `"${p.title}"`, when: '', color: 'var(--m7)', tag: 'M07', href: `/operations/${p.id}`, ts: new Date(p.created_at).getTime() })
+    rawFeed.push({ who: 'New task', act: `"${p.title}"`, when: '', color: 'var(--m7)', tag: 'M07', href: `/operations/${p.id}`, ts: new Date(p.created_at).getTime() })
   }
   for (const p of recentProposals) {
     rawFeed.push({ who: 'New proposal', act: `"${p.title}"`, when: '', color: 'var(--m9)', tag: 'M09', href: '/governance', ts: new Date(p.created_at).getTime() })
   }
   for (const u of (opsUpdatesRes.data ?? []) as any[]) {
     const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Someone'
-    const proj = u.projects?.title ?? 'a project'
+    const proj = u.projects?.title ?? 'a task'
     const body = (u.content as string).length > 60 ? (u.content as string).slice(0, 58) + '…' : u.content
     rawFeed.push({ who: author, act: `on "${proj}" — ${body}`, when: '', color: 'var(--m7)', tag: 'M07', href: `/operations/${u.project_id}`, ts: new Date(u.created_at).getTime() })
   }
@@ -267,7 +267,7 @@ export default async function DashboardPage() {
                 Community Dashboard
               </h1>
               <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
-                {memberCount} member{memberCount !== 1 ? 's' : ''} · {activeProjects} active project{activeProjects !== 1 ? 's' : ''} · {projectName}
+                {memberCount} member{memberCount !== 1 ? 's' : ''} · {activeProjects} active task{activeProjects !== 1 ? 's' : ''} · {projectName}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
@@ -315,7 +315,7 @@ export default async function DashboardPage() {
           deltaColor="var(--m4)"
           href="/blueprint"
         />
-        <StatCard label="Open projects" value={String(activeProjects)} delta={activeProjects === 0 ? 'None yet' : projectsNeedingHelp > 0 ? `${projectsNeedingHelp} open to collaborators` : 'none need help right now'} href="/operations" />
+        <StatCard label="Open tasks" value={String(activeProjects)} delta={activeProjects === 0 ? 'None yet' : projectsNeedingHelp > 0 ? `${projectsNeedingHelp} open to collaborators` : 'none need help right now'} href="/operations" />
         <StatCard
           label="Open proposals"
           value={String(openProposals)}
@@ -354,7 +354,7 @@ export default async function DashboardPage() {
 
           <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '16px 18px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Projects activity</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Tasks activity</div>
               <Link href="/operations" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--m7)', textDecoration: 'none', fontWeight: 600 }}>Open Operations →</Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

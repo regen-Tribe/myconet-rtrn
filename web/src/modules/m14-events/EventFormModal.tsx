@@ -94,7 +94,7 @@ export function EventFormModal({
 
   function pickKind(k: EventKind) {
     if (k !== 'community' && !canCore) {
-      setKindNote(`${KIND_META[k].label} are posted by full members, circle leads and project leads. You're a ${ROLE_LABELS[role] ?? 'Explorer'}, so you can post a community hosted event instead.`)
+      setKindNote(`${KIND_META[k].label} are posted by full members, circle leads and task leads. You're a ${ROLE_LABELS[role] ?? 'Explorer'}, so you can post a community hosted event instead.`)
       return
     }
     setKindNote(null)
@@ -255,7 +255,7 @@ export function EventFormModal({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
           <div>
-            <label style={labelStyle} htmlFor="ev-project">Ops project</label>
+            <label style={labelStyle} htmlFor="ev-project">Task</label>
             <select id="ev-project" value={projectId} onChange={e => pickProject(e.target.value)} style={inputStyle}>
               <option value="">None</option>
               {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}

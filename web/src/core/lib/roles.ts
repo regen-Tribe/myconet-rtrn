@@ -13,6 +13,17 @@ export const isJoiningOrAbove = (role: string): boolean =>
 export const isCircleAdmin = (role: string): boolean =>
   ['circle_lead', 'admin'].includes(role)
 
+/**
+ * Who may edit the community Blueprint (answers, values, documents, circles step). Circle leads and admins
+ * by default; a community can make it admins only with `"blueprintEditors": "admins"` in instance/config.jsonc
+ * (and the matching database rule in its instance/migrations). Protopia did, 2026-11-20.
+ */
+export const BLUEPRINT_EDITORS = process.env.NEXT_PUBLIC_BLUEPRINT_EDITORS === 'admins' ? 'admins' : 'leads'
+export const canEditBlueprint = (role: string): boolean =>
+  BLUEPRINT_EDITORS === 'admins' ? role === 'admin' : isCircleAdmin(role)
+/** "Admins edit these." / "Admins and circle leads edit these." */
+export const BLUEPRINT_EDITORS_LABEL = BLUEPRINT_EDITORS === 'admins' ? 'Admins' : 'Admins and circle leads'
+
 // Sees full Ops admin panel — circle_lead, project_lead, admin
 export const isOpsAdmin = (role: string): boolean =>
   ['circle_lead', 'project_lead', 'admin'].includes(role)
@@ -42,7 +53,7 @@ export const ROLE_LABELS: Record<string, string> = {
   joining: 'Joining member',
   member: 'Member',
   circle_lead: 'Circle lead',
-  project_lead: 'Project lead',
+  project_lead: 'Task lead',
   advisor: 'Advisor',
   admin: 'Admin',
 }

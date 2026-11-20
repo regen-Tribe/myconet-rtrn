@@ -1,4 +1,5 @@
 'use client'
+import { BLUEPRINT_EDITORS_LABEL } from '@/core/lib/roles'
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
@@ -142,7 +143,7 @@ export default function CommunityValuesEditor({ canEdit }: { canEdit: boolean })
         <button className="btn btn-ghost" onClick={() => setEdit({ id: null, title: '', description: '' })} disabled={busy}>+ Add a value</button>
       )}
       {!canEdit && (
-        <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '6px 0 0' }}>Admins and circle leads edit these.</p>
+        <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '6px 0 0' }}>{BLUEPRINT_EDITORS_LABEL} edit these.</p>
       )}
     </div>
   )
