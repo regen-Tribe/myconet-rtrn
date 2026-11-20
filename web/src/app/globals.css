@@ -567,3 +567,59 @@ a:has(.dash-stat-card--link):hover .dash-stat-card--link {
 /* Keep a phrase on one line, except on phones where it wouldn't fit */
 .keep-together { white-space: nowrap; }
 @media (max-width: 520px) { .keep-together { white-space: normal; } }
+
+/* ─── The v4 look (DESIGN-SYSTEM.md › v4) ───────────────────────────
+   Off unless a community sets "design": "v4" in instance/config.jsonc
+   (layout.tsx puts data-design="v4" on <html>). It re-points the existing
+   tokens, so every page that uses them changes at once; hard-coded colors
+   and sizes move over module by module. Light mode only for now. */
+[data-design="v4"]:not([data-theme="dark"]) {
+  /* type: Inter for text, Inter Tight for headings; labels drop the mono font
+     and become light sans capitals */
+  --display: var(--font-inter-tight), 'Inter Tight', system-ui, sans-serif;
+  --mono: var(--font-inter), 'Inter', system-ui, sans-serif;
+
+  /* neutrals, slightly cool; a pale blue page with white cards */
+  --ink: #111317; --ink-1: #111317; --ink-2: #3A3F4A; --ink-3: #6B7180; --ink-4: #9AA0AD;
+  --surface: #FFFFFF; --bg: #E9EFFD; --bg-2: #EEF3FF; --bg-3: #E2E9FA;
+  --rule: rgba(35, 80, 176, .13); --rule-soft: rgba(35, 80, 176, .07);
+
+  /* pastel primaries: they group and show status, never a module */
+  --blue: #D6E4FF;   --blue-ink: #2350B0;
+  --red: #FFD9D6;    --red-ink: #AE3A35;
+  --yellow: #FFF0B3; --yellow-ink: #7A5B00;
+  --green: #D3F1DC;  --green-ink: #2E7A4A;
+  --violet: #E5DCFF; --violet-ink: #5B3FB0;
+
+  /* the one action colour per screen (the next step), and black for main buttons */
+  --action: #D4F0DD; --action-ink: #235C3B;
+  --accent-color: #111317; --accent-soft: #D4F0DD;
+  /* pages use --accent as a strong colour (text, borders, filled buttons), so in v4 it is the dark action green */
+  --accent: #235C3B; --accent-foreground: #FFFFFF;
+
+  /* status: Ideas · To do · In progress · Review · Done · Paused */
+  --st-idea: #EBEEF7;  --st-idea-ink: #5D6380;
+  --st-todo: var(--blue);     --st-todo-ink: var(--blue-ink);
+  --st-doing: var(--violet);  --st-doing-ink: var(--violet-ink);
+  --st-review: var(--red);    --st-review-ink: var(--red-ink);
+  --st-done: #E3F5E8;         --st-done-ink: var(--green-ink);
+  --st-paused: var(--yellow); --st-paused-ink: var(--yellow-ink);
+
+  /* module colours stop branding modules: their buttons and stripes turn black */
+  --m0: #111317; --m1: #111317; --m4: #111317; --m5: #111317; --m6: #111317; --m7: #111317;
+  --m8: #111317; --m9: #111317; --m14: #111317; --m15: #111317; --m16: #111317; --m17: #111317; --m18: #111317;
+
+  /* shadcn primitives follow */
+  --background: #E9EFFD; --foreground: #111317; --border: rgba(35, 80, 176, .13);
+  --primary: #111317; --primary-foreground: #FFFFFF; --ring: #2350B0;
+  --sidebar: #FFFFFF; --sidebar-primary: #111317; --sidebar-accent: var(--blue); --sidebar-accent-foreground: var(--blue-ink);
+
+  /* softer, rounder shapes */
+  --radius: .75rem; --radius-lg: 1.25rem; --radius-xl: 1.5rem;
+}
+[data-design="v4"]:not([data-theme="dark"]) body {
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+}
+[data-design="v4"]:not([data-theme="dark"]) h1,
+[data-design="v4"]:not([data-theme="dark"]) h2 { letter-spacing: -.03em; }

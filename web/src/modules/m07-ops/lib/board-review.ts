@@ -125,7 +125,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
         purpose: (unit.data?.description as string | null) ?? null, leads, paths,
         members: unit.data ? names(unit.data) : [],
         teams: units.filter(u => u.kind === 'team').map(u => ({ name: u.name, people: names(u), projects: projects.filter(p => p.team_id === u.id).map(p => p.title) })),
-        projects: projects.filter(p => !p.is_chores).map(p => ({ title: p.title, open: left.filter(t => t.project_id === p.id).length, url: `${appUrl}/ops/${p.id}` })),
+        projects: projects.filter(p => !p.is_chores).map(p => ({ title: p.title, open: left.filter(t => t.project_id === p.id).length, url: `${appUrl}/operations/${p.id}` })),
       })
       const saved = await saveNote(`${folder}/board.md`, buildBoardNote({ circle, circleName, status, projects, tasks: left, nameOf, suggestions }), `Board status: ${circleName}`)
       // Board notes used to live together in knowledge.boardFolder: the agent removes its old copy
@@ -277,7 +277,7 @@ function buildBoardNote(n: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const line = (t: Task) => {
     const who = n.nameOf(t.assignee_id) ?? (t.assignee_name ? `${t.assignee_name} (not on MyCoNet yet)` : null)
-    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''}${t.priority && t.priority !== 'none' ? ` · ${t.priority} priority` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}${t.project_id ? `/ops/${t.project_id}` : '/ops'}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
+    return `- ${t.needs_review ? '(draft) ' : ''}${t.title}${who ? ` · **${who}**` : ' · _nobody yet_'}${t.due_date ? ` · ${t.due_date}` : ''}${t.priority && t.priority !== 'none' ? ` · ${t.priority} priority` : ''} · ${t.status.replace('_', ' ')} → [open](${appUrl}${t.project_id ? `/operations/${t.project_id}` : '/operations'}?task=${t.id})${t.notes?.trim() ? `\n  - _${t.notes.trim().replace(/\s+/g, ' ').slice(0, 300)}_` : ''}`
   }
   const out = [
     '---',
@@ -285,13 +285,13 @@ function buildBoardNote(n: {
     `circle: ${n.circle}`,
     'visibility: members',
     'source: myconet-board',
-    `board: ${appUrl}/ops?circle=${n.circle}`,
+    `board: ${appUrl}/operations?circle=${n.circle}`,
     `updated: ${new Date().toISOString().slice(0, 10)}`,
     '---',
     '',
     `# ${n.circleName} board`,
     '',
-    `*The circle's open work, kept up to date by the MyCoNet project manager after each meeting. [Open the board](${appUrl}/ops?circle=${n.circle}).*`,
+    `*The circle's open work, kept up to date by the MyCoNet project manager after each meeting. [Open the board](${appUrl}/operations?circle=${n.circle}).*`,
     '',
     '## Status', '', n.status || '_No status yet._', '',
   ]

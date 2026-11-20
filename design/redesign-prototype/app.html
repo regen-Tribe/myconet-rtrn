@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MyCoNet prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<!-- hand-drawn wobble for icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink0" filterUnits="userSpaceOnUse" x="-4" y="-4" width="32" height="32"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="1" seed="3"/><feDisplacementMap in="SourceGraphic" scale="2.2" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="ink1" filterUnits="userSpaceOnUse" x="-4" y="-4" width="32" height="32"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="1" seed="8"/><feDisplacementMap in="SourceGraphic" scale="2.2" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="ink2" filterUnits="userSpaceOnUse" x="-4" y="-4" width="32" height="32"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="1" seed="13"/><feDisplacementMap in="SourceGraphic" scale="2.2" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="ink3" filterUnits="userSpaceOnUse" x="-4" y="-4" width="32" height="32"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="1" seed="19"/><feDisplacementMap in="SourceGraphic" scale="2.2" xChannelSelector="R" yChannelSelector="G"/></filter>
+</svg>
+
+<div id="stage">
+  <div id="app">
+    <div class="shell">
+      <aside class="side" id="side"></aside>
+      <div class="mainwrap">
+        <header class="mtop">
+          <button class="iconbtn" data-act="menu" aria-label="Open menu"><svg class="i" data-i="menu"></svg></button>
+          <span class="title" id="mtitle">Dashboard</span>
+          <button class="iconbtn" data-act="bell" aria-label="Notifications"><svg class="i" data-i="bell"></svg><span class="ping"></span></button>
+        </header>
+        <header class="dtop">
+          <label class="search"><svg class="i" data-i="search"></svg><input placeholder="Search members, projects, tasks…" aria-label="Search"></label>
+          <span class="spacer"></span>
+          <button class="iconbtn" data-act="bell" aria-label="Notifications"><svg class="i" data-i="bell"></svg><span class="ping"></span></button>
+          <a id="topAv" href="#/members/MO" class="av" aria-label="Your profile"></a>
+        </header>
+        <main class="view" id="view"></main>
+        <nav class="tabbar" id="tabbar"></nav>
+      </div>
+    </div>
+    <button class="fab" data-act="assist" aria-label="Ask the assistant"><svg class="i" data-i="spark"></svg></button>
+    <div class="layer" id="layer"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<div class="proto" id="proto">
+  <b>Prototype</b>
+  <span class="full" style="display:flex;gap:6px;align-items:center">
+    <select id="dataSel" aria-label="Data"><option value="live">Protopia live data</option><option value="sample">Sample data</option></select>
+    <select id="roleSel" aria-label="View as">
+      <option value="explorer">View as explorer</option>
+      <option value="joining">View as joining member</option>
+      <option value="member">View as member</option>
+      <option value="lead">View as circle lead</option>
+      <option value="admin">View as admin</option>
+    </select>
+    <button id="phoneBtn">Phone</button>
+    <button id="resetBtn" title="Start again with the sample data">Reset</button>
+  </span>
+  <button class="x" id="minBtn" aria-label="Hide prototype controls">–</button>
+</div>
+
+<script src="parts.js"></script>
+<!-- Optional: real data exported from the live portal. Local only, never committed (see live-build.mjs). -->
+<script src="live/live-data.js" onerror="void 0"></script>
+<script src="live/about.js" onerror="void 0"></script>
+<script src="app.js"></script>
+</body>
+</html>

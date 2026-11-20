@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
   const mark = (id: string | null, uid: string | null) =>
     supabase.rpc('calendar_push_mark', { p_secret: secret, p_event_id: eventId, p_google_event_id: id ?? '', p_google_ical_uid: uid ?? '' })
-  const link = `${req.nextUrl.origin}/events?event=${eventId}`
+  const link = `${req.nextUrl.origin}/calendar?event=${eventId}`
   const done = (google: Google, googleError?: string) => NextResponse.json({ ok: true, google, ...(googleError ? { googleError } : {}) })
 
   if (action === 'delete') {

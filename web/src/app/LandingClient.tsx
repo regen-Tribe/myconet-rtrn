@@ -7,6 +7,7 @@ import type { CalendarEvent } from '@/modules/m14-events/types'
 import { CommunityGlance } from '@/modules/home/CommunityGlance'
 import { CirclesPreview, ResourcesPreview, StaysPreview, type CirclesPreviewData, type PreviewItem } from '@/modules/home/ModulePreviews'
 import { CLUBHOUSE, MEMBER_MODULES } from '@/core/lib/nav'
+import { moduleOn } from '@/core/lib/modules'
 import { COMMUNITY_NAME, DEFAULT_PURPOSE, FRAMEWORK_CREDIT } from '@/core/lib/instance'
 import BannerImage from '@/core/components/BannerImage'
 import ModuleOverview from '@/modules/home/ModuleOverview'
@@ -47,16 +48,16 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 /** Clubhouse preview cards — counts are live, so visitors see the real community. */
 function clubhouseCards(st: LandingStats) {
   return [
-    { num: '01', name: 'Community Network',  desc: `Meet ${plural(st.members, 'member')} and explorers`,   color: 'var(--m1)', href: '/network' },
+    { num: '01', name: 'Members',  desc: `Meet ${plural(st.members, 'member')} and explorers`,   color: 'var(--m1)', href: '/members' },
     { num: '04', name: 'Project Blueprint',  desc: 'Our neighborhood plan, phase by phase',                color: 'var(--m4)', href: '/blueprint' },
     { num: '05', name: 'Join the community', desc: 'A few steps · sign the values',                         color: 'var(--m5)', href: '/join', cta: true },
     { num: '06', name: 'Active projects',    desc: `${plural(st.activeProjects, 'project')} underway`,      color: 'var(--m6)', href: '/agreements' },
-    { num: '07', name: 'Operations',         desc: plural(st.deliverables, 'deliverable'),                  color: 'var(--m7)', href: '/ops' },
-    { num: '08', name: 'Your contributions', desc: 'Points and badges for showing up',                      color: 'var(--m8)', href: '/contributions' },
+    { num: '07', name: 'Operations',         desc: plural(st.deliverables, 'task'),                  color: 'var(--m7)', href: '/operations' },
+    { num: '08', name: 'Your achievements', desc: 'Badges for showing up',                      color: 'var(--m8)', href: '/achievements' },
     { num: '09', name: 'Governance',         desc: `${plural(st.openProposals, 'proposal')} open for votes`, color: 'var(--m9)', href: '/governance' },
-    { num: '14', name: 'Calendar',           desc: 'Events and tasks · open to everyone',                   color: 'var(--m14)', href: '/events' },
-    { num: '15', name: 'Accommodation',      desc: 'Book a place to stay',                                  color: 'var(--m15)', href: '/stays' },
-    { num: '16', name: 'Resources',          desc: 'Shared tools and spaces',                               color: 'var(--m16)', href: '/bookings' },
+    { num: '14', name: 'Calendar',           desc: 'Events and tasks · open to everyone',                   color: 'var(--m14)', href: '/calendar' },
+    { num: '15', name: 'Accommodation',      desc: 'Book a place to stay',                                  color: 'var(--m15)', href: '/accommodation' },
+    { num: '16', name: 'Resources',          desc: 'Shared tools and spaces',                               color: 'var(--m16)', href: '/resources' },
   ]
 }
 
@@ -78,7 +79,7 @@ const PILLARS = [
 const VALUES = [
   { t: 'Care for the land before yield.',      d: 'Decisions are tested against ecological impact first, profit second.' },
   { t: 'Consent over consensus.',              d: 'We seek no objections, not unanimous applause. Move forward if good enough for now.' },
-  { t: "Show up, don't just sign up.",         d: 'Logged contributions matter more than promises. Reputation is earned in the doing.' },
+  { t: "Show up, don't just sign up.",         d: 'What you do matters more than what you promise.' },
   { t: 'Disagree out loud, decide in writing.', d: 'Bring the hard things to the circle. What we decide goes in the Blueprint.' },
   { t: 'Leave it better.',                     d: 'Land, people, money — whatever you touch, leave it more alive than you found it.' },
 ]
@@ -257,7 +258,7 @@ function MeetSection() {
       <div className="lp-split">
         <div>
           <SectionHead
-            mod="01" label="Community Network" color="var(--m1)"
+            mod="01" label="Members" color="var(--m1)"
             h="Meet the people gathering around this idea."
             lead="Before anything is built, the right people have to find each other. Browse rich profiles of every member, vision-holder, and explorer — sorted by how well your offers, seeks, values, and skills line up."
           />
@@ -404,7 +405,7 @@ function JoinSection({ values }: { values: { title: string; description: string 
               <p><strong>Application reviewed by a real human</strong> — the project leads, not an algorithm.</p>
             </div>
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
-              <p><strong>Unlocks Agreements, Operations, Contributions, and Governance.</strong></p>
+              <p><strong>Unlocks Agreements, Operations, Achievements and Governance.</strong></p>
             </div>
           </div>
         </div>
@@ -448,7 +449,7 @@ function JoinSection({ values }: { values: { title: string; description: string 
 function AgreementsSection() {
   const [picked, setPicked] = useState(0)
   const [what, setWhat] = useState('Lead the trench-digging weekend with my excavator and 2 helpers.')
-  const [expect, setExpect] = useState('20 contribution points + lunch on site + future member priority.')
+  const [expect, setExpect] = useState(moduleOn('points') ? '20 contribution points + lunch on site + future member priority.' : 'Lunch on site + future member priority.')
   const [submitted, setSubmitted] = useState(false)
 
   return (
@@ -517,7 +518,7 @@ function AgreementsSection() {
               <p><strong>Every agreement is public</strong> — no side deals, no resentment.</p>
             </div>
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
-              <p><strong>Auto-feeds Operations and Contributions</strong> — once accepted, the work shows up everywhere it should.</p>
+              <p><strong>Auto-feeds Operations and Achievements</strong> — once accepted, the work shows up everywhere it should.</p>
             </div>
           </div>
         </div>
@@ -534,8 +535,8 @@ function OpsSection() {
         <div>
           <SectionHead
             mod="07" label="Operations" color="var(--m7)"
-            h="See every promise. Watch every deliverable."
-            lead="A community lives or dies by what gets done. Operations turns every active agreement into visible deliverables — who owns it, when it's due, and whether it's actually happening. No surprises at the next meeting."
+            h="See every promise. Watch every task."
+            lead="A community lives or dies by what gets done. Operations turns every active agreement into visible tasks — who owns it, when it's due, and whether it's actually happening. No surprises at the next meeting."
           />
           <div className="lp-why">
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
@@ -555,15 +556,15 @@ function OpsSection() {
               <span className="lp-mod-pill" style={{ background: 'var(--m7)' }}>M07</span>
               <strong>{COMMUNITY_NAME} · This sprint</strong>
             </div>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>Sprint 12 · May→Jun</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>May→Jun</span>
           </div>
           <div className="lp-ops-stat">
             <div className="lp-stat"><div className="lp-sn">5</div><div className="lp-sl">Active projects</div></div>
-            <div className="lp-stat"><div className="lp-sn">12</div><div className="lp-sl">Deliverables</div></div>
-            <div className="lp-stat"><div className="lp-sn">40%</div><div className="lp-sl">Sprint complete</div></div>
+            <div className="lp-stat"><div className="lp-sn">12</div><div className="lp-sl">Tasks</div></div>
+            <div className="lp-stat"><div className="lp-sn">40%</div><div className="lp-sl">Complete</div></div>
           </div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
-            Deliverables — Reed-bed wetland
+            Tasks — Reed-bed wetland
           </div>
           <div className="lp-deliverables">
             {DELIVERABLES.map((d, i) => (
@@ -733,14 +734,14 @@ function EventsSection({ events }: { events: CalendarEvent[] }) {
         <LinkedEventsList
           events={events}
           title="Coming up"
-          viewAllHref="/events?view=list"
+          viewAllHref="/calendar?view=list"
           addHref={null}
           limit={4}
           showKind
           emptyText="Nothing on the public calendar yet — check back soon."
         />
         <div className="lp-cta-row" style={{ marginTop: 18 }}>
-          <Link className="lp-btn lp-btn-primary" href="/events">Open the calendar <Arrow /></Link>
+          <Link className="lp-btn lp-btn-primary" href="/calendar">Open the calendar <Arrow /></Link>
         </div>
       </div>
     </section>
@@ -770,8 +771,8 @@ function Closing({ name }: { name: string | null }) {
           When you&apos;re ready, sign the values — and start showing up.
         </p>
         <div className="lp-cta-row" style={{ justifyContent: 'center' }}>
-          <Link className="lp-btn lp-btn-primary" href="/auth/signup">Begin joining → <Arrow /></Link>
-          <Link className="lp-btn lp-btn-secondary" href="/network">Just browse first</Link>
+          <Link className="lp-btn lp-btn-primary" href="/auth/signup">Create account <Arrow /></Link>
+          <Link className="lp-btn lp-btn-secondary" href="/members">Just browse first</Link>
         </div>
         <div className="lp-footnote">{COMMUNITY_NAME} · MyCoNet · RNF · {VERSION}</div>
       </div>
@@ -818,7 +819,7 @@ export default function LandingClient({ firstName, communityPurpose, upcomingEve
         <CirclesPreview data={previews.circles} />
       </PreviewSection>
       <OpsSection />
-      <ContributionsSection />
+      {moduleOn('points') && <ContributionsSection />}
       <GovernanceSection />
       <AskSection />
       <Closing name={firstName} />

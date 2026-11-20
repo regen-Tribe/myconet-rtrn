@@ -46,7 +46,7 @@ export default function TopBarSearch() {
     if (!term) return []
     return [
       ...PAGES.filter(p => p.name.toLowerCase().includes(term)).map(p => ({ group: 'Pages', label: p.name, href: p.href })),
-      ...circles.list.filter(c => c.name.toLowerCase().includes(term)).map(c => ({ group: 'Circles', label: `${c.emoji} ${c.name}`, href: '/org' })),
+      ...circles.list.filter(c => c.name.toLowerCase().includes(term)).map(c => ({ group: 'Circles', label: `${c.emoji} ${c.name}`, href: '/circles' })),
     ]
   }, [q, circles])
 
@@ -67,9 +67,9 @@ export default function TopBarSearch() {
       if (cancelled) return
       setHits([
         ...(members.data ?? []).map(m => ({ group: 'Members', label: m.first_name || m.username, detail: m.headline ?? `@${m.username}`, href: `/u/${m.username}` })),
-        ...(projects.data ?? []).map(p => ({ group: 'Projects', label: p.title, detail: p.status?.replace('_', ' '), href: `/ops/${p.id}` })),
+        ...(projects.data ?? []).map(p => ({ group: 'Projects', label: p.title, detail: p.status?.replace('_', ' '), href: `/operations/${p.id}` })),
         ...(proposals.data ?? []).map(p => ({ group: 'Proposals', label: p.title, detail: p.status, href: '/governance' })),
-        ...(events.data ?? []).map(e => ({ group: 'Calendar', label: e.title, detail: new Date(e.starts_at).toLocaleDateString(), href: `/events?event=${e.id}` })),
+        ...(events.data ?? []).map(e => ({ group: 'Calendar', label: e.title, detail: new Date(e.starts_at).toLocaleDateString(), href: `/calendar?event=${e.id}` })),
       ])
     }, 200)
     return () => { cancelled = true; clearTimeout(t) }

@@ -19,7 +19,7 @@ const TILES: { emoji: string; label: string; keys: string[]; href?: string }[] =
   { emoji: '🥕', label: 'Food',              keys: ['food_systems', 'c_food_note'] },
   { emoji: '☀️', label: 'Energy & water',    keys: ['energy_source', 'c_energy_note', 'water_fresh'] },
   { emoji: '⚖️', label: 'How we decide',     keys: ['governance_model', 'decision_method'], href: '/governance' },
-  { emoji: '🤝', label: 'How we live',       keys: ['gatherings_internal', 'rituals', 'daily_rhythms'], href: '/events' },
+  { emoji: '🤝', label: 'How we live',       keys: ['gatherings_internal', 'rituals', 'daily_rhythms'], href: '/calendar' },
   { emoji: '🔑', label: 'Who owns it',       keys: ['real_estate_model', 'legal_structure'] },
   { emoji: '🧭', label: 'Our values',        keys: ['values', 'community_agreements'] },
   { emoji: '🚧', label: 'Where we are now',  keys: ['where_now', 'build_timeline'] },

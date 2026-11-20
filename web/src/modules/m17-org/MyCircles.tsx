@@ -72,7 +72,7 @@ export function MyCircles({ userId }: { userId: string }) {
     <section style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 12, padding: '16px 18px', margin: '16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>My circles</h2>
-        <Link href="/org" style={{ fontSize: 12, fontWeight: 600, color: 'var(--m17)', textDecoration: 'none' }}>All circles →</Link>
+        <Link href="/circles" style={{ fontSize: 12, fontWeight: 600, color: 'var(--m17)', textDecoration: 'none' }}>All circles →</Link>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: others.length ? 14 : 0 }}>
         {mine.filter(m => m.how !== 'asked' && circles.has(m.circle)).map(m => chip(m.circle, m.how === 'lead' ? 'lead' : '', true))}

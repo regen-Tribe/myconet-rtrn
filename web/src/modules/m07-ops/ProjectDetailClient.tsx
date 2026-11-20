@@ -347,7 +347,7 @@ export default function ProjectDetailClient({
     <div className="ops-detail-root" style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 80px' }}>
 
       {/* Back */}
-      <Link href="/ops" style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 28 }}>
+      <Link href="/operations" style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 28 }}>
         ← Operations
       </Link>
 
@@ -553,7 +553,7 @@ export default function ProjectDetailClient({
           <div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14, display: 'flex', justifyContent: 'space-between' }}>
               <span>
-                Subtasks · {deliverables.length}
+                Tasks · {deliverables.length}
                 {canManage && pendingProposals.length > 0 && ` · ${pendingProposals.length} idea${pendingProposals.length === 1 ? '' : 's'}`}
               </span>
             </div>
@@ -566,7 +566,7 @@ export default function ProjectDetailClient({
                     value={newTaskTitle}
                     onChange={e => setNewTaskTitle(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addSubtask()}
-                    placeholder="New subtask title…"
+                    placeholder="New task…"
                     style={{ ...inputStyle, flex: '1 1 200px', padding: '8px 12px', fontSize: 13 }}
                   />
                   <div style={{ flexShrink: 0 }}>
@@ -782,7 +782,7 @@ export default function ProjectDetailClient({
           {/* ── Events (M14) ─────────────────────────────────────────────────── */}
           <LinkedEventsList
             events={projectEvents}
-            addHref={isJoiningOrAbove(userRole) ? `/events?new=1&project=${project.id}` : null}
+            addHref={isJoiningOrAbove(userRole) ? `/calendar?new=1&project=${project.id}` : null}
             hideWhenEmpty
           />
 
@@ -855,7 +855,7 @@ export default function ProjectDetailClient({
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>Status</label>
                 <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }}>
                   <option value="pending">Idea</option>
-                  <option value="backlog">Backlog</option>
+                  <option value="backlog">To do</option>
                   <option value="in_progress">In progress</option>
                   <option value="review">Review</option>
                   <option value="done">Done</option>

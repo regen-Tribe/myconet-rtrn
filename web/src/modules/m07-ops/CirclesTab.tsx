@@ -177,7 +177,7 @@ export function CirclesTab({
                         {g.list.map(p => {
                           const st = PROJECT_STATUS_META[p.status]
                           return (
-                            <Link key={p.id} href={`/ops/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', textDecoration: 'none', borderTop: '1px solid var(--rule-soft, var(--rule))' }}>
+                            <Link key={p.id} href={`/operations/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', textDecoration: 'none', borderTop: '1px solid var(--rule-soft, var(--rule))' }}>
                               <span style={{ fontSize: 13, color: 'var(--ink)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
                               <span style={{ fontSize: 10.5, fontWeight: 600, color: st?.color ?? 'var(--ink-4)', whiteSpace: 'nowrap' }}>{st?.label ?? p.status}</span>
                             </Link>
@@ -193,8 +193,8 @@ export function CirclesTab({
         })}
       </div>
 
-      <Link href="/org" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--m17)', textDecoration: 'none' }}>
-        See the Circles org chart, with teams inside each circle →
+      <Link href="/circles" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--m17)', textDecoration: 'none' }}>
+        See all circles, with the teams inside each one →
       </Link>
 
       {directory.admins.length > 0 && (

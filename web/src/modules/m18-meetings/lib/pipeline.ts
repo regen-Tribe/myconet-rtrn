@@ -180,7 +180,7 @@ export async function processMeeting(
       return {
         // Tasks before v4.32.0 had "(for Luis)" in the title; the note and email show the person already
         title: (t.title as string).replace(/ \(for [^)]+\)$/, ''), person: (l.person_name as string | null), onMyCoNet: !!l.assignee_id || !l.person_name,
-        url: t.project_id ? `${appUrl}/ops/${t.project_id}?task=${t.id}` : `${appUrl}/ops?task=${t.id}`, draft: !!t.needs_review, circle: t.circle as string | null,
+        url: t.project_id ? `${appUrl}/operations/${t.project_id}?task=${t.id}` : `${appUrl}/operations?task=${t.id}`, draft: !!t.needs_review, circle: t.circle as string | null,
         circleName: circleName(t.circle), when: t.due_date ? fmtTaskWhen(t.due_date, t.due_time) : null,
       }
     }).filter((t): t is NonNullable<typeof t> => !!t)

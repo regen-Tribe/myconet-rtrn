@@ -201,7 +201,7 @@ export default function AuthPage() {
                   This is the member portal for a <strong style={{ color: 'var(--ink-2)' }}>regenerative neighborhood</strong> being formed together — meet the people involved, read the community documentation, join if you align with the values, contribute to projects, and help make decisions.
                 </p>
                 <button type="button" onClick={() => setMode('register')} style={{ width: '100%', padding: '10px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: 'var(--accent-color)', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                  Create free account →
+                  Create account
                 </button>
               </div>
             </>
@@ -345,7 +345,7 @@ export default function AuthPage() {
             {[
               { icon: '👤', title: 'Deep profiles', desc: 'Share your values, skills, and goals. Get matched with people who align.' },
               { icon: '🗳️', title: '4-layer governance', desc: 'Every proposal is evaluated by Sociocracy, Democracy, Meritocracy, and AI.' },
-              { icon: '⚙️', title: 'Real project ops', desc: 'Propose projects, form agreements, track deliverables together.' },
+              { icon: '⚙️', title: 'Real project ops', desc: 'Suggest projects, make agreements, track tasks together.' },
             ].map(f => (
               <div key={f.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>{f.icon}</div>

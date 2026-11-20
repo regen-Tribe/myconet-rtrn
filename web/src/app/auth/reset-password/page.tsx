@@ -57,7 +57,7 @@ function ResetPasswordForm() {
       setError(error.message)
     } else {
       setDone(true)
-      setTimeout(() => router.push('/network'), 2000)
+      setTimeout(() => router.push('/members'), 2000)
     }
     setLoading(false)
   }

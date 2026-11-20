@@ -7,17 +7,17 @@ Each module is an independently workable feature of the MyCoNet platform. You ca
 | Folder | Number | Route | What it does | Status |
 |--------|--------|-------|-------------|--------|
 | `m00-dashboard/` | M00 | `/dashboard` | Personal HUD — role badge, activity stats, quick links | Live |
-| `m01-network/` | M01 | `/network` | Member directory with AI match scoring | Live |
+| `m01-network/` | M01 | `/members` | Member directory with AI match scoring | Live |
 | `m04-blueprint/` | M04 | `/blueprint` | Community planning wizard with AI scan | Live |
 | `m05-join/` | M05 | `/join` | Onboarding flow, application, role roadmap | Live |
 | `m06-agreements/` | M06 | `/agreements` | Collaboration proposals between members and projects | Live |
-| `m07-ops/` | M07 | `/ops` | Five-column Project Kanban with drag-and-drop and proposal-to-deliverable flow | Live |
-| `m08-contributions/` | M08 | `/contributions` | Achievement badges and contribution history | Live |
+| `m07-ops/` | M07 | `/operations` | Five-column Project Kanban with drag-and-drop and proposal-to-deliverable flow | Live |
+| `m08-contributions/` | M08 | `/achievements` | Achievement badges and contribution history | Live |
 | `m09-governance/` | M09 | `/governance` | Proposals, voting, and decision layers | Live |
-| `m14-events/` | M14 | `/events` | Calendar — core events, community hosted events, tasks; RSVPs; links to circles/projects/proposals | Live |
-| `m15-bookings/` | M15 | `/stays` | Accommodation — book rooms, cabins, tent sites; admins/circle leads manage, joining+ book | Live |
-| `m16-resources/` | M16 | `/bookings` | Resources — book tools, spaces and other shared things (same code as M15, `scope='resources'`) | Live |
-| `m17-org/` | M17 | `/org` | Circles (org chart) — circles, teams and their leads; public; leads/admins edit | Live |
+| `m14-events/` | M14 | `/calendar` | Calendar — core events, community hosted events, tasks; RSVPs; links to circles/projects/proposals | Live |
+| `m15-bookings/` | M15 | `/accommodation` | Accommodation — book rooms, cabins, tent sites; admins/circle leads manage, joining+ book | Live |
+| `m16-resources/` | M16 | `/resources` | Resources — book tools, spaces and other shared things (same code as M15, `scope='resources'`) | Live |
+| `m17-org/` | M17 | `/circles` | Circles (org chart) — circles, teams and their leads; public; leads/admins edit | Live |
 | `home/` | — | `/home` | Public and member-facing community landing page | Live |
 | `admin/` | — | `/admin/users` | Admin-only user editor (role + lead_circles) | Live |
 

@@ -59,17 +59,17 @@ contributors are in its `instance/CONTRIBUTING.md`. Never commit keys, tokens, p
 | # | Module | Route |
 |---|---|---|
 | M00 | Dashboard | `/dashboard` |
-| M01 | Members (profiles, AI matching) | `/network` |
+| M01 | Members (profiles, AI matching) | `/members` |
 | M04 | Blueprint (RNF wizard, AI document scan, circles setup) | `/blueprint` |
 | M05 | Join | `/join` |
 | M06 | Agreements | `/agreements` |
-| M07 | Operations (projects, Kanban) | `/ops` |
-| M08 | Contributions | `/contributions` |
+| M07 | Operations (projects, Kanban) | `/operations` |
+| M08 | Achievements | `/achievements` |
 | M09 | Governance (4-layer voting) | `/governance` |
-| M14 | Calendar (events, tasks) | `/events` |
-| M15 | Accommodation | `/stays` |
-| M16 | Resources (tools, spaces) | `/bookings` |
-| M17 | Circles (org chart) | `/org` |
+| M14 | Calendar (events, tasks) | `/calendar` |
+| M15 | Accommodation | `/accommodation` |
+| M16 | Resources (tools, spaces) | `/resources` |
+| M17 | Circles (org chart) | `/circles` |
 
 Planned: M10 Genesis bot, M11 Quinn, M12 MycoNet agent, M13 Hive.
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Inter, Inter_Tight } from 'next/font/google'
 import './globals.css'
 import AppShell from '@/core/components/shell/AppShell'
 import { createClient } from '@/core/lib/supabase/server'
@@ -7,10 +7,13 @@ import { loadCircleRows } from '@/core/lib/circles-server'
 import { CirclesProvider } from '@/core/components/CirclesProvider'
 import { loadBranding } from '@/core/lib/branding-server'
 import { BrandingProvider } from '@/core/components/BrandingProvider'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
+// The v4 look (DESIGN-SYSTEM.md › v4): Inter for text, Inter Tight for headings
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-inter-tight' })
 
 const TITLE = `${COMMUNITY_NAME} · MyCoNet`
 const DESCRIPTION = `The member portal for ${COMMUNITY_NAME}, a regenerative neighborhood. Connect, plan, and build together.`
@@ -47,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}${DESIGN ? ` ${inter.variable} ${interTight.variable}` : ''}`} data-design={DESIGN || undefined} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{
           __html: `(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;})()`

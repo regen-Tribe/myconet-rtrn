@@ -12,12 +12,12 @@ import {
 import { useState } from 'react'
 
 const NAV_ITEMS = [
-  { title: 'Dashboard',      href: '/network',          icon: LayoutDashboard },
-  { title: 'My Profile',     href: '/network/profile',  icon: User },
-  { title: 'Matches',        href: '/network/matches',  icon: Sparkles },
-  { title: 'Search Network', href: '/network/discover', icon: Search },
-  { title: 'My Offers',      href: '/network/offers',   icon: Gift },
-  { title: 'My Seeks',       href: '/network/seeks',    icon: HelpCircle },
+  { title: 'Dashboard',      href: '/members',          icon: LayoutDashboard },
+  { title: 'My Profile',     href: '/members/profile',  icon: User },
+  { title: 'Matches',        href: '/members/matches',  icon: Sparkles },
+  { title: 'Search Network', href: '/members/discover', icon: Search },
+  { title: 'My offers',      href: '/members/offers',   icon: Gift },
+  { title: 'My requests',     href: '/members/requests',    icon: HelpCircle },
 ]
 
 interface Props {
@@ -52,8 +52,8 @@ export default function NetworkSidebar({ user }: Props) {
             Navigation
           </p>
           {NAV_ITEMS.map(item => {
-            const active = item.href === '/network'
-              ? pathname === '/network'
+            const active = item.href === '/members'
+              ? pathname === '/members'
               : pathname.startsWith(item.href)
             return (
               <Link key={item.href} href={item.href}>
@@ -112,7 +112,7 @@ export default function NetworkSidebar({ user }: Props) {
 
               {menuOpen && (
                 <div className="absolute bottom-full left-2 right-2 mb-1 bg-popover border border-popover-border rounded-lg shadow-lg overflow-hidden z-50">
-                  <Link href="/network/profile" onClick={() => setMenuOpen(false)}
+                  <Link href="/members/profile" onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2.5 text-sm text-popover-foreground hover-elevate">
                     <User className="h-4 w-4" /> View Profile
                   </Link>
@@ -140,8 +140,8 @@ export default function NetworkSidebar({ user }: Props) {
       {/* Mobile bottom nav */}
       <nav className="net-mobile-nav fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border justify-around items-center py-1.5">
         {NAV_ITEMS.map(item => {
-          const active = item.href === '/network'
-            ? pathname === '/network'
+          const active = item.href === '/members'
+            ? pathname === '/members'
             : pathname.startsWith(item.href)
           return (
             <Link key={item.href} href={item.href}

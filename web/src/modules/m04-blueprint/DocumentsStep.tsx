@@ -43,7 +43,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
         ? await extractPdfText(file, (p, t) => setStatus(`Reading page ${p} of ${t}…`))
         : await file.text()
       if (!content.trim()) throw new Error('No text found in that file (a scanned PDF needs text recognition first).')
-      setStatus('Adding it to the library…')
+      setStatus('Adding it to Documents…')
       await addToLibrary({ title: titleFromFile(file.name), fileName: file.name, visibility: kind, content })
       setAdding(false); setKind(null)
       await load()
@@ -67,7 +67,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
 
       <div className="section">
         <div className="section-head">
-          <div className="section-title">Library</div>
+          <div className="section-title">Documents</div>
           <div className="section-meta-row"><span className="section-meta">{docs ? `${docs.length} document${docs.length === 1 ? '' : 's'}` : ''}</span></div>
         </div>
         {docs && docs.length === 0 && (
@@ -91,7 +91,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
             </div>
             {canEdit && (confirmRemove === d.id ? (
               <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 12 }}>Remove from the library?</span>
+                <span style={{ fontSize: 12 }}>Remove from Documents?</span>
                 <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setConfirmRemove(null)} disabled={busy}>Keep</button>
                 <button className="btn" style={{ fontSize: 12, color: '#b91c1c' }} disabled={busy}
                   onClick={() => { setConfirmRemove(null); run(() => createClient().from('community_documents').delete().eq('id', d.id)) }}>Remove</button>

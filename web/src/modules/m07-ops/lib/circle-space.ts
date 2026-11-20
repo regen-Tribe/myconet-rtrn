@@ -40,7 +40,7 @@ export async function updateCircleSpace(admin: SupabaseClient, c: CircleRow, opt
     '## In MyCoNet',
     '',
     `**Circle:** ${c.emoji ?? ''} ${c.name}${c.archived_at ? ` · **retired** ${c.archived_at.slice(0, 10)}` : ''} · **Leads:** ${leads.length ? leads.join(', ') : '_none yet_'}`,
-    `[Board status](board.md) · [Open the board](${appUrl}/ops?circle=${c.slug}) · [Meeting notes](${appUrl}/meetings?circle=${c.slug})`,
+    `[Board status](board.md) · [Open the board](${appUrl}/operations?circle=${c.slug}) · [Meeting notes](${appUrl}/meetings?circle=${c.slug})`,
     '',
     ...(opts.purpose ? [`**Purpose:** ${opts.purpose.replace(/\s+/g, ' ').trim()}`, ''] : []),
     ...(opts.members?.length ? [`**Members:** ${opts.members.join(', ')}`, ''] : []),

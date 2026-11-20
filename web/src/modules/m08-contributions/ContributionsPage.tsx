@@ -1,5 +1,6 @@
 import { createClient } from '@/core/lib/supabase/server'
 import Link from 'next/link'
+import { moduleOn } from '@/core/lib/modules'
 
 const CATALOG = [
   {
@@ -16,15 +17,15 @@ const CATALOG = [
     description: 'Signed the community values and joined as a member.',
     icon: '🏡',
     color: 'var(--m5)',
-    hint: 'Complete M05 Join and get accepted to earn this badge.',
+    hint: 'Finish joining and get accepted to earn this badge.',
   },
   {
     key: 'community_member',
     title: 'Community Member',
-    description: 'Supported a project in Agreements or proposed one in Operations — a full contributing member of the community.',
+    description: 'Made an agreement to help on a project, or suggested a project in Operations — a full contributing member of the community.',
     icon: '⊕',
     color: 'var(--m9)',
-    hint: 'Go to Agreements and support an existing project, or propose a new project in Operations. Once accepted you earn this badge.',
+    hint: 'Make an agreement to help on a project, or suggest a project in Operations. Once one is accepted you earn this badge.',
   },
 ]
 
@@ -34,12 +35,18 @@ export default async function ContributionsPage() {
 
   let earnedKeys = new Set<string>()
   let earnedAt: Record<string, string> = {}
+  let points: number | null = null
 
   if (user) {
     const { data: earned } = await supabase
       .from('user_achievements')
       .select('achievement_key, earned_at')
       .eq('user_id', user.id)
+
+    if (moduleOn('points')) {
+      const { data: total } = await supabase.rpc('points_total', { p_user: user.id })
+      points = typeof total === 'number' ? total : 0
+    }
 
     earnedKeys = new Set((earned ?? []).map((r: { achievement_key: string }) => r.achievement_key))
     earnedAt = Object.fromEntries(
@@ -63,6 +70,11 @@ export default async function ContributionsPage() {
         <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>
           Badges earned by showing up, contributing, and building this community.
         </p>
+        {points !== null && (
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 10, fontWeight: 600 }}>
+            Your points: <span style={{ color: 'var(--m8)' }}>{points}</span>
+          </p>
+        )}
       </div>
 
       {!user && (
@@ -129,10 +141,10 @@ export default async function ContributionsPage() {
               {!unlocked && (
                 user
                   ? <Link href={a.key === 'community_joiner' ? '/join' : a.key === 'community_member' ? '/agreements' : '/profile/edit'} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textDecoration: 'none', whiteSpace: 'nowrap', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--rule)' }}>
-                      {a.key === 'community_joiner' ? 'Go to Join →' : a.key === 'community_member' ? 'Go to Agreements →' : 'Complete profile →'}
+                      {a.key === 'community_joiner' ? 'Open Join →' : a.key === 'community_member' ? 'Open Agreements →' : 'Complete profile →'}
                     </Link>
                   : <Link href="/auth/signup" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textDecoration: 'none', whiteSpace: 'nowrap', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--rule)' }}>
-                      Sign up to earn →
+                      Create account
                     </Link>
               )}
             </div>

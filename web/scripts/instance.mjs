@@ -42,7 +42,7 @@ export function loadInstance() {
   if (!/^[a-z0-9-]+$/.test(cfg.cloudflare?.workerName ?? '')) problems.push('cloudflare.workerName: lowercase letters, numbers and dashes')
   if (!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(cfg.supabase?.url ?? '')) problems.push('supabase.url: https://<ref>.supabase.co')
   if (!cfg.supabase?.anonKey) problems.push('supabase.anonKey is required')
-  const known = ['meetings']
+  const known = ['meetings', 'points']
   for (const m of cfg.modules ?? []) if (!known.includes(m)) problems.push(`modules: unknown module "${m}" (known: ${known.join(', ')})`)
   if (cfg.timeZone) {
     try { new Intl.DateTimeFormat('en-US', { timeZone: cfg.timeZone }) } catch { problems.push(`timeZone: "${cfg.timeZone}" isn't a time zone (e.g. "America/Costa_Rica")`) }
@@ -87,6 +87,8 @@ function publicEnv(cfg) {
     NEXT_PUBLIC_COMMUNITY_NAME: cfg.displayName,
     // Optional modules that are on, e.g. "meetings" (core/lib/modules.ts)
     NEXT_PUBLIC_MODULES: (cfg.modules ?? []).join(','),
+    // The look: "v4" = the pastel redesign (DESIGN-SYSTEM.md › v4). Empty = the current look.
+    NEXT_PUBLIC_DESIGN: cfg.design ?? '',
     // The community's time zone, for dates said in meetings ("by Friday") and task times
     COMMUNITY_TIME_ZONE: cfg.timeZone ?? 'UTC',
     // The community's second brain on GitHub (meeting notes are saved there); the token is the

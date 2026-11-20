@@ -11,11 +11,11 @@ import { loadProjectManager } from '@/modules/m07-ops/lib/pm-data'
 import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
 import { MEMBER_SELECT, toMember } from '@/modules/m17-org/lib/org'
 
-const OPS_TABS = ['board', 'deliverables', 'updates', 'circles'] as const
+const OPS_TABS = ['board', 'tasks', 'updates', 'circles'] as const
 
 export default async function OpsPage({ searchParams }: { searchParams: Promise<{ tab?: string; circle?: string; task?: string; view?: string }> }) {
   const { tab, circle, task, view } = await searchParams
-  const initialTab = OPS_TABS.find(t => t === tab) ?? 'board'
+  const initialTab = OPS_TABS.find(t => t === (tab === 'deliverables' ? 'tasks' : tab)) ?? 'board' // old links said ?tab=deliverables
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

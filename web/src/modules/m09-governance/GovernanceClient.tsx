@@ -319,7 +319,7 @@ export default function GovernanceClient({
               <><a href="/auth/signup" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: 'var(--m9)', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>Create account</a>
               <a href="/auth/login" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--m9)', padding: '5px 4px', textDecoration: 'none' }}>Sign in</a></>
             ) : role === 'joining' ? (
-              <a href="/contributions" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: '#d97706', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>View contributions →</a>
+              <a href="/achievements" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: '#d97706', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>View contributions →</a>
             ) : (
               <a href="/join" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: '#d97706', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>Go to M05 Join →</a>
             )}

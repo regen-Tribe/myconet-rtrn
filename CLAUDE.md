@@ -114,6 +114,7 @@ New members join **by invitation only** — someone already in the community sha
 | `member` | First accepted agreement OR active project (auto-promotion) | Above + vote in Governance (M09), earn contribution points, full Network matching |
 | `project_lead` | Assigned by admin | Member access + can manage all aspects of their own projects (drag any of their projects on the Kanban) |
 | `circle_lead` | Assigned by admin, plus `lead_circles` set on `/admin/users` | Member access + can manage Blueprint / Join / Agreements + can drag any project in their assigned circles on the Kanban |
+| `advisor` | Assigned by admin | Member access + reviews Governance proposals with admins (expert review) |
 | `admin` | Assigned directly | Full edit access everywhere |
 
 ---
@@ -126,6 +127,7 @@ New members join **by invitation only** — someone already in the community sha
 - **Config:** `instance/config.jsonc` (this community's settings). `web/wrangler.jsonc` and `web/.env.production.local` are **generated** from it by `web/scripts/instance.mjs` before every build/deploy: don't edit them
 - **Adapter:** `@opennextjs/cloudflare` v1.19.9 (OpenNext)
 - **Current version:** `web/src/core/lib/version.ts` (shown by `AppTopBar` and `LandingClient`)
+- **Words:** `LEXICON.md` at the repo root. One term per idea on screens, emails, agent prompts and the second brain; change it there first.
 - **Design system:** see `DESIGN-SYSTEM.md` at the repo root. Canonical reference implementation is `web/src/modules/m00-dashboard/DashboardPage.tsx`. All new module pages must match the dashboard's visual language.
 
 ---
@@ -198,16 +200,16 @@ Every page (except `/` and `/auth/*`) is wrapped in `AppShell.tsx`:
 
 ## M07 Operations — the unified Kanban
 
-This is the largest module. Both the main `/ops` board and each `/ops/[id]` project page render the same five-column model from `@/core/lib/project-status`:
+This is the largest module. Both the main `/operations` board and each `/operations/[id]` project page render the same five-column model from `@/core/lib/project-status`:
 
 ```
-Ideas → Backlog → In progress → Review → Done
+Ideas → To do → In progress → Review → Done   (+ Paused on the main board)
 ```
 
 - **Main board** cards = **projects**. Status drives the column.
-- **Project detail** cards = **deliverables** for that project; the leftmost Ideas column shows pending collaboration proposals (visible to admin / project creator only).
+- **Project detail** cards = **tasks** for that project (the `deliverables` table; status `backlog` shows as "To do"); the leftmost Ideas column shows pending collaboration proposals (visible to admin / project creator only).
 - Drag-and-drop on both surfaces is permission-gated (`canMoveProject` / `canManage`).
-- Accepting a proposal — by dragging Ideas → Backlog or clicking Accept — flips the agreement status to `'accepted'` and spawns a new `deliverables` row with `from_agreement_id` linking back.
+- Accepting a proposal — by dragging Ideas → To do or clicking Accept — flips the agreement status to `'accepted'` and spawns a new `deliverables` row with `from_agreement_id` linking back.
 
 See `web/src/modules/m07-ops/README.md` for the full module spec.
 

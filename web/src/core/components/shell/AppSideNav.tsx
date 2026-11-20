@@ -65,15 +65,15 @@ const JOURNEY = [
     label: 'Explorer',
     color: 'var(--ink-3)',
     next: 'Complete M05 Join and get accepted.',
-    cta: 'Go to Join →',
+    cta: 'Open Join →',
     href: '/join',
   },
   {
     role: 'joining',
     label: 'Joining',
     color: 'var(--m5)',
-    next: 'Support a project in Agreements, or propose a new project in Operations. Once accepted, you become a Member.',
-    cta: 'Go to Agreements →',
+    next: 'Make an agreement to help on a project, or suggest a project in Operations. Once one is accepted, you become a member.',
+    cta: 'Open Agreements →',
     href: '/agreements',
   },
   {
@@ -178,8 +178,8 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
   const isActive = (href: string | null) => {
     if (!href) return false
     if (href === '/dashboard') return pathname === '/dashboard'
-    // M01 (/network) also owns /u/[username] — keep the module highlighted on public profile pages.
-    if (href === '/network') return pathname.startsWith('/network') || pathname.startsWith('/u/')
+    // M01 (/members) also owns /u/[username] — keep the module highlighted on public profile pages.
+    if (href === '/members') return pathname.startsWith('/members') || pathname.startsWith('/u/')
     return pathname.startsWith(href)
   }
 
@@ -226,7 +226,7 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
         <div style={{ margin: '4px 6px 0', padding: '6px 10px', borderRadius: 7, background: 'var(--bg-2)', border: '1px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ fontSize: 10.5, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>view only</span>
           <a href="/auth/signup" style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--m9)', textDecoration: 'none' }}>
-            Join to interact →
+            Create account
           </a>
         </div>
       )}

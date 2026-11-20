@@ -64,7 +64,7 @@ export function AddCircleButton() {
             <input id="ac-name" autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Incubator" style={input} maxLength={60} />
             <label style={lbl} htmlFor="ac-purpose">Purpose (one line)</label>
             <input id="ac-purpose" value={purpose} onChange={e => setPurpose(e.target.value)} placeholder="What this circle takes care of" style={input} maxLength={300} />
-            <div style={{ fontSize: 11.5, color: 'var(--ink-4)', marginTop: 4 }}>The meeting agent reads this to put tasks in the right circle.</div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-4)', marginTop: 4 }}>The assistant reads this to put tasks in the right circle.</div>
             <span style={lbl}>Emoji</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {CIRCLE_EMOJIS.map(e => (

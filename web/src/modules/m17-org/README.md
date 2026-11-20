@@ -1,8 +1,8 @@
 # M17 — Circles (org chart)
 
-Shown as **Circles** in the UI (sidebar, menus, dashboard); route `/org`, with `/circles` redirecting.
+Shown as **Circles** in the UI (sidebar, menus, dashboard); route `/circles`, with `/circles` redirecting.
 
-Who does what: the community stewards (admins), the community's circles, the teams (departments) inside each circle, and who leads each one. Route: `/org`. Public — logged-out visitors can see it too.
+Who does what: the community stewards (admins), the community's circles, the teams (departments) inside each circle, and who leads each one. Route: `/circles`. Public — logged-out visitors can see it too.
 
 ## Who can edit
 
@@ -24,7 +24,7 @@ Each circle has two kinds of lead. The **lead name** (`circles.leads_to_assign`)
 | `JoinRequests.tsx` | Requests to join a circle, for its leads and admins: Approve / Decline (`decide_circle_join()`) |
 | `MyCircles.tsx` | "My circles" on your own profile: your circles, ask to join, withdraw |
 | `lib/org.ts` | `canLeadCircle`, `canEditUnit` (mirror the DB), `MEMBER_SELECT`, normalizers |
-| `app/org/page.tsx` | Loads units, members, the circle directory, and (for editors) everyone for the picker |
+| `app/circles/page.tsx` | Loads units, members, the circle directory, and (for editors) everyone for the picker |
 
 ## Database
 

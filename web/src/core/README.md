@@ -76,7 +76,7 @@ Constants `MEMBER_ROLES` and `JOINING_OR_ABOVE` are also exported for use in `.f
 role = await promoteToMemberIfEligible(supabase, user.id, role)
 ```
 
-This runs at the top of `app/agreements/page.tsx` and `app/ops/page.tsx`.
+This runs at the top of `app/agreements/page.tsx` and `app/operations/page.tsx`.
 
 ## Circles (`core/lib/circles.ts`)
 
@@ -84,7 +84,7 @@ Circles are the community's standing groups, rows in the `circles` table, set du
 
 ## Project status (`core/lib/project-status.ts`)
 
-The M07 Kanban is a five-column board shared by both the main `/ops` page (cards = projects) and the per-project `/ops/[id]` page (cards = deliverables, plus pending proposals in the leftmost Ideas column):
+The M07 Kanban is a five-column board shared by both the main `/operations` page (cards = projects) and the per-project `/operations/[id]` page (cards = deliverables, plus pending proposals in the leftmost Ideas column):
 
 ```
 pending (Ideas) → backlog → in_progress → review → done

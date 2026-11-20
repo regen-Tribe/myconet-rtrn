@@ -6,7 +6,7 @@ Achievement and badge system. Tracks visible contributions across the community.
 
 | Route | File |
 |-------|------|
-| `/contributions` | `app/contributions/page.tsx` → `ContributionsPage` |
+| `/achievements` | `app/achievements/page.tsx` → `ContributionsPage` |
 
 ## Files
 

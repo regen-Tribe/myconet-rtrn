@@ -85,7 +85,7 @@ export default function AgreementsAdminClient({ agreements: initial }: Props) {
           M06 · Agreements — Admin Review
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', marginBottom: 6 }}>
-          Collaboration proposals
+          Agreements waiting for you
         </h1>
         <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>
           Review, accept, and progress collaboration agreements across all projects.
@@ -174,7 +174,7 @@ export default function AgreementsAdminClient({ agreements: initial }: Props) {
                     {/* Project link */}
                     {a.project_title && (
                       <div style={{ marginBottom: 16 }}>
-                        <Link href={`/ops/${a.project_id}`} style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
+                        <Link href={`/operations/${a.project_id}`} style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
                           View project in Operations →
                         </Link>
                       </div>

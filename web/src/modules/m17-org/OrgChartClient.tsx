@@ -291,7 +291,7 @@ export default function OrgChartClient({
                         {teamProjects.some(p => p.team_id === t.id) && (
                           <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                             {teamProjects.filter(p => p.team_id === t.id).map(p => (
-                              <Link key={p.id} href={`/ops/${p.id}`} style={{ fontSize: 11.5, fontWeight: 600, color: meta.color, textDecoration: 'none', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 20, padding: '2px 8px' }}>{p.title}</Link>
+                              <Link key={p.id} href={`/operations/${p.id}`} style={{ fontSize: 11.5, fontWeight: 600, color: meta.color, textDecoration: 'none', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 20, padding: '2px 8px' }}>{p.title}</Link>
                             ))}
                           </div>
                         )}

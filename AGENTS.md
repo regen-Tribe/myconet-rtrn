@@ -52,6 +52,9 @@ that no log mentions looks like it never happened: the log is the handoff to who
 
 ## Rules
 
+- **Use the words in `LEXICON.md`** on screens, in emails, agent prompts and second-brain notes: one term per
+  idea (task, not deliverable or subtask), module names that match their addresses, the button patterns.
+  A new word or a rename goes into `LEXICON.md` first.
 - **Start from the newest code, every session.** First run `cd web && npm run start-work`
   (Claude Code runs it for you when a session opens: `.claude/settings.json`). It pulls the latest
   `main` / `master` when that's safe, lists what others changed in the last 3 days, shows who is

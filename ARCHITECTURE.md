@@ -367,18 +367,18 @@ $$;
 | `/` | Server | public | Landing page — hero, module grid, join CTA |
 | `/home` | Server + Client | public | Portal explainer — live DB content per module, module links |
 | `/dashboard` | Server | public / member | M00 — Community overview for guests; personal home for members |
-| `/network` | Server | public / member | M01 — Member directory, tile/list toggle |
-| `/network/discover` | Server | public / member | M01 — Profile discovery (guests see all; members see matches) |
-| `/network/matches` | Server | public / member | M01 — Guest sees teaser; logged-in sees AI matches |
+| `/members` | Server | public / member | M01 — Member directory, tile/list toggle |
+| `/members/discover` | Server | public / member | M01 — Profile discovery (guests see all; members see matches) |
+| `/members/matches` | Server | public / member | M01 — Guest sees teaser; logged-in sees AI matches |
 | `/u/[username]` | Server | public | M01 — Public member profile page |
 | `/blueprint` | Server + Client | public / admin | M04 — Read-only for all; edit mode for admin |
 | `/join` | Server + Client | public / member / admin | M05 — Guest sees teaser; member applies; admin reviews |
 | `/agreements` | Server + Client | public / member / admin | M06 — Open projects visible to all; proposals for joining+ |
 | `/agreements/[id]` | Server + Client | member | M06 — Submit a collaboration proposal |
-| `/ops` | Server | public / admin | M07 — Project list visible to all; admin controls |
-| `/ops/new` | Server + Client | admin | M07 — Create a project |
-| `/ops/[id]` | Server + Client | public / admin | M07 — Project detail, updates feed, proposals panel (admin) |
-| `/contributions` | Server | member | M08 — Achievements catalog; Profile Pioneer badge |
+| `/operations` | Server | public / admin | M07 — Project list visible to all; admin controls |
+| `/operations/new` | Server + Client | admin | M07 — Create a project |
+| `/operations/[id]` | Server + Client | public / admin | M07 — Project detail, updates feed, proposals panel (admin) |
+| `/achievements` | Server | member | M08 — Achievements catalog; Profile Pioneer badge |
 | `/governance` | Server + Client | member | M09 — Proposals, voting, discussion threads |
 | `/profile/edit` | Client | member | Edit profile (8-step wizard) |
 | `/changelog` | Static | public | Release notes |
@@ -396,7 +396,7 @@ $$;
 | `src/core/lib/nav.ts` | Sidebar module list and order (also used by the landing/home previews). Module colours are the `--mNN` tokens in `globals.css`. |
 | `src/components/ModuleHeader.tsx` | Colored header band at the top of each module page. Hover/tap reveals module description. Imports from `module-meta.ts`. |
 | `src/components/DashCardTooltip.tsx` | Client wrapper for dashboard module cards. Hover shows a popup with the module description and module-color accent border. |
-| `src/app/network/MemberList.tsx` | Client component for the member grid. Holds tile/list view toggle state (server components can't hold UI state). |
+| `src/app/members/MemberList.tsx` | Client component for the member grid. Holds tile/list view toggle state (server components can't hold UI state). |
 
 ---
 

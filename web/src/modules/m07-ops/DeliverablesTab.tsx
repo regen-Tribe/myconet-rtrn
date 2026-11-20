@@ -9,7 +9,7 @@ import { PriorityBadge } from './Priority'
 import { taskHref } from './TaskModal'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
-  backlog:     { label: 'Backlog',     color: 'var(--ink-4)', bg: 'var(--bg-3)' },
+  backlog:     { label: 'To do',       color: 'var(--ink-4)', bg: 'var(--bg-3)' },
   in_progress: { label: 'In progress', color: 'var(--m7)',    bg: '#4338ca18' },
   review:      { label: 'Review',      color: '#f59e0b',      bg: '#f59e0b18' },
   done:        { label: 'Done',        color: 'var(--m5)',    bg: '#15803d18' },
@@ -57,7 +57,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
         borderRadius: 10, padding: '40px 24px', textAlign: 'center',
         color: 'var(--ink-4)', fontSize: 13,
       }}>
-        {draftsOnly ? 'No drafts to confirm.' : 'No deliverables yet.'}
+        {draftsOnly ? 'No drafts to confirm.' : 'No tasks yet.'}
       </div></>
     )
   }
@@ -69,7 +69,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr>
-            <th style={thStyle}>Deliverable</th>
+            <th style={thStyle}>Task</th>
             <th style={thStyle}>Project</th>
             <th style={thStyle}>Assignee</th>
             <th style={thStyle}>Due</th>

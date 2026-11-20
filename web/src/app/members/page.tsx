@@ -131,12 +131,12 @@ export default async function NetworkDashboard() {
       {/* ── Page header ── */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · Community Network
+          M01 · Members
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 6px' }}>
-              {user && displayName ? `${greeting}, ${displayName}.` : 'Community Network'}
+              {user && displayName ? `${greeting}, ${displayName}.` : 'Members'}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
               {user
@@ -145,11 +145,11 @@ export default async function NetworkDashboard() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-            <Link href="/network/discover" style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)', padding: '7px 14px', border: '1px solid var(--rule)', borderRadius: 8, textDecoration: 'none', background: 'var(--surface)' }}>
+            <Link href="/members/discover" style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)', padding: '7px 14px', border: '1px solid var(--rule)', borderRadius: 8, textDecoration: 'none', background: 'var(--surface)' }}>
               Search network
             </Link>
             {user && (
-              <Link href="/network/matches" style={{ fontSize: 13, fontWeight: 700, color: '#fff', padding: '7px 16px', borderRadius: 8, textDecoration: 'none', background: 'var(--m1)' }}>
+              <Link href="/members/matches" style={{ fontSize: 13, fontWeight: 700, color: '#fff', padding: '7px 16px', borderRadius: 8, textDecoration: 'none', background: 'var(--m1)' }}>
                 See your matches →
               </Link>
             )}
@@ -225,18 +225,18 @@ export default async function NetworkDashboard() {
 
       {/* ── Stat cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 22 }}>
-        <StatCard label="Members" value={String(memberCount)} delta="across the network" href="/network/discover" />
+        <StatCard label="Members" value={String(memberCount)} delta="across the network" href="/members/discover" />
         <StatCard
           label="Your offers"
           value={user ? String(offersCount) : '—'}
           delta={user ? (offersCount > 0 ? 'live on your profile' : 'add some') : 'sign in to post'}
-          href={user ? '/network/offers' : '/auth/signup'}
+          href={user ? '/members/offers' : '/auth/signup'}
         />
         <StatCard
           label="Your seeks"
           value={user ? String(seeksCount) : '—'}
           delta={user ? (seeksCount > 0 ? 'live on your profile' : 'add some') : 'sign in to post'}
-          href={user ? '/network/seeks' : '/auth/signup'}
+          href={user ? '/members/requests' : '/auth/signup'}
         />
         <StatCard
           label="Top match"
@@ -247,14 +247,14 @@ export default async function NetworkDashboard() {
                 : 'complete profile to unlock')
             : 'sign in to see'}
           deltaColor={user && topMatches.length > 0 ? 'var(--m1)' : undefined}
-          href={user ? '/network/matches' : '/auth/signup'}
+          href={user ? '/members/matches' : '/auth/signup'}
         />
       </div>
 
       {/* ── Your matches strip (logged-in only) ── */}
       {user && (
         <section style={{ marginBottom: 22 }}>
-          <SectionHeader label="Your matches" actionHref="/network/matches" actionLabel="See all →" />
+          <SectionHeader label="Your matches" actionHref="/members/matches" actionLabel="See all →" />
           {!myBio ? (
             <NextStepCard
               eyebrow="GET MATCHED"
@@ -283,7 +283,7 @@ export default async function NetworkDashboard() {
             <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
               M01 · Network activity
             </span>
-            <Link href="/network/discover" style={{ fontSize: 12.5, color: 'var(--m1)', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/members/discover" style={{ fontSize: 12.5, color: 'var(--m1)', fontWeight: 600, textDecoration: 'none' }}>
               Search network →
             </Link>
           </div>

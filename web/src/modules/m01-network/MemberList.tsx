@@ -75,7 +75,7 @@ export default function MemberList({ members, matchScores = {} }: { members: Mem
               ☰
             </button>
           </div>
-          <Link href="/network/discover" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/members/discover" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
             View all →
           </Link>
         </div>

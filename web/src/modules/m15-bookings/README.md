@@ -2,8 +2,8 @@
 
 This folder runs two modules from one codebase:
 
-- **M15 Accommodation** — `/stays`, accommodation only
-- **M16 Resources** — `/bookings` (alias `/resources`), tools and spaces — see `../m16-resources/README.md`
+- **M15 Accommodation** — `/accommodation`, accommodation only
+- **M16 Resources** — `/resources`, tools and spaces — see `../m16-resources/README.md`
 
 `BookingsClient` takes a `scope` (`stays` | `resources`); `SCOPE_META` in `lib/inventory.ts` sets each page's number, label, route, accent (`--bk-accent`) and categories. The loader is `BookingsPage.tsx` (`renderBookings`).
 
@@ -22,8 +22,8 @@ This folder runs two modules from one codebase:
 
 | Route | File |
 |-------|------|
-| `/stays` | `app/stays/page.tsx` → `renderBookings('stays')` |
-| `/bookings` | `app/bookings/page.tsx` → `renderBookings('resources')`; `?category=accommodation` redirects to `/stays` |
+| `/accommodation` | `app/accommodation/page.tsx` → `renderBookings('stays')` |
+| `/resources` | `app/resources/page.tsx` → `renderBookings('resources')`; `?category=accommodation` redirects to `/accommodation` |
 
 Query params: `tab=browse|mine|manage`, `category=accommodation|tools|spaces`, `item=<id>` (opens the pop-up).
 

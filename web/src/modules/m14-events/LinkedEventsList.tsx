@@ -8,7 +8,7 @@ import { KIND_META } from './lib/permissions'
 import { eventColor } from './CalendarViews'
 
 /**
- * Upcoming events for other modules' pages — a project's events on /ops/[id],
+ * Upcoming events for other modules' pages — a project's events on /operations/[id],
  * the dashboard card, the home page section.
  */
 export function LinkedEventsList({
@@ -56,7 +56,7 @@ export function LinkedEventsList({
           {upcoming.map(e => (
             <Link
               key={e.id}
-              href={`/events?event=${e.id}`}
+              href={`/calendar?event=${e.id}`}
               style={{
                 display: 'block', textDecoration: 'none', background: 'var(--surface)',
                 border: '1px solid var(--rule)', borderLeft: `3px solid ${eventColor(e)}`, borderRadius: 8, padding: '10px 12px',

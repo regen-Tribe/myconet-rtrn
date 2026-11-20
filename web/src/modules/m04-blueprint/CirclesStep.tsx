@@ -177,7 +177,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
       <div className="crumb"><span>Setup</span><span className="crumb-sep">/</span><span>Circles</span></div>
       <h1 className="step-title">Circles</h1>
       <p className="step-lede">
-        The standing groups that look after an area of community life. Projects, events, bookable items and the org chart all belong to a circle, and circle leads can edit their circle&rsquo;s work.
+        The standing groups that look after an area of community life. Projects, events, bookable items and teams all belong to a circle, and circle leads can edit their circle&rsquo;s work.
       </p>
       <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5, marginTop: -6, marginBottom: 20 }}>
         Not the same as the Blueprint&rsquo;s framework pillars, which are fixed scoring axes. Your circles can match them, but don&rsquo;t have to.
@@ -205,11 +205,11 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
                 <div><div style={label}>Name</div><input className="input" value={edit.name} maxLength={60} onChange={e => setEdit({ ...edit, name: e.target.value })} /></div>
                 <div><div style={label}>Purpose</div><input className="input" value={edit.purpose} onChange={e => setEdit({ ...edit, purpose: e.target.value })} /></div>
               </div>
-              <div style={label}>Lead’s name (shown on the org chart; give portal members the circle lead role in Admin › Users)</div>
+              <div style={label}>Lead’s name (shown on the Circles page; give portal members the circle lead role in Admin › Users)</div>
               <input className="input" value={edit.leads} maxLength={300} onChange={e => setEdit({ ...edit, leads: e.target.value })} style={{ marginBottom: 10 }} />
               <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: 'var(--ink-2)', marginBottom: 10, cursor: 'pointer' }}>
                 <input type="checkbox" checked={edit.steward} onChange={e => setEdit({ ...edit, steward: e.target.checked })} style={{ marginTop: 3 }} />
-                <span><strong>Community stewards:</strong> this circle looks after every circle. It goes at the top of the org chart. Only one circle can be the stewards.</span>
+                <span><strong>Community stewards:</strong> this circle looks after every circle. It goes at the top of the Circles page. Only one circle can be the stewards.</span>
               </label>
               <div style={label}>Emoji</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
@@ -349,7 +349,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
 
       <div className="nav-row">
         <button className="btn btn-ghost" onClick={onPrev}>← Previous</button>
-        <button className="btn btn-primary" onClick={onNext}>Continue to dashboard →</button>
+        <button className="btn btn-primary" onClick={onNext}>Open Dashboard →</button>
       </div>
     </div>
   )

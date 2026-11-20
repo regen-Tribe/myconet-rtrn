@@ -218,7 +218,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {tasks.map(t => (
-                <Link key={t.deliverable_id} href={t.project_id ? `/ops/${t.project_id}?task=${t.deliverable_id}` : `/ops?task=${t.deliverable_id}`} style={{ textDecoration: 'none' }}>
+                <Link key={t.deliverable_id} href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} style={{ textDecoration: 'none' }}>
                   <div style={{ border: '1px solid var(--rule)', borderRadius: 10, padding: '10px 14px', background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>

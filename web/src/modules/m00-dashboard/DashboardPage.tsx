@@ -110,9 +110,9 @@ export default async function DashboardPage() {
 
   const modules: ModuleCard[] = [
     {
-      num: '01', name: 'Community Network',
+      num: '01', name: 'Members',
       desc: `${memberCount} members · explore profiles and match`,
-      color: 'var(--m1)', href: '/network', locked: false,
+      color: 'var(--m1)', href: '/members', locked: false,
     },
     {
       num: '04', name: 'Our community & neighborhood plan at a glance',
@@ -136,13 +136,13 @@ export default async function DashboardPage() {
     },
     {
       num: '07', name: 'Operations',
-      desc: `${activeProjects} active project${activeProjects !== 1 ? 's' : ''} · deliverables & sprints`,
-      color: 'var(--m7)', href: '/ops', locked: locked('joining'),
+      desc: `${activeProjects} active project${activeProjects !== 1 ? 's' : ''} · tasks on the board`,
+      color: 'var(--m7)', href: '/operations', locked: locked('joining'),
     },
     {
-      num: '08', name: 'Contributions',
-      desc: 'Track points, badges, and logged effort',
-      color: 'var(--m8)', href: '/contributions', locked: locked('member'),
+      num: '08', name: 'Achievements',
+      desc: 'Badges for what you give',
+      color: 'var(--m8)', href: '/achievements', locked: locked('member'),
     },
     {
       num: '09', name: 'Governance',
@@ -156,22 +156,22 @@ export default async function DashboardPage() {
       desc: upcomingEvents.length > 0
         ? `${upcomingEvents.length} upcoming · RSVP, help out or host`
         : 'Events and tasks · host or help out',
-      color: 'var(--m14)', href: '/events', locked: false,
+      color: 'var(--m14)', href: '/calendar', locked: false,
     },
     {
       num: '17', name: 'Circles',
       desc: 'Circles, teams and who leads them',
-      color: 'var(--m17)', href: '/org', locked: false,
+      color: 'var(--m17)', href: '/circles', locked: false,
     },
     {
       num: '15', name: 'Accommodation',
       desc: atLeast(role, 'joining') ? 'Book a room, cabin or tent site' : 'See where you could stay',
-      color: 'var(--m15)', href: '/stays', locked: false,
+      color: 'var(--m15)', href: '/accommodation', locked: false,
     },
     {
       num: '16', name: 'Resources',
       desc: atLeast(role, 'joining') ? 'Book shared tools and spaces' : 'Browse shared tools and spaces',
-      color: 'var(--m16)', href: '/bookings', locked: false,
+      color: 'var(--m16)', href: '/resources', locked: false,
     },
   ]
 
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
     rawFeed.push({ who: name, act: `is looking for — "${title}"`, when: '', color: 'var(--m1)', tag: 'M01', href: p?.username ? `/u/${p.username}` : undefined, ts: new Date(s.created_at).getTime() })
   }
   for (const p of recentProjects) {
-    rawFeed.push({ who: 'New project', act: `"${p.title}"`, when: '', color: 'var(--m7)', tag: 'M07', href: `/ops/${p.id}`, ts: new Date(p.created_at).getTime() })
+    rawFeed.push({ who: 'New project', act: `"${p.title}"`, when: '', color: 'var(--m7)', tag: 'M07', href: `/operations/${p.id}`, ts: new Date(p.created_at).getTime() })
   }
   for (const p of recentProposals) {
     rawFeed.push({ who: 'New proposal', act: `"${p.title}"`, when: '', color: 'var(--m9)', tag: 'M09', href: '/governance', ts: new Date(p.created_at).getTime() })
@@ -204,13 +204,13 @@ export default async function DashboardPage() {
     const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Someone'
     const proj = u.projects?.title ?? 'a project'
     const body = (u.content as string).length > 60 ? (u.content as string).slice(0, 58) + '…' : u.content
-    rawFeed.push({ who: author, act: `on "${proj}" — ${body}`, when: '', color: 'var(--m7)', tag: 'M07', href: `/ops/${u.project_id}`, ts: new Date(u.created_at).getTime() })
+    rawFeed.push({ who: author, act: `on "${proj}" — ${body}`, when: '', color: 'var(--m7)', tag: 'M07', href: `/operations/${u.project_id}`, ts: new Date(u.created_at).getTime() })
   }
   for (const d of (opsTasksRes.data ?? []) as any[]) {
     const task = (d.title as string).length > 50 ? (d.title as string).slice(0, 48) + '…' : d.title
     // A task with no project is on the main board (v4.34.0)
     const act = d.project_id ? `on "${d.projects?.title ?? 'a project'}" — ${task}` : `on the board — ${task}`
-    rawFeed.push({ who: 'New task', act, when: '', color: 'var(--m7)', tag: 'M07', href: d.project_id ? `/ops/${d.project_id}` : `/ops?task=${d.id}`, ts: new Date(d.created_at).getTime() })
+    rawFeed.push({ who: 'New task', act, when: '', color: 'var(--m7)', tag: 'M07', href: d.project_id ? `/operations/${d.project_id}` : `/operations?task=${d.id}`, ts: new Date(d.created_at).getTime() })
   }
 
   const feed = rawFeed
@@ -263,7 +263,7 @@ export default async function DashboardPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
               <Link href="/auth/signup" style={{ fontSize: 13, fontWeight: 700, color: '#fff', padding: '7px 16px', border: 'none', borderRadius: 8, textDecoration: 'none', background: 'var(--m9)' }}>
-                Join the community →
+                Create account
               </Link>
               <Link href="/auth/login" style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)', padding: '7px 14px', border: '1px solid var(--rule)', borderRadius: 8, textDecoration: 'none', background: 'var(--surface)' }}>
                 Sign in
@@ -288,7 +288,7 @@ export default async function DashboardPage() {
               </Link>
               {!atLeast(role, 'joining') && (
                 <Link href="/join" style={{ fontSize: 13, fontWeight: 700, color: '#fff', padding: '7px 16px', border: 'none', borderRadius: 8, textDecoration: 'none', background: 'var(--m5)' }}>
-                  Begin joining →
+                  Start joining →
                 </Link>
               )}
             </div>
@@ -297,7 +297,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="dash-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Members" value={String(memberCount)} delta={newMembersThisWeek > 0 ? `+${newMembersThisWeek} this week` : 'none new this week'} href="/network" />
+        <StatCard label="Members" value={String(memberCount)} delta={newMembersThisWeek > 0 ? `+${newMembersThisWeek} this week` : 'none new this week'} href="/members" />
         <StatCard
           label="Blueprint readiness"
           value={overall !== null ? `${overall.toFixed(1)}` : '—'}
@@ -306,7 +306,7 @@ export default async function DashboardPage() {
           deltaColor="var(--m4)"
           href="/blueprint"
         />
-        <StatCard label="Open projects" value={String(activeProjects)} delta={activeProjects === 0 ? 'None yet' : projectsNeedingHelp > 0 ? `${projectsNeedingHelp} open to collaborators` : 'none need help right now'} href="/ops" />
+        <StatCard label="Open projects" value={String(activeProjects)} delta={activeProjects === 0 ? 'None yet' : projectsNeedingHelp > 0 ? `${projectsNeedingHelp} open to collaborators` : 'none need help right now'} href="/operations" />
         <StatCard
           label="Open proposals"
           value={String(openProposals)}
@@ -335,8 +335,8 @@ export default async function DashboardPage() {
             <LinkedEventsList
               events={upcomingEvents}
               title="M14 · Coming up on the calendar"
-              viewAllHref="/events?view=list"
-              addHref={atLeast(role, 'joining') ? '/events?new=1' : null}
+              viewAllHref="/calendar?view=list"
+              addHref={atLeast(role, 'joining') ? '/calendar?new=1' : null}
               limit={4}
               showKind
               emptyText="Nothing scheduled yet."
@@ -346,7 +346,7 @@ export default async function DashboardPage() {
           <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '16px 18px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Projects activity</div>
-              <Link href="/ops" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--m7)', textDecoration: 'none', fontWeight: 600 }}>View ops →</Link>
+              <Link href="/operations" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--m7)', textDecoration: 'none', fontWeight: 600 }}>Open Operations →</Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {feed.length > 0 ? feed.map((a, i) => (
@@ -363,7 +363,7 @@ export default async function DashboardPage() {
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
                   M01 · Member activity
                 </div>
-                <Link href="/network" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--m1)', textDecoration: 'none', fontWeight: 600 }}>View network →</Link>
+                <Link href="/members" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--m1)', textDecoration: 'none', fontWeight: 600 }}>Open Members →</Link>
               </div>
               <div style={{ borderTop: '1px solid var(--rule)' }}>
                 {memberActivity.map((item, i) => (
@@ -408,7 +408,7 @@ export default async function DashboardPage() {
               <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.55, marginBottom: 12 }}>
                 {application
                   ? 'Your application has been submitted. The admin team will review it and reach out.'
-                  : '3 simple steps move you from Explorer to Joining. Unlocks Agreements, Operations, Contributions and Governance.'}
+                  : '3 simple steps move you from Explorer to Joining. Unlocks Agreements, Operations, Achievements and Governance.'}
               </div>
               {!application && (
                 <Link href="/join" style={{ display: 'inline-block', fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--m5)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none' }}>

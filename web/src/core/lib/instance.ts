@@ -6,6 +6,9 @@
 /** Short name, e.g. "Regen Hood 0". Used for login, headers and branding. */
 export const COMMUNITY_NAME = process.env.NEXT_PUBLIC_COMMUNITY_NAME || 'Our community'
 
+/** Which look the portal uses: 'v4' turns on the redesign (DESIGN-SYSTEM.md › v4), '' keeps the current one. */
+export const DESIGN = process.env.NEXT_PUBLIC_DESIGN === 'v4' ? 'v4' : ''
+
 /** The Blueprint's working name for the neighborhood, falling back to the short name. */
 export function communityName(answers: Record<string, unknown> | null | undefined): string {
   const name = answers?.project_name
