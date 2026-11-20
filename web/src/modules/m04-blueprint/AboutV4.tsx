@@ -51,8 +51,11 @@ function fact(text: string | null): string | null {
   let clause = t.split(/[,;.(]| — | – /)[0].trim()
   clause = clause.replace(/^(?:our [\w-]+ (?:is|are)|we (?:are|currently have|have)(?: in| a| an)?|about|it is|it's|there (?:is|are))\s+/i, '')
   clause = clause.replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|hundred)\b/gi, w => NUM[w.toLowerCase()])
+  // Long clauses lose their place ("… in the hills of La Cabanga") and, when they count things, their second half
+  if (clause.length > 36) clause = clause.replace(/\s+in (?:the |a )?[\p{L} ,'-]+$/u, '')
+  if (clause.length > 30 && /\d/.test(clause) && / and /.test(clause)) clause = clause.slice(0, clause.indexOf(' and '))
   clause = clause.replace(/^\p{Ll}/u, c => c.toUpperCase())
-  return clause.length > 40 ? clause.slice(0, clause.lastIndexOf(' ', 38)) + '…' : clause
+  return clause.length > 44 ? clause.slice(0, clause.lastIndexOf(' ', 42)) + '…' : clause
 }
 
 /** "…in La Cabanga, Costa Rica, between…" → "La Cabanga, Costa Rica" (the place tag on the photo). */
@@ -122,7 +125,7 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
   const s = (k: string) => str(a[k])
   const { name, tagline } = splitName(s('project_name'), communityName)
   const where = place(s('project_name'), s('project_country'), s('location_setting'))
-  const facts = FACTS.map(([k, label]) => [label, fact(s(k))] as const).filter(([, v]) => v)
+  const facts = FACTS.map(([k, label]) => [label, fact(s(k)), s(k)] as const).filter(([, v]) => v)
   const explorer = !roleAtLeast(role, 'joining')
 
   // Chapters, each only when the Blueprint has something for it
@@ -130,11 +133,24 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
   const [storyTitle, storyText] = headline(s('dream_origin') ?? s('why_personal'))
   const [landTitle, landText] = headline(s('location_setting') ?? s('eco_assessment'))
   const systems = ([
-    ['sprout', 'Food', s('food_systems')], ['globe', 'Water', s('water_fresh')], ['spark', 'Energy', s('energy_source')], ['building', 'Shared spaces', s('amenities')],
+    ['sprout', 'Food', s('food_systems'), s('c_food_note')], ['globe', 'Water', s('water_fresh'), s('c_water_note')], ['spark', 'Energy', s('energy_source'), s('c_energy_note')], ['building', 'Shared spaces', s('amenities'), s('c_buildings_note')],
+  ] as [IconName, string, string | null, string | null][]).filter(([, , t, n]) => t || n)
+  // Day to day on the land (the Blueprint's checklist notes): getting here, internet, waste
+  const practical = ([
+    ['pin', 'Getting here', s('c_roads_note')], ['laptop', 'Internet and work', s('c_connectivity_note')], ['trash', 'Waste', s('c_waste_note')], ['alert', 'When the weather turns', s('climate_emergencies')],
   ] as [IconName, string, string | null][]).filter(([, , t]) => t)
+  // How we live together, in practice (the agreements checklist notes)
+  const together = ([
+    ['calendar', 'How we meet', s('a_meeting_note')], ['chat', 'How we talk', s('a_communication_note')], ['scale', 'How we decide, day to day', s('a_decision_note')], ['handshake', 'When we disagree', s('a_conflict_note')],
+  ] as [IconName, string, string | null][]).filter(([, , t]) => t)
+  const staying = ([
+    ['Before you join', s('a_membership_note')], ['Money', s('a_money_note')], ['When someone leaves', s('a_offboarding_note')],
+  ] as [string, string | null][]).filter(([, t]) => t)
   const dayItems = items(s('daily_rhythms'))
   const rituals = items(s('rituals'))
   const valueItems: [string, string | null][] = values?.length ? values.map(v => [v.title, v.description] as [string, string | null]) : items(s('values')).map(titled)
+  // The Blueprint's values answer, shown in full when it isn't the list itself
+  const valuesText = values?.length || !items(s('values')).length ? s('values') : null
   const decide = ([['How we govern', s('governance_model')], ['How decisions are made', s('decision_method')], ['When we disagree', s('conflict_process')], ['What we decide together', s('scope')]] as [string, string | null][]).filter(([, t]) => t)
   const ways = ([['Living here', s('resident_finances')], ['Buying in', s('real_estate_model')], ['What you give and get', s('value_exchange')]] as [string, string | null][]).filter(([, t]) => t)
   const joinSteps = items(s('onboarding')).map(titled)
@@ -152,16 +168,16 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
   const pillars = FW_DATA.pillars.map(p => [p.name, Math.round((pillarScores[p.id] ?? 0) * 10) / 10] as const)
 
   // Every other answered field, so nothing the Blueprint holds is hidden
-  const used = new Set(['purpose', 'dream_origin', 'why_personal', 'why_now', 'location_setting', 'eco_assessment', 'ecological_philosophy', 'food_systems', 'water_fresh', 'energy_source', 'amenities', 'daily_rhythms', 'rituals', 'values', 'governance_model', 'decision_method', 'conflict_process', 'scope', 'resident_finances', 'real_estate_model', 'value_exchange', 'onboarding', 'goals_3yr', 'goals_5_10yr', 'next_horizon', 'project_name', 'mission_statement', 'vision_statement', 'why_world', 'ideal_archetypes', 'gatherings_internal', 'community_agreements', ...FACTS.map(([k]) => k)])
+  const used = new Set(['purpose', 'dream_origin', 'why_personal', 'why_now', 'location_setting', 'eco_assessment', 'ecological_philosophy', 'food_systems', 'water_fresh', 'energy_source', 'amenities', 'daily_rhythms', 'rituals', 'values', 'governance_model', 'decision_method', 'conflict_process', 'scope', 'resident_finances', 'real_estate_model', 'value_exchange', 'onboarding', 'goals_3yr', 'goals_5_10yr', 'next_horizon', 'project_name', 'mission_statement', 'vision_statement', 'why_world', 'ideal_archetypes', 'gatherings_internal', 'community_agreements', 'climate_emergencies', ...FACTS.map(([k]) => k)])
   const rest = FW_DATA.phases.map(p => ({
     phase: p,
     steps: p.steps.map(st => ({ step: st, items: (st.fields ?? []).filter(f => !used.has(f.id) && s(f.id)).map(f => [f.label, s(f.id)!] as const) })).filter(x => x.items.length),
   })).filter(p => p.steps.length)
 
   const nav = ([
-    ['story', 'Our story', !!(storyTitle || storyText)], ['land', 'The land', !!(landTitle || landText || systems.length)],
-    ['day', 'A day here', !!(dayItems.length || s('daily_rhythms') || rituals.length)], ['values', 'What we value', valueItems.length > 0],
-    ['decide', 'How we decide', decide.length > 0], ['live', 'Living here', !!(s('ideal_archetypes') || ways.length || joinSteps.length)],
+    ['story', 'Our story', !!(storyTitle || storyText)], ['land', 'The land', !!(landTitle || landText || systems.length || practical.length)],
+    ['day', 'A day here', !!(dayItems.length || s('daily_rhythms') || rituals.length)], ['values', 'What we value', valueItems.length > 0 || !!valuesText],
+    ['decide', 'How we decide', decide.length > 0 || together.length > 0], ['live', 'Living here', !!(s('ideal_archetypes') || ways.length || staying.length || joinSteps.length)],
     ['people', 'People', people.length > 0], ['next', 'Where we’re going', going.length > 0],
   ] as [string, string, boolean][]).filter(([, , on]) => on)
 
@@ -181,7 +197,13 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
       </header>
 
       {facts.length > 0 && (
-        <div className="ab-facts">{facts.map(([label, v]) => <div key={label}><b>{v}</b><span>{label}</span></div>)}</div>
+        // Label on top, the short fact, and the whole answer when you open the tile (Sonia, 20 Nov)
+        <div className="ab-facts">{facts.map(([label, v, full]) => (
+          <details key={label} className="ab-fact">
+            <summary><span>{label}</span><b>{v}</b><i className="ab-fact__more">More</i></summary>
+            <p className="v4-prose">{full}</p>
+          </details>
+        ))}</div>
       )}
 
       {nav.length > 1 && (
@@ -194,11 +216,12 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
         <section className="ab-why">
           <div className="v4-eyebrow">Why we’re here</div>
           {whyQuote && <blockquote>{whyQuote}</blockquote>}
-          <Prose text={whyRest ?? s('why_world')} />
+          <Short text={whyRest} max={320} />
+          {s('why_world') && <Short text={s('why_world')} max={320} />}
           {(s('mission_statement') || s('vision_statement')) && (
             <div className="ab-two">
-              {s('mission_statement') && <Card><div className="v4-eyebrow">Mission</div><Prose text={s('mission_statement')} /></Card>}
-              {s('vision_statement') && <Card><div className="v4-eyebrow">Vision</div><Prose text={s('vision_statement')} /></Card>}
+              {s('mission_statement') && <Card><div className="v4-eyebrow">Mission</div><Short text={s('mission_statement')} max={300} /></Card>}
+              {s('vision_statement') && <Card><div className="v4-eyebrow">Vision</div><Short text={s('vision_statement')} max={300} /></Card>}
             </div>
           )}
         </section>
@@ -207,22 +230,28 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
       {(storyTitle || storyText) && (
         <Section id="story" eyebrow="Our story" title={storyTitle}>
           <div>
-            <div><Prose text={storyText} lead /><Short text={s('why_now')} max={360} /></div>
+            <div><Prose text={storyText} lead />{s('dream_origin') && <Short text={s('why_personal')} max={320} />}<Short text={s('why_now')} max={360} /></div>
 
           </div>
         </Section>
       )}
 
-      {(landTitle || landText || systems.length > 0) && (
+      {(landTitle || landText || systems.length > 0 || practical.length > 0) && (
         <Section id="land" eyebrow="The land" title={landTitle}>
           <div className={mapUrl ? 'ab-split' : undefined}>
-            <div><Prose text={landText} lead /><Short text={s('ecological_philosophy')} max={360} /></div>
+            <div><Prose text={landText} lead />{s('location_setting') && <Short text={s('eco_assessment')} max={320} />}<Short text={s('ecological_philosophy')} max={360} /></div>
             {mapUrl && <a href="/amenities" className="ab-photo ab-photo--map" style={{ backgroundImage: `url(${mapUrl})` }} aria-label="Open the map of the land" />}
           </div>
+          {practical.length > 0 && (
+            <>
+              <h3 className="ab-h3">Day to day</h3>
+              <div className="ab-two">{practical.map(([icon, t, d]) => <Card key={t}><div className="v4-card-head"><IconTile name={icon} tone="blue" /><div><b>{t}</b></div></div><Short text={d} max={220} /></Card>)}</div>
+            </>
+          )}
           {systems.length > 0 && (
             <div className="ab-two">
-              {systems.map(([icon, t, d]) => (
-                <Card key={t}><div className="v4-card-head"><IconTile name={icon} tone="green" /><div><b>{t}</b></div></div><Short text={d} /></Card>
+              {systems.map(([icon, t, d, n]) => (
+                <Card key={t}><div className="v4-card-head"><IconTile name={icon} tone="green" /><div><b>{t}</b></div></div><Short text={d} />{n && <div className="ab-note"><Short text={n} max={200} /></div>}</Card>
               ))}
             </div>
           )}
@@ -243,26 +272,34 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
         </Section>
       )}
 
-      {valueItems.length > 0 && (
-        <Section id="values" eyebrow="What we value" title={valueItems.length <= 6 ? `${['', 'One thing', 'Two things', 'Three things', 'Four things', 'Five things', 'Six things'][valueItems.length]} we hold to` : 'What we hold to'}>
-          <div className="ab-two">
+      {(valueItems.length > 0 || valuesText) && (
+        <Section id="values" eyebrow="What we value" title={valueItems.length >= 2 && valueItems.length <= 6 ? `${['', '', 'Two things', 'Three things', 'Four things', 'Five things', 'Six things'][valueItems.length]} we hold to` : 'What we hold to'}>
+          {valuesText && <Short text={valuesText} max={420} />}
+          {valueItems.length > 0 && <div className="ab-two v4-mt">
             {valueItems.map(([t, d], i) => <div key={t + i} className="ab-val"><span className="n">{i + 1}</span><b>{t}</b>{d && <p className="v4-prose">{d}</p>}</div>)}
-          </div>
+          </div>}
           {s('community_agreements') && <Card className="ab-banner"><IconTile name="handshake" tone="yellow" /><div><b>Our community agreements</b><Prose text={s('community_agreements')} /></div></Card>}
         </Section>
       )}
 
-      {decide.length > 0 && (
+      {(decide.length > 0 || together.length > 0) && (
         <Section id="decide" eyebrow="How we decide" title="Decisions sit with the people they affect">
           <div className="ab-two">{decide.map(([t, d]) => <Card key={t}><b className="ab-cardtitle">{t}</b><Short text={d} /></Card>)}</div>
+          {together.length > 0 && (
+            <>
+              <h3 className="ab-h3">In practice</h3>
+              <div className="ab-two">{together.map(([icon, t, d]) => <Card key={t}><div className="v4-card-head"><IconTile name={icon} tone="violet" /><div><b>{t}</b></div></div><Short text={d} max={220} /></Card>)}</div>
+            </>
+          )}
           <p className="ab-links"><Button variant="quiet" href="/circles">Open Circles →</Button><Button variant="quiet" href="/governance">Open Governance →</Button></p>
         </Section>
       )}
 
-      {(s('ideal_archetypes') || ways.length > 0 || joinSteps.length > 0) && (
+      {(s('ideal_archetypes') || ways.length > 0 || staying.length > 0 || joinSteps.length > 0) && (
         <Section id="live" eyebrow="Living here" title="Who we’re looking for, and how to stay">
           <Prose text={s('ideal_archetypes')} lead />
           {ways.length > 0 && <div className="ab-ways">{ways.map(([t, d]) => <Card key={t}><small className="v4-eyebrow">{t}</small><Short text={d} /></Card>)}</div>}
+          {staying.length > 0 && <div className="ab-ways v4-mt">{staying.map(([t, d]) => <Card key={t}><small className="v4-eyebrow">{t}</small><Short text={d} max={220} /></Card>)}</div>}
           {joinSteps.length > 0 && (
             <>
               <h3 className="ab-h3">How joining works</h3>

@@ -42,7 +42,7 @@ export const ROLE_LABELS: Record<string, string> = {
   joining: 'Joining member',
   member: 'Member',
   circle_lead: 'Circle lead',
-  project_lead: 'Project lead',
+  project_lead: 'Task lead',
   advisor: 'Advisor',
   admin: 'Admin',
 }

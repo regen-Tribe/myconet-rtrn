@@ -70,7 +70,7 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
     <span
       role="button"
       tabIndex={0}
-      aria-label="Draft task. Slide right or press the right arrow to approve; slide left or press the left arrow to decline."
+      aria-label="Draft. Slide right or press the right arrow to approve; slide left or press the left arrow to decline."
       title={error || 'Draft: slide right to approve, left to decline'}
       draggable
       onDragStart={stop}

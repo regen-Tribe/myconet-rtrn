@@ -1,3 +1,4 @@
+import { DESIGN } from '@/core/lib/instance'
 import { after } from 'next/server'
 import { createClient } from '@/core/lib/supabase/server'
 import EventsClient from '@/modules/m14-events/EventsClient'
@@ -83,10 +84,12 @@ export default async function EventsPage({ searchParams }: {
   const linked = sp.event ? events.find(e => e.id === sp.event) : undefined
   // Which kinds are ticked: ?show=daily,core (older links use ?tab=core); everything by default
   const asked = (sp.show ?? sp.tab ?? '').split(',').filter(isEventKind)
-  const initialKinds = asked.length ? asked : [...EVENT_KINDS]
+  // Tasks from the board are off until you tick them (Sonia, 20 Nov): the calendar opens on events
+  const initialKinds = asked.length ? asked : EVENT_KINDS.filter(k => k !== 'task')
   if (linked && !initialKinds.includes(linked.kind)) initialKinds.push(linked.kind)
   const draftKind = isEventKind(sp.tab) ? sp.tab : asked[0] ?? 'core'
-  const initialView = VIEWS.find(v => v === sp.view) ?? 'day'
+  // The v4 look opens on the whole week with its time slots (Sonia, 20 Nov); the classic look on today
+  const initialView = VIEWS.find(v => v === sp.view) ?? (DESIGN === 'v4' ? 'week' : 'day')
   const initialDraft: EventDraft | null = sp.new && isJoiningOrAbove(role)
     ? {
         kind: draftKind,

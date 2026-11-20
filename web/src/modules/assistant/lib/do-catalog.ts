@@ -119,7 +119,7 @@ export function catalogPrompt(r: Refs): string {
     const how = t.t === 'enum' ? t.values.join('|') : t.t === 'circles' ? '{"add":["C1"],"remove":["C2"]}' : t.t === 'person' ? 'U-ref or null' : t.t === 'circle' ? 'C-ref or null' : t.t === 'project' ? 'P-ref or null (null: no project, on the main board)' : t.t === 'team' ? 'O-ref of a team, or null' : t.t === 'archived' ? 'true|false' : t.t
     return `${f}=${how}`
   }).join(', ')}`).join('\n')
-  const unitName = (u: Refs['units'][number]) => `${u.kind === 'circle' ? 'circle' : 'team'} ${u.name}${u.kind !== 'circle' ? ` (in ${r.circles.find(c => c.slug === u.circle)?.name ?? u.circle})` : ''}`
+  const unitName = (u: Refs['units'][number]) => `${u.kind === 'circle' ? 'circle' : 'subcircle'} ${u.name}${u.kind !== 'circle' ? ` (in ${r.circles.find(c => c.slug === u.circle)?.name ?? u.circle})` : ''}`
   return `General changes (made with the person's own rights; the database refuses what they may not do):
 - update {"what":"person|circle|unit|project|task","row":"U1|C1|O1|P1|T1","set":{"field":value,…}}
 - add_member {"unit":"O1","person":"U1","role":"lead|member","title":"optional role title"}: put someone in a circle or a team
@@ -213,7 +213,7 @@ function toColumns(def: TableDef, before: Before, set: Record<string, unknown>):
 export async function describeGeneral(admin: SupabaseClient, a: GeneralAction, r: Refs): Promise<string | null> {
   const person = (id: unknown) => r.people.find(p => p.id === id)?.name ?? (id ? 'someone' : 'nobody')
   const circle = (s: unknown) => r.circles.find(c => c.slug === s)?.name ?? (s ? String(s) : 'none')
-  const unitName = (id: string) => { const u = r.units.find(x => x.id === id); return u ? `${u.kind === 'circle' ? 'the' : 'the team'} ${u.name}${u.kind === 'circle' ? ' circle' : ''}` : 'a unit' }
+  const unitName = (id: string) => { const u = r.units.find(x => x.id === id); return u ? `${u.kind === 'circle' ? 'the' : 'the subcircle'} ${u.name}${u.kind === 'circle' ? ' circle' : ''}` : 'a unit' }
   if (a.kind === 'add_member') return `Add ${person(a.person)} to ${unitName(a.unit)}${a.role === 'lead' ? ' as its lead' : ''}${a.title ? ` (${a.title})` : ''}`
   if (a.kind === 'remove_member') return r.members.some(m => m.unit_id === a.unit && m.user_id === a.person) ? `Take ${person(a.person)} out of ${unitName(a.unit)}` : null
   const def = CATALOG[a.what]
@@ -222,13 +222,13 @@ export async function describeGeneral(admin: SupabaseClient, a: GeneralAction, r
   const after = toColumns(def, before, a.set)
   const show = (f: string, v: unknown) => {
     const t = def.fields[f].type
-    if ((v === null || v === undefined) && t.t === 'project') return 'no project (the main board)'
+    if ((v === null || v === undefined) && t.t === 'project') return 'no task (the main board)'
     if (v === null || v === undefined || (Array.isArray(v) && !v.length)) return '—'
     if (t.t === 'person') return person(v)
     if (t.t === 'circle') return circle(v)
     if (t.t === 'circles') return (v as string[]).map(circle).join(', ')
-    if (t.t === 'project') return r.projects.find(p => p.id === v)?.title ?? 'a project'
-    if (t.t === 'team') return r.units.find(u => u.id === v)?.name ?? 'a team'
+    if (t.t === 'project') return r.projects.find(p => p.id === v)?.title ?? 'a task'
+    if (t.t === 'team') return r.units.find(u => u.id === v)?.name ?? 'a subcircle'
     if (t.t === 'archived') return v ? 'yes' : 'no'
     if (t.t === 'bool') return v ? 'yes' : 'no'
     return String(v).replace(/_/g, ' ')
@@ -249,14 +249,14 @@ export async function executeGeneral(admin: SupabaseClient, mine: SupabaseClient
   if (a.kind === 'add_member') {
     const { data, error } = await mine.from('org_unit_members').insert({ unit_id: a.unit, user_id: a.person, role: a.role, title: a.title }).select('unit_id')
     if (error) return { rows: [], error: error.code === '23505' ? 'They’re already in it.' : error.message }
-    if (!data?.length) return { rows: [], error: 'You can’t change that circle or team.' }
+    if (!data?.length) return { rows: [], error: 'You can’t change that circle or subcircle.' }
     return { rows: [{ table: 'org_unit_members', match: { unit_id: a.unit, user_id: a.person }, before: null, inserted: true }] }
   }
   if (a.kind === 'remove_member') {
     const { data: old } = await admin.from('org_unit_members').select('unit_id, user_id, role, title').eq('unit_id', a.unit).eq('user_id', a.person).maybeSingle()
     const { data, error } = await mine.from('org_unit_members').delete().eq('unit_id', a.unit).eq('user_id', a.person).select('unit_id')
     if (error) return { rows: [], error: error.message }
-    if (!data?.length) return { rows: [], error: 'You can’t change that circle or team.' }
+    if (!data?.length) return { rows: [], error: 'You can’t change that circle or subcircle.' }
     return { rows: [{ table: 'org_unit_members', match: { unit_id: a.unit, user_id: a.person }, before: old as Before }] }
   }
   const def = CATALOG[a.what]

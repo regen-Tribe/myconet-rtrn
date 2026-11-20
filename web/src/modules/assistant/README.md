@@ -61,6 +61,22 @@ so the database's own rules (RLS, the `guard_profile_privileges` trigger) decide
 MyCoNet adds no rights. The card shows each field before → after; Undo puts the old values back, again as the
 person. Example: "make Sonia a circle lead of Kitchen" → *Person "Sonia Wendorff": role member → circle lead;
 leads the circles — → Kitchen* (admins only, like Admin › Users). An admin made circle lead stays admin. To reach
-more of MyCoNet, add tables and fields to `CATALOG` (events, bookings and governance are next). At most 8 changes
+more of MyCoNet, add tables and fields to `CATALOG` (bookings and governance are next). At most 8 changes
 per request (Cloudflare's 50 outside calls per request).
+
+### Calendar events (v4.65.0)
+
+Oscar: "we want the agent to be able to change events on the calendar - update time, date, notes in it".
+`lib/do-events.ts` adds one change, `change_event`: the date, start, end and all-day; the title, description
+(notes), place and online link. The planner sees the events from a week back to two months ahead (daily ones only
+for the next week) as E-refs in the community's time zone, plus the one open on the Calendar (`/calendar?event=…`,
+so "move this to 7" works). A new date keeps the times; a new start keeps the length; an end before the start
+means past midnight. The same rules as the Calendar, made with the person's own session:
+- **time**: `event_set_times` (joining members and up, as on the Calendar); an event from the linked Google
+  calendar moves there too
+- **title, description, place, link**: an update under the events RLS (its host, an admin, or a lead of its
+  circle); refused on events from the Google calendar, whose description is their notes (`event_set_notes`, full
+  members)
+- then the Google copy follows (`m14-events/lib/google-push.ts`, the code `/api/calendar-push` uses). The card shows
+  before → after and says first when the person can't; Undo puts the old values back, as the person, and in Google.
 

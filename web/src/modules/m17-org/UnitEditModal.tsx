@@ -56,7 +56,7 @@ export function UnitEditModal({
   async function save(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!isCircle && !name.trim()) return setError('Give the team a name.')
+    if (!isCircle && !name.trim()) return setError('Give the subcircle a name.')
     setBusy(true)
     const err = await onSave({
       name: isCircle ? unit!.name : name.trim(),
@@ -74,20 +74,20 @@ export function UnitEditModal({
     if (err) setError(err)
   }
 
-  const title = isCircle ? `${meta.emoji} ${meta.label} circle` : unit ? `Edit team · ${unit.name}` : `New team in ${meta.emoji} ${meta.label}`
+  const title = isCircle ? `${meta.emoji} ${meta.label} circle` : unit ? `Edit subcircle · ${unit.name}` : `New subcircle in ${meta.emoji} ${meta.label}`
 
   return (
     <ModalShell title={title} onClose={onClose} maxWidth={560}>
       <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {!isCircle && (
           <div>
-            <label style={labelStyle} htmlFor="ou-name">Team name</label>
+            <label style={labelStyle} htmlFor="ou-name">Subcircle name</label>
             <input id="ou-name" value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder="Food forest crew, Web team, Welcome desk…" autoFocus />
           </div>
         )}
 
         <div>
-          <label style={labelStyle} htmlFor="ou-desc">{isCircle ? 'Purpose' : 'What this team does'}</label>
+          <label style={labelStyle} htmlFor="ou-desc">{isCircle ? 'Purpose' : 'What this subcircle does'}</label>
           <textarea id="ou-desc" value={description} onChange={e => setDescription(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.55 }}
             placeholder={isCircle ? 'What this circle is responsible for…' : 'Responsibilities, rhythms, how to get involved…'} />
         </div>
@@ -108,7 +108,7 @@ export function UnitEditModal({
                   <select
                     value={r.role}
                     onChange={e => setRows(list => list.map(x => (x.user_id === r.user_id ? { ...x, role: e.target.value as UnitRole } : x)))}
-                    aria-label="Role in team"
+                    aria-label="Role in subcircle"
                     style={{ fontSize: 12, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)' }}
                   >
                     <option value="lead">Lead</option>
@@ -143,17 +143,17 @@ export function UnitEditModal({
               confirmDelete ? (
                 <span style={{ display: 'inline-flex', gap: 6 }}>
                   <button type="button" onClick={() => setConfirmDelete(false)} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>Keep it</button>
-                  <button type="button" onClick={remove} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer' }}>Delete team</button>
+                  <button type="button" onClick={remove} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer' }}>Delete subcircle</button>
                 </span>
               ) : (
-                <button type="button" onClick={() => setConfirmDelete(true)} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: '#dc2626', cursor: 'pointer' }}>Delete team</button>
+                <button type="button" onClick={() => setConfirmDelete(true)} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: '#dc2626', cursor: 'pointer' }}>Delete subcircle</button>
               )
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={onClose} style={{ fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>Cancel</button>
             <button type="submit" disabled={busy} style={{ fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 'var(--radius)', border: 'none', background: 'var(--m17)', color: '#fff', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}>
-              {busy ? 'Saving…' : unit ? 'Save' : 'Create team'}
+              {busy ? 'Saving…' : unit ? 'Save' : 'Create subcircle'}
             </button>
           </div>
         </div>

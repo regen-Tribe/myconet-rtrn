@@ -1,0 +1,96 @@
+/* ─── The v4 look on phones (375–430px wide) ──────────────────────────
+   Only for communities with "design": "v4" (data-design="v4" on <html>), and only
+   at phone widths. Imported once in app/layout.tsx after globals.css; every rule is
+   scoped under html[data-design="v4"] inside a max-width media query, so the
+   desktop look and communities without v4 never see it. Layout only: no content,
+   data or behaviour changes. Review notes: instance/v4-review.md › Phones. */
+
+@media (max-width: 768px) {
+  /* iOS Safari zooms the whole page when a field under 16px gets focus: keep fields at 16px */
+  html[data-design="v4"] :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea) {
+    font-size: 16px !important;
+  }
+
+  /* Taps feel instant: no 300ms double-tap wait, no grey flash */
+  html[data-design="v4"] :is(a, button, [role="button"], label, summary) { touch-action: manipulation; }
+
+  /* Kanban boards (Operations, and a project's tasks): the columns scroll sideways inside
+     their own box, one column at a time, instead of stacking into a very long page.
+     Each column scrolls on its own, like a phone board. */
+  html[data-design="v4"] div:has(> .ops-col) {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: 84%;
+    align-items: start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 16px;
+    margin-inline: -16px;
+    padding: 0 16px 10px;
+    scrollbar-width: none;
+  }
+  html[data-design="v4"] div:has(> .ops-col)::-webkit-scrollbar { display: none; }
+  html[data-design="v4"] .ops-col {
+    scroll-snap-align: start;
+    max-height: calc(100dvh - var(--topbar-h, 60px) - var(--tabbar-h, 62px) - 70px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  /* A project page: the title no longer shares its row with Subscribe (it squeezed the
+     description into a narrow column); Subscribe drops below it. Less side padding. */
+  html[data-design="v4"] .ops-detail-root { padding: 12px 16px 100px !important; }
+  html[data-design="v4"] .ops-detail-root div[style*="flex-wrap"] > div[style*="flex:1"]:has(h1) { flex: 1 1 100% !important; min-width: 0; }
+  html[data-design="v4"] .ops-detail-grid { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Modals become a sheet from the bottom (globals.css); keep it clear of the home bar and
+     stop the page behind it from scrolling along */
+  html[data-design="v4"] .modal-shell__dialog {
+    max-height: 88dvh !important;
+    padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior: contain;
+  }
+
+  /* The menu drawer scrolls on its own, without moving the page behind it */
+  html[data-design="v4"] .app-shell-sidenav { overscroll-behavior: contain; }
+}
+
+@media (max-width: 640px) {
+  /* Text-only links stretched to 44px tall (the global tap-size rule) kept their text at
+     the top: "Sign in" in the top bar, "Open →", "Create account". Centre the text. */
+  html[data-design="v4"] a:not(.no-min-height):not(:has(*)) { align-content: center; }
+
+  /* Search fields (Members, Amenities): the field grew to 44px inside a 38px pill and
+     showed its own white box; the pill takes the full height instead */
+  html[data-design="v4"] .v4-search { height: 44px; }
+  /* :not(#_) outranks the long input rule in globals.css that draws the field's box */
+  html[data-design="v4"] .v4-search input:not(#_) { min-height: 0; height: 100%; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
+
+  /* The public landing page: less empty space between the picture and the welcome */
+  html[data-design="v4"] .lp-hero { padding-top: 32px; padding-left: 20px; padding-right: 20px; }
+  html[data-design="v4"] .lp-section { padding-left: 20px; padding-right: 20px; }
+
+  /* About: the facts grid's values read at phone size */
+  html[data-design="v4"] .ab-facts b { font-size: 17px; }
+  html[data-design="v4"] .ab-facts > div { padding: 14px; }
+
+  /* Governance: the four checks stack instead of squeezing two narrow cards side by side */
+  html[data-design="v4"] .v4-gov div[style*="minmax(140px"] { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Achievements: each badge's button moves under its text instead of squeezing it */
+  html[data-design="v4"] .v4-page div[style*="display:flex"][style*="gap:18px"][style*="padding:18px 20px"] {
+    flex-wrap: wrap; gap: 12px 16px !important; padding: 16px !important;
+  }
+  html[data-design="v4"] .v4-page div[style*="display:flex"][style*="gap:18px"][style*="padding:18px 20px"] > div[style*="flex:1"] { flex: 1 1 170px !important; min-width: 0; }
+
+  /* Operations: the six numbers take less of the first screen */
+  html[data-design="v4"] .v4-stat { padding: 12px 14px; }
+  html[data-design="v4"] .v4-stat b { font-size: 24px; }
+
+  /* Page headers: actions sit under the title, full width rows that wrap neatly */
+  html[data-design="v4"] .v4-ph__row { align-items: flex-start; gap: 12px; }
+  html[data-design="v4"] .v4-ph__actions { width: 100%; }
+  html[data-design="v4"] .v4-sec { flex-wrap: wrap; }
+}

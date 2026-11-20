@@ -42,7 +42,7 @@ export default function MembersGridV4({ people, circles }: { people: MemberCard[
             <Link key={p.id} href={p.username ? `/u/${p.username}` : '#'} className="v4-card v4-card--link v4-member">
               <div className="v4-card-head">
                 {p.avatar
-                  ? <img src={p.avatar} alt="" className="v4-avatar v4-avatar--md" />
+                  ? <img loading="lazy" decoding="async" src={p.avatar} alt="" className="v4-avatar v4-avatar--md" />
                   : <span className="v4-avatar v4-avatar--md">{p.name.slice(0, 1).toUpperCase()}</span>}
                 <div>
                   <b>{p.name}{p.you ? ' (you)' : ''}</b>

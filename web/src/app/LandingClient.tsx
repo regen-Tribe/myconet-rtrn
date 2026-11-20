@@ -52,7 +52,7 @@ function clubhouseCards(st: LandingStats) {
     { num: '01', name: 'Members',  desc: `Meet ${plural(st.members, 'member')} and explorers`,   color: 'var(--m1)', href: '/members' },
     { num: '04', name: 'Project Blueprint',  desc: 'Our neighborhood plan, phase by phase',                color: 'var(--m4)', href: '/blueprint' },
     { num: '05', name: 'Join the community', desc: 'A few steps · sign the values',                         color: 'var(--m5)', href: '/join', cta: true },
-    { num: '06', name: 'Active projects',    desc: `${plural(st.activeProjects, 'project')} underway`,      color: 'var(--m6)', href: '/agreements' },
+    { num: '06', name: 'Active tasks',    desc: `${plural(st.activeProjects, 'task')} underway`,      color: 'var(--m6)', href: '/agreements' },
     { num: '07', name: 'Operations',         desc: plural(st.deliverables, 'task'),                  color: 'var(--m7)', href: '/operations' },
     { num: '08', name: 'Your achievements', desc: 'Badges for showing up',                      color: 'var(--m8)', href: '/achievements' },
     { num: '09', name: 'Governance',         desc: `${plural(st.openProposals, 'proposal')} open for votes`, color: 'var(--m9)', href: '/governance' },
@@ -66,7 +66,7 @@ const MEMBERS = [
   { name: 'Ana Whitewater', where: 'San Cristóbal, MX',        av: 'var(--m1)', offers: ['Permaculture design', 'Mycology'],     seeks: ['Co-builders'],     match: 92 },
   { name: 'Eli Tanaka',     where: 'Visiting Tlaxcala, MAY',   av: 'var(--m4)', offers: ['Natural building', 'Cob'],             seeks: ['Land partner'],     match: 81 },
   { name: 'Priya Mahesh',   where: 'Berkeley, CA · Vision holder', av: 'var(--m9)', offers: ['NVC facilitation', 'Conflict mediation'], seeks: ['Resident circle'], match: 76 },
-  { name: 'Diego Solá',     where: 'Oaxaca · Resident',        av: 'var(--m5)', offers: ['Investment capital'],                  seeks: ['Project leads'],    match: 68 },
+  { name: 'Diego Solá',     where: 'Oaxaca · Resident',        av: 'var(--m5)', offers: ['Investment capital'],                  seeks: ['Task leads'],    match: 68 },
 ]
 
 const PILLARS = [
@@ -156,7 +156,7 @@ function Hero({ name, communityPurpose }: { name: string | null; communityPurpos
 const PORTAL_STEPS = [
   { n: '1', title: 'Explore', text: 'Read the plan, meet the members, and browse the calendar — no account needed.' },
   { n: '2', title: 'Join', text: 'Apply, sign the community values, and become a joining member.' },
-  { n: '3', title: 'Contribute', text: 'Book stays and resources, host events, join projects, and help decide what happens next.' },
+  { n: '3', title: 'Contribute', text: 'Book stays and resources, host events, help on tasks, and help decide what happens next.' },
 ]
 
 function ClubhousePreview({ name, stats }: { name: string | null; stats: LandingStats }) {
@@ -403,7 +403,7 @@ function JoinSection({ values }: { values: { title: string; description: string 
               <p><strong>No NDAs, no hidden rules.</strong> What you sign is what&apos;s in the Blueprint.</p>
             </div>
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
-              <p><strong>Application reviewed by a real human</strong> — the project leads, not an algorithm.</p>
+              <p><strong>Application reviewed by a real human</strong> — the circle leads, not an algorithm.</p>
             </div>
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
               <p><strong>Unlocks Agreements, Operations, Achievements and Governance.</strong></p>
@@ -460,7 +460,7 @@ function AgreementsSection() {
           <div className="lp-demo-head">
             <div className="lp-demo-title">
               <span className="lp-mod-pill mod-num" style={{ background: 'var(--m6)' }}>M06</span>
-              <strong>Open projects · Propose how you&apos;ll help</strong>
+              <strong>Open tasks · Propose how you&apos;ll help</strong>
             </div>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>3 open</span>
           </div>
@@ -509,7 +509,7 @@ function AgreementsSection() {
           <SectionHead
             mod="06" label="Agreements" color="var(--m6)"
             h="Make visible deals on how you'll support."
-            lead="Browse every active project — the ones quietly building, the ones loudly hiring. Propose exactly what you'll contribute, exactly what you expect in return. The team reviews. If accepted, your agreement is live and tracked."
+            lead="Browse every active task — the ones quietly building, the ones loudly hiring. Propose exactly what you'll contribute, exactly what you expect in return. The team reviews. If accepted, your agreement is live and tracked."
           />
           <div className="lp-why">
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
@@ -541,10 +541,10 @@ function OpsSection() {
           />
           <div className="lp-why">
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
-              <p><strong>Live status of every project</strong> — pulled from agreements, not status meetings.</p>
+              <p><strong>Live status of every task</strong> — pulled from agreements, not status meetings.</p>
             </div>
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
-              <p><strong>Timeline updates</strong> from project leads, threaded into the dashboard.</p>
+              <p><strong>Timeline updates</strong> from task leads, threaded into the dashboard.</p>
             </div>
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
               <p><strong>Drift detection</strong> — when something slips, the community sees it before it becomes a crisis.</p>
@@ -560,7 +560,7 @@ function OpsSection() {
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>May→Jun</span>
           </div>
           <div className="lp-ops-stat">
-            <div className="lp-stat"><div className="lp-sn">5</div><div className="lp-sl">Active projects</div></div>
+            <div className="lp-stat"><div className="lp-sn">5</div><div className="lp-sl">Active tasks</div></div>
             <div className="lp-stat"><div className="lp-sn">12</div><div className="lp-sl">Tasks</div></div>
             <div className="lp-stat"><div className="lp-sn">40%</div><div className="lp-sl">Complete</div></div>
           </div>

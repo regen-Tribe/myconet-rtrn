@@ -26,7 +26,7 @@ interface DoMessage { role: 'user' | 'assistant'; content: string; instruction?:
   suggestionId?: string }
 const DO_KEY = 'myconet-agent-do'
 const DO_EXAMPLES = [
-  'Merge the 4 elements project into the 5 senses project',
+  'Merge the 4 elements task into the 5 senses task',
   'Give the fridge checklist task to Sonia, due Friday',
   'Confirm all the kitchen drafts',
 ]

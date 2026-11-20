@@ -24,10 +24,10 @@ const CATALOG = [
   {
     key: 'community_member',
     title: 'Community Member',
-    description: 'Made an agreement to help on a project, or suggested a project in Operations — a full contributing member of the community.',
+    description: 'Made an agreement to help on a task, or suggested a task in Operations — a full contributing member of the community.',
     icon: '⊕',
     color: 'var(--m9)',
-    hint: 'Make an agreement to help on a project, or suggest a project in Operations. Once one is accepted you earn this badge.',
+    hint: 'Make an agreement to help on a task, or suggest a task in Operations. Once one is accepted you earn this badge.',
   },
 ]
 

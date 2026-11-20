@@ -117,7 +117,7 @@ function MatchCard({ match: { profile: p, bio, score, reasons } }: { match: Matc
             background: 'color-mix(in srgb, var(--m1) 12%, var(--surface))', display: 'grid', placeItems: 'center',
           }}>
             {p.avatar_url
-              ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <img loading="lazy" decoding="async" src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--m1)' }}>{init}</span>
             }
           </div>

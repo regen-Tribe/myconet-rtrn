@@ -63,7 +63,7 @@ export default function DesignPage() {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}><StatusPill status="doing" /><Tag>6 tasks</Tag><Tag icon="users">2 helping</Tag></div>
         </Card>
-        <EmptyState title="No agreements yet" text="Find a project you'd like to help on and offer what you can give." action={{ href: '/operations', label: 'Open Operations →' }} />
+        <EmptyState title="No agreements yet" text="Find a task you'd like to help on and offer what you can give." action={{ href: '/operations', label: 'Open Operations →' }} />
       </div>
 
       <SectionHead title={`Icons · ${Object.keys(ICONS).length}`} />

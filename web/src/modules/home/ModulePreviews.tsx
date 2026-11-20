@@ -130,7 +130,7 @@ export function CirclesPreview({ data }: { data: CirclesPreviewData }) {
               <div style={{ fontSize: 11.5, color: 'var(--ink-2)', marginTop: 3 }}>
                 {leads.length ? `Led by ${leads.map(l => l.name).join(', ')}` : 'Lead wanted'}
               </div>
-              {teams.length > 0 && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{teams.length} team{teams.length === 1 ? '' : 's'}: {teams.slice(0, 2).join(', ')}{teams.length > 2 ? '…' : ''}</div>}
+              {teams.length > 0 && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{teams.length} subcircle{teams.length === 1 ? '' : 's'}: {teams.slice(0, 2).join(', ')}{teams.length > 2 ? '…' : ''}</div>}
             </div>
           )
         })}

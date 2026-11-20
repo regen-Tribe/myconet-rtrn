@@ -228,7 +228,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '14px 14px 0 0',
         }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
-            Task
+            {task.project_id ? 'Subtask' : 'Task of its own'}
           </div>
           <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0, display: 'flex' }}>×</button>
         </div>
@@ -307,21 +307,21 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
                 {task.due_date ? fmtTaskWhen(task.due_date, task.due_time) : 'No due date'}
               </div>
             )}
-            {task.due_date && <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>Dated tasks also show on the calendar.</div>}
+            {task.due_date && <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>Anything with a date also shows on the calendar.</div>}
           </div>
 
           {/* Where it belongs: project, circle, team */}
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle} htmlFor="task-project">Project</label>
+            <label style={labelStyle} htmlFor="task-project">Part of task</label>
             {canManage ? (
               <select id="task-project" value={projectId} onChange={e => pickProject(e.target.value)} style={small}>
-                <option value="">No project · on the board</option>
+                <option value="">None · a task of its own</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             ) : task.project_id ? (
-              <Link href={`/operations/${task.project_id}`} style={{ fontSize: 13, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>{projectTitle ?? 'Its project'} →</Link>
+              <Link href={`/operations/${task.project_id}`} style={{ fontSize: 13, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>{projectTitle ?? 'Its task'} →</Link>
             ) : (
-              <div style={{ fontSize: 13, color: 'var(--ink-4)' }}>No project · on the board</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-4)' }}>None · a task of its own</div>
             )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
@@ -337,10 +337,10 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
               )}
             </div>
             <div>
-              <label style={labelStyle} htmlFor="task-team">Team</label>
+              <label style={labelStyle} htmlFor="task-team">Subcircle</label>
               {canManage ? (
                 <select id="task-team" value={teamId} onChange={e => pickTeam(e.target.value)} style={small} disabled={!circleTeams.length && !teamId}>
-                  <option value="">{circleTeams.length ? 'The whole circle' : circle ? 'No teams in this circle' : 'Pick a circle first'}</option>
+                  <option value="">{circleTeams.length ? 'The whole circle' : circle ? 'No subcircles in this circle' : 'Pick a circle first'}</option>
                   {circleTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               ) : (

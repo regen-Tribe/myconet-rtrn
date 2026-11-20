@@ -3,11 +3,13 @@ import { createServiceClient } from '@/core/lib/supabase/service'
 import { circleDecider } from '@/modules/m07-ops/lib/pm-access'
 import { undoRows } from '@/modules/assistant/lib/do-actions'
 import { undoGeneral } from '@/modules/assistant/lib/do-catalog'
+import { undoEvent } from '@/modules/assistant/lib/do-events'
 import { createClient } from '@/core/lib/supabase/server'
 
 // Undo one of the agent's changes ({ action: 'undo' }): a circle's leads or an admin; a Do change also
 // by the person who asked for it.
-//   do_*      → every row it changed gets its values back; a project it made goes when empty
+//   do_*      → every row it changed gets its values back; a project it made goes when empty; an event its old
+//               time, details and notes (as the person, and in Google)
 //   pm_move   → the task goes back to where it was (a project the change made is removed when empty)
 //   pm_merge  → the merged-away task comes back, with its meeting links
 //   pm_assign → the task has nobody again
@@ -26,7 +28,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (String(a.action).startsWith('do_')) {
     // A general change is undone as the person, like it was made
-    try { if (d.as_user) await undoGeneral(await createClient(), d.general_rows ?? []); else await undoRows(admin, d) } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 500 }) }
+    try {
+      if (d.event_undo) await undoEvent(await createClient(), me.user.id, d.event_undo, req.nextUrl.origin)
+      else if (d.as_user) await undoGeneral(await createClient(), d.general_rows ?? [])
+      else await undoRows(admin, d)
+    } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 500 }) }
     await admin.from('agent_actions').update({ undone_at: new Date().toISOString(), undone_by: me.user.id }).eq('id', id)
     return NextResponse.json({ ok: true })
   }

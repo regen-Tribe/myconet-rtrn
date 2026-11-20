@@ -83,7 +83,7 @@ export default function NewProjectModal({ userId, onClose }: Props) {
           {done ? (
             <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>🎉</div>
-              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>Project proposed!</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>Task suggested!</p>
               <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>
                 The admin team will review and activate your project. Once active, it'll appear here for collaboration.
               </p>
@@ -96,15 +96,15 @@ export default function NewProjectModal({ userId, onClose }: Props) {
             </div>
           ) : (
             <>
-              <FormField label="Project title *">
+              <FormField label="Task title *">
                 <FocusInput value={title} onChange={setTitle} placeholder="e.g. Community garden infrastructure" />
               </FormField>
 
               <FormField label="Description" hint="optional">
-                <FocusTextarea value={desc} onChange={setDesc} placeholder="What is this project about? What does success look like?" />
+                <FocusTextarea value={desc} onChange={setDesc} placeholder="What is this task about? What does done look like?" />
               </FormField>
 
-              <FormField label="Circle" hint="which pillar this project belongs to">
+              <FormField label="Circle" hint="which circle this task belongs to">
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {circles.slugs.map(p => {
                     const meta = circles.meta(p)

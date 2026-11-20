@@ -141,7 +141,7 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
       <div className="mv4-foot">
         {state.me ? (
           <Link href={state.me.username ? `/u/${state.me.username}` : '/profile/edit'} className="mv4-me" onClick={onClose} title={rail ? state.me.name : undefined}>
-            {state.me.avatar ? <img src={state.me.avatar} alt="" className="mv4-av" /> : <span className="mv4-av">{state.me.name.slice(0, 1).toUpperCase()}</span>}
+            {state.me.avatar ? <img loading="lazy" decoding="async" src={state.me.avatar} alt="" className="mv4-av" /> : <span className="mv4-av">{state.me.name.slice(0, 1).toUpperCase()}</span>}
             <span className="mv4-me__txt"><b>{state.me.name}</b><small>{ROLE_LABELS[role] ?? 'Explorer'}</small></span>
             <span className="mv4-me__go"><Icon name="right" size={15} /></span>
           </Link>

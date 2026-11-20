@@ -9,8 +9,13 @@ import { fmtTaskWhen } from '@/core/lib/tasks'
 import NotesText from './NotesText'
 import SummaryCards from './SummaryCards'
 import type { Meeting, MeetingTask } from './types'
+import { DESIGN } from '@/core/lib/instance'
+import { Icon, StatusPill, Tag } from '@/core/components/v4'
+import './meetings-v4.css'
 
-const sectionStyle: React.CSSProperties = {
+const V4 = DESIGN === 'v4'
+
+const sectionStyle: React.CSSProperties = DESIGN === 'v4' ? { fontSize: 17, fontWeight: 600, color: 'var(--ink)', margin: '26px 0 10px' } : {
   fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
   color: 'color-mix(in srgb, var(--ink) 55%, transparent)', margin: '28px 0 12px',
 }
@@ -164,6 +169,98 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
 
   const byPerson: Record<string, string[]> = {}
   for (const item of m.action_items ?? []) (byPerson[item.speaker || 'Action items'] ??= []).push(item.text)
+
+  if (V4) {
+    const notice = !canManage && m.needs_review ? (
+      <div className="v4-card v4-note"><Icon name="clock" /><span>The assistant wasn’t sure this is a community meeting, so a lead is checking it before anything goes on the board.</span></div>
+    ) : null
+    return (
+      <div className="v4-page v4-page--wide mt4">
+        <div className="mt4-back">
+          <Link href="/meetings" className="v4-back"><Icon name="left" size={14} />Meetings</Link>
+          {meta && <Link href={`/meetings?circle=${m.circle}`} className="v4-back">{meta.label} meetings</Link>}
+        </div>
+        <header className="v4-ph">
+          <div className="v4-tags mt4-tags">
+            {meta ? <span className="mt4-ctag" style={{ ['--c' as string]: meta.color }}><i className="mt4-dot" aria-hidden />{meta.label.charAt(0).toUpperCase() + meta.label.slice(1)}{m.circle_source === 'agent' ? <span className="mt4-by"> · chosen by the assistant</span> : null}</span>
+              : m.processed_at ? <Tag>Community-wide</Tag> : null}
+            <Tag icon="calendar">{fmtDay(m.meeting_date ?? m.created_at)}</Tag>
+            {m.attendees.length > 0 && <span className="v4-tag" title={m.attendees.join(', ')}><Icon name="users" size={13} />{m.attendees.length} {m.attendees.length === 1 ? 'person' : 'people'}</span>}
+            {m.visibility === 'circle' && <Tag icon="lock">Circle only</Tag>}
+          </div>
+          <h1 className="v4-ph__title">{m.title}</h1>
+          {m.original_title && m.original_title !== m.title && <p className="v4-ph__sub">Recorded as “{m.original_title}”</p>}
+          {m.attendees.length > 0 && <p className="v4-hint mt4-people">{m.attendees.join(', ')}</p>}
+        </header>
+
+        {m.status === 'processing' && <div className="v4-card v4-note"><Icon name="clock" /><span>Transcribing this recording. Check back in a few minutes.</span></div>}
+        {m.status === 'error' && <div className="v4-card v4-note"><Icon name="alert" /><span>This recording couldn’t be transcribed.{m.error ? ` (${m.error})` : ''}</span></div>}
+
+        <div className="mt4-split">
+          <div>
+            {notice}
+            {m.status === 'done' && (
+              <>
+                {m.summary && <div className="v4-card mt4-sumcard"><h2 className="mt4-h">Summary</h2><SummaryCards text={m.summary} accent={meta?.color} /></div>}
+
+                <div className="v4-sec"><h2>Action items{drafts ? ` · ${drafts} to confirm` : ''}</h2><span className="v4-hint">They become tasks on the board</span></div>
+                {tasks.length === 0 ? (
+                  <p className="v4-hint">{m.processed_at ? 'No tasks came out of this meeting.' : m.needs_review ? 'Nothing on the board: this meeting is waiting for a lead.' : 'The assistant hasn’t read this meeting yet.'}</p>
+                ) : (
+                  <div className="v4-list">
+                    {tasks.map(t => {
+                      const who = t.assignee ?? (t.person_name ? `${t.person_name} (not on MyCoNet yet)` : 'Not assigned yet')
+                      return (
+                        <div key={t.deliverable_id} className="v4-row mt4-task">
+                          <span className="v4-row__lead"><span className="v4-avatar">{(t.assignee ?? t.person_name ?? '?').slice(0, 1).toUpperCase()}</span></span>
+                          <Link href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} className="v4-row__main mt4-tlink">
+                            <b className={t.status === 'done' ? 'mt4-done' : undefined}>{t.title}</b>
+                            <small>{who}{t.due_date ? ` · ${fmtTaskWhen(t.due_date, t.due_time)}` : ''}{t.project_title ? ` · ${t.project_title}` : ''}</small>
+                            {t.item_text && t.item_text !== t.title && <small className="mt4-quote">“{t.item_text.slice(0, 120)}”</small>}
+                          </Link>
+                          <span className="v4-row__trail">
+                            {t.needs_review
+                              ? <DraftSwipe taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => router.refresh()} onDeclined={() => router.refresh()} />
+                              : <StatusPill status={t.status === 'done' ? 'done' : 'todo'} label={t.status === 'done' ? 'Done' : 'On the board'} />}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {Object.keys(byPerson).length > 0 && (
+                  <details className="v4-card mt4-ff">
+                    <summary>Action items as Fireflies wrote them</summary>
+                    {Object.entries(byPerson).map(([person, items]) => (
+                      <div key={person} className="mt4-ffp">
+                        <b>{person}</b>
+                        <ul>{items.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    ))}
+                  </details>
+                )}
+
+                <DocTabs m={m} brainNote={brainNote} />
+              </>
+            )}
+          </div>
+
+          <div>
+            <div className="v4-sec"><h2>Files</h2></div>
+            <div className="v4-list">
+              <div className="v4-row"><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="file" /></span></span><span className="v4-row__main"><b>Meeting notes</b><small>{m.visibility === 'circle' ? 'This circle can read' : 'Members can read'}</small></span></div>
+              <div className={`v4-row${m.transcript ? '' : ' mt4-off'}`}><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name={m.transcript ? 'mic' : 'lock'} /></span></span><span className="v4-row__main"><b>Transcript</b><small>{m.transcript ? 'You can read it (in the documents)' : 'Only circle leads and admins'}</small></span></div>
+            </div>
+            {m.notes_url && (
+              <a href={m.notes_url} target="_blank" rel="noreferrer" className="mt4-brain"><Icon name="brain" size={15} /><span>Saved in the second brain</span><Icon name="right" size={14} /></a>
+            )}
+            {canManage && <LeadBar m={m} drafts={drafts} emailOn={emailOn} secondBrainOn={secondBrainOn} />}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 20px 80px' }}>

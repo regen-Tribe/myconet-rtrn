@@ -3,6 +3,102 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.65.0',
+    date: '2026-11-20',
+    title: 'The assistant changes events',
+    items: ['Ask the assistant to move an event, change its time or date, or update its notes, place or link: "move tonight’s dinner to 7", or "add to this event: bring a dish" with the event open. It shows the change first, follows the Calendar’s rules, updates Google Calendar too, and can be undone.'],
+  },
+  {
+    version: 'v4.64.0',
+    date: '2026-11-20',
+    title: 'About shows the whole Blueprint',
+    items: ['With the new look on, About shows every Blueprint answer: day-to-day life on the land, how we meet and talk, money and leaving. The facts at the top have their label on top and open to the whole answer.'],
+  },
+  {
+    version: 'v4.63.0',
+    date: '2026-11-20',
+    title: 'Circles at a glance',
+    items: ['With the new look on, each circle card shows its purpose, lead, members with their photos, open tasks and meetings. A circle opens in tabs: Overview, Manuals & guides, People, Subcircles, Tasks and Meetings.'],
+  },
+  {
+    version: 'v4.62.0',
+    date: '2026-11-20',
+    title: 'The Task board',
+    items: ['Operations is now the Task board. With the new look on, it opens with one clear summary line, each task card shows how far along its subtasks are and who is on it, and late tasks and drafts are one tap away. On a phone the board scrolls one column at a time.'],
+  },
+  {
+    version: 'v4.61.0',
+    date: '2026-11-20',
+    title: 'Subcircles, tasks and subtasks',
+    items: ['Teams are now called subcircles, and projects are tasks with subtasks. Only the words changed: everything you made is still there.'],
+  },
+  {
+    version: 'v4.60.0',
+    date: '2026-11-20',
+    title: 'Meetings clear at a glance',
+    items: ['With the new look on, each meeting shows its date in a box and its circle by name, not only by colour. Meetings are grouped by week, titles lose the repeated date, and the summary is one clean line.'],
+  },
+  {
+    version: 'v4.59.0',
+    date: '2026-11-20',
+    title: 'Clearer actions, more calendar',
+    items: ['With the new look on, the main action on a page is green and the tabs are softer. The calendar opens on the week at the morning, with tasks off until you want them, and + Add event stands out.'],
+  },
+  {
+    version: 'v4.58.0',
+    date: '2026-11-20',
+    title: 'The new look on phones',
+    items: [
+      'With the new look on, project boards scroll sideways on a phone, one column at a time, instead of one very long page.',
+      'Buttons and links that read off-centre on a phone are centred, and cards that squeezed their text now stack.',
+      'Tapping a field on an iPhone no longer zooms the page, and pages load a little lighter (fewer fonts, member photos load as you scroll).',
+    ],
+  },
+  {
+    version: 'v4.57.0',
+    date: '2026-11-20',
+    title: 'Nothing lost in the new look',
+    items: ['Meetings show who was there, proposals show how close they are to approval and who proposed them, overdue projects say so, and team roles show on Circles again.'],
+  },
+  {
+    version: 'v4.56.0',
+    date: '2026-11-20',
+    title: 'The calendar opens on the week',
+    items: [
+      'The calendar opens on the whole week with its time slots.',
+      'The list shows what’s coming up; what’s already over today stays there, greyed out.',
+    ],
+  },
+  {
+    version: 'v4.55.0',
+    date: '2026-11-20',
+    title: 'Profiles, joining and projects, as designed',
+    items: [
+      'With the new look on, a profile shows the person large, with their circles beside it.',
+      'Applying to join is one card with your step and what comes next.',
+      'A project opens with a banner in its circle’s colour and a clear way to offer help.',
+    ],
+  },
+  {
+    version: 'v4.54.0',
+    date: '2026-11-20',
+    title: 'Meetings, decisions and agreements, as designed',
+    items: [
+      'With the new look on, each meeting shows its summary, its action items and its files side by side.',
+      'Governance shows each proposal as a card with its four checks, and a page where you vote and discuss.',
+      'Agreements lists yours as simple rows: what you give, what you’d like back, and where it stands.',
+    ],
+  },
+  {
+    version: 'v4.53.0',
+    date: '2026-11-20',
+    title: 'Circles and the calendar, as designed',
+    items: [
+      'With the new look on, Circles shows a card per circle, and each opens its own page with its members, teams, projects and who’s asking to join. Members can ask to join from there.',
+      'The calendar opens on a list of what’s coming, with a date box and a one-tap RSVP for each event, and a small month beside it.',
+    ],
+  },
+  {
     version: 'v4.52.0',
     date: '2026-11-20',
     title: 'About, as designed',

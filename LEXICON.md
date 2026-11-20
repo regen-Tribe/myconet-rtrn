@@ -4,6 +4,7 @@ One word per idea, on every screen, in emails, in agent prompts and in the secon
 and agents read the community's knowledge outside the portal too, so the words have to hold up there.
 If a word isn't here, use the plainest one a newcomer would understand.
 Approved 2026-11-18 (Sonia). Change this file first, then the screens.
+Changed 2026-11-20 (Sonia): **teams are subcircles**, and **projects are parked**: work is **tasks** with **subtasks**.
 
 **Writing rules:** sentence case for buttons, headings and labels ("Create account", not "Create
 Account"). Module names keep their capital ("Open Operations →"). Role names are lowercase inside a
@@ -18,7 +19,7 @@ sentence ("ask a circle lead").
 | M04 | **Blueprint** | `/blueprint` | community plan (as a name) |
 | M05 | **Join** | `/join` | |
 | M06 | **Agreements** | `/agreements` | Collaborations |
-| M07 | **Operations** | `/operations` | Ops, Projects (as the module name) |
+| M07 | **Operations** | `/operations` | Ops, Projects |
 | M08 | **Achievements** | `/achievements` | Contributions (as the module name) |
 | M09 | **Governance** | `/governance` | |
 | M14 | **Calendar** | `/calendar` | Events (as the module name) |
@@ -54,13 +55,17 @@ profiles). My tasks isn't a menu item: your open tasks are counted beside My das
 
 | Say | Means | Not |
 |---|---|---|
-| **project** | A piece of work with a lead, on the Operations board | |
-| **task** | One thing to do, in a project or straight on the board (`deliverables` table) | deliverable, subtask, to-do, action item* |
-| **project idea** | A project someone suggested; it waits in Ideas. Button: "+ Suggest a project" | project proposal |
+| **task** | A piece of work on the Operations board, with a lead; it can have subtasks | project, deliverable, to-do, action item* |
+| **subtask** | One step inside a task, assigned to someone | sub-task, deliverable |
+| **task idea** | A task someone suggested; it waits in Ideas. Button: "+ Suggest a task" | project idea, project proposal |
 | **board** | The Operations board | Kanban |
-| Columns | **Ideas → To do → In progress → Review → Done**, plus **Paused** on the main board for projects (status `backlog` shows as "To do") | Backlog |
-| **lead** / **assigned to** | A project has a lead; a task is assigned to someone | owner |
-| **sprint** | Only where a project has a sprint name set | |
+| Columns | **Ideas → To do → In progress → Review → Done**, plus **Paused** on the main board for tasks with subtasks (status `backlog` shows as "To do") | Backlog |
+| **lead** / **assigned to** | A task has a lead; a subtask is assigned to someone | owner |
+| **sprint** | Only where a task has a sprint name set | |
+
+**How it maps to the data (for code and agents):** the `projects` table holds tasks (the ones that can have
+subtasks); `deliverables` holds their subtasks, and a deliverable with no project is a task of its own on the
+board. Table and column names stay as they are; only the words change.
 
 \* "Action items" is only the meeting tool's own word, before they become tasks.
 
@@ -68,7 +73,7 @@ profiles). My tasks isn't a menu item: your open tasks are counted beside My das
 
 | Say | Means | Not |
 |---|---|---|
-| **agreement** | An offer to help on a project, with what you give and get: proposed → **accepted** / **declined** | collaboration proposal, support |
+| **agreement** | An offer to help on a task, with what you give and get: proposed → **accepted** / **declined** | collaboration proposal, support |
 | **proposal** | Only in Governance: something put to a decision | |
 | **decision** | A proposal that was approved; also its note in the second brain | |
 | **Accept / Decline** | Answering any request | Reject, Rejected |
@@ -87,9 +92,9 @@ never "L1–L4", "CL", "live" or "threshold". "Sociocracy / Democracy / Meritocr
 | Say | Not |
 |---|---|
 | **member(s)**, **people** on screen; "user" only in admin | user |
-| Roles: **explorer**, **joining member**, **member**, **project lead**, **circle lead**, **advisor**, **admin** | CL, Joining Member |
+| Roles: **explorer**, **joining member**, **member**, **task lead**, **circle lead**, **advisor**, **admin** | CL, Joining Member, project lead |
 | **circle**: a standing group that looks after an area of community life | |
-| **team**: a group inside a circle | unit, pod, guild, working group |
+| **subcircle**: a smaller, lasting group inside a circle, with its own members and lead | team, unit, pod, guild, working group |
 | **Community stewards**: the one circle that looks after every circle | |
 
 ## Members module
@@ -130,7 +135,16 @@ manage view; **space** only for a physical space you book.
 | Go back | **← {Page}** |
 | Go to a page | **Open {Page} →** |
 | See a whole list | **See all {things} →** |
-| Add something | **+ Add {thing}** (exceptions: "+ Suggest a project", "+ New proposal") |
+| Add something | **+ Add {thing}** (exceptions: "+ Suggest a task", "+ New proposal") |
 | Save | **Save**, **Save & continue →**, **Save as draft**. "Done" is a status, never a button |
 | Take away | **Remove** = out of a list; **Delete** = gone for good; **Archive** = hidden but kept |
 | Back out | **Cancel** |
+
+## For later
+
+Words parked until the community needs the extra layer (Sonia, 2026-11-20: "for more complexity").
+
+| Word | Why it's parked | Until then |
+|---|---|---|
+| **project** | A bundle of tasks with its own page, lead and team was more structure than the community uses | a **task** with **subtasks** |
+

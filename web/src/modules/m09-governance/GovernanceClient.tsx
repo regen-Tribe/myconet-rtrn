@@ -1,5 +1,6 @@
 'use client'
-import { Button, PageHeader } from '@/core/components/v4'
+import { Button, Icon, PageHeader, StatusPill as V4Pill, Tag } from '@/core/components/v4'
+import { ModalShell } from '@/core/components/ModalShell'
 import { DESIGN } from '@/core/lib/instance'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
@@ -145,7 +146,8 @@ export default function GovernanceClient({
   const supabase = createClient()
 
   const [proposals, setProposals] = useState<Proposal[]>(initial)
-  const [selectedId, setSelectedId] = useState<string | null>(initial[0]?.id ?? null)
+  // The v4 look starts on the proposal cards; the classic look opens the first proposal
+  const [selectedId, setSelectedId] = useState<string | null>((DESIGN as string) === 'v4' ? null : initial[0]?.id ?? null)
   const [myVotes, setMyVotes] = useState<MyVotes>(init)
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
   const [loadingComments, setLoadingComments] = useState(false)
@@ -264,6 +266,185 @@ export default function GovernanceClient({
     }
     setShowNew(false); setNewTitle(''); setNewDesc(''); setNewDays('7')
     setSubmitting(false)
+  }
+
+  // ── The v4 look (Sonia's prototype pGovernance / pProposal): proposal cards, then a page per proposal ──
+  if ((DESIGN as string) === 'v4') {
+    const CHECKS = [
+      { key: 'sociocracy', name: 'Circle leads · consent', icon: 'circles' as const },
+      { key: 'democracy', name: 'All members · vote', icon: 'vote' as const },
+      { key: 'merit', name: 'Admins & advisors · review', icon: 'shield' as const },
+      { key: 'ai', name: 'Assistant · Blueprint check', icon: 'spark' as const },
+    ]
+    const checkState = (p: Proposal) => {
+      const s = layerVotes(p.votes, 'sociocracy'), d = layerVotes(p.votes, 'democracy'), m = layerVotes(p.votes, 'merit')
+      const e = evalLayers(p)
+      return [
+        e.sociocracyPassed ? 'done' : s.clObject > 0 ? 'no' : s.clTotal ? 'doing' : 'idea',
+        e.democPassed ? 'done' : d.total ? 'doing' : 'idea',
+        e.meritPassed ? 'done' : m.expertReject > 0 ? 'no' : 'idea',
+        'advice',
+      ] as const
+    }
+    const pillFor = (st: string) => st === 'done' ? <V4Pill status="done" label="Passed" /> : st === 'no' ? <V4Pill status="no" label="Objection" />
+      : st === 'doing' ? <V4Pill status="doing" label="In progress" /> : st === 'advice' ? <V4Pill status="idea" label="Advice" /> : <V4Pill status="idea" label="Waiting" />
+    const voteOpts = (layer: string, opts: { vote: string; label: string }[], p: Proposal) => {
+      const mine = (myVotes[p.id] ?? {})[layer]
+      return (
+        <div className="gv4-vote">
+          {opts.map((o, i) => (
+            <Button key={o.vote} size="sm" variant={mine === o.vote ? 'primary' : 'secondary'} icon={mine === o.vote ? 'check' : undefined}
+              onClick={() => castVote(p.id, o.vote, layer)} disabled={voting} aria-pressed={mine === o.vote} className={i === 0 ? undefined : undefined}>{o.label}</Button>
+          ))}
+          {mine && <span className="v4-hint">Tap your answer again to take it back.</span>}
+        </div>
+      )
+    }
+    const sel = selected
+    const access = !isFullMember && (
+      <div className="v4-card v4-note gv4-access">
+        <Icon name="lock" />
+        <span><b>{!isLoggedIn ? 'Members vote' : role === 'joining' ? 'You’ll vote once you’re a member' : 'Start joining to take part'}</b>{' '}
+          {!isLoggedIn ? <>You’re looking around. <a href="/auth/login">Sign in</a> or <a href="/auth/signup">create an account</a> to vote and comment.</>
+            : role === 'joining' ? <>You become a member when your first agreement is accepted. <a href="/achievements">See your contributions →</a></>
+            : <><a href="/join">Start joining →</a></>}
+        </span>
+      </div>
+    )
+    return (
+      <div className="v4-page v4-page--wide v4-gov gv4">
+        {!sel ? (
+          <>
+            <PageHeader eyebrow="Working together" title="Governance"
+              subtitle={<>Every proposal gets <b>4 checks</b> at once. {RULE}{memberCount > 0 ? ` ${memberCount} people can vote.` : ''}</>}
+              actions={isFullMember ? <Button variant="next" onClick={() => setShowNew(true)}>+ New proposal</Button> : undefined} />
+            {access}
+            <div className="v4-chiprow"><span className="v4-chip v4-chip--on">Open <span className="v4-chip__count">{proposals.length}</span></span></div>
+            {proposals.length === 0 ? (
+              <div className="v4-empty"><span className="v4-empty__art"><Icon name="vote" size={30} /></span><b>No open proposals</b><p>When someone proposes something, it shows up here for everyone to check.</p></div>
+            ) : (
+              <div className="gv4-cards">
+                {proposals.map(p => {
+                  const st = checkState(p)
+                  const { isLive } = evalLayers(p)
+                  const voted = Object.keys(myVotes[p.id] ?? {}).length > 0
+                  return (
+                    <button key={p.id} type="button" className="v4-card v4-card--link gv4-card" onClick={() => { setSelectedId(p.id); window.scrollTo(0, 0) }}>
+                      <div className="v4-tags gv4-gap">
+                        {isLive ? <V4Pill status="done" label="Approved" /> : <V4Pill status="doing" label={`Open · ${timeLeft(p.closes_at)}`} />}
+                        {voted && <Tag icon="check">You voted</Tag>}
+                      </div>
+                      <b className="gv4-title">{p.title}</b>
+                      <small className="gv4-by">by {displayName(p.proposer)}</small>
+                      {p.description && <p className="gv4-body">{p.description}</p>}
+                      <div className="v4-tags gv4-checks">
+                        {CHECKS.map((c, i) => <span key={c.key} className={`v4-st v4-st--${st[i] === 'advice' ? 'idea' : st[i]}`} title={c.name}>{c.name.split(' · ')[0]}</span>)}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        ) : (() => {
+          const d = layerVotes(sel.votes, 'democracy'), s = layerVotes(sel.votes, 'sociocracy'), m = layerVotes(sel.votes, 'merit')
+          const { passed, isLive } = evalLayers(sel)
+          const st = checkState(sel)
+          const pct = d.total ? Math.round((d.yes / d.total) * 100) : 0
+          const ai = aiChecks[sel.id]
+          const list = comments[sel.id] ?? []
+          const small = [
+            s.clTotal === 0 ? 'Waiting for the circle leads' : `${s.clConsent} consent · ${s.clConcern} concern · ${s.clObject} object`,
+            `${d.total}${memberCount ? ` of ${memberCount}` : ''} voted · ${d.yes} yes · ${d.no} no${d.total ? ` (${pct}%)` : ''}`,
+            m.expertTotal === 0 ? 'Waiting for a review' : `${m.expertApprove} approved · ${m.expertReject} not approved`,
+            ai?.loading || !ai ? 'Checking against the Blueprint…' : ai.confidence !== null ? `Fits the Blueprint: ${ai.confidence}%` : 'Couldn’t check right now',
+          ]
+          return (
+            <>
+              <button type="button" className="v4-back no-min-height gv4-back" onClick={() => setSelectedId(null)}><Icon name="left" size={14} />Governance</button>
+              <div className="gv4-split">
+                <div>
+                  <div className="v4-tags gv4-gap">
+                    {isLive ? <V4Pill status="done" label="Approved" /> : <V4Pill status="doing" label={`Open · ${timeLeft(sel.closes_at)}`} />}
+                    <Tag>{passed} of {PEOPLE_CHECKS} people checks passed</Tag>
+                  </div>
+                  <h1 className="v4-ph__title gv4-h1">{sel.title}</h1>
+                  <div className="gv4-progress" aria-label={`${passed} of ${PEOPLE_CHECKS} people checks passed; approved at ${APPROVE_AT}`}>
+                    <span className="gv4-track"><i style={{ width: `${(passed / PEOPLE_CHECKS) * 100}%` }} className={isLive ? 'live' : undefined} /><em style={{ left: `${(APPROVE_AT / PEOPLE_CHECKS) * 100}%` }} /></span>
+                    <small>{isLive ? 'Approved' : `Approved at ${APPROVE_AT} of ${PEOPLE_CHECKS}`}</small>
+                  </div>
+                  <p className="gv4-prose">Proposed by {displayName(sel.proposer)} · {new Date(sel.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}.</p>
+                  {sel.description && <p className="gv4-prose gv4-desc">{sel.description}</p>}
+                  {isLive && <div className="v4-card v4-note gv4-live"><Icon name="check" /><span><b>Approved.</b> This proposal is now a decision. Work can begin.</span></div>}
+                  {access}
+
+                  {isFullMember && (
+                    <div className="v4-card gv4-yourvote">
+                      <b>Your vote</b>
+                      {voteOpts('democracy', [{ vote: 'yes', label: 'Vote yes' }, { vote: 'no', label: 'Vote no' }], sel)}
+                    </div>
+                  )}
+
+                  <div className="v4-sec"><h2>Discussion · {list.length}</h2></div>
+                  {loadingComments ? <p className="v4-hint">Loading…</p> : list.length === 0 ? <p className="v4-hint">No comments yet.</p> : (
+                    <div className="v4-list">
+                      {list.map(cm => (
+                        <div key={cm.id} className="v4-row gv4-cm">
+                          <span className="v4-row__lead"><span className="v4-avatar">{(cm.user?.first_name?.[0] ?? cm.user?.username?.[0] ?? '?').toUpperCase()}</span></span>
+                          <span className="v4-row__main"><b>{displayName(cm.user)} <small className="gv4-ago">{ago(cm.created_at)}</small></b><span className="gv4-cmtext">{cm.content}</span></span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {isLoggedIn && (
+                    <div className="gv4-comment">
+                      <textarea className="v4-input" rows={2} value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) postComment() }} placeholder="Add to the discussion… (⌘↵ to send)" />
+                      <Button onClick={postComment} disabled={postingComment || !newComment.trim()}>{postingComment ? 'Sending…' : 'Send'}</Button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="v4-sec"><h2>4 checks</h2></div>
+                  <div className="v4-list gv4-checklist">
+                    {CHECKS.map((c, i) => (
+                      <div key={c.key} className="gv4-check">
+                        <div className="gv4-checkrow">
+                          <span className={`v4-tile ${st[i] === 'done' ? 'v4-tile--green' : st[i] === 'no' ? 'v4-tile--red' : 'v4-tile--grey'}`}><Icon name={st[i] === 'done' ? 'check' : c.icon} /></span>
+                          <span className="v4-row__main"><b>{c.name}</b><small>{small[i]}</small>
+                            {i === 1 && <span className="gv4-bar"><i style={{ width: `${pct}%` }} /></span>}
+                          </span>
+                          {pillFor(st[i])}
+                        </div>
+                        {i === 0 && isCircleLead && voteOpts('sociocracy', [{ vote: 'consent', label: 'I consent' }, { vote: 'concern', label: 'I have a concern' }, { vote: 'object', label: 'I object' }], sel)}
+                        {i === 2 && isAdvisorOrAdmin && voteOpts('merit', [{ vote: 'approve', label: 'Approve' }, { vote: 'reject', label: 'Reject' }], sel)}
+                        {i === 3 && ai && !ai.loading && ai.reasoning && <p className="v4-hint gv4-ai">{ai.reasoning}</p>}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="v4-hint v4-mt">{RULE}</p>
+                </div>
+              </div>
+            </>
+          )
+        })()}
+
+        {showNew && (
+          <ModalShell title="New proposal" onClose={() => setShowNew(false)} maxWidth={540}>
+            <p className="v4-hint">Every proposal gets 4 checks at once. {RULE}</p>
+            <div className="gv4-form">
+              <label className="v4-field"><span>Title</span><input className="v4-input" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. Approve $4k for solar panels" autoFocus /></label>
+              <label className="v4-field"><span>Description <small>optional</small></span><textarea className="v4-input" rows={4} value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Context, cost, who benefits…" /></label>
+              <label className="v4-field gv4-days"><span>Days open</span><input className="v4-input" type="number" min="1" max="30" value={newDays} onChange={e => setNewDays(e.target.value)} /></label>
+            </div>
+            <div className="gv4-foot">
+              <Button variant="secondary" onClick={() => setShowNew(false)}>Cancel</Button>
+              <Button onClick={submitProposal} disabled={submitting || !newTitle.trim()}>{submitting ? 'Sending…' : 'Send proposal'}</Button>
+            </div>
+          </ModalShell>
+        )}
+      </div>
+    )
   }
 
   return (

@@ -86,7 +86,7 @@ export default async function MembersV4({ supabase, userId, memberCount, profile
                   const name = [m.profile.first_name, m.profile.last_name].filter(Boolean).join(' ') || m.profile.username || 'Someone'
                   return (
                     <ListRow key={m.profile.id} href={m.profile.username ? `/u/${m.profile.username}` : undefined}
-                      lead={m.profile.avatar_url ? <img src={m.profile.avatar_url} alt="" className="v4-avatar" /> : <span className="v4-avatar">{name.slice(0, 1).toUpperCase()}</span>}
+                      lead={m.profile.avatar_url ? <img loading="lazy" decoding="async" src={m.profile.avatar_url} alt="" className="v4-avatar" /> : <span className="v4-avatar">{name.slice(0, 1).toUpperCase()}</span>}
                       title={name} meta={m.reasons.slice(0, 2).join(' · ') || 'Shared interests'}
                       trail={<Tag>{m.score}% match</Tag>} />
                   )

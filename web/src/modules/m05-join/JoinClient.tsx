@@ -1,5 +1,5 @@
 'use client'
-import { PageHeader } from '@/core/components/v4'
+import { Button, Icon as V4Icon, PageHeader } from '@/core/components/v4'
 import { DESIGN } from '@/core/lib/instance'
 import { useState } from 'react'
 import { isJoiningOrAbove } from '@/core/lib/roles'
@@ -69,7 +69,7 @@ const ROLE_MAP = [
     color: '#0ea5e9',
     how: 'Sign up for a free account — takes under a minute.',
     access: [
-      'Browse open projects and community members',
+      'Browse open tasks and community members',
       'Read the community blueprint and values',
       'Explore the full platform before committing',
     ],
@@ -80,7 +80,7 @@ const ROLE_MAP = [
     color: '#f59e0b',
     how: 'Complete the M05 Join application: sign the community values, get matched with a buddy, and submit.',
     access: [
-      'Submit collaboration proposals on open projects',
+      'Offer help on open tasks',
       'View the Operations board and sprint progress',
       'Appear in community network matching',
     ],
@@ -89,7 +89,7 @@ const ROLE_MAP = [
     role: 'member',
     label: 'Full Member',
     color: M5,
-    how: 'Application accepted. Activate by completing your first agreement or launching an active project.',
+    how: 'Application accepted. Activate by completing your first agreement or leading an active task.',
     access: [
       'Make binding collaboration agreements',
       'Vote and submit proposals in Governance',
@@ -99,13 +99,13 @@ const ROLE_MAP = [
   },
   {
     role: 'project_lead',
-    label: 'Project Lead',
+    label: 'Task lead',
     color: '#8b5cf6',
-    how: 'Appointed by an admin based on sustained project contributions.',
+    how: 'Appointed by an admin based on sustained contributions.',
     access: [
       'Everything a Member can do',
       'Manage the full Operations panel',
-      'Create and lead community projects',
+      'Create and lead community tasks',
       'Review and update tasks',
     ],
   },
@@ -115,7 +115,7 @@ const ROLE_MAP = [
     color: '#ec4899',
     how: 'Appointed by an admin to steward a key area of the community.',
     access: [
-      'Everything a project lead can do',
+      'Everything a task lead can do',
       'Manage the Blueprint and community values',
       'Review and accept Join applications',
       'Manage collaboration agreements and their status',
@@ -128,7 +128,7 @@ const ROLE_MAP = [
     how: 'Appointed by existing admins. Responsible for the overall health of the community.',
     access: [
       'Full edit access to every module',
-      'Activate, pause, or archive projects',
+      'Activate, pause, or archive tasks',
       'Manage all member roles and permissions',
       'Access all admin panels across the platform',
     ],
@@ -153,13 +153,13 @@ const EXPLORER_BADGES = [
   {
     id: 'contribution',
     label: 'Collaborator',
-    desc: 'Contribute to a community project',
+    desc: 'Contribute to a community task',
     icon: '🤝',
   },
   {
     id: 'ownProject',
-    label: 'Project Lead',
-    desc: 'Propose and lead your own project',
+    label: 'Task lead',
+    desc: 'Suggest and lead your own task',
     icon: '🚀',
   },
 ]
@@ -624,6 +624,18 @@ export default function JoinClient({
   }
 
   // ── Success state ────────────────────────────────────────────────────────────
+  if (submitted && (DESIGN as string) === 'v4') {
+    return (
+      <div className="v4-page" style={{ maxWidth: 760 }}>
+        <div className="v4-empty jn4-done">
+          <span className="v4-empty__art"><V4Icon name="check" size={30} /></span>
+          <b>Application sent</b>
+          <p>Thank you for applying. A circle lead reads your answers and gets back to you soon.</p>
+          <Button onClick={() => setShowForm(false)}>See your progress →</Button>
+        </div>
+      </div>
+    )
+  }
   if (submitted) {
     return (
       <div style={{ maxWidth: 880, margin: '0 auto', padding: '26px 32px 80px' }}>
@@ -660,6 +672,40 @@ export default function JoinClient({
   }
 
   const stepDescriptions = ['Read and sign the community values', 'Get matched with a welcoming buddy', 'Send your application for review']
+
+  if ((DESIGN as string) === 'v4') {
+    return (
+      <div className="v4-page jn4">
+        <button type="button" className="v4-back no-min-height jn4-back" onClick={() => setShowForm(false)}><V4Icon name="left" size={14} />Join</button>
+        <div className="jn4-split">
+          <div className="v4-card jn4-card">
+            <div className="v4-eyebrow">Join · step {step + 1} of {STEPS.length}</div>
+            <div className="jn4-steps" aria-hidden="true">{STEPS.map((_, i) => <i key={i} className={i <= step ? 'on' : ''} />)}</div>
+            <h1 className="jn4-title">{reapplying ? 'Reapply to the community' : stepDescriptions[step]}</h1>
+            {reapplying && <p className="v4-hint jn4-note">Your previous application wasn’t accepted. Go through the steps again and send a new one.</p>}
+            <ProfileSummary profile={userProfile} />
+            {step === 0 && userId && (
+              <Step1Values userId={userId} values={communityValues} signedIds={signedIds} onToggle={handleToggleValue} onNext={() => setStep(1)} />
+            )}
+            {step === 1 && (
+              <Step2Buddy buddies={buddyProfiles} onBack={() => setStep(0)} onNext={() => setStep(2)} />
+            )}
+            {step === 2 && userId && (
+              <Step3Submit userId={userId} questions={questions} signedCount={signedIds.size} totalValues={communityValues.length} onBack={() => setStep(1)} onSubmitted={() => setSubmitted(true)} />
+            )}
+          </div>
+          <aside className="jn4-aside">
+            {STEPS.map((label, i) => (
+              <div key={label} className={`jn4-row${i === step ? ' on' : ''}${i < step ? ' done' : ''}`}>
+                <span className="jn4-num">{i < step ? <V4Icon name="check" size={14} /> : i + 1}</span>
+                <span><b>{label}</b><small>{stepDescriptions[i]}</small></span>
+              </div>
+            ))}
+          </aside>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '26px 32px 80px' }}>
