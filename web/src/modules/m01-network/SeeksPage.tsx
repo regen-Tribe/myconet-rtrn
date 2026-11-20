@@ -15,6 +15,7 @@ import {
   SelectTrigger, SelectValue,
 } from '@/core/components/ui/select'
 import { Plus, HelpCircle, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { modLabel } from '@/core/lib/module-label'
 
 const CATEGORIES = [
   'Housing','Transport','Skills','Resources','Community',
@@ -100,7 +101,7 @@ export default function SeeksPage() {
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · My requests
+          {modLabel('01', 'My requests')}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
@@ -165,7 +166,7 @@ export default function SeeksPage() {
       {requests.length === 0 ? (
         <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 10, padding: '40px 24px', textAlign: 'center' }}>
           <HelpCircle style={{ width: 36, height: 36, color: 'var(--ink-4)', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>No seeks yet</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>No requests yet</div>
           <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>Let the community know what you need.</div>
           <button onClick={openNew} style={{
             fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--m1)',

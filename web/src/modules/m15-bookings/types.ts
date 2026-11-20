@@ -18,6 +18,9 @@ export interface BookingItem {
   requires_approval: boolean
   is_active: boolean
   created_by: string | null
+  /** Pin on the Amenities map, percent of the picture (v4.43.0); null when not placed */
+  map_x?: number | null
+  map_y?: number | null
 }
 
 export interface Booking {

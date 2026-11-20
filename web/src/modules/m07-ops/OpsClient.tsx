@@ -26,6 +26,9 @@ import { ProjectManagerPanel } from './ProjectManagerPanel'
 import { NameTag } from './NameTag'
 import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
 import { PriorityBadge } from './Priority'
+import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import { Button, Chip, ChipRow, PageHeader } from '@/core/components/v4'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +77,12 @@ function StatCard({ label, value, delta, valueColor = 'var(--ink)', onClick, act
   label: string; value: string | number; delta: string; valueColor?: string
   onClick?: () => void; active?: boolean
 }) {
+  if (DESIGN === 'v4') {
+    const body = <><small>{label}</small><b style={{ color: valueColor }}>{value}</b><span>{delta}</span></>
+    return onClick
+      ? <button type="button" className={`v4-stat v4-stat--click${active ? ' on' : ''}`} onClick={onClick} aria-pressed={active}>{body}</button>
+      : <div className="v4-stat">{body}</div>
+  }
   return (
     <div
       onClick={onClick}
@@ -126,6 +135,7 @@ function ProjectKanbanCard({
     <Link href={`/operations/${project.id}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
       <div
         // Blocked cards stay draggable so the attempt can explain itself
+        className="ops-card"
         draggable={canMove || !!onBlockedDrag}
         onDragStart={(e) => {
           if (!canMove) { e.preventDefault(); onBlockedDrag?.(); return }
@@ -229,6 +239,7 @@ function TaskKanbanCard({ task, canMove, onOpen, projectTitle, onDragStart, onDr
       style={{ display: 'block', marginBottom: 8 }}
     >
       <div
+        className="ops-card"
         draggable={canMove || !!onBlockedDrag}
         onDragStart={(e) => {
           if (!canMove) { e.preventDefault(); onBlockedDrag?.(); return }
@@ -363,7 +374,7 @@ export default function OpsClient({
     }
   }
 
-  const sprintLabel = sprintName ?? 'Community Projects'
+  const sprintLabel = sprintName ?? 'Operations'
   const onTrackCount = initialDeliverables.filter(d => d.status === 'in_progress').length
   const totalProjects = boardProjects.filter(p => !p.is_chores && ['backlog', 'in_progress', 'review'].includes(p.status)).length
 
@@ -439,19 +450,28 @@ export default function OpsClient({
   }
 
   return (
-    <div style={{ padding: '26px 32px 60px' }}>
+    <div className={DESIGN === 'v4' ? 'v4-page v4-page--wide v4-ops' : undefined} style={DESIGN === 'v4' ? undefined : { padding: '26px 32px 60px' }}>
 
+{DESIGN === 'v4' ? (
+        <PageHeader eyebrow="Working together" title={sprintLabel}
+          subtitle={<><b>{activeCount} active</b> · {deliverableCount} task{deliverableCount !== 1 ? 's' : ''} · {doneCount} done</>}
+          actions={<>
+            {canPropose && !isAdmin && <Button variant="secondary" href="/operations/new" icon="plus">Suggest a project</Button>}
+            {isAdmin && <Button variant="secondary" icon="plus" onClick={() => setNewTask(true)}>Task</Button>}
+            {isAdmin && <Button href="/operations/new" icon="plus">Project</Button>}
+          </>} />
+) : (<>
       {/* ── Page Head ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, var(--m7) 10%, var(--surface))', color: 'var(--m7)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>
-            Module 07 · Operations
+            {modLabel('07', 'Operations', 'Module')}
           </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 8px' }}>
             {sprintLabel}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
-            {activeCount} active · {deliverableCount} deliverable{deliverableCount !== 1 ? 's' : ''} · {doneCount} done
+            {activeCount} active · {deliverableCount} task{deliverableCount !== 1 ? 's' : ''} · {doneCount} done
           </p>
         </div>
 
@@ -489,6 +509,7 @@ export default function OpsClient({
           )}
         </div>
       </div>
+</>)}
 
       {/* ── Stat Cards ────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 18 }}>
@@ -512,6 +533,13 @@ export default function OpsClient({
         )}
       </div>
 
+{DESIGN === 'v4' ? (
+        <ChipRow>
+          {(['board', 'tasks', 'updates', 'circles'] as const).map(t => (
+            <Chip key={t} on={activeTab === t} onClick={() => setActiveTab(t)}>{({ board: 'Board', tasks: 'Tasks', updates: 'Updates', circles: 'Circles' } as const)[t]}</Chip>
+          ))}
+        </ChipRow>
+) : (<>
       {/* ── Tab Row ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--rule)', marginBottom: 18 }}>
         <button onClick={() => setActiveTab('board')} style={tabStyle('board')}>Board</button>
@@ -519,6 +547,7 @@ export default function OpsClient({
         <button onClick={() => setActiveTab('updates')} style={tabStyle('updates')}>Updates</button>
         <button onClick={() => setActiveTab('circles')} style={tabStyle('circles')}>Circles</button>
       </div>
+</>)}
 
       {/* ── Board ─────────────────────────────────────────────────────── */}
       {activeTab === 'board' && (
@@ -540,6 +569,35 @@ export default function OpsClient({
               </button>
             </div>
           )}
+{DESIGN === 'v4' ? (
+          <div className="v4-opsfilters">
+            <span className="v4-seg" role="tablist" aria-label="Board view">
+              {([['projects', 'Projects'], ['tasks', 'All tasks']] as const).map(([v, label]) => (
+                <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => pickView(v)}>{label}</button>
+              ))}
+            </span>
+            <div className="v4-chiprow" role="group" aria-label="Circle">
+              {[null, ...circles.slugs].map(circle => {
+                const meta = circle ? circles.meta(circle) : null
+                const on = selectedCircle === circle
+                return (
+                  <button key={circle ?? 'all'} type="button" aria-pressed={on} className={`v4-chip${on ? ' v4-chip--on' : ''}`} onClick={() => setSelectedCircle(circle)}>
+                    {meta && <span className="v4-dot" style={{ background: meta.color, width: 8, height: 8 }} />}{meta ? meta.label : 'All circles'}
+                  </button>
+                )
+              })}
+            </div>
+            {userId && (
+              <span className="v4-seg" role="group" aria-label="My role">
+                {(['all', 'lead', 'member', 'subscriber'] as const).map(r => (
+                  <button key={r} type="button" aria-pressed={myRole === r} className={myRole === r ? 'on' : ''} onClick={() => setMyRole(r)}>
+                    {({ all: 'Everything', lead: 'I lead', member: 'I’m in', subscriber: 'I watch' } as const)[r]}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
+) : (<>
           {/* Filters */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
             {/* What the board shows: projects (and tasks with no project yet), or every task */}
@@ -604,6 +662,7 @@ export default function OpsClient({
               </div>
             )}
           </div>
+</>)}
 
         <ProjectManagerPanel
           suggestions={pmSuggestions} actions={pmActions} circle={selectedCircle} canDecide={canDecide}
@@ -625,6 +684,7 @@ export default function OpsClient({
                   e.dataTransfer.dropEffect = 'move'
                   if (dropTarget !== col.key) setDropTarget(col.key)
                 }}
+                className="ops-col"
                 onDragLeave={(e) => { if (e.currentTarget === e.target) setDropTarget(null) }}
                 onDrop={(e) => {
                   e.preventDefault()

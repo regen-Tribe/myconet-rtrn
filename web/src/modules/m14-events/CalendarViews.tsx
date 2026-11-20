@@ -8,6 +8,10 @@ import {
   DAY_LABELS, WEEK_LABELS, addDays, dayKey, fmtDayLong, fmtEventWhen, fmtTime, groupByDay, isPast,
   monthGrid, sameDay, startOfDay, weekDays,
 } from './lib/calendar'
+import { DESIGN } from '@/core/lib/instance'
+import { Icon, StatusPill } from '@/core/components/v4'
+
+const V4 = DESIGN === 'v4'
 
 /** An event takes its calendar's colour (Daily, Core, Community, Tasks); categories show as a dot */
 export function eventColor(e: CalendarEvent): string {
@@ -60,7 +64,7 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
   const MAX = 3
 
   return (
-    <div style={{ border: '1px solid var(--rule)', borderRadius: 10, overflow: 'hidden', background: 'var(--surface)' }}>
+    <div className={V4 ? 'v4-calframe' : undefined} style={{ border: '1px solid var(--rule)', borderRadius: 10, overflow: 'hidden', background: 'var(--surface)' }}>
       <div className="ev-grid7" style={{ borderBottom: '1px solid var(--rule)', background: 'var(--bg-2)' }}>
         {WEEK_LABELS.map(l => (
           <div key={l} style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', padding: '8px 8px' }}>
@@ -195,7 +199,7 @@ function WeekGrid({ anchor, events, now, onOpen }: {
   const hasBanners = banners.some(b => b.length)
 
   return (
-    <div ref={scroller} style={{
+    <div ref={scroller} className={V4 ? 'v4-calframe' : undefined} style={{
       border: '1px solid var(--rule)', borderRadius: 10, background: 'var(--surface)',
       overflow: 'auto', maxHeight: 'min(72vh, 760px)', position: 'relative',
     }}>
@@ -354,6 +358,28 @@ function EventRow({ event: e, rsvps, userId, onOpen, dim = false }: {
   const color = eventColor(e)
   const going = rsvps.filter(r => r.event_id === e.id && r.status === 'going').length
   const mine = userId ? rsvps.find(r => r.event_id === e.id && r.user_id === userId) : null
+  // The v4 look: the same facts as a soft row (time, title, where, circle, who's going, your answer)
+  if (V4) {
+    return (
+      <button type="button" className={`v4-evrow${dim ? ' v4-evrow--dim' : ''}`} onClick={() => onOpen(e.id)} style={{ ['--ev' as string]: color }}>
+        <span className="v4-evrow__time">{e.all_day ? 'All day' : fmtTime(e.starts_at)}</span>
+        <span className="v4-evrow__main">
+          <b>{e.title}</b>
+          <small>
+            {e.location && <span><Icon name="pin" size={13} />{e.location}</span>}
+            {e.online_url && <span><Icon name="laptop" size={13} />Online</span>}
+            {circles.has(e.circle) && <span><span className="v4-dot" style={{ background: circles.meta(e.circle).color, width: 7, height: 7 }} />{circles.meta(e.circle).label}</span>}
+            {e.project && <span><Icon name="board" size={13} />{e.project.title}</span>}
+            {e.is_public && <span><Icon name="globe" size={13} />Public</span>}
+          </small>
+        </span>
+        <span className="v4-evrow__trail">
+          {going > 0 && <small>{going} {KIND_META[e.kind].goingCount}</small>}
+          {mine && <StatusPill status={mine.status === 'going' ? 'done' : 'review'} label={mine.status === 'going' ? KIND_META[e.kind].youGoing : 'Maybe'} />}
+        </span>
+      </button>
+    )
+  }
   return (
     <button
       onClick={() => onOpen(e.id)}
@@ -449,7 +475,7 @@ export function ListView({ events, rsvps, userId, now, showPast, onOpen }: {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       {groups.map(g => (
         <div key={dayKey(g.day)}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: sameDay(g.day, now) ? 'var(--m14)' : 'var(--ink-3)', marginBottom: 8 }}>
+          <div className={V4 ? 'v4-evday' : undefined} style={V4 ? undefined : { fontSize: 12, fontWeight: 700, color: sameDay(g.day, now) ? 'var(--m14)' : 'var(--ink-3)', marginBottom: 8 }}>
             {sameDay(g.day, now) ? 'Today · ' : ''}{fmtDayLong(g.day)}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

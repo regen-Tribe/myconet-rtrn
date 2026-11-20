@@ -1,10 +1,13 @@
 'use client'
+import { Button, PageHeader } from '@/core/components/v4'
+import { DESIGN } from '@/core/lib/instance'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { formatDeadline } from '@/core/lib/format'
 import { moduleOn } from '@/core/lib/modules'
 import NewProjectModal from './NewProjectModal'
 import { FormField, FocusInput, FocusTextarea } from './AgreementFormFields'
+import { modLabel } from '@/core/lib/module-label'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -297,13 +300,18 @@ export default function AgreementsClient({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ padding: '26px 32px 60px' }}>
+    <div className={DESIGN === 'v4' ? 'v4-page v4-page--wide' : undefined} style={DESIGN === 'v4' ? undefined : { padding: '26px 32px 60px' }}>
 
+{DESIGN === 'v4' ? (
+        <PageHeader eyebrow="Working together" title="Agreements"
+          subtitle="Propose exactly what you’ll contribute to a project, and exactly what you expect in return."
+          actions={<Button icon="plus" onClick={() => setShowNewProject(true)}>Propose a new project</Button>} />
+      ) : (<>
       {/* Page head */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 24, flexWrap: 'wrap' as const }}>
         <div>
           <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--m6)', background: 'color-mix(in srgb, var(--m6) 10%, transparent)', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-            Module 06 · Agreements
+            {modLabel('06', 'Agreements', 'Module')}
           </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.15, marginBottom: 8 }}>
             Agreements
@@ -319,6 +327,7 @@ export default function AgreementsClient({
           + Propose new project
         </button>
       </div>
+      </>)}
 
       {/* Tab row */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--rule)', paddingBottom: 0 }}>

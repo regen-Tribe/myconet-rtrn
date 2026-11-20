@@ -1,3 +1,5 @@
+import { PageHeader } from '@/core/components/v4'
+import { DESIGN } from '@/core/lib/instance'
 import { createClient } from '@/core/lib/supabase/server'
 import Link from 'next/link'
 import { moduleOn } from '@/core/lib/modules'
@@ -55,10 +57,13 @@ export default async function ContributionsPage() {
   }
 
   return (
-    <div style={{ padding: '32px 28px', maxWidth: 720 }}>
+    <div className={DESIGN === 'v4' ? 'v4-page' : undefined} style={DESIGN === 'v4' ? { maxWidth: 820 } : { padding: '32px 28px', maxWidth: 720 }}>
       <div style={{ marginBottom: 24 }}>
+        {DESIGN === 'v4' ? (
+          <PageHeader eyebrow="You" title="Achievements" subtitle="Badges earned by showing up, contributing and building this community." />
+        ) : (<>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <span style={{
+          <span className="mod-num" style={{
             fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
             letterSpacing: '0.12em', textTransform: 'uppercase',
             color: 'var(--m8)', background: 'color-mix(in srgb, var(--m8) 10%, transparent)',
@@ -70,6 +75,7 @@ export default async function ContributionsPage() {
         <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>
           Badges earned by showing up, contributing, and building this community.
         </p>
+        </>)}
         {points !== null && (
           <p style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 10, fontWeight: 600 }}>
             Your points: <span style={{ color: 'var(--m8)' }}>{points}</span>

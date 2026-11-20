@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
 import { useBranding } from '@/core/components/BrandingProvider'
 
 type Mode = 'login' | 'register' | 'forgot'
@@ -131,17 +131,25 @@ export default function AuthPage() {
     setForgotLoading(false)
   }
 
-  const inp: React.CSSProperties = {
+  const inpClassic: React.CSSProperties = {
     width: '100%', padding: '11px 14px', borderRadius: 10, fontSize: 14,
     border: '1px solid var(--rule)', background: 'var(--bg-2)',
     color: 'var(--ink)', outline: 'none', boxSizing: 'border-box',
     fontFamily: 'inherit', transition: 'border-color 120ms',
   }
-  const btn: React.CSSProperties = {
+  const btnClassic: React.CSSProperties = {
     width: '100%', padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 600,
     background: 'var(--ink)', color: 'var(--bg)', border: 'none', cursor: 'pointer',
     transition: 'opacity 120ms',
   }
+  // The v4 look: the shared field and the black pill button (DESIGN-SYSTEM.md › v4)
+  const V4 = DESIGN === 'v4'
+  const inp: React.CSSProperties = V4
+    ? { width: '100%', boxSizing: 'border-box', fontSize: 15, color: 'var(--ink)', background: 'var(--surface)', border: 0, boxShadow: 'inset 0 0 0 1px var(--rule)', borderRadius: 14, padding: '13px 14px', outline: 'none', fontFamily: 'inherit' }
+    : inpClassic
+  const btn: React.CSSProperties = V4
+    ? { width: '100%', height: 48, borderRadius: 999, border: 'none', background: 'var(--ink)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }
+    : btnClassic
   const lbl: React.CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }
   const linkBtn: React.CSSProperties = { fontSize: 'inherit', fontWeight: 600, color: 'var(--accent-color)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }
 
@@ -344,7 +352,7 @@ export default function AuthPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {[
               { icon: '👤', title: 'Deep profiles', desc: 'Share your values, skills, and goals. Get matched with people who align.' },
-              { icon: '🗳️', title: '4-layer governance', desc: 'Every proposal is evaluated by Sociocracy, Democracy, Meritocracy, and AI.' },
+              { icon: '🗳️', title: 'Four checks on every proposal', desc: 'Circle leads, all members, admins and advisors, and an AI Blueprint check.' },
               { icon: '⚙️', title: 'Real project ops', desc: 'Suggest projects, make agreements, track tasks together.' },
             ].map(f => (
               <div key={f.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>

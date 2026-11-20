@@ -3,6 +3,114 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.52.0',
+    date: '2026-11-20',
+    title: 'About, as designed',
+    items: ['With the new look on, About shows the community as designed: the big photo and name, short facts, and chapters from our story to where we’re going, with the map of the land and the Blueprint’s progress.'],
+  },
+  {
+    version: 'v4.51.0',
+    date: '2026-11-20',
+    title: 'The new look, all the way in',
+    items: ['With the new look on, the cards, tabs, buttons, labels and fields inside Agreements, Meetings, Governance, Join, Achievements, the Members pages and the pop-ups match the rest of the app.'],
+  },
+  {
+    version: 'v4.50.0',
+    date: '2026-11-20',
+    title: 'The rest of the way in',
+    items: ['With the new look on, Join, Achievements, the sign-in page and the landing page match the rest of the app.'],
+  },
+  {
+    version: 'v4.49.0',
+    date: '2026-11-20',
+    title: 'Operations, the new way',
+    items: ['With the new look on, Operations, its board and project pages match the rest of the app.', 'On a phone, the top bar shows a menu button and the page you’re on.'],
+  },
+  {
+    version: 'v4.48.0',
+    date: '2026-11-20',
+    title: 'The menu, as designed',
+    items: ['With the new look on, the menu runs the full height with your community’s mark on top and you at the foot. The arrow makes it a slim row of icons instead of hiding it.'],
+  },
+  {
+    version: 'v4.47.0',
+    date: '2026-11-20',
+    title: 'More pages in the new look',
+    items: ['With the new look on, Circles, Agreements, Meetings and Governance get the new page headers, and Circles gets soft cards.'],
+  },
+  {
+    version: 'v4.46.0',
+    date: '2026-11-20',
+    title: 'Calendar, the new way',
+    items: ['With the new look on, the Calendar’s header, filters, toolbar and event lists match the rest of the app. Everything works as before.'],
+  },
+  {
+    version: 'v4.45.0',
+    date: '2026-11-20',
+    title: 'Members, the new way',
+    items: [
+      'With the new look on, Members shows everyone as cards with their circles, offers and what they’re looking for. Filter by circle or search.',
+      'The Members pages share one row of tabs instead of a second side menu.',
+    ],
+  },
+  {
+    version: 'v4.44.0',
+    date: '2026-11-20',
+    title: 'Explore the map',
+    items: [
+      'Zoom into the Amenities map and move around it. Tap a pin to see what it is, whether it’s free, and book it.',
+      'The list beside the map shows each pin when you point at a name, and takes you there when you click it.',
+    ],
+  },
+  {
+    version: 'v4.43.1',
+    date: '2026-11-20',
+    title: 'A fix for the map',
+    items: ['A safety check on the map pins now holds in every case. Nothing changes on screen.'],
+  },
+  {
+    version: 'v4.43.0',
+    date: '2026-11-20',
+    title: 'A map of the amenities',
+    items: [
+      'With the new look on, Amenities & tools shows a map of the land with a pin for each room, tool and space. Tap a pin to see it and book it.',
+      'Admins upload the picture of the land in Admin › Bookings › Map; admins and circle leads put their rooms, tools and spaces on it.',
+    ],
+  },
+  {
+    version: 'v4.42.1',
+    date: '2026-11-20',
+    title: 'Booking in the new look',
+    items: [
+      'With the new look on, the booking pop-up and the form to add or edit a room, tool or space match the rest of the app. Booking works as before.',
+    ],
+  },
+  {
+    version: 'v4.42.0',
+    date: '2026-11-20',
+    title: 'The new menu, with the new look',
+    items: [
+      'For communities that use the new look: your next step on top of the menu, then You, Community, Working together and Admin. Plain names, one icon each, and a count of your open tasks beside My dashboard.',
+      'Newcomers see where they are (Explorer, Joining member, Member) inside the next step, a line under each group, and why a locked page is locked.',
+      'Accommodation and Resources become one page, Amenities & tools, that explorers can look around. Booking opens when you’re a joining member.',
+      'Admin has Applications, Bookings and Permissions. Circle leads see Permissions without changing it.',
+      'On a phone, a bar at the bottom with Dashboard, Operations (About for newcomers), Calendar, Members and Menu, each with its name.',
+      'About {community} tells the Blueprint as a page to read: the photo, short facts and chapters (why we’re here, how we live, how we decide, joining…), with the whole plan still one click away.',
+      'Amenities & tools and Admin › Bookings in the new look, and a calendar in Admin › Bookings that shows who stays where, day by day.',
+      'Permissions lists each person’s role and circles, explains what each role can do, and gathers the settings only admins change.',
+    ],
+  },
+  {
+    version: 'v4.41.0',
+    date: '2026-11-19',
+    title: 'Building blocks and a new My dashboard',
+    items: [
+      'Shared buttons, status labels, filters, cards, lists, page headers, the next-step box, empty states and one hand-drawn icon set, so every page can move to the new look the same way. See them all at /design.',
+      'With the new look on, My dashboard is redesigned: one next step on top, your tasks with filters, your project, the next event, open proposals and your circles.',
+      'With the new look on, pop-ups get a light blurred backdrop and open from the bottom on phones.',
+    ],
+  },
+  {
     version: 'v4.40.0',
     date: '2026-11-19',
     title: 'One vocabulary',

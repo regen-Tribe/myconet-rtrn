@@ -5,6 +5,232 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.52.0 — 2026-11-20 — About {community} laid out as the prototype (from Protopia, Sonia)
+
+Only with the v4 look. Sonia: "this is not the design". `AboutV4.tsx` now follows
+`design/redesign-prototype/app.js › pAbout`, filled from the community's own data:
+- **Hero**: the banner full-bleed with a dark fade, a place tag (from the Blueprint's working name or country), the
+  name very large in white, the tagline, Start joining (explorers), **Ask about {community}** (opens the assistant)
+  and Edit Blueprint (circle leads).
+- **Facts strip** with short facts (lead-ins dropped, number words as digits), chapter chips that stay on top.
+- **Chapters**: Why we're here (the purpose as a big quote, mission and vision cards), Our story, The land (with the
+  Amenities map picture when there is one, and food / water / energy / shared-spaces cards), A day here (times when
+  the rhythm has them), What we value (numbered pastel cards from the community values, agreements banner), How we
+  decide, Living here (ways to stay, how joining works as numbered steps), People (circle leads and admins), Where
+  we're going, and **Blueprint progress** (readiness, gates and the five pillars, from the wizard's own scoring).
+- Long answers show their first sentences with **Read more**; every other answered field stays under "The whole
+  Blueprint". Uses `community_settings.site_map_url` when present (read forgivingly).
+
+## v4.51.0 — 2026-11-20 — the insides of the older pages in the v4 look (from Protopia, Sonia)
+
+Only with the v4 look. A scoped layer in `globals.css` restyles the inline-styled patterns the older pages share,
+only inside v4 page frames and pop-ups (`.v4-page`, `.v4-members`, `.v4-gov`, `.modal-shell__dialog`): bordered
+cards become soft white cards, underline tabs become chips, module-coloured buttons become black pills, outlined
+buttons become white pills, monospace capital labels become light capitals, fields get the shared field look, and
+thick coloured card edges go. Covers Agreements, Meetings, Governance, Join, Achievements, the Members sub-pages,
+Operations and the pop-ups (task, project, event). Matches React's style text both as server-rendered (`prop:val`)
+and after hydration (`prop: val`). The building blocks are untouched. Pages still get proper rebuilds over time.
+
+## v4.50.0 — 2026-11-20 — Join, Achievements, sign in and the landing page in the v4 look (from Protopia, Sonia)
+
+Only with the v4 look.
+- **Join** and **Achievements**: the shared page header in the v4 page frame.
+- **Sign in** (`app/auth/login`): the shared field (white, rounded, hairline) and the black pill button; headings in
+  the v4 type.
+- **The landing page** (`/`, `landing.css`): a scoped layer in `globals.css` (`[data-design="v4"] .lp…`): headings in
+  the v4 type, black and white pill buttons, light-capital eyebrows without module dots, soft cards.
+
+## v4.49.0 — 2026-11-20 — Operations in the v4 look; the phone top bar as in the prototype (from Protopia, Sonia)
+
+Only with the v4 look.
+- **Operations** (`m07-ops/OpsClient.tsx`): the shared page header (Suggest a project, Task, Project), the numbers as
+  soft cards (At risk and Drafts still filter when clicked), Board · Tasks · Updates · Circles as chips, and the
+  filters as one row (Projects | All tasks, circles with their colour dot, Everything | I lead | I'm in | I watch).
+- **The board and the project page**: columns on a soft panel, cards as white rounded cards without the coloured
+  edge; the project title in the v4 type (`ops-col`, `ops-card`, `ops-detail-*` hooks in `globals.css`). Dragging,
+  permissions, drafts and pop-ups are unchanged.
+- **Phone top bar** (`AppTopBar.tsx`): a menu button and the name of the page you're on, on the page colour, then the
+  bell and your account (the logo is in the menu).
+- Slim menu mode applies on desktop only.
+
+## v4.48.0 — 2026-11-20 — the menu as in the prototype, with a slim mode (from Protopia, Sonia)
+
+Only with the v4 look.
+- **Full-height menu** (`MenuV4.tsx`, `AppShell.tsx`), like `design/redesign-prototype`: the community's letter mark
+  and name ("on MyCoNet") on top, the next step, You / Community / Working together / Admin, and you at the foot
+  (photo, name, role → your profile) with the version under it. The top bar sits over the page only, on the page
+  colour, with search, the bell and your account; the logo moves into the menu.
+- **Slim mode** instead of hiding the menu: the arrow beside the name makes it a 76px rail of icons (names on hover,
+  a red dot for counts, the next step as a round green button); the arrow brings it back. Remembered per browser.
+- Active page in the prototype's style (page colour with a hairline). On phones the menu opens full, with a close
+  button.
+- `layout.tsx` passes who's signed in (`MenuState.me`).
+
+## v4.47.0 — 2026-11-20 — Circles, Agreements, Meetings and Governance headers in the v4 look (from Protopia, Sonia)
+
+Only with the v4 look; release 7 continues (a first pass on these four pages).
+- **Circles** (`m17-org/OrgChartClient.tsx`): the shared page header ("Circles", where you sit, Add circle for
+  admins) and soft white cards for the stewards and every circle, no coloured stripes. Editing is unchanged.
+- **Agreements**, **Meetings** and **Governance**: the shared page header with their main action (Propose a new
+  project, Upload recording, New proposal) as a shared button, inside the v4 page frame.
+- Their lists, tabs and pop-ups keep their current inside for now (next passes).
+
+## v4.46.0 — 2026-11-20 — Calendar in the v4 look (from Protopia, Sonia)
+
+Only with the v4 look; release 7 continues.
+- **Calendar** (`m14-events/EventsClient.tsx`): the page header (Linked calendars, Add from a photo, New event as
+  shared buttons), the event kinds and categories as chips you switch on and off, and one toolbar (previous /
+  Today / next, the circle filter, Day · Week · Month · List).
+- **Event rows** (List and Day views, `CalendarViews.tsx`): time, title, where, online, circle, project and Public
+  with icons, who's going, and your answer as a status label. Month and week grids get the soft frame.
+- Same events, filters, links (`?show=`, `?view=`), RSVPs, pop-ups and permissions as before.
+
+## v4.45.0 — 2026-11-20 — Members in the v4 look (from Protopia, Sonia)
+
+Only with the v4 look. Release 7 of DESIGN-SYSTEM.md › v4 starts here: the existing pages move to `core/components/v4`.
+- **Members** (`modules/m01-network/MembersV4.tsx`, `MembersGridV4.tsx`): everyone as cards (avatar, headline, their
+  circles, what they offer and what they're looking for), filtered by circle or searched. The classic page listed
+  only the newest eight. Kept from the classic page: "Finish your profile" (now the green next step), your best
+  matches, and what's new lately; the visitor note with Sign in / Create account.
+- **One row of tabs** for the Members pages (Everyone, Matches for you, My offers, My requests, Search, My profile)
+  instead of their own side menu (`MembersTabsV4.tsx`, in `app/members/layout.tsx`). The sub-pages keep their
+  current inside for now.
+
+## v4.44.0 — 2026-11-20 — the Amenities map is interactive (from Protopia, Sonia)
+
+- **Zoom and move around** (`AmenitiesMap.tsx`): + / − and a reset button, double click, ⌘/Ctrl + scroll or a
+  trackpad pinch, drag to pan, two fingers on a phone. A plain scroll still scrolls the page. Pins keep their size.
+- **A card for each pin**: what it is, where, how many people, "Free now" or "In use until…", whether it needs
+  approval, and **See and book** (opens the booking pop-up). Beside its pin on wide screens, kept inside the map;
+  under the map on phones. Escape or a click on the map closes it.
+- **The list beside the map**: hovering a name lights up its pin; clicking it flies there and opens its card.
+- Pins opt out of the phone 44px button minimum (`no-min-height`) with a larger invisible tap area.
+
+## v4.43.1 — 2026-11-20 — fix: the map pin check (from Protopia)
+
+- **Migration `20261210000100_amenities_map_pin_check.sql`**: v4.43.0's pin check let a half pin through (one
+  coordinate set, the other empty), because a CHECK that comes out NULL counts as passed. Now both are set and
+  between 0 and 100, or both are empty. Apply it with the v4.43.0 migration (found in Protopia's dry run, before
+  anything was applied). The app always saves both together, so no data was affected.
+
+## v4.43.0 — 2026-11-20 — the Amenities map (from Protopia, Sonia)
+
+- **A map on Amenities & tools** (v4 look): the community's picture of the land (an aerial photo or a drawn plan)
+  with a pin for each room, tool and space that has one. Map | List switch; a pin opens the item. Items without
+  a pin are listed under the map. `modules/m15-bookings/AmenitiesMap.tsx`.
+- **Admin › Bookings › Map**: admins upload or replace the picture (public `branding` bucket, like the banner);
+  admins and circle leads place, move or remove the pins of the items they manage ("Place", then click on the map).
+- **Migration `20261210000000_amenities_map.sql`**: `community_settings.site_map_url`, `booking_items.map_x` and
+  `map_y` (percent of the picture, 0–100, both or neither). No new policies: the existing ones decide who edits
+  (admins for the picture; the "leads edit items" policy for pins). The page reads pins and the picture on their
+  own, so a community that hasn't applied the migration yet keeps a working bookings page without the map.
+
+## v4.42.1 — 2026-11-20 — the booking pop-up and item form in the v4 look (from Protopia, Sonia)
+
+Only with the v4 look. Same fields, rules, checks and messages; only the view changed.
+- **Booking pop-up** (`m15-bookings/ItemModal.tsx`): the item's icon tile in the title, tags and circle as tags,
+  location, capacity and approval as an icon list, booked times as soft rows ("You" in the action green), the
+  booking form with the shared fields, the overlap warning, and Archive / Edit item at the bottom.
+- **Add or edit an item** (`ItemFormModal.tsx`): category and circle as chips, tags you can remove, suggested tags,
+  the approval checkbox, Cancel / Save.
+- **Shared form styles** for any v4 pop-up (`globals.css`): `.v4-modal`, `.v4-form`, `.v4-field`, `.v4-input`,
+  `.v4-check`, `.v4-done`, `.v4-warn`, `.v4-error-box`, `.v4-hint`. No migration.
+
+## v4.42.0 — 2026-11-20 — the v4 menu (from Protopia, Sonia)
+
+Only with the v4 look (`"design": "v4"`); every other community keeps today's menu and addresses. Release 2 of
+DESIGN-SYSTEM.md › v4, from the menu Sonia decided on 19 Nov (`design/redesign-prototype/app.js › NAV`), with the
+orientation review's proposals she picked (O3, O5, O7, O8, O9 below).
+
+- **The menu** (`core/components/shell/MenuV4.tsx`; AppShell picks it, `AppSideNav` is unchanged): **Your next step**
+  on top in the action green, then **You** (My dashboard, with your open-task count), **Community** (About
+  {community}, Members, Calendar, Circles, Amenities & tools), **Working together** (Operations, Agreements, Meetings,
+  Governance) and **Admin** for circle leads and admins (Applications and Bookings with their waiting counts,
+  Permissions). Plain names and one icon each (the shared `Icon` from `core/components/v4`). One list feeds the menu,
+  the phone tab bar and search: `core/lib/nav.ts › menuGroups()`.
+- **The next step** (`core/lib/menu-server.ts`, loaded in `layout.tsx` with the viewer's session): signed out,
+  Create account (Sign in beside it); explorer, Start joining (or "Your application is in"); joining member, Your
+  first agreement (or "Waiting for an answer"); admin, booking requests then join applications; circle lead, join
+  applications; then your next task by due date, else "Find a project to help on". For explorers and joining
+  members it shows **Explorer · Joining member · Member** with "Step N of 3" (O3), and each group has a line
+  under its label (O7). It hides on My dashboard, which has its own next step (`DashboardV4`).
+- **Locked items say why** (O5): below joining member, Agreements and Meetings show a lock, aren't links, and say
+  "Opens when you're a joining member" on hover and to screen readers. Amenities & tools isn't locked.
+- **Phone tab bar** (`TabBarV4.tsx`): Dashboard, Operations, Calendar, Members and Menu, each named under its
+  icon (O9). Explorers and joining members get About instead of Operations (O8). Menu shows the name of the
+  page you're on when it isn't one of the four, and opens the menu above the bar. The assistant's dot moves up.
+- **New pages and addresses**: `/about` (the Blueprint page), `/amenities` (all bookable things on one page: a
+  third booking scope, `amenities`; Browse, My bookings, Manage), `/admin/applications` (join applications, moved
+  out of the Join page; circle leads review, admins decide), `/admin/bookings` (booking requests and the
+  inventory) and `/admin/permissions` (`UsersAdminClient` with `readOnly` for circle leads). They exist for every
+  community; with v4, `/blueprint`, `/accommodation`, `/resources`, `/stays`, `/bookings` and `/admin/users`
+  redirect to them permanently (`next.config.ts`, read from `NEXT_PUBLIC_DESIGN`).
+- **The user menu** (under your name) with v4: View my profile, Edit profile, Change password, Achievements, Sign
+  out. Achievements stays here until badges show on profiles; no dark-mode switch (v4 is light only).
+- **The version** under the logo is small plain text with v4 (11px, `--ink-4`), not a pill.
+- Booking for explorers says "Booking opens when you're a joining member" (all communities).
+- **LEXICON.md**: the v4 menu's names and addresses (My dashboard, About {community}, Amenities & tools,
+  Applications, Bookings, Permissions).
+- **About {community} in the v4 look** (`modules/m04-blueprint/AboutV4.tsx`): the Blueprint as a page to read. The
+  banner and logo, the community's name with the working name's sentence as a tagline, short facts, and chapters
+  from the Blueprint answers (why we're here, mission and vision, values with the community values, the land, how we
+  live, decide and share, joining, where we're going). Every other answered field is folded under "The whole
+  Blueprint", so nothing is hidden. `?edit=1` and old `/blueprint?step=…` links open the wizard; everyone gets a
+  link to it (read-only below circle lead).
+- **Amenities & tools and Admin › Bookings in the v4 look** (`modules/m15-bookings/BookingsV4.tsx`, only the view:
+  `BookingsClient` keeps the state, rules and writes). Category filters with counts, search, tag filters, cards with
+  "Free now"; My bookings and Manage as lists. Admin › Bookings has **Calendar** (two weeks of rooms, and any tool or
+  space booked, with who and waiting requests in yellow; earlier/later), Requests and Inventory.
+- **Admin › Permissions in the v4 look** (`UsersAdminClient › PermissionsV4`): filter by role, "What can each role
+  do?", each person's role, the circles they lead and the circles they're in (same saves), and **Community settings**:
+  one list of what only admins change (look and feel, circles, documents, community values, the Blueprint), each
+  opening where it lives.
+- Not yet: the map of amenities (items have no position yet), the booking pop-up's inside, a vote as the menu's next step (My dashboard has it). The counts refresh when a page loads, not as you click
+  around. No migration.
+
+## v4.41.0 — 2026-11-19
+
+- **v4 building blocks** (`core/components/v4`, DESIGN-SYSTEM.md › v4, release 2): `Button` (primary, secondary, quiet,
+  danger, next), `StatusPill` (+ `statusFromDb`, lexicon labels), `Chip`/`ChipRow`, `Card`, `List`/`ListRow`, `IconTile`,
+  `PageHeader` (eyebrow without module numbers, title, line, actions, back link), `NextStep`, `SectionHead`, `EmptyState`,
+  `Tag`, and `Icon` with Sonia's 66 marker-line icons (`core/components/v4/icons.ts`). Styles are the `.v4-*` rules in
+  `globals.css`; they read the v4 tokens with fallbacks, so they work where v4 is off. Nothing uses them yet except
+  `/design`, a reference page with every block (sample words, noindex).
+- **My dashboard in v4** (`m00-dashboard/DashboardV4.tsx`, shown only when v4 is on; DESIGN-SYSTEM.md › v4 release 3):
+  "Hey {name}, welcome home", one next step by role (Start joining / your application / your first agreement / join
+  applications to answer / a proposal to vote on / your next task), your project and the next event, **Your tasks** with
+  status filters (`YourTasks.tsx`; My tasks lives here now), open proposals (with "You voted"), your circles, and a
+  "Start here" list for explorers. Built only from `core/components/v4`; no module numbers.
+- **ModalShell** gets class names; under v4 its backdrop is light and blurred and it opens as a bottom sheet on phones.
+  Unchanged where v4 is off. No migration.
+
+
+### the lexicon's words on the remaining screens
+
+- **Governance** (`LEXICON.md`): every proposal gets **4 checks**, each named who · how (Circle leads · consent, All
+  members · majority vote, Admins & advisors · expert review, AI · Blueprint check); **Approved** / **Not approved**
+  instead of "live" / "Rejected"; "Waiting for circle leads" instead of "Awaiting CL"; no "layers", "L01–L04" or
+  "threshold". Same words in the home and landing demos and the sign-in page.
+- **Governance: the AI · Blueprint check is advice** (Sonia, 2026-11-19). It always counted as passed and was never
+  saved, so "3 of 4" really meant 2 of the 3 people checks. The rule now says so: **Approved when 2 of the 3 people
+  checks pass** (circle leads, all members, admins & advisors); the screen counts "N / 3 people checks passed". The AI
+  panel says "Advice" and, when the check fails, "Couldn't check" instead of a made-up 75% "✓ Cleared". No proposal
+  changes status. `LEXICON.md` and the M09 README state the rule.
+- **Operations**: the board title is "Operations" when no sprint is set (was "Community Projects"); "27 active ·
+  262 tasks" (was deliverables); home "Latest tasks".
+- **Members**: "Your requests", "No requests yet" (were seeks).
+- Text only: no data, address or behaviour changes.
+
+### no module numbers in the v4 look
+
+- **The v4 look shows no module numbers** (Sonia, 19 Nov: "only in the new look"). With `"design": "v4"`, labels
+  like "M01 · Members" or "Module 07 · Operations" read just "Members" / "Operations", and number badges ("M08") are
+  hidden. The current look is unchanged. Text labels go through `modLabel()` (`core/lib/module-label.ts`); number-only
+  badges carry the `mod-num` class, hidden under v4 in `globals.css`. The sidebar's own numbers are left to the menu
+  rebuild.
+
+- No data or address changes; the only behaviour change is the AI check's failure answer (`confidence: null`).
+
 ## v4.40.0 — 2026-11-19 — one vocabulary (from Protopia, Sonia)
 
 - **`LEXICON.md`**: one word per idea, for screens, emails, agent prompts and the second brain. Approved by Sonia
@@ -25,6 +251,8 @@ are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
   recorded in `points_log` (one row per award, undone with `undo_points()`, never deleted); accepting an agreement
   with a `points_value` logs it. With the switch off, no screen mentions points, reputation or the points demo;
   with it on, Achievements shows your total (`points_total()`). **Migration** `20261209000000_points_log.sql`.
+- **Meetings say "the assistant" too** (`LEXICON.md`): the meetings list, a meeting's page, the upload form, the
+  notes email and the "couldn't read this meeting" note. The agent's own prompt and second-brain notes are unchanged.
 
 ## v4.39.0 — 2026-11-19
 

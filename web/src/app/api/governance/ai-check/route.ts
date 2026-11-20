@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/core/lib/supabase/server'
 
+// Advice only: the result is shown to the viewer, never saved, and doesn't count toward
+// approval (see evalLayers in GovernanceClient.tsx). confidence is null when the check didn't run.
 export async function POST(req: NextRequest) {
   // Signed-in users only, so the AI key can't be used anonymously
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ confidence: 75, reasoning: 'Sign in to see the AI check.' }, { status: 401 })
+  if (!user) return NextResponse.json({ confidence: null, reasoning: 'Sign in to see the AI check.' }, { status: 401 })
 
   const apiKey = process.env.MINIMAX_API_KEY
-  if (!apiKey) return NextResponse.json({ confidence: 75, reasoning: 'AI check not configured.' })
+  if (!apiKey) return NextResponse.json({ confidence: null, reasoning: 'AI check not configured.' })
 
   let body: { title?: string; description?: string | null }
-  try { body = await req.json() } catch { return NextResponse.json({ confidence: 75, reasoning: 'Invalid request.' }) }
+  try { body = await req.json() } catch { return NextResponse.json({ confidence: null, reasoning: 'Invalid request.' }) }
 
   const title = typeof body.title === 'string' ? body.title.slice(0, 300) : ''
   const description = typeof body.description === 'string' ? body.description.slice(0, 4000) : null
-  if (!title) return NextResponse.json({ confidence: 75, reasoning: 'No proposal title provided.' })
+  if (!title) return NextResponse.json({ confidence: null, reasoning: 'No proposal title provided.' })
 
   // Fetch community blueprint to compare against
   const { data: bp } = await supabase
@@ -63,7 +65,7 @@ If uncertain or blueprint is sparse, set confidence 65-79.`
       }),
     })
 
-    if (!res.ok) return NextResponse.json({ confidence: 75, reasoning: 'Could not complete AI check at this time.' })
+    if (!res.ok) return NextResponse.json({ confidence: null, reasoning: 'Could not complete AI check at this time.' })
 
     const data = await res.json()
     const content: string = data?.choices?.[0]?.message?.content ?? ''
@@ -77,14 +79,14 @@ If uncertain or blueprint is sparse, set confidence 65-79.`
       try {
         const parsed = JSON.parse(c.slice(start, end + 1)) as { confidence?: number; reasoning?: string }
         return NextResponse.json({
-          confidence: Math.min(100, Math.max(0, parsed.confidence ?? 75)),
+          confidence: typeof parsed.confidence === 'number' ? Math.min(100, Math.max(0, parsed.confidence)) : null,
           reasoning: parsed.reasoning ?? '',
         })
       } catch { /* fall through */ }
     }
 
-    return NextResponse.json({ confidence: 75, reasoning: 'No blockers detected. Proposal appears consistent with community goals.' })
+    return NextResponse.json({ confidence: null, reasoning: 'Couldn’t read the AI’s answer.' })
   } catch {
-    return NextResponse.json({ confidence: 75, reasoning: 'AI check temporarily unavailable.' })
+    return NextResponse.json({ confidence: null, reasoning: 'AI check temporarily unavailable.' })
   }
 }

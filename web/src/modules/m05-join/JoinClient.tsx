@@ -1,9 +1,12 @@
 'use client'
+import { PageHeader } from '@/core/components/v4'
+import { DESIGN } from '@/core/lib/instance'
 import { useState } from 'react'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { moduleOn } from '@/core/lib/modules'
 import { createClient } from '@/core/lib/supabase/client'
 import Link from 'next/link'
+import { modLabel } from '@/core/lib/module-label'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +94,7 @@ const ROLE_MAP = [
       'Make binding collaboration agreements',
       'Vote and submit proposals in Governance',
       ...(moduleOn('points') ? ['Earn contribution points'] : []),
-      'Full network access — offers, seeks, and direct matching',
+      'Full Members access — offers, requests and matching',
     ],
   },
   {
@@ -405,12 +408,16 @@ function RoleRoadmap({ currentRole, milestones, applicationStatus, onApply, onRe
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 32px 80px' }}>
+    <div className={DESIGN === 'v4' ? 'v4-page v4-join' : undefined} style={DESIGN === 'v4' ? { maxWidth: 900 } : { maxWidth: 900, margin: '0 auto', padding: '32px 32px 80px' }}>
 
+{DESIGN === 'v4' ? (
+      <PageHeader eyebrow="Joining" title="Community roles and your progress"
+        subtitle="Every role is earned, not assigned. Here’s the full path: where you are now and what opens up as you grow with the community." />
+) : (<>
       {/* Header */}
       <div style={{ marginBottom: 40, maxWidth: 600 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: M5, background: `color-mix(in srgb, ${M5} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${M5} 25%, transparent)`, padding: '3px 10px', borderRadius: 999, marginBottom: 18 }}>
-          Module 05 · Join
+          {modLabel('05', 'Join', 'Module')}
         </span>
         <h1 style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--ink)', marginBottom: 14 }}>
           Community roles & your progress
@@ -419,6 +426,7 @@ function RoleRoadmap({ currentRole, milestones, applicationStatus, onApply, onRe
           Every role is earned, not assigned. Here's the full path — where you are now and what opens up as you grow with the community.
         </p>
       </div>
+</>)}
 
       {/* Role cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -660,7 +668,7 @@ export default function JoinClient({
           ← Back to overview
         </button>
         <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: M5, background: `color-mix(in srgb, ${M5} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${M5} 25%, transparent)`, padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>
-          Module 05 · Join
+          {modLabel('05', 'Join', 'Module')}
         </span>
         <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: 6 }}>
           {reapplying ? 'Reapply to the community' : 'Become a joining member'}

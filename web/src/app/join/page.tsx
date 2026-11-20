@@ -2,24 +2,14 @@ import { createClient } from '@/core/lib/supabase/server'
 import JoinClient from '@/modules/m05-join/JoinClient'
 import JoinAdminClient from '@/modules/m05-join/JoinAdminClient'
 import { isAdmin, isCircleAdmin } from '@/core/lib/roles'
+import { DESIGN } from '@/core/lib/instance'
+import { loadApplications, loadJoinQuestions } from '@/modules/m05-join/applications-server'
 
 export default async function JoinPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: blueprints } = await supabase
-    .from('blueprints')
-    .select('answers, updated_at')
-    .order('updated_at', { ascending: false })
-
-  const communityBlueprint = blueprints?.find(
-    b => (b.answers as any)?.join_application_questions
-  )
-  const rawQuestions: string = (communityBlueprint?.answers as any)?.join_application_questions ?? ''
-  const questions = rawQuestions
-    .split('\n')
-    .map((q: string) => q.trim())
-    .filter((q: string) => q.length > 0)
+  const questions = await loadJoinQuestions(supabase)
 
   let role = 'explorer'
   if (user) {
@@ -92,35 +82,9 @@ export default async function JoinPage() {
   const isProfileComplete = !!(userProfile?.first_name && userProfile?.headline)
 
   // Admins and circle leads can read applications. Only an admin can decide one.
-  let adminApps: {
-    id: string; user_id: string; status: string; answers: Record<string, string>;
-    admin_notes: string | null; created_at: string; first_name: string | null; username: string | null;
-  }[] = []
-
-  if (canReview) {
-    const { data: apps } = await supabase
-      .from('applications')
-      .select('id, user_id, status, answers, admin_notes, created_at')
-      .order('created_at', { ascending: false })
-
-    const userIds = (apps ?? []).map(a => a.user_id)
-    const { data: profiles } = userIds.length > 0
-      ? await supabase
-          .from('user_profiles')
-          .select('id, first_name, username')
-          .in('id', userIds)
-      : { data: [] }
-
-    const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
-
-    adminApps = (apps ?? []).map(a => ({
-      ...a,
-      answers: (a.answers as Record<string, string>) ?? {},
-      admin_notes: a.admin_notes ?? null,
-      first_name: profileMap[a.user_id]?.first_name ?? null,
-      username: profileMap[a.user_id]?.username ?? null,
-    }))
-  }
+  // With the v4 look they're in Admin › Applications instead, so Join is only the newcomer's page.
+  const showReview = canReview && DESIGN !== 'v4'
+  const adminApps = showReview ? await loadApplications(supabase) : []
 
   return (
     <>
@@ -137,7 +101,7 @@ export default async function JoinPage() {
         hasContribution={hasContribution}
         hasOwnProject={hasOwnProject}
       />
-      {canReview && (
+      {showReview && (
         <div style={{ borderTop: '1px solid var(--rule)' }}>
           <JoinAdminClient applications={adminApps} questions={questions} canDecide={canDecide} />
         </div>

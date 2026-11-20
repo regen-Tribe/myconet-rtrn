@@ -10,6 +10,9 @@ import {
   CATEGORY_META, canBook, fmtBookingRange, isHolding,
   localDateInput, localDateTimeInput, overlaps, personName,
 } from './lib/inventory'
+import { DESIGN } from '@/core/lib/instance'
+import { Button, Icon, IconTile, StatusPill, Tag } from '@/core/components/v4'
+import { CATEGORY_ICON } from './BookingsV4'
 
 const sectionLabel: React.CSSProperties = {
   fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -76,6 +79,89 @@ export function ItemModal({
     setDone(item.requires_approval
       ? 'Request sent. You’ll see it as confirmed under My bookings once a lead approves it.'
       : 'Booked! It’s in My bookings.')
+  }
+
+  // The v4 look: same rules, checks and messages, the shared building blocks
+  if (DESIGN === 'v4') {
+    const ci = CATEGORY_ICON[item.category]
+    return (
+      <ModalShell title={<span className="v4-modal-title"><IconTile name={ci.icon} tone={ci.tone} />{item.name}</span>} onClose={onClose} maxWidth={560}>
+        <div className="v4-modal">
+          <div className="v4-tags">
+            <Tag>{meta.label}</Tag>
+            {circles.has(item.circle) && <Tag><span className="v4-dot" style={{ background: circles.meta(item.circle).color }} />{circles.meta(item.circle).label}</Tag>}
+            {item.tags.map(t => <Tag key={t}>{t}</Tag>)}
+            {!item.is_active && <StatusPill status="paused" label="Archived" />}
+          </div>
+
+          <ul className="v4-facts-list">
+            {item.location && <li><Icon name="pin" size={16} />{item.location}</li>}
+            {item.capacity && <li><Icon name="users" size={16} />Up to {item.capacity} {item.capacity === 1 ? 'person' : 'people'}</li>}
+            <li><Icon name={item.requires_approval ? 'hand' : 'check'} size={16} />{item.requires_approval ? 'Bookings need a lead’s approval' : 'Bookings confirm instantly'}</li>
+          </ul>
+
+          {item.description && <p className="v4-prose">{item.description}</p>}
+
+          <div>
+            <div className="v4-eyebrow">Booked times</div>
+            {!userId ? (
+              <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to see when it’s free and book it.</p>
+            ) : !canBook(role) && upcoming.length === 0 ? (
+              <p className="v4-hint">The schedule is visible to joining members and above.</p>
+            ) : upcoming.length === 0 ? (
+              <p className="v4-hint">Nothing booked: it’s free.</p>
+            ) : (
+              <ul className="v4-slots">
+                {upcoming.map(b => (
+                  <li key={b.id}>
+                    <span>{fmtBookingRange(b, item.category)}</span>
+                    <b className={b.user_id === userId ? 'v4-slots__you' : undefined}>{b.user_id === userId ? 'You' : personName(b.person)}{b.status === 'pending' ? ' · waiting' : ''}</b>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {userId && item.is_active && (
+            canBook(role) ? (
+              done ? (
+                <div className="v4-done"><Icon name="check" size={18} /><span>{done}</span></div>
+              ) : (
+                <form onSubmit={submit} className="v4-form v4-modal__section">
+                  <div className="v4-eyebrow">{item.requires_approval ? 'Request a booking' : 'Book it'}</div>
+                  <div className="v4-form__row">
+                    <label className="v4-field">
+                      <span>{byNight ? 'Check-in' : 'From'}</span>
+                      <input className="v4-input" type={byNight ? 'date' : 'datetime-local'} value={start} onChange={e => setStart(e.target.value)} />
+                    </label>
+                    <label className="v4-field">
+                      <span>{byNight ? 'Check-out' : 'Until'}</span>
+                      <input className="v4-input" type={byNight ? 'date' : 'datetime-local'} value={end} min={start} onChange={e => setEnd(e.target.value)} />
+                    </label>
+                  </div>
+                  <label className="v4-field">
+                    <span>Note <small>optional</small></span>
+                    <input className="v4-input" value={note} onChange={e => setNote(e.target.value)} placeholder={byNight ? 'Who’s staying?' : 'What’s it for?'} />
+                  </label>
+                  {clash && !error && <p className="v4-warn"><Icon name="alert" size={16} />Overlaps {personName(clash.person)}’s booking ({fmtBookingRange(clash, item.category)}).</p>}
+                  {error && <p className="v4-error-box">{error}</p>}
+                  <div><Button type="submit" disabled={busy || !!clash}>{busy ? 'Booking…' : item.requires_approval ? 'Send request' : 'Book'}</Button></div>
+                </form>
+              )
+            ) : (
+              <div className="v4-note v4-card"><Icon name="lock" /><span>Joining members and above can book. You’re {ROLE_LABELS[role] ? `a ${ROLE_LABELS[role].toLowerCase()}` : 'an explorer'}. <Link href="/join">Start joining →</Link></span></div>
+            )
+          )}
+
+          {canManage && (
+            <div className="v4-modal__foot">
+              <Button variant={item.is_active ? 'danger' : 'secondary'} size="sm" onClick={() => { void onToggleActive() }}>{item.is_active ? 'Archive' : 'Restore'}</Button>
+              <Button size="sm" icon="pencil" onClick={onEdit}>Edit item</Button>
+            </div>
+          )}
+        </div>
+      </ModalShell>
+    )
   }
 
   return (

@@ -225,7 +225,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
   if (!open) {
     return (
       // A small floating dot (v4.36.0): ask, or tell the agent to do something with what's on this page
-      <button onClick={() => setOpen(true)} aria-label={isLoggedIn ? 'Ask or tell the assistant' : `Ask ${COMMUNITY_NAME}`} title={isLoggedIn ? 'Ask or tell the assistant' : `Ask ${COMMUNITY_NAME}`} style={{
+      <button className="assistant-dot" onClick={() => setOpen(true)} aria-label={isLoggedIn ? 'Ask or tell the assistant' : `Ask ${COMMUNITY_NAME}`} title={isLoggedIn ? 'Ask or tell the assistant' : `Ask ${COMMUNITY_NAME}`} style={{
         position: 'fixed', right: 20, bottom: 20, zIndex: 150, width: 52, height: 52,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: '50%', border: 'none', cursor: 'pointer',

@@ -14,6 +14,7 @@ import BannerImage from '@/core/components/BannerImage'
 import ModuleOverview from '@/modules/home/ModuleOverview'
 import AskSection from '@/modules/home/AskSection'
 import type { GlanceTile } from './lib/at-a-glance'
+import { modLabel } from '@/core/lib/module-label'
 
 type PhaseP = { id: string; name: string; answered: number; total: number; ratio: number }
 type Member = { id: string; first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null; avatar_url: string | null; username: string | null }
@@ -98,7 +99,7 @@ function ModulePill({ mod, icon, text, target, color }: {
         whiteSpace: 'nowrap', flexShrink: 0,
       }}
     >
-      <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: hovered ? color : 'var(--ink-4)', letterSpacing: '0.04em', flexShrink: 0 }}>M{mod}</span>
+      <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: hovered ? color : 'var(--ink-4)', letterSpacing: '0.04em', flexShrink: 0 }}>M{mod}</span>
       <span style={{ fontSize: 13 }}>{icon}</span>
       <span>{text}</span>
     </button>
@@ -111,7 +112,7 @@ function initials(name: string) {
 
 function ModTag({ color, label }: { color: string; label: string }) {
   return (
-    <span style={{
+    <span className="mod-num" style={{
       fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
       background: `color-mix(in srgb, ${color} 14%, transparent)`,
       color, padding: '2px 8px', borderRadius: 20,
@@ -165,7 +166,7 @@ function SectionHead({ color, mod, label, h, lead, why, href }: {
           cursor: 'pointer',
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
-          Module {mod} · {label} ↗
+          {modLabel(mod, label, 'Module')} ↗
         </span>
       </Link>
       <h2 style={{
@@ -242,8 +243,9 @@ export default function HomeClient({
   const democConcern = 3 + (democVote === 'concern' ? 1 : 0)
   const democNo = 2 + (democVote === 'no' ? 1 : 0)
   const democPassed = democYes >= 10
-  const layersPassed = [consentPassed, democPassed, true, true].filter(Boolean).length
-  const proposalLive = layersPassed >= 3
+  // 3 people checks (expert review already approved in this demo); 2 of 3 = approved. The AI check is advice.
+  const layersPassed = [consentPassed, democPassed, true].filter(Boolean).length
+  const proposalLive = layersPassed >= 2
 
   // M04 - animate bars on scroll into view
   const bpRef = useRef<HTMLDivElement>(null)
@@ -491,7 +493,7 @@ export default function HomeClient({
                 cursor: 'pointer',
               }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-2)' }} />
-                Module 00 · Dashboard ↗
+                {modLabel('00', 'Dashboard ↗', 'Module')}
               </span>
             </Link>
             <h2 style={{
@@ -563,7 +565,7 @@ export default function HomeClient({
                   fontWeight: m.active ? 600 : 400,
                 }}>
                   <span style={{ width: 3, height: 14, borderRadius: 2, background: m.color, flexShrink: 0 }} />
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: m.active ? 'var(--ink-3)' : 'var(--ink-4)', width: 22 }}>M{m.num}</span>
+                  <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 9, color: m.active ? 'var(--ink-3)' : 'var(--ink-4)', width: 22 }}>M{m.num}</span>
                   <span style={{ fontSize: 11.5 }}>{m.name}</span>
                 </div>
               ))}
@@ -575,7 +577,7 @@ export default function HomeClient({
                   color: 'var(--ink-2)', fontSize: 11.5,
                 }}>
                   <span style={{ width: 3, height: 14, borderRadius: 2, background: m.color, flexShrink: 0 }} />
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', width: 22 }}>M{m.num}</span>
+                  <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', width: 22 }}>M{m.num}</span>
                   <span>{m.name}</span>
                 </div>
               ))}
@@ -611,7 +613,7 @@ export default function HomeClient({
                 <Link href="/blueprint" style={{ textDecoration: 'none', display: 'block', marginBottom: 14 }}>
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '10px 12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, color: 'var(--m4)' }}>M04 · Blueprint</span>
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, color: 'var(--m4)' }}>{modLabel('04', 'Blueprint')}</span>
                       <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{overall.toFixed(1)} / 10</span>
                     </div>
                     <div style={{ height: 4, borderRadius: 99, background: 'var(--bg-3)', overflow: 'hidden' }}>
@@ -1130,7 +1132,7 @@ export default function HomeClient({
               ))}
             </div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-              Latest deliverables
+              Latest tasks
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {(deliverables.length > 0 ? deliverables : [
@@ -1248,13 +1250,13 @@ export default function HomeClient({
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <SectionHead
             mod="09" label="Governance" color="var(--m9)"
-            h="Decide together. Four layers, one community."
-            lead="Every proposal runs through all four governance layers simultaneously. Once 3 of 4 layers approve, the proposal is live — work can begin, agreements are created automatically."
+            h="Decide together. Four checks, one community."
+            lead="Every proposal gets four checks at once. When two of the three people checks pass, it is approved and becomes a decision, and work can begin."
             href="/dashboard"
             why={[
-              '<strong>All four layers run in parallel</strong> — no waiting for one mode to finish before the next starts.',
-              '<strong>3 of 4 threshold</strong> — consent, majority, expert, and AI must collectively approve.',
-              '<strong>AI facilitator</strong> flags blockers and summarizes concerns in real time.',
+              '<strong>All four checks run at once</strong> — no waiting for one to finish before the next starts.',
+              '<strong>Approved when 2 of the 3 people checks pass</strong> — circle leads, all members, admins and advisors.',
+              '<strong>AI Blueprint check</strong> gives advice: does the proposal fit the Blueprint and goals? It doesn’t vote.',
             ]}
           />
 
@@ -1273,7 +1275,7 @@ export default function HomeClient({
               {proposalLive ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, #22c55e 10%, var(--surface))', border: '1px solid color-mix(in srgb, #22c55e 35%, var(--rule))', borderRadius: 20, padding: '5px 14px', flexShrink: 0 }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', flexShrink: 0, animation: 'ping 1.6s ease-out infinite' }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a' }}>PROPOSAL LIVE</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a' }}>APPROVED</span>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, var(--m9) 8%, var(--surface))', border: '1px solid color-mix(in srgb, var(--m9) 25%, var(--rule))', borderRadius: 20, padding: '5px 14px', flexShrink: 0 }}>
@@ -1287,20 +1289,20 @@ export default function HomeClient({
             <div style={{ padding: '12px 22px', background: 'var(--bg-2)', borderBottom: '1px solid var(--rule)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color: proposalLive ? '#16a34a' : 'var(--ink-3)' }}>
-                  {layersPassed} / 4 layers approved
+                  {layersPassed} / 3 people checks passed
                 </span>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
-                  {proposalLive ? '✓ threshold reached — proposal is live' : 'needs 3 of 4 to go live'}
+                  {proposalLive ? '✓ Approved: the proposal is now a decision' : 'Approved when 2 of 3 pass'}
                 </span>
               </div>
               <div style={{ position: 'relative', height: 8, background: 'var(--rule)', borderRadius: 4, overflow: 'visible' }}>
                 <div style={{
                   height: '100%', borderRadius: 4, transition: 'width 600ms ease, background 400ms',
                   background: proposalLive ? '#22c55e' : 'var(--m9)',
-                  width: `${(layersPassed / 4) * 100}%`,
+                  width: `${(layersPassed / 3) * 100}%`,
                 }} />
-                <div style={{ position: 'absolute', top: -3, left: 'calc(75% - 1px)', width: 2, height: 14, background: '#22c55e', borderRadius: 1, opacity: 0.7 }} />
-                <div style={{ position: 'absolute', top: 14, left: 'calc(75% - 18px)', fontFamily: 'var(--mono)', fontSize: 9, color: '#16a34a', whiteSpace: 'nowrap' }}>3/4 live ↑</div>
+                <div style={{ position: 'absolute', top: -3, left: 'calc(66.667% - 1px)', width: 2, height: 14, background: '#22c55e', borderRadius: 1, opacity: 0.7 }} />
+                <div style={{ position: 'absolute', top: 14, left: 'calc(66.667% - 18px)', fontFamily: 'var(--mono)', fontSize: 9, color: '#16a34a', whiteSpace: 'nowrap' }}>Approved ↑</div>
               </div>
             </div>
 
@@ -1312,8 +1314,8 @@ export default function HomeClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 20, marginBottom: 3 }}>☉</div>
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 01</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Consent</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 01</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Circle leads · consent</div>
                   </div>
                   {consentPassed
                     ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Passed</span>
@@ -1352,8 +1354,8 @@ export default function HomeClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 20, marginBottom: 3 }}>☑</div>
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 02</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Democracy</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 02</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>All members · majority vote</div>
                   </div>
                   {democPassed
                     ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Passed</span>
@@ -1389,8 +1391,8 @@ export default function HomeClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 20, marginBottom: 3 }}>△</div>
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 03</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Meritocracy</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 03</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Admins & advisors · expert review</div>
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Approved</span>
                 </div>
@@ -1411,15 +1413,15 @@ export default function HomeClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 20, marginBottom: 3 }}>◇</div>
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 04</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>AI Facilitation</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 04</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>AI · Blueprint check</div>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Cleared</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-3)', background: 'var(--bg-2)', border: '1px solid var(--rule)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Advice</span>
                 </div>
                 <p style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.55, margin: '0 0 8px' }}>
                   No blockers detected. Proposal is well-scoped and consistent with Blueprint Phase 2 goals.
                 </p>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Confidence: 91%</div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Fits the Blueprint: 91% · doesn’t count</div>
               </div>
             </div>
 

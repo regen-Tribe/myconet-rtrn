@@ -37,7 +37,11 @@ Four-layer community decision-making. Members submit proposals; the system evalu
 | L1 | Sociocracy | `circle_lead` role only | consent / concern / object | At least one vote; zero objections |
 | L2 | Democracy | All `member`+ roles | yes / no | Yes > No |
 | L3 | Meritocracy | `admin` and `advisor` roles | approve / reject | At least one approval; zero rejections |
-| L4 | AI facilitation | Automatic (no human vote) | — | Always shows; confidence score guides humans |
+| L4 | AI facilitation | Automatic (no human vote) | — | Never: advice only, not saved, doesn't count |
+
+**Approved when 2 of the 3 people checks (L1–L3) pass** (`evalLayers` in `GovernanceClient.tsx`). The AI
+Blueprint check is advice: it runs when someone opens a proposal, is shown to them, and is not stored. Approval is
+shown on screen only; an admin still sets `proposals.status`.
 
 ## Role gating
 
@@ -70,7 +74,7 @@ Each user can vote once per layer per proposal. Votes are upserted on conflict.
 
 ## AI check endpoint
 
-`POST /api/governance/ai-check` accepts `{ title, description }`, fetches the community blueprint from Supabase, and calls MiniMax M2.7 with a structured prompt asking for JSON `{ confidence: number, reasoning: string }`. The confidence is 0–100 (how well the proposal aligns with the blueprint). Displayed inline on proposal select.
+`POST /api/governance/ai-check` accepts `{ title, description }`, fetches the community blueprint from Supabase, and calls MiniMax M2.7 with a structured prompt asking for JSON `{ confidence: number, reasoning: string }`. The confidence is 0–100 (how well the proposal aligns with the blueprint). Displayed inline on proposal select, as advice. On any failure it returns `confidence: null` and the panel says "Couldn’t check".
 
 ## Proposal lifecycle
 

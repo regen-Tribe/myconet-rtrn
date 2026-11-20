@@ -8,6 +8,7 @@ import {
   SelectTrigger, SelectValue,
 } from '@/core/components/ui/select'
 import { Search, Filter, X } from 'lucide-react'
+import { modLabel } from '@/core/lib/module-label'
 
 const ROLE_FILTERS = [
   { value: 'all',                     label: 'All Types' },
@@ -82,7 +83,7 @@ export default function DiscoverClient({ profiles, bioMap, myBio, isLoggedIn }: 
       {/* Header */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · Search members
+          {modLabel('01', 'Search members')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 6px' }}>
           Find your people.

@@ -62,3 +62,8 @@ cd web && npm run dev
 To modify matching logic, edit `lib/match-score.ts`. The function is pure (no DB calls) and easy to unit-test.
 
 To add a new member card field, update `MemberList.tsx` and the relevant Supabase select query in `app/members/page.tsx`.
+
+
+## v4 look (v4.45.0)
+
+With `"design": "v4"`, `/members` renders `MembersV4.tsx` (data in the page, grid in `MembersGridV4.tsx`) and the layout shows `MembersTabsV4.tsx` instead of `NetworkSidebar`.

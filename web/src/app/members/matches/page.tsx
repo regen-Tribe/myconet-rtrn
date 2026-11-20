@@ -2,6 +2,7 @@ import { createClient } from '@/core/lib/supabase/server'
 import Link from 'next/link'
 import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import MatchesTabs from '@/modules/m01-network/MatchesTabs'
+import { modLabel } from '@/core/lib/module-label'
 
 const SCORING_DIMENSIONS = [
   { label: 'Shared skills',       max: 25, note: 'fuzzy — tolerates typos' },
@@ -22,7 +23,7 @@ export default async function MatchesPage() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '56px 28px 80px' }}>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-            M01 · Your Matches
+            {modLabel('01', 'Your Matches')}
           </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(24px, 3.5vw, 32px)', color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 8px' }}>
             Find your people.
@@ -84,7 +85,7 @@ export default async function MatchesPage() {
       {/* Header */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 8 }}>
-          M01 · Your Matches
+          {modLabel('01', 'Your Matches')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', lineHeight: 1.1, margin: '0 0 6px' }}>
           Your matches

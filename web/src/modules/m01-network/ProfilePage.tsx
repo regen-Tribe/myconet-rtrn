@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { AvatarCropper } from '@/core/components/AvatarCropper'
 import { uploadAvatarBlob } from '@/core/lib/avatar'
+import { modLabel } from '@/core/lib/module-label'
 
 const OCEAN_LABELS = [
   { key: 'openness',          label: 'Openness' },
@@ -192,7 +193,7 @@ export default function NetworkProfilePage() {
       )}
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
-          M01 · My Profile
+          {modLabel('01', 'My Profile')}
         </div>
       </div>
 

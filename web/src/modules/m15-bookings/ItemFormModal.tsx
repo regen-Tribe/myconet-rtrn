@@ -6,6 +6,8 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
 import type { BookingCategory, BookingItem } from './types'
 import { CATEGORY_META } from './lib/inventory'
+import { DESIGN } from '@/core/lib/instance'
+import { Button, Chip, ChipRow } from '@/core/components/v4'
 
 export interface ItemPayload {
   name: string
@@ -89,6 +91,94 @@ export function ItemFormModal({
     fontSize: 12, fontWeight: 600, borderRadius: 20, padding: '5px 12px', cursor: 'pointer',
     border: `1px solid ${active ? color : 'var(--rule)'}`, background: active ? color : 'var(--surface)', color: active ? '#fff' : color,
   })
+
+  // The v4 look: same fields, rules and saves, the shared building blocks
+  if (DESIGN === 'v4') {
+    return (
+      <ModalShell title={existing ? 'Edit item' : 'Add to the inventory'} onClose={onClose} maxWidth={560}>
+        <form onSubmit={submit} className="v4-form v4-modal">
+          <label className="v4-field">
+            <span>Name</span>
+            <input className="v4-input" value={name} onChange={e => setName(e.target.value)} placeholder="Guest cabin, chainsaw, common kitchen…" autoFocus />
+          </label>
+
+          <div className="v4-field">
+            <span>Category</span>
+            <ChipRow>{categories.map(c => <Chip key={c} on={category === c} onClick={() => setCategory(c)}>{CATEGORY_META[c].label}</Chip>)}</ChipRow>
+            <small className="v4-hint">{CATEGORY_META[category].unit === 'night' ? 'Booked by the night (check-in and check-out dates).' : 'Booked by the hour (start and end time).'}</small>
+          </div>
+
+          <div className="v4-field">
+            <label htmlFor="it-tags">Tags</label>
+            {tags.length > 0 && (
+              <div className="v4-tags">
+                {tags.map(t => (
+                  <button key={t} type="button" className="v4-tag v4-tag--on" onClick={() => setTags(list => list.filter(x => x !== t))} title="Remove tag">{t} ×</button>
+                ))}
+              </div>
+            )}
+            <input
+              id="it-tags" className="v4-input" value={tagInput} onChange={e => setTagInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput) } }}
+              onBlur={() => tagInput.trim() && addTag(tagInput)}
+              placeholder="Type a tag and press Enter"
+            />
+            {suggestions.length > 0 && (
+              <div className="v4-tags">
+                {suggestions.map(t => <button key={t} type="button" className="v4-tag v4-tag--out" onClick={() => addTag(t)}>+ {t}</button>)}
+              </div>
+            )}
+          </div>
+
+          <label className="v4-field">
+            <span>Description</span>
+            <textarea className="v4-input" value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="What it is, how to use it, where the key is…" />
+          </label>
+
+          <div className="v4-form__row">
+            <label className="v4-field">
+              <span>Location</span>
+              <input className="v4-input" value={location} onChange={e => setLocation(e.target.value)} placeholder="Tool shed, north field…" />
+            </label>
+            <label className="v4-field">
+              <span>Capacity <small>people, optional</small></span>
+              <input className="v4-input" value={capacity} onChange={e => setCapacity(e.target.value)} inputMode="numeric" placeholder="4" />
+            </label>
+          </div>
+
+          <div className="v4-field">
+            <span>Circle <small>who looks after it</small></span>
+            <div className="v4-chiprow">
+              <button type="button" className={`v4-chip${circle === '' ? ' v4-chip--on' : ''}`} aria-pressed={circle === ''} onClick={() => setCircle('')}>None</button>
+              {circles.slugs.map(p => {
+                const ok = circleAllowed(p)
+                return (
+                  <button key={p} type="button" disabled={!ok} aria-pressed={circle === p} onClick={() => setCircle(p)}
+                    title={ok ? undefined : 'You can only add items to circles you lead.'}
+                    className={`v4-chip${circle === p ? ' v4-chip--on' : ''}`}>
+                    <span className="v4-dot" style={{ background: circles.meta(p).color, width: 8, height: 8 }} />{circles.meta(p).label}
+                  </button>
+                )
+              })}
+            </div>
+            {role === 'circle_lead' && <small className="v4-hint">You can add items to circles you lead. Items with no circle can be managed by any circle lead.</small>}
+          </div>
+
+          <label className="v4-check">
+            <input type="checkbox" checked={requiresApproval} onChange={e => setRequiresApproval(e.target.checked)} />
+            <span><b>Bookings need approval.</b> Requests wait for an admin or circle lead. Otherwise bookings confirm instantly.</span>
+          </label>
+
+          {error && <p className="v4-error-box">{error}</p>}
+
+          <div className="v4-modal__foot">
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Saving…' : existing ? 'Save' : 'Add item'}</Button>
+          </div>
+        </form>
+      </ModalShell>
+    )
+  }
 
   return (
     <ModalShell title={existing ? 'Edit item' : 'Add to the inventory'} onClose={onClose} maxWidth={560}>
