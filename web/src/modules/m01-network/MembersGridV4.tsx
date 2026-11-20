@@ -2,15 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Chip, ChipRow, EmptyState, Icon, Tag } from '@/core/components/v4'
+import { Chip, ChipRow, EmptyState, Icon } from '@/core/components/v4'
+import './members-v4.css'
 
 export type MemberCard = {
   id: string; username: string | null; name: string; avatar: string | null; headline: string | null
   circles: { slug: string; name: string; color: string }[]; offers: string[]; requests: string[]; you: boolean
+  /** Your match % with them (signed in, with your bio filled in); null otherwise */
+  score: number | null
 }
 
 /** Members in the v4 look (Sonia's prototype): everyone as cards, filtered by circle or searched. */
-export default function MembersGridV4({ people, circles }: { people: MemberCard[]; circles: { slug: string; name: string; color: string }[] }) {
+export default function MembersGridV4({ people, circles, signedIn }: { people: MemberCard[]; circles: { slug: string; name: string; color: string }[]; signedIn: boolean }) {
   const [circle, setCircle] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const query = q.trim().toLowerCase()
@@ -20,50 +23,63 @@ export default function MembersGridV4({ people, circles }: { people: MemberCard[
   const inCircle = (slug: string) => people.filter(p => p.circles.some(c => c.slug === slug)).length
 
   return (
-    <>
-      <div className="v4-toolbar">
+    <section className="mb4-people" aria-label="Everyone">
+      <div className="mb4-find">
+        <label className="mb4-search">
+          <Icon name="search" size={18} />
+          <input type="search" className="mb4-search__input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, skill, offer or circle" aria-label="Search members" />
+          {q && <button type="button" className="mb4-search__clear" onClick={() => setQ('')} aria-label="Clear search"><Icon name="x" size={14} /></button>}
+        </label>
         <ChipRow>
           <Chip on={circle === null} onClick={() => setCircle(null)} count={people.length}>Everyone</Chip>
           {circles.filter(c => inCircle(c.slug) > 0).map(c => (
             <Chip key={c.slug} on={circle === c.slug} onClick={() => setCircle(c.slug)} count={inCircle(c.slug)}>{c.name}</Chip>
           ))}
         </ChipRow>
-        <label className="v4-search">
-          <Icon name="search" size={16} />
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search people, offers, skills" aria-label="Search members" />
-        </label>
       </div>
+      {(query || circle) && <p className="mb4-count">{shown.length} of {people.length} people</p>}
 
       {shown.length === 0 ? (
         <EmptyState icon="users" title="Nobody matches that" text="Try another circle or clear the search." />
       ) : (
-        <div className="v4-grid v4-grid--people">
+        <div className="mb4-grid">
           {shown.map(p => (
-            <Link key={p.id} href={p.username ? `/u/${p.username}` : '#'} className="v4-card v4-card--link v4-member">
-              <div className="v4-card-head">
+            <Link key={p.id} href={p.username ? `/u/${p.username}` : '#'} className={`mb4-card${p.you ? ' mb4-card--you' : ''}`}>
+              <div className="mb4-card__head">
                 {p.avatar
-                  ? <img loading="lazy" decoding="async" src={p.avatar} alt="" className="v4-avatar v4-avatar--md" />
-                  : <span className="v4-avatar v4-avatar--md">{p.name.slice(0, 1).toUpperCase()}</span>}
-                <div>
-                  <b>{p.name}{p.you ? ' (you)' : ''}</b>
+                  ? <img loading="lazy" decoding="async" src={p.avatar} alt="" className="v4-avatar mb4-card__av" />
+                  : <span className="v4-avatar mb4-card__av">{p.name.slice(0, 1).toUpperCase()}</span>}
+                <div className="mb4-card__who">
+                  <b>{p.name}</b>
                   <small>{p.headline || (p.username ? `@${p.username}` : '')}</small>
                 </div>
+                {p.you ? <span className="mb4-you">you</span> : p.score != null && <span className="mb4-score" title="Your match with them">{p.score}%</span>}
               </div>
-              {p.circles.length > 0 && (
-                <div className="v4-tags">
-                  {p.circles.slice(0, 3).map(c => <Tag key={c.slug}><span className="v4-dot" style={{ background: c.color }} />{c.name}</Tag>)}
-                </div>
-              )}
-              {p.offers.length > 0 && (
-                <div className="v4-member__line"><small>Offers</small><div className="v4-tags">{p.offers.slice(0, 2).map(o => <Tag key={o} icon="gift">{o}</Tag>)}</div></div>
-              )}
-              {p.requests.length > 0 && (
-                <div className="v4-member__line"><small>Looking for</small><div className="v4-tags">{p.requests.slice(0, 2).map(o => <Tag key={o} icon="hand">{o}</Tag>)}</div></div>
-              )}
+              <div className="mb4-circles" title={p.circles.map(c => c.name).join(', ')}>
+                {p.circles.length === 0 ? <span className="mb4-none">No circle yet</span> : <>
+                  {p.circles.slice(0, 2).map(c => <span key={c.slug}><i style={{ background: c.color }} />{c.name}</span>)}
+                  {p.circles.length > 2 && <span className="mb4-more">+{p.circles.length - 2}</span>}
+                </>}
+              </div>
+              {/* Visitors can't read offers and requests, so their cards leave these lines out */}
+              {signedIn && <>
+                <Line icon="gift" tone="offer" items={p.offers} empty="No offers yet" />
+                <Line icon="hand" tone="need" items={p.requests} empty="No requests yet" />
+              </>}
             </Link>
           ))}
         </div>
       )}
-    </>
+    </section>
+  )
+}
+
+/** One line on a card: the first offer (or request), and how many more. Always there, so cards line up. */
+function Line({ icon, tone, items, empty }: { icon: 'gift' | 'hand'; tone: 'offer' | 'need'; items: string[]; empty: string }) {
+  if (items.length === 0) return <div className="mb4-line mb4-line--empty"><Icon name={icon} size={13} /><span>{empty}</span></div>
+  return (
+    <div className={`mb4-line mb4-line--${tone}`} title={items.join(' · ')}>
+      <Icon name={icon} size={13} /><span>{items[0]}</span>{items.length > 1 && <em>+{items.length - 1}</em>}
+    </div>
   )
 }

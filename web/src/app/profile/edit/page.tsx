@@ -139,7 +139,7 @@ interface FormData {
 type GrowthVisibility = 'anyone' | 'explorers' | 'joining' | 'full_members' | 'only_me'
 const GROWTH_VISIBILITY: { id: GrowthVisibility; label: string; description: string }[] = [
   { id: 'only_me',      label: 'Only me',                 description: 'Nobody else sees it. Useful as notes for yourself.' },
-  { id: 'full_members', label: 'Full members',            description: 'Members, circle and project leads, advisors and admins.' },
+  { id: 'full_members', label: 'Full members',            description: 'Members, circle and task leads, advisors and admins.' },
   { id: 'joining',      label: 'Joining members and up',  description: 'Also people who are on their way to becoming members.' },
   { id: 'explorers',    label: 'Everyone signed up',      description: 'Anyone with an account, including explorers.' },
   { id: 'anyone',       label: 'Anyone',                  description: 'Public, including visitors who aren’t signed in.' },

@@ -27,7 +27,7 @@ export default async function NetworkDashboard() {
       .order('created_at', { ascending: false })
       .limit(6),
     supabase.from('user_requests')
-      .select('id, title, created_at, user_profiles(first_name, last_name, username)')
+      .select('id, title:request_text, created_at, user_profiles(first_name, last_name, username)')
       .order('created_at', { ascending: false })
       .limit(6),
   ])
@@ -41,6 +41,7 @@ export default async function NetworkDashboard() {
   let myBio: Bio = null
   let topMatches: { profile: NonNullable<typeof recentRes.data>[number]; score: number; reasons: string[] }[] = []
   const recentMatchScores: Record<string, MatchResult> = {}
+  const matchScores: Record<string, number> = {}
   let profileSteps: { label: string; complete: boolean }[] | null = null
   let profileCompleteness = 0
 
@@ -86,13 +87,15 @@ export default async function NetworkDashboard() {
       bioMap[b.user_id] = { ...b, city: loc.city, country: loc.country } as Bio
     }
 
-    topMatches = (allProfilesRes.data ?? [])
+    const scored = (allProfilesRes.data ?? [])
       .map(p => {
         const { score, reasons } = computeMatch(myBio, bioMap[p.id] ?? null)
         return { profile: p, score, reasons }
       })
       .sort((a, b) => b.score - a.score)
-      .slice(0, 4)
+    // Everyone's score with you, for the v4 member cards (only when you've told us about yourself)
+    if (myBio) for (const m of scored) matchScores[m.profile.id] = m.score
+    topMatches = scored.slice(0, 4)
 
     if (myBio) {
       for (const u of recentUsers) {
@@ -129,7 +132,8 @@ export default async function NetworkDashboard() {
   if (DESIGN === 'v4') {
     return (
       <MembersV4 supabase={supabase} userId={user?.id ?? null} memberCount={memberCount} profileSteps={profileSteps}
-        profileCompleteness={profileCompleteness} topMatches={topMatches as any} activity={memberActivity} hasBio={!!myBio} />
+        profileCompleteness={profileCompleteness} topMatches={topMatches as any} activity={memberActivity} hasBio={!!myBio}
+        offersCount={offersCount} requestsCount={seeksCount} matchScores={matchScores} />
     )
   }
 
