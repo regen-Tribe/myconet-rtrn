@@ -800,3 +800,7 @@ Staying on Supabase (auth + DB + realtime) and Next.js App Router on Cloudflare 
 - Core #48 (v4 look, off) + #49 (LEXICON.md, new addresses with 308s, task wording, points log behind `points`, off), released as core #51 / tag v4.40.0.
 - Migration `20261209000000_points_log.sql` applied (dry-run first, rolled back: trigger logs once, admin-only award/undo, members see own rows only, anon none).
 - Update PR #66; deploy 3470a1de; /api/version v4.40.0; /ops → 308 /operations.
+
+## 2026-11-20 — v4.52.0 deployed (Sonia's v4 releases v4.41.0–v4.52.0; v4 look stays off)
+- Update PR #67 merged (bea44bb). Migrations 20261210000000_amenities_map + 20261210000100_amenities_map_pin_check applied via MCP and verified (3 columns, both-or-neither pin check).
+- Deploy 4112cfad; /api/version v4.52.0; /, /operations, /members, /calendar, /circles 200; /ops 308; no data-design (current look).
