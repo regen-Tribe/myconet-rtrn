@@ -3,6 +3,18 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.67.1',
+    date: '2026-11-20',
+    title: 'Fixes: Operations and requests',
+    items: ['Operations opens even when a community hasn’t set every server key yet.', 'What people are looking for shows again on Home and Members.'],
+  },
+  {
+    version: 'v4.67.0',
+    date: '2026-11-20',
+    title: 'Members: your matches first',
+    items: ['Members opens with your best matches, your profile, your offers and requests and what’s new. Below, everyone as same-size cards with your match %, one clear search and circle filters.'],
+  },
+  {
     version: 'v4.66.0',
     date: '2026-11-20',
     title: 'Who edits the Blueprint',

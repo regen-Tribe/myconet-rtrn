@@ -56,7 +56,7 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(4),
     supabase.from('user_requests')
-      .select('id, title, created_at, user_profiles(first_name, last_name, username)')
+      .select('id, title:request_text, created_at, user_profiles(first_name, last_name, username)')
       .order('created_at', { ascending: false })
       .limit(4),
     supabase.from('user_profiles').select('id', { count: 'exact', head: true })

@@ -8,7 +8,7 @@ const TABS: { href: string; label: string; signedIn?: boolean }[] = [
   { href: '/members/matches', label: 'Matches for you', signedIn: true },
   { href: '/members/offers', label: 'My offers', signedIn: true },
   { href: '/members/requests', label: 'My requests', signedIn: true },
-  { href: '/members/discover', label: 'Search' },
+  { href: '/members/discover', label: 'Discover' },
   { href: '/members/profile', label: 'My profile', signedIn: true },
 ]
 

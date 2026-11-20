@@ -10,7 +10,7 @@ export async function loadProjectManager(supabase: SupabaseClient): Promise<{ su
   const since = new Date(Date.now() - 14 * 86400_000).toISOString()
   const [{ data: sugs }, { data: acts }] = await Promise.all([
     supabase.from('agent_suggestions').select('id, circle, kind, payload, reason').eq('status', 'open').order('created_at'),
-    createServiceClient().from('agent_actions').select('id, action, detail').or('action.like.pm_%,action.like.do_%').is('undone_at', null).gte('created_at', since).order('created_at', { ascending: false }).limit(40),
+    loadRecentActions(since),
   ])
   const actions = (acts ?? []).map(a => {
     const d = a.detail as Record<string, any>
@@ -29,4 +29,14 @@ export async function suggestionCountsByCircle(supabase: SupabaseClient): Promis
   const out: Record<string, number> = {}
   for (const s of data ?? []) out[s.circle as string] = (out[s.circle as string] ?? 0) + 1
   return out
+}
+
+/** The agent's own recent changes. Without the service key (a community that hasn't set it) the panel is just empty. */
+async function loadRecentActions(since: string): Promise<{ data: { id: string; action: string; detail: unknown }[] | null }> {
+  try {
+    return await createServiceClient().from('agent_actions').select('id, action, detail').or('action.like.pm_%,action.like.do_%').is('undone_at', null).gte('created_at', since).order('created_at', { ascending: false }).limit(40)
+  } catch (e) {
+    console.error('[pm-data] recent agent actions skipped:', (e as Error).message)
+    return { data: null }
+  }
 }
