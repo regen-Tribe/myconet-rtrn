@@ -6,6 +6,9 @@
   "id": "rtrn",
   "displayName": "Regen Hood 0",
 
+  // The look: "v4" = Sonia's redesign (DESIGN-SYSTEM.md › v4). Turned on 2026-11-20 (Oscar: "make RTRN be fully caught up including looks").
+  "design": "v4",
+
   "appUrl": "https://myconet.correa-oscar11.workers.dev",
 
   "cloudflare": {
