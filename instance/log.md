@@ -2,6 +2,13 @@
 
 ---
 
+## 2026-11-20 — Core v4.67.1 via PR #70 (deployed, f2abcee4) + missing Worker secrets added
+- Operations crashed ("This page couldn't load") for every signed-in person: the Worker had no
+  `SUPABASE_SERVICE_ROLE_KEY` (only `CALENDAR_SYNC_SECRET`), and the project manager panel reads `agent_actions`
+  with it. Added `SUPABASE_SERVICE_ROLE_KEY` and `MINIMAX_API_KEY` from Bitwarden ("RTRN — Supabase service role
+  key", "mini max api key"). Core v4.67.1 (core #87) also makes that panel optional and fixes `user_requests.title`
+  → `request_text`. Includes Sonia's v4.67.0 (Members in the v4 look). No migrations.
+
 
 ## 2026-11-17 — Core v4.21.1 via PR #44 (deployed, 3a1b13f2)
 - Review fixes (person's circle beats the agent's skip, Circle-only without a circle, date-only values, less duplication, Meeting notes button layout). No migration.
