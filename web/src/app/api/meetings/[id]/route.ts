@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 })
   const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle()
   if (!isOpsAdmin(profile?.role ?? '')) {
-    return NextResponse.json({ error: 'Admins, circle leads and project leads manage meetings.' }, { status: 403 })
+    return NextResponse.json({ error: 'Admins, circle leads and task leads manage meetings.' }, { status: 403 })
   }
   // Read with the person's own session: they must be able to see this meeting
   const { data: meeting } = await supabase.from('meeting_transcripts').select('id, circle, needs_review, status').eq('id', id).maybeSingle()

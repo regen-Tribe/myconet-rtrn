@@ -29,6 +29,7 @@ import { PriorityBadge } from './Priority'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
 import { Button, Chip, ChipRow, PageHeader } from '@/core/components/v4'
+import { CircleFilter, parseCircleParam, setCircleParam } from '@/core/components/v4/CircleFilter'
 import './ops-v4.css'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -407,7 +408,11 @@ export default function OpsClient({
   const [boardProjects, setBoardProjects] = useState<Project[]>(projects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
-  const [selectedCircle, setSelectedCircle] = useState<string | null>(initialCircle && circles.has(initialCircle) ? initialCircle : null)
+  // The circle filter: several circles at once ([] = all), kept in the address as ?circle=a,b (v4.68.0)
+  const [selectedCircles, setSelectedCircles] = useState<string[]>(() => parseCircleParam(initialCircle, s => circles.has(s)))
+  function pickCircles(next: string[]) { setSelectedCircles(next); setCircleParam(next) }
+  // One circle chosen: new tasks start in it, and the project manager panel shows it (as with the old single filter)
+  const selectedCircle = selectedCircles.length === 1 ? selectedCircles[0] : null
   // Who decides the project manager's suggestions for a circle: admins and that circle's leads
   const canDecide = (c: string) => userRole === 'admin' || (userRole === 'circle_lead' && leadCircles.includes(c))
   const pmCounts: Record<string, number> = {}
@@ -518,12 +523,19 @@ export default function OpsClient({
   const filteredProjects = boardProjects.filter(p => {
     if (view === 'tasks' || p.is_chores) return false
     if (overdueOnly && !overdueProjectIds.has(p.id)) return false
-    if (selectedCircle && p.circle !== selectedCircle) return false
+    if (selectedCircles.length && !(p.circle && selectedCircles.includes(p.circle))) return false
     if (myRole === 'lead') return p.lead_user_id === userId || p.created_by === userId
     if (myRole === 'member') return myAssignedProjectIds.has(p.id)
     if (myRole === 'subscriber') return mySubscribedProjectIds.has(p.id)
     return true
   })
+
+  // The circle filter's list: how many cards each circle has in this view, and the viewer's own circles first
+  const circleCount = (c: string) => view === 'tasks'
+    ? boardTasks.filter(t => (t.circle ?? (t.project_id ? projectsById.get(t.project_id)?.circle : null)) === c).length
+    : boardProjects.filter(p => !p.is_chores && p.circle === c).length + boardTasks.filter(t => !t.project_id && t.circle === c).length
+  const myUnitIds = new Set(circleMembers.filter(m => m.user_id === userId).map(m => m.unit_id))
+  const myCircles = [...new Set([...leadCircles, ...circleUnits.filter(u => myUnitIds.has(u.id) && u.circle).map(u => u.circle as string)])]
 
   // Projects view: tasks with no project are cards of their own, a project's tasks are inside its card.
   // Tasks view: every task is a card, tagged with its project
@@ -532,7 +544,7 @@ export default function OpsClient({
     const p = t.project_id ? projectsById.get(t.project_id) : null
     const circle = t.circle ?? p?.circle ?? null
     if (overdueOnly && !isTaskOverdue(t.due_date, t.due_time, t.status)) return false
-    if (selectedCircle && circle !== selectedCircle) return false
+    if (selectedCircles.length && !(circle && selectedCircles.includes(circle))) return false
     if (myRole === 'lead') return (!!circle && leadCircles.includes(circle)) || (!!p && (p.lead_user_id === userId || p.created_by === userId))
     if (myRole === 'member') return t.assignee_id === userId
     if (myRole === 'subscriber') return !!p && mySubscribedProjectIds.has(p.id)
@@ -687,10 +699,10 @@ export default function OpsClient({
           )}
 {DESIGN === 'v4' ? (
           <div className="v4-opsfilters ops4-filters">
-            <select className="v4-select" aria-label="Circle" value={selectedCircle ?? ''} onChange={e => setSelectedCircle(e.target.value || null)}>
-              <option value="">All circles</option>
-              {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).label}</option>)}
-            </select>
+            <CircleFilter
+              options={circles.slugs.map(c => ({ slug: c, label: circles.meta(c).label, color: circles.meta(c).color, count: circleCount(c) }))}
+              value={selectedCircles} onChange={pickCircles} mine={myCircles}
+            />
             {atRiskCount > 0 && (
               <button type="button" aria-pressed={overdueOnly} className={`v4-chip ops4-latechip${overdueOnly ? ' v4-chip--on' : ''}`} onClick={() => setOverdueOnly(v => !v)}>
                 {atRiskCount} late{overdueOnly ? ' ✕' : ''}
@@ -729,7 +741,7 @@ export default function OpsClient({
                 return (
                   <button
                     key={circle ?? 'all'}
-                    onClick={() => setSelectedCircle(circle)}
+                    onClick={() => pickCircles(circle ? [circle] : [])}
                     style={{
                       fontSize: 11, fontWeight: isActive ? 700 : 400,
                       color: isActive ? (meta?.color ?? 'var(--m7)') : 'var(--ink-3)',
@@ -775,7 +787,7 @@ export default function OpsClient({
 </>)}
 
         <ProjectManagerPanel
-          suggestions={pmSuggestions} actions={pmActions} circle={selectedCircle} canDecide={canDecide}
+          suggestions={pmSuggestions} actions={pmActions} circle={selectedCircles} canDecide={canDecide}
           projects={projectOptions} teams={teams}
           taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
         />

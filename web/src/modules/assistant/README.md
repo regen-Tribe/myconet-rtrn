@@ -80,3 +80,20 @@ means past midnight. The same rules as the Calendar, made with the person's own 
 - then the Google copy follows (`m14-events/lib/google-push.ts`, the code `/api/calendar-push` uses). The card shows
   before → after and says first when the person can't; Undo puts the old values back, as the person, and in Google.
 
+
+## The second brain (v4.74.0)
+
+Off unless the community sets `"assistant": { "secondBrain": true }` (with `knowledge.repo` and the
+`SECOND_BRAIN_GITHUB_TOKEN` secret). `lib/brain.ts`: one GitHub call lists the repo (kept 3 minutes); the notes whose
+folder and file names match the question best are fetched (Ask 10, Do 5; each kept by its git sha); each note's front
+matter decides who may read it; the visible ones that match go in as `<source name="Second brain · …">`.
+
+| Note | Who reads it |
+|---|---|
+| `visibility: members` (meeting notes, boards, circle pages MyCoNet writes) | joining members and up |
+| `visibility: circle` + `circle: <slug>` | that circle's leads and subcircle members, and admins |
+| no `visibility` (written by hand), `visibility: leads` | circle leads, project leads, admins |
+| anything else | admins |
+
+Visitors get nothing from the brain. Never read: `transcripts/`, `AGENTS.md`, hidden folders, files over 150 KB.
+The app does this filtering (GitHub has no per-person rules), so `mayRead()` is the one place to change them.

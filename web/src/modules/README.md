@@ -18,6 +18,7 @@ Each module is an independently workable feature of the MyCoNet platform. You ca
 | `m15-bookings/` | M15 | `/accommodation` | Accommodation — book rooms, cabins, tent sites; admins/circle leads manage, joining+ book | Live |
 | `m16-resources/` | M16 | `/resources` | Resources — book tools, spaces and other shared things (same code as M15, `scope='resources'`) | Live |
 | `m17-org/` | M17 | `/circles` | Circles (org chart) — circles, teams and their leads; public; leads/admins edit | Live |
+| `m19-map/` | M19 | `/map` | Map — the picture of the land with every place (houses, gardens, water, meeting spots); signed in; admins and circle leads edit | Live |
 | `home/` | — | `/home` | Public and member-facing community landing page | Live |
 | `admin/` | — | `/admin/users` | Admin-only user editor (role + lead_circles) | Live |
 

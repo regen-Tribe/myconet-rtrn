@@ -48,6 +48,7 @@ export function loadInstance() {
     try { new Intl.DateTimeFormat('en-US', { timeZone: cfg.timeZone }) } catch { problems.push(`timeZone: "${cfg.timeZone}" isn't a time zone (e.g. "America/Costa_Rica")`) }
   }
   if (cfg.knowledge?.repo && !/^[\w.-]+\/[\w.-]+$/.test(cfg.knowledge.repo)) problems.push('knowledge.repo: "owner/repo"')
+  if (cfg.assistant?.secondBrain && !cfg.knowledge?.repo) problems.push('assistant.secondBrain needs knowledge.repo (the second brain)')
   const mail = cfg.meetings?.notesEmail
   if (mail) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.from ?? '')) problems.push('meetings.notesEmail.from: an email address')
@@ -91,11 +92,14 @@ function publicEnv(cfg) {
     NEXT_PUBLIC_DESIGN: cfg.design ?? '',
     // Who edits the Blueprint: "admins" = admins only; empty = admins and circle leads (core/lib/roles › canEditBlueprint)
     NEXT_PUBLIC_BLUEPRINT_EDITORS: cfg.blueprintEditors ?? '',
+    NEXT_PUBLIC_BRAND_MARK: cfg.brandMark ?? '',
     // The community's time zone, for dates said in meetings ("by Friday") and task times
     COMMUNITY_TIME_ZONE: cfg.timeZone ?? 'UTC',
     // The community's second brain on GitHub (meeting notes are saved there); the token is the
     // SECOND_BRAIN_GITHUB_TOKEN secret
     ...(cfg.knowledge?.repo ? { KNOWLEDGE_REPO: cfg.knowledge.repo, KNOWLEDGE_BRANCH: cfg.knowledge.branch ?? 'main', KNOWLEDGE_MEETINGS_FOLDER: cfg.knowledge.meetingsFolder ?? 'operations/meetings', KNOWLEDGE_BOARD_FOLDER: cfg.knowledge.boardFolder ?? 'operations/board' } : {}),
+    // Ask and Do read the second brain (v4.74.0): "assistant": { "secondBrain": true } + knowledge.repo + the token
+    ...(cfg.assistant?.secondBrain ? { ASSISTANT_SECOND_BRAIN: 'on' } : {}),
     // Meeting notes email (needs the MEETINGS_SMTP_PASSWORD secret)
     ...(cfg.meetings?.notesEmail ? {
       MEETINGS_EMAIL_FROM: cfg.meetings.notesEmail.from,

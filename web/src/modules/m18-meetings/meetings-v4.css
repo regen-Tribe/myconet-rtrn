@@ -50,3 +50,26 @@
   .mt4-pill-phone { display: inline-flex; }
   .mt4-list .mt4-row .mt4-trail { align-self: center; }
 }
+
+/* ─── The leads' review as steps (v4.61.0) ─── */
+.mt4-lead { padding: 18px; margin-bottom: 4px; }
+.mt4-lead + .v4-sec { margin-top: 22px; }
+.mt4-lead__eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3, #6b7180); margin-bottom: 4px; }
+.mt4-said { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--ink-2, #3a3f4a); background: var(--violet, #e5dcff); border-radius: 14px; padding: 10px 12px; }
+.mt4-said svg { flex: none; margin-top: 2px; color: var(--violet-ink, #5b3fb0); }
+.mt4-warn { font-size: 12.5px; color: #b45309; margin: 8px 0 0; }
+.mt4-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 4px; }
+.mt4-step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 1px solid var(--rule, rgba(17,19,23,.08)); }
+.mt4-step:first-child { border-top: 0; }
+.mt4-step__n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 650; background: color-mix(in srgb, var(--ink, #111317) 6%, var(--surface, #fff)); color: var(--ink-2, #3a3f4a); }
+.mt4-step--done .mt4-step__n { background: var(--green, #d3f1dc); color: var(--green-ink, #2e7a4a); }
+.mt4-step--now .mt4-step__n { background: var(--ink, #111317); color: #fff; }
+.mt4-step__body { display: grid; gap: 6px; justify-items: start; min-width: 0; }
+.mt4-step__body > b { font-size: 14px; font-weight: 600; line-height: 26px; }
+.mt4-step__body > small { font-size: 12.5px; line-height: 1.45; color: var(--ink-3, #6b7180); margin-top: -4px; }
+.mt4-step__row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mt4-only { font-size: 12.5px; align-items: center; }
+.mt4-only input { margin-top: 0; }
+.mt4-path { display: inline-flex; gap: 6px; align-items: center; max-width: 100%; font-size: 12px; color: var(--violet-ink, #5b3fb0); text-decoration: none; }
+.mt4-path code { font-family: var(--mono, ui-monospace, monospace); overflow-wrap: anywhere; }
+.mt4-msg { font-size: 13px; font-weight: 600; margin: 10px 0 0; }

@@ -1320,3 +1320,31 @@ svg { display: block; }
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(0.8); }
 }
+
+/* ─── The v4 look (Sonia, 20 Nov: "when I click Edit the whole thing looks super ugly") ───────────────
+   The wizard keeps its own token set; with the v4 design its tokens become v4's, so it reads like the
+   rest of MyCoNet: Inter / Inter Tight instead of a missing serif, the pale blue page, white cards with
+   soft blue rules, green actions, rounder corners. */
+[data-design="v4"] .wizard-root:not([data-theme="dark"]) {
+  --display: var(--font-inter-tight), 'Inter Tight', system-ui, sans-serif;
+  --sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --mono: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --bg: #E9EFFD; --bg-2: #EEF3FF; --bg-3: #E2E9FA;
+  --surface: #FFFFFF; --surface-2: #F5F8FF;
+  --ink: #111317; --ink-2: #3A3F4A; --ink-3: #6B7180; --ink-4: #9AA0AD;
+  --rule: rgba(35, 80, 176, .13); --rule-soft: rgba(35, 80, 176, .07);
+  --accent: #235C3B; --accent-2: #1B4A2F; --accent-soft: #D4F0DD;
+  --shadow-sm: none; --shadow: 0 1px 2px rgba(17,19,23,.04); --shadow-lg: 0 18px 48px -18px rgba(17,19,23,.25);
+  --radius: 14px; --radius-sm: 10px; --radius-lg: 20px;
+}
+[data-design="v4"] .wizard-root .step-title { font-size: clamp(30px, 4vw, 42px); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; }
+[data-design="v4"] .wizard-root .step-lede { font-size: 16px; }
+[data-design="v4"] .wizard-root .metric-value { font-weight: 400; letter-spacing: -.04em; }
+[data-design="v4"] .wizard-root .guide-pop-title { font-family: var(--display); }
+/* Labels drop the mono capitals' heavy weight, as everywhere in v4 */
+[data-design="v4"] .wizard-root .crumb, [data-design="v4"] .wizard-root .rail-title { letter-spacing: .08em; font-weight: 500; }
+/* Buttons: pills; the main action is the v4 green */
+[data-design="v4"] .wizard-root .btn { border-radius: 999px; }
+[data-design="v4"] .wizard-root .btn-primary { background: var(--action, #D4F0DD); border-color: transparent; color: var(--action-ink, #235C3B); font-weight: 600; }
+[data-design="v4"] .wizard-root .btn-primary:hover { background: #C3E8CF; border-color: transparent; }
+[data-design="v4"] .wizard-root .card { border-color: transparent; }

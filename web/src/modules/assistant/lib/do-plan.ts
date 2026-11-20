@@ -14,7 +14,7 @@ const KINDS: DoKind[] = ['create_circle', 'merge_projects', 'rename_project', 'c
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
 
-function prompt(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, events: EventRef[], meName: string, community: string, context = '') {
+function prompt(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, events: EventRef[], meName: string, community: string, context = '', brain = '') {
   const open = b.tasks.filter(t => t.status !== 'done')
   const pRef = new Map(b.projects.map((p, i) => [p.id, `P${i + 1}`]))
   const person = (id: string | null) => b.people.find(p => p.id === id)?.name ?? null
@@ -57,10 +57,11 @@ Open tasks (ref · [circle] title · project or board · who · due · status):
 ${tasks || '(none)'}
 ${history.length ? `\nThe conversation so far:\n${history.slice(-6).map(m => `${m.role === 'user' ? meName : 'Agent'}: ${m.content.slice(0, 500)}`).join('\n')}\n` : ''}
 ${context ? `\nWhat ${meName} is looking at right now ("this", "here" and "these" mean what's here):\n${context}\n` : ''}
+${brain ? `\nFrom the community's second brain (notes ${meName} may read; use them to understand the request, e.g. "the tasks from last week's kitchen meeting" — they change nothing by themselves, and the board above is what's true now):\n${brain}\n` : ''}
 ${meName}'s request: ${instruction}`
 }
 
-export async function planChanges(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, events: EventRef[], meName: string, context = ''): Promise<{ reply: string; actions: (DoAction | GeneralAction | EventAction)[] }> {
+export async function planChanges(instruction: string, history: { role: string; content: string }[], b: Board, refs: Refs, events: EventRef[], meName: string, context = '', brain = ''): Promise<{ reply: string; actions: (DoAction | GeneralAction | EventAction)[] }> {
   const apiKey = process.env.MINIMAX_API_KEY
   if (!apiKey) throw new Error('The agent isn’t set up (MINIMAX_API_KEY).')
   const ctrl = new AbortController()
@@ -70,7 +71,7 @@ export async function planChanges(instruction: string, history: { role: string; 
     const res = await fetch('https://api.minimax.io/v1/chat/completions', {
       method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: MODEL, reasoning_effort: 'low', max_completion_tokens: 4000, messages: [{ role: 'user', content: prompt(instruction, history, b, refs, events, meName, process.env.NEXT_PUBLIC_COMMUNITY_NAME || 'the community', context) }] }),
+      body: JSON.stringify({ model: MODEL, reasoning_effort: 'low', max_completion_tokens: 4000, messages: [{ role: 'user', content: prompt(instruction, history, b, refs, events, meName, process.env.NEXT_PUBLIC_COMMUNITY_NAME || 'the community', context, brain) }] }),
     })
     if (!res.ok) throw new Error(`The agent is busy (AI ${res.status}). Try again in a moment.`)
     const data = await res.json() as { choices?: { message?: { content?: string } }[] }

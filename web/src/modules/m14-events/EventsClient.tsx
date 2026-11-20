@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
+import { CircleFilter, parseCircleParam } from '@/core/components/v4/CircleFilter'
 import type { CircleSlug } from '@/core/lib/circles'
 import type { BoardTask, CalendarEvent, CalendarFeed, EventKind, EventRsvp, EventsView, LinkOption, PersonLite, RsvpStatus } from './types'
 import { boardTaskEvent } from './lib/board-tasks'
@@ -60,7 +61,11 @@ export default function EventsClient({
   const [rsvps, setRsvps] = useState(initialRsvps)
   const [kinds, setKinds] = useState<EventKind[]>(initialKinds)
   const [view, setView] = useState<EventsView>(initialView)
-  const [circleFilter, setCircleFilter] = useState<CircleSlug | ''>('')
+  // The circle filter: several circles at once ([] = all), in the address as ?circle=a,b (v4.68.0)
+  const searchParams = useSearchParams()
+  const [circlePicks, setCirclePicks] = useState<string[]>(() => parseCircleParam(searchParams.get('circle'), c => circles.slugs.length === 0 || circles.has(c)))
+  const circleFilter = (circlePicks.length === 1 ? circlePicks[0] : '') as CircleSlug | ''
+  const setCircleFilter = (c: CircleSlug | '') => setCirclePicks(c ? [c] : [])
   // Categories the viewer has unticked ("Food"…); everything else shows
   const [hiddenCategories, setHiddenCategories] = useState<string[]>([])
   const [showPast, setShowPast] = useState(false)
@@ -98,8 +103,9 @@ export default function EventsClient({
     params.set('show', kinds.join(','))
     params.set('view', view)
     if (openId) params.set('event', openId)
+    if (circlePicks.length) params.set('circle', circlePicks.join(','))
     window.history.replaceState(null, '', `/calendar?${params.toString()}`)
-  }, [kinds, view, openId])
+  }, [kinds, view, openId, circlePicks])
 
   useEffect(() => {
     if (!toast) return
@@ -113,7 +119,7 @@ export default function EventsClient({
 
   // Categories ("Food", "Movement"…) used by the ticked kinds, for the checkboxes
   const categories = useMemo(() => [...new Set(shown.filter(e => kinds.includes(e.kind) && e.category).map(e => e.category as string))].sort(), [shown, kinds])
-  const visible = shown.filter(e => kinds.includes(e.kind) && (!circleFilter || e.circle === circleFilter) && !(e.category && hiddenCategories.includes(e.category)))
+  const visible = shown.filter(e => kinds.includes(e.kind) && (!circlePicks.length || (!!e.circle && circlePicks.includes(e.circle))) && !(e.category && hiddenCategories.includes(e.category)))
   const openEvent = openId ? events.find(e => e.id === openId) ?? null : null
   const canPostCommunity = canCreateKind('community', role)
 
@@ -300,10 +306,10 @@ export default function EventsClient({
               )}
             </span>
             <span className="v4-toolbar__end">
-              <select className="v4-select" value={circleFilter} onChange={e => setCircleFilter(e.target.value as CircleSlug | '')} aria-label="Filter by circle">
-                <option value="">All circles</option>
-                {circles.slugs.map(p => <option key={p} value={p}>{circles.meta(p).label}</option>)}
-              </select>
+              <CircleFilter
+                options={circles.slugs.map(c => ({ slug: c, label: circles.meta(c).label, color: circles.meta(c).color, count: now ? shown.filter(e => e.circle === c && !isPast(e, now)).length : undefined }))}
+                value={circlePicks} onChange={setCirclePicks} mine={leadCircles}
+              />
               <span className="v4-seg" role="group" aria-label="View">
                 {VIEWS.map(v => <button key={v.id} type="button" className={view === v.id ? 'on' : ''} aria-pressed={view === v.id} onClick={() => setView(v.id)}>{v.label}</button>)}
               </span>

@@ -3,6 +3,66 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.74.0',
+    date: '2026-11-20',
+    title: 'The assistant reads the second brain',
+    items: ['Where a community turns it on, Ask answers from its second brain too — meeting notes and circle boards for members, and the hand-written notes for leads and admins — and Do uses them to understand what you ask.'],
+  },
+  {
+    version: 'v4.73.0',
+    date: '2026-11-20',
+    title: 'Community-wide meetings in “My circles”',
+    items: ['A meeting that spans several circles — like a morning sync — now shows in “My circles” as well as “All”, so it no longer looks missing.'],
+  },
+  {
+    version: 'v4.72.0',
+    date: '2026-11-20',
+    title: 'About: a calm overview with a sticky heading',
+    items: ['The facts under the About photo are a quick overview; tap one to jump to its whole answer in the right chapter.', 'The chapter bar stays at the top as you scroll and shows where you are; the chapters follow the questions a visitor asks.', 'Editing the Blueprint looks like the rest of MyCoNet.'],
+  },
+  {
+    version: 'v4.71.0',
+    date: '2026-11-20',
+    title: 'Reviewing a meeting, step by step',
+    items: ['Leads see a “Review this meeting” box at the top of a meeting: choose the circle, put the tasks on the board, email the notes, and see where the notes were saved. Done steps are ticked; the green button is always the next thing to do.', 'Meetings no longer show a day early.'],
+  },
+  {
+    version: 'v4.70.1',
+    date: '2026-11-20',
+    title: 'The community’s mark beside its name',
+    items: ['The menu shows a small mark (for Protopia, its spiral) with the community’s name and “on MyCoNet” beside it.'],
+  },
+  {
+    version: 'v4.70.0',
+    date: '2026-11-20',
+    title: 'A map of the land',
+    items: ['New Map page: the picture of the land with a pin for every place, the houses, shared spaces, gardens, water, forest and meeting spots. Tap a pin for its photo, a short description, who looks after it and what you can book there. Filter by kind; works with two fingers on a phone.', 'Admins and circle leads put places on the map and add photos with “Edit places”.'],
+  },
+  {
+    version: 'v4.69.0',
+    date: '2026-11-20',
+    title: 'All of Members in the new look',
+    items: ['Matches, My offers, My requests, Discover and Edit profile now look like the rest of the portal. My profile opens your own profile page.'],
+  },
+  {
+    version: 'v4.68.2',
+    date: '2026-11-20',
+    title: 'Your community’s logo in the menu',
+    items: ['The menu shows the community’s logo, set in the Blueprint, instead of a letter.'],
+  },
+  {
+    version: 'v4.68.1',
+    date: '2026-11-20',
+    title: 'Members takes less room',
+    items: ['Your best matches on Members are short rows, and “Lately” is now “Members activity”. Your profile no longer lists your circles twice.'],
+  },
+  {
+    version: 'v4.68.0',
+    date: '2026-11-20',
+    title: 'One way to filter by circle',
+    items: ['Members, Operations, Meetings and the Calendar filter by circle the same way: a “Circles” button opens every circle with a search, you pick one or several, and the chosen ones show as pills you can remove. On phones the list slides up from the bottom, and nothing scrolls sideways any more.'],
+  },
+  {
     version: 'v4.67.1',
     date: '2026-11-20',
     title: 'Fixes: Operations and requests',

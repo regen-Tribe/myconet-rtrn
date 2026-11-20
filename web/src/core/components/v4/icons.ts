@@ -67,6 +67,8 @@ export const ICONS = {
   "megaphone": "<path d=\"M4 10v4h3l8 4.5V5.5L7 10z\"/><path d=\"M18.5 9.5a3.5 3.5 0 0 1 0 5M7 14l1.5 5.5\"/>",
   "wrench": "<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z\"/>",
   "building": "<path d=\"M3.5 20.5h17M5 20.5V10M19 20.5V10M9 20.5V10M15 20.5V10M3 9.5 12 4l9 5.5z\"/>",
+  "drop": "<path d=\"M12 3.5s6.5 7 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10.5 12 3.5 12 3.5z\"/><path d=\"M9 15a3 3 0 0 0 3 3\"/>",
+  "tree": "<path d=\"M12 21v-6\"/><path d=\"M12 3.5 6 11h3l-4 5h14l-4-5h3z\"/>",
 } as const
 
 export type IconName = keyof typeof ICONS

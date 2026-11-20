@@ -11,10 +11,10 @@ type Activity = { id: string; who: string; act: string; href: string; ts: number
 
 /**
  * Members in the v4 look (Sonia's prototype, 19 Nov; "matches first", 20 Nov). Your best matches lead the
- * page, with your profile, your offers and requests and what's new beside them; then everyone as uniform
+ * page, with your profile and members' activity beside them; then everyone as uniform
  * cards (with your match % on each) you can search and filter by circle.
  */
-export default async function MembersV4({ supabase, userId, memberCount, profileSteps, profileCompleteness, topMatches, activity, hasBio, offersCount, requestsCount, matchScores }: {
+export default async function MembersV4({ supabase, userId, memberCount, profileSteps, profileCompleteness, topMatches, activity, hasBio, matchScores }: {
   supabase: SupabaseClient
   userId: string | null
   memberCount: number
@@ -23,8 +23,6 @@ export default async function MembersV4({ supabase, userId, memberCount, profile
   topMatches: Match[]
   activity: Activity[]
   hasBio: boolean
-  offersCount: number
-  requestsCount: number
   matchScores: Record<string, number>
 }) {
   // Read separately and forgivingly: visitors may not see circles, offers or requests
@@ -97,9 +95,8 @@ export default async function MembersV4({ supabase, userId, memberCount, profile
                       {m.profile.avatar_url
                         ? <img loading="lazy" decoding="async" src={m.profile.avatar_url} alt="" className="v4-avatar mb4-match__av" />
                         : <span className="v4-avatar mb4-match__av">{n.slice(0, 1).toUpperCase()}</span>}
-                      <b>{n}</b>
-                      <span className="mb4-score">{m.score}% match</span>
-                      <small>{m.reasons.slice(0, 2).join(' · ') || 'Shared interests'}</small>
+                      <span className="mb4-match__txt"><b>{n}</b><small>{m.reasons.slice(0, 2).join(' · ') || 'Shared interests'}</small></span>
+                      <span className="mb4-score">{m.score}%</span>
                     </Link>
                   )
                 })}
@@ -107,7 +104,7 @@ export default async function MembersV4({ supabase, userId, memberCount, profile
             )}
           </div>
 
-          {/* You: profile (the one green next step while unfinished), offers and requests, lately */}
+          {/* You: profile (the one green next step while unfinished), then members' activity */}
           <div className="mb4-side">
             {profileSteps && profileCompleteness < 100 ? (
               <Link href="/profile/edit" className="mb4-box mb4-box--next">
@@ -124,19 +121,12 @@ export default async function MembersV4({ supabase, userId, memberCount, profile
                 <span className="mb4-box__txt"><small>Your profile</small><b><Icon name="check" size={15} /> Complete · see how others see you</b></span>
               </Link>
             )}
-            <div className="mb4-box">
-              <span className="mb4-box__txt">
-                <small>You</small>
-                <b><Link href="/members/offers">{offersCount} {offersCount === 1 ? 'offer' : 'offers'}</Link> · <Link href="/members/requests">{requestsCount} {requestsCount === 1 ? 'request' : 'requests'}</Link></b>
-              </span>
-              <span className="mb4-box__links"><Link href="/members/offers"><Icon name="plus" size={13} />Offer</Link><Link href="/members/requests"><Icon name="plus" size={13} />Request</Link></span>
-            </div>
-            <LatelyTile activity={activity} label="Lately" />
+            <LatelyTile activity={activity} label="Members activity" />
           </div>
         </section>
       )}
 
-      {!userId && activity.length > 0 && <div className="mb4-visitor-lately"><LatelyTile activity={activity} label="Lately" /></div>}
+      {!userId && activity.length > 0 && <div className="mb4-visitor-lately"><LatelyTile activity={activity} label="Members activity" /></div>}
 
       <h2 className="mb4-h2">Everyone</h2>
       <MembersGridV4 people={people} circles={[...circleBySlug.values()]} signedIn={!!userId} />

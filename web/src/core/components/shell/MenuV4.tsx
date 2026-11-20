@@ -15,6 +15,9 @@ import { Icon } from '@/core/components/v4'
  * slim rail of icons (names on hover) instead of disappearing. Today's AppSideNav stays for everyone else.
  */
 
+// The community's small square mark (instance config "brandMark", e.g. Protopia's spiral); the letter otherwise
+const BRAND_MARK = process.env.NEXT_PUBLIC_BRAND_MARK || ''
+
 const JOURNEY = ['Explorer', 'Joining member', 'Member']
 
 function NextStepCard({ state, onClose, collapsed }: { state: MenuState; onClose?: () => void; collapsed: boolean }) {
@@ -106,7 +109,9 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
     <nav aria-label="Menu" className={`app-shell-sidenav menu-v4${mobileOpen ? ' mobile-open' : ''}${rail ? ' mv4--rail' : ''}`}>
       <div className="mv4-top">
         <Link href="/home" className="mv4-brand" title={COMMUNITY_NAME} onClick={onClose}>
-          <span className="mv4-mark" aria-hidden="true">{COMMUNITY_NAME.slice(0, 1).toUpperCase()}</span>
+          {BRAND_MARK
+            ? <img className="mv4-mark mv4-mark--img" src={BRAND_MARK} alt="" aria-hidden="true" />
+            : <span className="mv4-mark" aria-hidden="true">{COMMUNITY_NAME.slice(0, 1).toUpperCase()}</span>}
           <span className="mv4-brand__txt"><b>{COMMUNITY_NAME}</b><small>on MyCoNet</small></span>
         </Link>
         {onToggleCollapse && (

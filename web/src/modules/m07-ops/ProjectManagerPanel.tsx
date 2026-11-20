@@ -57,7 +57,8 @@ const btn = (primary = false): React.CSSProperties => ({
  */
 export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide, projects = [], teams = [] }: {
   suggestions: AgentSuggestion[]; actions: PmAction[]; taskTitles: Record<string, string>
-  circle: string | null; canDecide: (circle: string) => boolean
+  /** The board's circle filter: one circle, several, or null / [] for all */
+  circle: string | string[] | null; canDecide: (circle: string) => boolean
 
   /** Where a suggestion can be put instead (v4.38.3): open projects, and the circles' teams */
   projects?: { id: string; title: string; circle: string | null }[]
@@ -86,9 +87,10 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   const linkedHere = useSyncExternalStore(onHash, atPm, () => false)
   const open = toggled ?? linkedHere
   const acceptedIds = new Set(accepted.map(a => a.s.id))
-  const sugs = suggestions.filter(s => (!circle || s.circle === circle) && !acceptedIds.has(s.id))
-  const acceptedShown = accepted.filter(a => !circle || a.s.circle === circle)
-  const done = actions.filter(a => !circle || a.circle === circle)
+  const inFilter = (c: string | null) => !circle || circle.length === 0 || (Array.isArray(circle) ? !!c && circle.includes(c) : c === circle)
+  const sugs = suggestions.filter(s => inFilter(s.circle) && !acceptedIds.has(s.id))
+  const acceptedShown = accepted.filter(a => inFilter(a.s.circle))
+  const done = actions.filter(a => inFilter(a.circle))
   if (!sugs.length && !done.length && !acceptedShown.length) return null
 
   const overrides = (v: string | undefined) => {

@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Chip, ChipRow, EmptyState, Icon } from '@/core/components/v4'
+import { EmptyState, Icon } from '@/core/components/v4'
+import { CircleFilter, parseCircleParam, setCircleParam } from '@/core/components/v4/CircleFilter'
 import './members-v4.css'
 
 export type MemberCard = {
@@ -14,11 +16,16 @@ export type MemberCard = {
 
 /** Members in the v4 look (Sonia's prototype): everyone as cards, filtered by circle or searched. */
 export default function MembersGridV4({ people, circles, signedIn }: { people: MemberCard[]; circles: { slug: string; name: string; color: string }[]; signedIn: boolean }) {
-  const [circle, setCircle] = useState<string | null>(null)
+  // The circle filter (several at once; [] = everyone), kept in the address as ?circle=a,b
+  const params = useSearchParams()
+  const [picked, setPicked] = useState<string[]>(() => parseCircleParam(params.get('circle'), () => true))
+  const pick = (next: string[]) => { setPicked(next); setCircleParam(next) }
+  const active = picked.filter(s => circles.some(c => c.slug === s))
+  const circle = active.length > 0
   const [q, setQ] = useState('')
   const query = q.trim().toLowerCase()
   const shown = people
-    .filter(p => !circle || p.circles.some(c => c.slug === circle))
+    .filter(p => !circle || p.circles.some(c => active.includes(c.slug)))
     .filter(p => !query || [p.name, p.username ?? '', p.headline ?? '', ...p.offers, ...p.requests, ...p.circles.map(c => c.name)].some(s => s.toLowerCase().includes(query)))
   const inCircle = (slug: string) => people.filter(p => p.circles.some(c => c.slug === slug)).length
 
@@ -30,12 +37,11 @@ export default function MembersGridV4({ people, circles, signedIn }: { people: M
           <input type="search" className="mb4-search__input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, skill, offer or circle" aria-label="Search members" />
           {q && <button type="button" className="mb4-search__clear" onClick={() => setQ('')} aria-label="Clear search"><Icon name="x" size={14} /></button>}
         </label>
-        <ChipRow>
-          <Chip on={circle === null} onClick={() => setCircle(null)} count={people.length}>Everyone</Chip>
-          {circles.filter(c => inCircle(c.slug) > 0).map(c => (
-            <Chip key={c.slug} on={circle === c.slug} onClick={() => setCircle(c.slug)} count={inCircle(c.slug)}>{c.name}</Chip>
-          ))}
-        </ChipRow>
+        <CircleFilter
+          options={circles.filter(c => inCircle(c.slug) > 0).map(c => ({ slug: c.slug, label: c.name, color: c.color, count: inCircle(c.slug) }))}
+          value={picked} onChange={pick}
+          mine={people.find(p => p.you)?.circles.map(c => c.slug) ?? []}
+        />
       </div>
       {(query || circle) && <p className="mb4-count">{shown.length} of {people.length} people</p>}
 

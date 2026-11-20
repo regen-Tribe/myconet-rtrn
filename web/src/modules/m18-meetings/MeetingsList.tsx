@@ -8,6 +8,7 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import { taskDate } from '@/core/lib/tasks'
 import type { MeetingListItem, MeetingStatus } from './types'
 import { modLabel } from '@/core/lib/module-label'
+import { CircleFilter, parseCircleParam } from '@/core/components/v4/CircleFilter'
 import './meetings-v4.css'
 
 const STATUS: Record<MeetingStatus, { label: string; color: string }> = {
@@ -40,7 +41,14 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
   initialQuery: string
 }) {
   const circles = useCircles()
-  const [filter, setFilter] = useState<string>(initialCircle ?? (myCircles.length ? 'mine' : 'all'))
+  // The circle filter: several circles at once ([] = all). In the address as ?circle=mine | all | a,b,
+  // so "Meeting notes" links and the back button work; with no ?circle= it opens on My circles
+  const fromParam = (raw: string): string[] => raw === 'mine' ? myCircles : raw === 'all' ? [] : parseCircleParam(raw, s => circles.has(s))
+  const [picked, setPicked] = useState<string[]>(() => fromParam(initialCircle ?? (myCircles.length ? 'mine' : 'all')))
+  const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every(x => b.includes(x))
+  const isMine = myCircles.length > 0 && sameSet(picked, myCircles)
+  const filter = picked.length === 0 ? 'all' : isMine ? 'mine' : picked.join(',')
+  const setFilter = (key: string) => setPicked(fromParam(key))
   const [q, setQ] = useState(initialQuery)
   const [needsReview, setNeedsReview] = useState(false)
 
@@ -54,17 +62,21 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
 
   const usedCircles = useMemo(() => circles.slugs.filter(c => meetings.some(m => m.circle === c)), [circles.slugs, meetings])
   const counts = useMemo(() => {
-    const out: Record<string, number> = { all: meetings.length, mine: meetings.filter(m => m.circle && myCircles.includes(m.circle)).length }
+    // Community-wide meetings (no single circle) concern everyone, so they count towards My circles too
+    const cw = meetings.filter(m => !m.circle && m.processed_at).length
+    const out: Record<string, number> = { all: meetings.length, mine: meetings.filter(m => m.circle && myCircles.includes(m.circle)).length + cw }
     for (const m of meetings) if (m.circle) out[m.circle] = (out[m.circle] ?? 0) + 1
     return out
   }, [meetings, myCircles])
   const needsLead = (m: MeetingListItem) => (m.needs_review && !m.processed_at) || (taskCounts[m.id]?.drafts ?? 0) > 0
   const reviewCount = meetings.filter(needsLead).length
 
+  // A community-wide meeting (the agent found no single circle, e.g. a morning sync) concerns everyone,
+  // so it shows in My circles as well as All — it isn't hidden until you switch to All.
+  const communityWide = (m: MeetingListItem) => !m.circle && !!m.processed_at
   const needle = q.trim().toLowerCase()
   const shown = meetings.filter(m => {
-    if (filter === 'mine' && !(m.circle && myCircles.includes(m.circle))) return false
-    if (filter !== 'mine' && filter !== 'all' && m.circle !== filter) return false
+    if (picked.length && !((m.circle && picked.includes(m.circle)) || (isMine && communityWide(m)))) return false
     if (needsReview && !needsLead(m)) return false
     if (needle && !`${m.title} ${m.summary ?? ''} ${m.attendees.join(' ')}`.toLowerCase().includes(needle)) return false
     return true
@@ -111,11 +123,20 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
       </div>
       </>)}
 
-      <div role="group" aria-label="Show meetings of" className={V4 ? 'v4-chiprow' : undefined} style={V4 ? undefined : { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+      {V4 ? (
+        <div style={{ marginBottom: 12 }}>
+          <CircleFilter
+            options={usedCircles.map(c => ({ slug: c, label: circles.meta(c).label, color: circles.meta(c).color, count: counts[c] ?? 0 }))}
+            value={picked} onChange={setPicked} mine={myCircles}
+          />
+        </div>
+      ) : (
+      <div role="group" aria-label="Show meetings of" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {myCircles.length > 0 && chip('mine', 'My circles')}
         {chip('all', 'All')}
-        {usedCircles.map(c => chip(c, V4 ? circles.meta(c).label : `${circles.meta(c).emoji} ${circles.meta(c).label}`, circles.meta(c).color, V4))}
+        {usedCircles.map(c => chip(c, `${circles.meta(c).emoji} ${circles.meta(c).label}`, circles.meta(c).color))}
       </div>
+      )}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 18 }}>
         <input
           type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search titles, summaries, people…" aria-label="Search meetings"

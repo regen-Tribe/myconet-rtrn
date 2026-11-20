@@ -5,12 +5,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
-import { fmtTaskWhen } from '@/core/lib/tasks'
+import { fmtTaskWhen, taskDate } from '@/core/lib/tasks'
 import NotesText from './NotesText'
 import SummaryCards from './SummaryCards'
 import type { Meeting, MeetingTask } from './types'
 import { DESIGN } from '@/core/lib/instance'
-import { Icon, StatusPill, Tag } from '@/core/components/v4'
+import { Button, Icon, StatusPill, Tag } from '@/core/components/v4'
 import './meetings-v4.css'
 
 const V4 = DESIGN === 'v4'
@@ -24,11 +24,12 @@ const btn = (primary = false): React.CSSProperties => ({
   color: primary ? '#fff' : 'var(--ink-2)', background: primary ? 'var(--m18)' : 'var(--surface)',
   border: primary ? 'none' : '1px solid var(--rule)',
 })
-const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+// A date-only meeting_date is a local day: "2026-11-18" read as UTC showed Nov 17 west of Greenwich
+const fmtDay = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? taskDate(iso) : new Date(iso)).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 const ago = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 /** The leads' bar: circle, Circle only, run the pipeline, confirm drafts, email again */
-function LeadBar({ m, drafts, emailOn, secondBrainOn }: { m: Meeting; drafts: number; emailOn: boolean; secondBrainOn: boolean }) {
+function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn }: { m: Meeting; drafts: number; onBoard?: number; emailOn: boolean; secondBrainOn: boolean }) {
   const circles = useCircles()
   const router = useRouter()
   const [circle, setCircle] = useState(m.circle ?? '')
@@ -63,6 +64,93 @@ function LeadBar({ m, drafts, emailOn, secondBrainOn }: { m: Meeting; drafts: nu
   const saveSettings = (process: boolean) =>
     act('settings', { circle: circle || null, visibility: circle && circleOnly ? 'circle' : 'community', process }, process ? 'settings+process' : 'settings')
   const changed = (circle || null) !== m.circle || (circleOnly ? 'circle' : 'community') !== m.visibility
+
+  if (V4) {
+    // v4: the leads' review as numbered steps. The first step not done yet gets the one green next button.
+    const assistant = !ready ? 'Waiting for the notes from Fireflies.'
+      : running ? 'The assistant is reading this meeting…'
+      : m.processed_at
+        ? `Read ${ago(m.processed_at)}. ${m.circle_source === 'agent' ? (m.circle ? 'It chose the circle' : 'It found this meeting community-wide') : m.circle ? 'A person set the circle' : 'No circle'}${m.agent_note ? `: ${m.agent_note}` : '.'}`
+        : m.needs_review && m.agent_note
+          ? `It didn’t put anything on the board: ${m.agent_note} If this is a community meeting, choose its circle and save.`
+          : 'Not read yet: the assistant reads each new meeting within a few minutes.'
+    const circleDone = !!m.circle || !!m.processed_at
+    const tasksDone = !!m.processed_at && drafts === 0
+    const emailDone = !!m.notes_emailed_at
+    const next = !ready ? 0 : changed || !circleDone ? 1 : !tasksDone ? 2 : emailOn && !emailDone ? 3 : 0
+    const step = (n: number, title: string, done: boolean, body: React.ReactNode, status?: React.ReactNode) => (
+      <li className={`mt4-step${done ? ' mt4-step--done' : ''}${next === n ? ' mt4-step--now' : ''}`}>
+        <span className="mt4-step__n" aria-hidden>{done ? <Icon name="check" size={14} /> : n}</span>
+        <div className="mt4-step__body">
+          <b>{title}</b>
+          {status && <small>{status}</small>}
+          {body}
+        </div>
+      </li>
+    )
+    const tasksStatus = m.processed_at
+      ? `${onBoard} on the board${drafts ? ` · ${drafts} to confirm` : ''}`
+      : m.needs_review ? 'Nothing on the board yet' : 'The assistant hasn’t read it yet'
+    return (
+      <section className="v4-card mt4-lead" aria-label="For leads">
+        <div className="mt4-lead__eyebrow">For leads</div>
+        <h2 className="mt4-h">Review this meeting</h2>
+        <div className="mt4-said"><Icon name="spark" size={15} /><span>{assistant}</span></div>
+        {m.processing_error && <p className="mt4-warn">Last run: {m.processing_error}</p>}
+        <ol className="mt4-steps">
+          {step(1, 'Circle', circleDone && !changed, (
+            <>
+              <div className="mt4-step__row">
+                <select className="v4-select" value={circle} onChange={e => setCircle(e.target.value)} aria-label="Circle">
+                  <option value="">No circle yet</option>
+                  {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).label}</option>)}
+                </select>
+                <label className="v4-check mt4-only">
+                  <input type="checkbox" checked={circleOnly && !!circle} disabled={!circle} onChange={e => setCircleOnly(e.target.checked)} />
+                  <span><b>Circle only</b> · only this circle’s members can read it</span>
+                </label>
+              </div>
+              {changed && (
+                <Button variant={next === 1 ? 'next' : 'primary'} size="sm" disabled={!!busy} onClick={() => saveSettings(!m.processed_at && ready)}>
+                  {busy?.startsWith('settings') ? 'Saving…' : !m.processed_at && ready ? 'Save and put tasks on the board' : 'Save'}
+                </Button>
+              )}
+            </>
+          ), m.circle ? (m.circle_source === 'agent' ? 'Chosen by the assistant. Tasks already on the board stay where they are if you change it.' : 'Set by a person.') : m.processed_at ? 'Community-wide' : undefined)}
+          {step(2, 'Tasks on the board', tasksDone, (
+            <div className="mt4-step__row">
+              {drafts > 0 && (
+                <Button variant={next === 2 ? 'next' : 'primary'} size="sm" disabled={!!busy} onClick={() => act('confirm')}>
+                  {busy === 'confirm' ? 'Confirming…' : `Confirm all ${drafts} draft${drafts === 1 ? '' : 's'}`}
+                </Button>
+              )}
+              {ready && !changed && (
+                <Button variant={next === 2 && drafts === 0 ? 'next' : 'secondary'} size="sm" disabled={!!busy || running} onClick={() => act('process')}
+                  title="The assistant reads the meeting again: adds tasks that aren’t on the board yet and rewrites the second-brain note">
+                  {busy === 'process' || running ? 'Working…' : m.processed_at ? 'Look for new tasks again' : m.circle ? 'Put tasks on the board' : 'Let the assistant read it'}
+                </Button>
+              )}
+            </div>
+          ), <>{tasksStatus}{drafts > 0 ? '. Or swipe each draft in the list.' : ''}</>)}
+          {step(3, 'Email the notes', emailDone, emailOn ? (
+            ready && m.processed_at ? (
+              <div className="mt4-step__row">
+                <Button variant={next === 3 ? 'next' : 'secondary'} size="sm" disabled={!!busy} onClick={() => act('email')} icon="mail">
+                  {busy === 'email' ? 'Sending…' : emailDone ? 'Email the notes again' : 'Email the notes'}
+                </Button>
+              </div>
+            ) : null
+          ) : null, !emailOn ? 'Off: no SMTP password set.' : emailDone ? `Emailed ${m.notes_email_count ?? 0} on ${ago(m.notes_emailed_at!)}.` : m.processed_at ? 'To the leads of this meeting’s circle.' : 'After the tasks are on the board.')}
+          {step(4, 'Second brain', !!m.notes_url, m.notes_path ? (
+            m.notes_url
+              ? <a className="mt4-path" href={m.notes_url} target="_blank" rel="noreferrer"><Icon name="brain" size={14} /><code>{m.notes_path}</code></a>
+              : <span className="mt4-path"><Icon name="brain" size={14} /><code>{m.notes_path}</code></span>
+          ) : null, !secondBrainOn ? 'Saving to the second brain is off.' : m.notes_path ? `Saved${m.visibility === 'circle' ? ' (Circle only)' : ' (members can read)'}. The transcript sits beside it, for leads only.` : 'Saved when the assistant reads the meeting.')}
+        </ol>
+        {msg && <p className="mt4-msg" role="status">{msg}</p>}
+      </section>
+    )
+  }
 
   return (
     <div style={{ marginTop: 18, padding: '14px 16px', borderRadius: 12, border: '1px solid color-mix(in srgb, var(--m18) 30%, var(--rule))', background: 'color-mix(in srgb, var(--m18) 5%, var(--surface))', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -215,7 +303,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
                           <span className="v4-row__lead"><span className="v4-avatar">{(t.assignee ?? t.person_name ?? '?').slice(0, 1).toUpperCase()}</span></span>
                           <Link href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} className="v4-row__main mt4-tlink">
                             <b className={t.status === 'done' ? 'mt4-done' : undefined}>{t.title}</b>
-                            <small>{who}{t.due_date ? ` · ${fmtTaskWhen(t.due_date, t.due_time)}` : ''}{t.project_title ? ` · ${t.project_title}` : ''}</small>
+                            <small>{who}{t.due_date ? ` · ${fmtTaskWhen(t.due_date, t.due_time)}` : ''}{t.project_title ? ` · subtask of “${t.project_title}”` : ''}</small>
                             {t.item_text && t.item_text !== t.title && <small className="mt4-quote">“{t.item_text.slice(0, 120)}”</small>}
                           </Link>
                           <span className="v4-row__trail">
@@ -247,15 +335,15 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
           </div>
 
           <div>
+            {canManage && <LeadBar m={m} drafts={drafts} onBoard={tasks.length} emailOn={emailOn} secondBrainOn={secondBrainOn} />}
             <div className="v4-sec"><h2>Files</h2></div>
             <div className="v4-list">
               <div className="v4-row"><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="file" /></span></span><span className="v4-row__main"><b>Meeting notes</b><small>{m.visibility === 'circle' ? 'This circle can read' : 'Members can read'}</small></span></div>
               <div className={`v4-row${m.transcript ? '' : ' mt4-off'}`}><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name={m.transcript ? 'mic' : 'lock'} /></span></span><span className="v4-row__main"><b>Transcript</b><small>{m.transcript ? 'You can read it (in the documents)' : 'Only circle leads and admins'}</small></span></div>
             </div>
-            {m.notes_url && (
+            {m.notes_url && !canManage && (
               <a href={m.notes_url} target="_blank" rel="noreferrer" className="mt4-brain"><Icon name="brain" size={15} /><span>Saved in the second brain</span><Icon name="right" size={14} /></a>
             )}
-            {canManage && <LeadBar m={m} drafts={drafts} emailOn={emailOn} secondBrainOn={secondBrainOn} />}
           </div>
         </div>
       </div>
@@ -322,7 +410,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
                         {t.needs_review && <DraftSwipe taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => router.refresh()} onDeclined={() => router.refresh()} />}
                         {t.title}
                       </span>
-                      <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t.project_title ?? 'On the board'} ↗</span>
+                      <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t.project_title ? `Subtask of “${t.project_title}”` : 'On the board'} ↗</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
                       {t.assignee ?? (t.person_name ? `${t.person_name} (not on MyCoNet yet)` : 'No one assigned')}

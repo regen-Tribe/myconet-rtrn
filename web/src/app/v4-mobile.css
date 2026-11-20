@@ -72,9 +72,6 @@
   html[data-design="v4"] .lp-hero { padding-top: 32px; padding-left: 20px; padding-right: 20px; }
   html[data-design="v4"] .lp-section { padding-left: 20px; padding-right: 20px; }
 
-  /* About: the facts grid's values read at phone size */
-  html[data-design="v4"] .ab-facts b { font-size: 17px; }
-  html[data-design="v4"] .ab-facts > div { padding: 14px; }
 
   /* Governance: the four checks stack instead of squeezing two narrow cards side by side */
   html[data-design="v4"] .v4-gov div[style*="minmax(140px"] { grid-template-columns: minmax(0, 1fr) !important; }

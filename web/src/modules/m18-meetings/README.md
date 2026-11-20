@@ -94,7 +94,7 @@ the AI themselves: a Worker gets only about 30 s after replying, too little for 
    outside attendees. Once automatically; "Email the notes again" sends again.
 6. **Log:** circle choice, skips, every task, note and email in `agent_actions` (admins read it).
 
-Leads (admins, circle leads, project leads) on the meeting page: change the circle or Circle only, let the agent
+Leads (admins, circle leads, task leads: `project_lead`) on the meeting page: change the circle or Circle only, let the agent
 read it / look for new tasks again, confirm all drafts, email again: `POST /api/meetings/[id]` with
 `action: settings | process | email | confirm`. Changing the circle later doesn't move tasks already on the board.
 

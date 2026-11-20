@@ -10,8 +10,9 @@ type Mine = { circle: string; how: 'lead' | 'member' | 'asked' }
 /**
  * "My circles" on your own profile (v4.35.0): the circles you're in (as a member, a lead, or on one of its teams),
  * the ones you've asked to join, and "Ask to join" for the rest. A circle's leads approve on the Circles page.
+ * `askOnly` (the v4 profile, which already lists your circles above it): only what you've asked for and "Ask to join".
  */
-export function MyCircles({ userId }: { userId: string }) {
+export function MyCircles({ userId, askOnly = false }: { userId: string; askOnly?: boolean }) {
   const circles = useCircles()
   const [mine, setMine] = useState<Mine[] | null>(null)
   const [asking, setAsking] = useState<string | null>(null)
@@ -69,20 +70,20 @@ export function MyCircles({ userId }: { userId: string }) {
   }
 
   return (
-    <section style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 12, padding: '16px 18px', margin: '16px 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+    <section style={askOnly ? undefined : { background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 12, padding: '16px 18px', margin: '16px 0' }}>
+      {!askOnly && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>My circles</h2>
         <Link href="/circles" style={{ fontSize: 12, fontWeight: 600, color: 'var(--m17)', textDecoration: 'none' }}>All circles →</Link>
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: others.length ? 14 : 0 }}>
-        {mine.filter(m => m.how !== 'asked' && circles.has(m.circle)).map(m => chip(m.circle, m.how === 'lead' ? 'lead' : '', true))}
+      </div>}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: others.length && (!askOnly || mine.some(m => m.how === 'asked')) ? 14 : 0 }}>
+        {!askOnly && mine.filter(m => m.how !== 'asked' && circles.has(m.circle)).map(m => chip(m.circle, m.how === 'lead' ? 'lead' : '', true))}
         {mine.filter(m => m.how === 'asked' && circles.has(m.circle)).map(m => (
           <span key={m.circle} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {chip(m.circle, 'asked', false)}
             <button onClick={() => withdraw(m.circle)} style={{ fontSize: 11.5, color: 'var(--ink-4)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Withdraw</button>
           </span>
         ))}
-        {!mine.length && <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>You’re not in a circle yet.</span>}
+        {!askOnly && !mine.length && <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>You’re not in a circle yet.</span>}
       </div>
       {others.length > 0 && (
         <>

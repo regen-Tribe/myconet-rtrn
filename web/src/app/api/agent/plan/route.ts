@@ -8,6 +8,7 @@ import { describeGeneral, loadRefs, type GeneralAction } from '@/modules/assista
 import type { DoAction } from '@/modules/assistant/lib/do-actions'
 import { describeContext, type PageContext } from '@/modules/assistant/lib/do-context'
 import { describeEvent, eventBlocked, eventContext, loadEventRefs, type EventAction } from '@/modules/assistant/lib/do-events'
+import { brainSources, brainViewer } from '@/modules/assistant/lib/brain'
 
 const isGeneral = (a: DoAction | GeneralAction | EventAction): a is GeneralAction => ['update', 'add_member', 'remove_member'].includes(a.kind)
 const isEvent = (a: DoAction | GeneralAction | EventAction): a is EventAction => a.kind === 'change_event'
@@ -29,7 +30,10 @@ export async function POST(req: NextRequest) {
   try {
     // What's on their screen (v4.36.0): the page, the open task or project, a suggestion they're answering
     const seen = [await describeContext(admin, context, board), eventContext(context?.path, events)].filter(Boolean).join('\n')
-    const { reply, actions } = await planChanges(instruction.trim().slice(0, 2000), Array.isArray(history) ? history : [], board, refs, events, me.name, seen)
+    // The second brain (v4.74.0): a few notes this person may read that match the request (few: Do makes many calls)
+    const asked = [...(Array.isArray(history) ? history.slice(-4).map(m => String(m?.content ?? '')) : []), instruction].join('\n')
+    const brain = await brainSources(asked, await brainViewer(admin, me.id), { budget: 30_000, maxFetch: 5, perNote: 8_000 })
+    const { reply, actions } = await planChanges(instruction.trim().slice(0, 2000), Array.isArray(history) ? history : [], board, refs, events, me.name, seen, brain)
     const cards = await Promise.all(actions.map(async a => isEvent(a)
       ? { action: a, summary: await describeEvent(admin, a), blocked: await eventBlocked(admin, a, me) }
       : isGeneral(a)

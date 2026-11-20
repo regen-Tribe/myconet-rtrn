@@ -1,28 +1,29 @@
-/* Members in the v4 look ("matches first", Sonia 20 Nov): your best matches lead, your own things beside
-   them, then everyone as uniform compact cards. Only Members / profile rules live here; shared v4
+/* Members in the v4 look ("matches first", Sonia 20 Nov; compact top): your best matches lead, your profile
+   and members' activity beside them, then everyone as uniform compact cards. Only Members / profile rules live here; shared v4
    building blocks stay in globals.css. */
 
 /* ─── Top: matches (left) and you (right) ───────────────────────── */
-.mb4-top { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 14px; margin: 4px 0 28px; align-items: stretch; }
+.mb4-top { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; margin: 0 0 22px; align-items: start; }
 
-.mb4-matches { background: var(--surface, #fff); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.mb4-matches { background: var(--surface, #fff); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .mb4-matches__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.mb4-matches__head h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.mb4-matches__head h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
 .mb4-matches__head a { font-size: 12px; font-weight: 600; color: var(--ink-2, #3a3f4a); text-decoration: none; }
-.mb4-matches__row { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.mb4-match { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 16px; border-radius: 16px; background: var(--bg-2, #eef3ff); color: inherit; text-decoration: none; transition: transform .15s; min-width: 0; }
+.mb4-matches__row { display: grid; gap: 6px; }
+.mb4-match { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--bg-2, #eef3ff); color: inherit; text-decoration: none; transition: transform .15s; min-width: 0; }
 .mb4-match:hover { transform: translateY(-1px); }
-.mb4-match__av { width: 52px; height: 52px; font-size: 19px; object-fit: cover; margin-bottom: 2px; }
-.mb4-match b { font-size: 14px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mb4-match small { font-size: 11.5px; line-height: 1.35; color: var(--ink-3, #6b7180); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mb4-match__av { width: 36px; height: 36px; font-size: 14px; object-fit: cover; }
+.mb4-match__txt { display: grid; min-width: 0; }
+.mb4-match b { font-size: 13.5px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mb4-match small { font-size: 11.5px; line-height: 1.35; color: var(--ink-3, #6b7180); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
 .mb4-matches__empty { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 14px; border-radius: 16px; background: var(--bg-2, #eef3ff); font-size: 13px; color: var(--ink-3, #6b7180); }
 .mb4-matches__empty b { color: var(--ink, #111317); font-size: 14px; }
 .mb4-matches__empty .v4-btn { margin-top: 4px; }
 
 .mb4-score { flex-shrink: 0; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--blue, #d6e4ff); color: var(--blue-ink, #2350b0); white-space: nowrap; }
 
-.mb4-side { display: grid; gap: 10px; align-content: stretch; }
-.mb4-box { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: var(--surface, #fff); color: inherit; text-decoration: none; min-width: 0; }
+.mb4-side { display: grid; gap: 10px; align-content: start; }
+.mb4-box { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--surface, #fff); color: inherit; text-decoration: none; min-width: 0; }
 .mb4-box__txt { flex: 1; min-width: 0; display: grid; gap: 4px; }
 .mb4-box__txt small, .mb4-box__eye { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); }
 .mb4-box__txt b { font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
@@ -34,9 +35,6 @@
 .mb4-box__go { width: 36px; height: 36px; border-radius: 50%; background: var(--action-ink, #235c3b); color: #fff; display: grid; place-items: center; flex-shrink: 0; }
 .mb4-bar { display: block; height: 6px; border-radius: 99px; background: rgba(35, 92, 59, .16); overflow: hidden; margin: 2px 0; }
 .mb4-bar i { display: block; height: 100%; border-radius: inherit; background: var(--action-ink, #235c3b); }
-.mb4-box__links { display: flex; gap: 6px; flex-shrink: 0; }
-.mb4-box__links a { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 11px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--ink-2, #3a3f4a); background: var(--bg-2, #eef3ff); text-decoration: none; }
-.mb4-box__links a:hover { background: var(--bg-3, #e2e9fa); }
 
 .mb4-box--lately { flex-direction: column; align-items: stretch; gap: 8px; }
 .mb4-lately { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -90,23 +88,58 @@
 .mb4-line--need { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
 .mb4-line--empty { background: var(--bg-2, #eef3ff); color: var(--ink-4, #9aa0ad); }
 
+/* ─── Matches and Discover cards (PersonCardV4) ─────────────────── */
+.mb4-line--why { background: var(--bg-2, #eef3ff); color: var(--ink-2, #3a3f4a); }
+.mb4-skills { display: flex; gap: 4px; min-width: 0; overflow: hidden; height: 22px; align-items: center; }
+.mb4-skills i { font-style: normal; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--bg-2, #eef3ff); color: var(--ink-3, #6b7180); white-space: nowrap; flex-shrink: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.mb4-skills em { font-style: normal; font-size: 11.5px; color: var(--ink-4, #9aa0ad); }
+.mb4-how { background: var(--surface, #fff); border-radius: 18px; padding: 14px 16px; }
+.mb4-how summary { cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; }
+.mb4-how summary::-webkit-details-marker { display: none; }
+.mb4-how summary small { font-weight: 400; color: var(--ink-4, #9aa0ad); }
+.mb4-how ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.mb4-how li { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.mb4-how li span { display: grid; }
+.mb4-how li b { font-size: 13px; font-weight: 600; }
+.mb4-how li small { font-size: 11.5px; color: var(--ink-4, #9aa0ad); }
+.mb4-how li em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-3, #6b7180); }
+
+/* ─── My offers / My requests ───────────────────────────────────── */
+.mb4-mine { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.mb4-mine__card { display: grid; gap: 8px; align-content: start; padding: 14px; border-radius: 18px; background: var(--surface, #fff); min-width: 0; }
+.mb4-mine__card--soon { box-shadow: inset 0 0 0 2px var(--yellow, #fff0b3); }
+.mb4-mine__head { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.mb4-mine__head > b { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.35; padding-top: 6px; overflow-wrap: anywhere; }
+.mb4-mine__acts { display: flex; gap: 2px; flex-shrink: 0; }
+.mb4-mine__acts button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; color: var(--ink-3, #6b7180); display: grid; place-items: center; cursor: pointer; }
+.mb4-mine__acts button:hover { background: var(--bg-2, #eef3ff); color: var(--ink, #111317); }
+.mb4-mine__card p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2, #3a3f4a); white-space: pre-wrap; }
+.mb4-mine__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mb4-mine__tags > b { margin-left: auto; font-size: 13px; font-weight: 600; }
+.mb4-urg { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: var(--bg-2, #eef3ff); color: var(--ink-3, #6b7180); }
+.mb4-urg--urgent, .mb4-urg--high { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
+
+/* ─── Edit profile (/profile/edit, v4): same wizard and fields, calmer frame ─── */
+.pe4 { max-width: 880px; }
+.pe4-bar { height: 6px; border-radius: 99px; background: var(--bg-3, #e2e9fa); overflow: hidden; margin: 0 0 12px; }
+.pe4-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue-ink, #2350b0); transition: width .2s; }
+.pe4-steps { flex-wrap: wrap; overflow: visible; margin: 0 0 16px; }
+.pe4-steps .v4-chip { display: inline-flex; align-items: center; gap: 5px; }
+[data-design="v4"] .pe4 .pe4-card { background: var(--surface, #fff); border: 0; border-radius: 20px; box-shadow: none; }
+.pe4 .pe4-card [data-slot="card"], .pe4 .pe4-card .border-card-border { border: 0; border-radius: 14px; background: var(--bg-2, #eef3ff); box-shadow: none; }
+.pe4-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.pe4-nav .v4-btn span { display: inline-flex; align-items: center; gap: 6px; }
+
 /* ─── Narrower screens ─────────────────────────────────────────── */
 @media (max-width: 1000px) { .mb4-top { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
+  .pe4-steps { flex-wrap: nowrap; overflow-x: auto; margin-right: -16px; padding-right: 16px; }
   [data-design="v4"] .mb4-lately a { min-height: 0 !important; display: -webkit-box !important; padding: 2px 0 !important; }
   .mb4-find .v4-chiprow { flex-wrap: nowrap; overflow-x: auto; margin-right: -16px; padding-right: 16px; }
 }
 @media (max-width: 560px) {
-  .mb4-matches { padding: 14px; }
-  .mb4-matches__row { grid-template-columns: 1fr; gap: 8px; }
-  .mb4-match { display: grid; grid-template-columns: 44px 1fr auto; column-gap: 10px; row-gap: 2px; align-items: center; padding: 10px 12px; }
-  .mb4-match__av { width: 44px; height: 44px; font-size: 16px; grid-row: 1 / 3; margin: 0; }
-  .mb4-match b { grid-column: 2; grid-row: 1; }
-  .mb4-match small { grid-column: 2 / 4; grid-row: 2; -webkit-line-clamp: 1; }
-  .mb4-match .mb4-score { grid-column: 3; grid-row: 1; }
   .mb4-search { height: 44px; }
   .mb4-box { flex-wrap: wrap; }
-  .mb4-box__links { flex-basis: 100%; }
   .mb4-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .mb4-card { padding: 12px; gap: 7px; }
   .mb4-card__head { flex-wrap: wrap; gap: 8px; }

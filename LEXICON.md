@@ -27,6 +27,7 @@ sentence ("ask a circle lead").
 | M16 | **Resources** | `/resources` | Bookings, Tools & spaces |
 | M17 | **Circles** | `/circles` | org chart, Org |
 | M18 | **Meetings** | `/meetings` | |
+| M19 | **Map** | `/map` ("Map of {community}") | site plan, property map |
 
 The old addresses (`/network`, `/ops`, `/contributions`, `/events`, `/stays`, `/bookings`, `/org`)
 redirect permanently (`web/next.config.ts`), because notes and emails link to them. Code folders
@@ -114,7 +115,9 @@ Not "Seeks", not "Needs". A booking that needs approval is a **booking request**
 ## Places and things
 
 **book / booking**; **booking request** when it needs approval; **item** for a bookable thing in the
-manage view; **space** only for a physical space you book.
+manage view; **space** only for a physical space you book. **place** for anything with a pin on the Map
+(a house, a garden, the spring); its kinds on screen: Accommodation, Shared spaces, Amenities, Food & gardens,
+Water, Forest & trails, Gathering spots.
 
 ## Knowledge and the assistant
 
