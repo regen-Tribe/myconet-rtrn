@@ -3,20 +3,28 @@ import Link from 'next/link'
 import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import MatchesTabs from '@/modules/m01-network/MatchesTabs'
 import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import { Button, Card, IconTile, NextStep, PageHeader } from '@/core/components/v4'
+import { MATCH_DIMENSIONS } from '@/modules/m01-network/lib/match-dimensions'
+import MatchesV4 from '@/modules/m01-network/MatchesV4'
+import { HowMatchingWorks } from '@/modules/m01-network/PersonCardV4'
 
-const SCORING_DIMENSIONS = [
-  { label: 'Shared skills',       max: 25, note: 'fuzzy — tolerates typos' },
-  { label: 'Shared interests',    max: 15, note: 'fuzzy' },
-  { label: 'OCEAN similarity',    max: 20, note: '5 personality traits' },
-  { label: 'MBTI compatibility',  max: 20, note: 'ideal pairs + temperament' },
-  { label: 'Location proximity',  max:  5, note: 'city + country' },
-  { label: 'Travel overlap',      max: 10, note: 'same place + dates' },
-  { label: 'Aligned goals',       max:  5, note: 'regenerative keywords' },
-]
+const SCORING_DIMENSIONS = MATCH_DIMENSIONS
 
 export default async function MatchesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user && DESIGN === 'v4') {
+    return (
+      <div className="v4-page">
+        <PageHeader eyebrow="Members" title="Your matches" subtitle="We compare values, skills, personality, place and travel plans to find the people you’d work well with." />
+        <Card className="v4-note"><IconTile name="users" tone="red" /><span>Sign in to see your matches.</span></Card>
+        <div style={{ display: 'flex', gap: 8, margin: '4px 0 18px' }}><Button href="/auth/signup">Create an account</Button><Button variant="secondary" href="/auth/login">Sign in</Button></div>
+        <HowMatchingWorks open />
+      </div>
+    )
+  }
 
   if (!user) {
     return (
@@ -78,6 +86,26 @@ export default async function MatchesPage() {
   const topCount       = matches.filter(m => m.score >= 70).length
   const goodCount      = matches.filter(m => m.score >= 50 && m.score < 70).length
   const potentialCount = matches.filter(m => m.score < 50).length
+
+  if (DESIGN === 'v4') {
+    const people = matches.map(m => ({
+      id: m.profile.id, username: m.profile.username,
+      name: [m.profile.first_name, m.profile.last_name].filter(Boolean).join(' ') || m.profile.username || 'Someone',
+      avatar: m.profile.avatar_url ?? null,
+      sub: [m.profile.city, m.profile.country].filter(Boolean).join(', ') || (m.profile.username ? `@${m.profile.username}` : null),
+      score: m.score, reason: m.reasons.slice(0, 2).join(' · '),
+      tags: [...(m.bio?.skills ?? []), ...(m.bio?.interests ?? [])],
+    }))
+    return (
+      <div className="v4-page">
+        <PageHeader eyebrow="Members" title="Your matches"
+          subtitle={matches.length ? <><b>{topCount} top</b>, {goodCount} good and {potentialCount} potential matches, best first.</> : 'When other members fill in their profiles, they show up here, best match first.'} />
+        {!myBio && <div style={{ marginBottom: 16 }}><NextStep eyebrow="Unlock match scores" title="Fill in your profile" text="Your values, skills, personality and travel plans find your best matches." href="/profile/edit" /></div>}
+        <MatchesV4 people={people} />
+        <div style={{ marginTop: 22 }}><HowMatchingWorks /></div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px' }}>

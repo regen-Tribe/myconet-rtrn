@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/core/lib/supabase/server'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { NOT_COVERED, assistantPrompt, blueprintText, sourcesText, type LibraryDoc } from '@/modules/assistant/lib/context'
+import { brainSources, brainViewer } from '@/modules/assistant/lib/brain'
 
 // Portal assistant: answers from the community's Blueprint and documents (MiniMax, streamed).
 // Visitors get FREE_QUESTIONS before signing in; signed-in people a daily cap.
@@ -52,7 +53,9 @@ export async function POST(req: NextRequest) {
     supabase.from('community_documents').select('title, visibility, content').order('created_at'),
   ])
   const conversation = messages.map(m => m.content).join('\n')
-  const sources = sourcesText(blueprintText((bp?.answers ?? null) as Record<string, unknown> | null), (docs ?? []) as LibraryDoc[], conversation)
+  // The second brain (v4.74.0), only what this person may read; the documents get the room that's left
+  const brain = user ? await brainSources(conversation, await brainViewer(supabase, user.id), { budget: 90_000, maxFetch: 10, perNote: 15_000 }) : ''
+  const sources = [sourcesText(blueprintText((bp?.answers ?? null) as Record<string, unknown> | null), (docs ?? []) as LibraryDoc[], conversation, 300_000 - brain.length), brain].filter(Boolean).join('\n\n')
 
   const upstream = await fetch('https://api.minimax.io/v1/chat/completions', {
     method: 'POST',

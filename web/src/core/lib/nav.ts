@@ -32,7 +32,7 @@ export const MEMBER_MODULES = [
 
 /** Names from the shared v4 icon set (core/components/v4/icons.ts) */
 export type MenuIcon =
-  | 'home' | 'book' | 'users' | 'calendar' | 'circles' | 'pin'
+  | 'home' | 'book' | 'users' | 'calendar' | 'circles' | 'pin' | 'map'
   | 'board' | 'handshake' | 'chat' | 'scale' | 'inbox' | 'box' | 'shield'
 
 export interface MenuItem {
@@ -65,6 +65,8 @@ export function menuGroups(communityName: string): MenuGroup[] {
       { key: 'circles', name: 'Circles', href: '/circles', icon: 'circles' },
       // Readable by explorers; only booking waits (O5)
       { key: 'amenities', name: 'Amenities & tools', href: '/amenities', icon: 'pin' },
+      // The land with every place on it (M19, v4.70.0)
+      { key: 'map', name: 'Map', href: '/map', icon: 'map' },
     ] },
     { label: 'Working together', line: 'How we plan, agree and decide', items: [
       { key: 'operations', name: 'Operations', href: '/operations', icon: 'board' },

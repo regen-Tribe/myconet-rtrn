@@ -41,7 +41,7 @@ export function blueprintText(answers: Record<string, unknown> | null): string {
   return out.join('\n\n')
 }
 
-const terms = (text: string) => [...new Set((text.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? []).filter(w => !STOP.has(w)))]
+export const terms = (text: string) => [...new Set((text.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? []).filter(w => !STOP.has(w)))]
 
 /** Splits on [Page N] markers; text without markers is one page. */
 function pagesOf(content: string): { page: number | null; text: string }[] {
@@ -54,10 +54,10 @@ function pagesOf(content: string): { page: number | null; text: string }[] {
 }
 
 /** Sources for the prompt: everything if it fits, else the best-matching pages of each document. */
-export function sourcesText(blueprint: string, docs: LibraryDoc[], conversation: string): string {
+export function sourcesText(blueprint: string, docs: LibraryDoc[], conversation: string, limit = CONTEXT_CHARS): string {
   const head = blueprint ? `<source name="Blueprint">\n${blueprint}\n</source>` : ''
   const full = docs.map(d => `<source name="${d.title.replace(/"/g, "'")}">\n${d.content}\n</source>`)
-  if (head.length + full.reduce((n, s) => n + s.length, 0) <= CONTEXT_CHARS) return [head, ...full].filter(Boolean).join('\n\n')
+  if (head.length + full.reduce((n, s) => n + s.length, 0) <= limit) return [head, ...full].filter(Boolean).join('\n\n')
 
   const q = terms(conversation)
   const scored = docs.flatMap((d, di) => pagesOf(d.content).map(p => {
@@ -66,7 +66,7 @@ export function sourcesText(blueprint: string, docs: LibraryDoc[], conversation:
   }))
   // The first pages (overview, contents) always help; then the best matches
   scored.sort((a, b) => (b.score - a.score) || ((a.page ?? 0) - (b.page ?? 0)))
-  let budget = CONTEXT_CHARS - head.length
+  let budget = limit - head.length
   const chosen = new Map<number, typeof scored>()
   for (const p of scored) {
     const len = p.text.length + 20
@@ -89,8 +89,8 @@ export function assistantPrompt(community: string, sources: string) {
   return `You are the ${community} portal assistant. You help visitors and members understand ${community}: its plans, place, people, ways of living and how to take part.
 
 Rules:
-- Answer ONLY from the sources below (the community's Blueprint answers and documents). If they don't cover the question, say you don't know from the community's material and suggest asking an admin or circle lead. Never invent facts.
-- Cite where each fact comes from, in brackets: (Handbook p. 12), (Blueprint · 1.1 Finding Your Why). Use the source's name.
+- Answer ONLY from the sources below (the community's Blueprint answers and documents, and for members the community's second brain: meeting notes, circle boards and pages). If they don't cover the question, say you don't know from the community's material and suggest asking an admin or circle lead. Never invent facts.
+- Cite where each fact comes from, in brackets: (Handbook p. 12), (Blueprint · 1.1 Finding Your Why), (Second brain · 20.11.2026 Kitchen meeting). Use the source's name. Notes in the second brain have dates: when they disagree, say which is newer.
 - Be warm and concise: usually under 150 words, unless asked for detail. Use short lists when they help.
 - Reply in the language the person writes in.
 - Use the community's words for work in the portal: a task (it can have subtasks), not a project; a subcircle, not a team.

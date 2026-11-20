@@ -5,6 +5,111 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.74.0 — 2026-11-20 — Ask and Do read the second brain
+
+Off by default: a community turns it on with `"assistant": { "secondBrain": true }` (needs `knowledge.repo` and
+`SECOND_BRAIN_GITHUB_TOKEN`). Oscar: "give the ask do function access to read the second brain".
+- New `modules/assistant/lib/brain.ts`. Ask answers from the notes this person may read, cited as
+  (Second brain · <title>); Do's planner gets a few matching notes to understand requests ("the tasks from last
+  week's kitchen meeting"). The notes change nothing by themselves.
+- Who reads what (Oscar: tiered): visitors nothing; joining members and up the notes marked `visibility: members`
+  (meeting notes, boards, circle pages MyCoNet writes), `visibility: circle` only for that circle's people and
+  admins; circle leads, project leads and admins also the notes with no visibility (written by hand) and
+  `visibility: leads`; any other value admins only. Never: transcripts, `AGENTS.md`, hidden folders, files over 150 KB.
+- Light for the Workers free plan: one call lists the repo (kept 3 min), at most 10 matching notes are fetched for
+  Ask and 5 for Do (each kept by its git sha). Ask gives the brain up to 90k characters, the documents the rest.
+  A GitHub error just means no brain in that answer. No migration.
+
+## v4.73.0 — 2026-11-20 — Community-wide meetings show in My circles (from Protopia, Sonia)
+
+- A meeting the assistant judges community-wide (no single circle, e.g. a morning sync) now shows in the
+  “My circles” view as well as “All”, and counts in the My circles chip, so it no longer looks missing.
+  A meeting still being classified (“No circle yet”) is unaffected, and single-circle filters are unchanged.
+
+## v4.72.0 — 2026-11-20 — About: a calm overview with a sticky chapter heading; the Blueprint editor in the v4 look (from Protopia, Sonia)
+
+- The fact strip under the About photo is for a glance: label on top, the short fact, even rows at every width (one row,
+  two, then pairs on a phone). A tile no longer opens in place; it jumps to the whole answer, which now lives once in its
+  chapter (the land, living here, why we're here) and lights up when you arrive.
+- A sticky chapter heading: the community's name once the photo has scrolled away, the chapters with the one you're
+  reading in soft blue, and Edit for those who may edit the Blueprint.
+- Chapters in the order a visitor asks: why we're here, our story, what we value, the land, a day here, how we decide,
+  people, where we're going, living here ("Join us" for explorers), then the Blueprint.
+- The Blueprint editor (`/about?edit=1`) takes the v4 look when a community uses it (Inter, the pale blue page, green
+  actions; no more missing serif font), and its dashboard shows "<name> — Plan" and short facts instead of whole answers.
+- About's styles move from `globals.css` to `modules/m04-blueprint/about-v4.css`.
+
+## v4.71.0 — 2026-11-20 — Meetings: the leads' review as numbered steps (from Protopia, Sonia)
+
+- v4 meeting page: the leads' strip under Files is now a "Review this meeting" card at the top of the right column,
+  with four numbered steps: Circle (circle and Circle only), Tasks on the board (confirm drafts / put tasks on the
+  board / look again), Email the notes (to the leads of the meeting's circle, when last sent) and Second brain (the
+  note's path and who can read it; the transcript sits beside it, leads only). A finished step is ticked, and only
+  the first unfinished one gets the green button. Same actions and permissions as before; the old design is unchanged.
+- Meetings words: a meeting's task inside a bigger one reads "subtask of “…”"; the leads-only error names task leads.
+- Fix: the meeting page showed a date-only meeting a day early (read as UTC); it now reads it as a local day.
+
+## v4.70.1 — 2026-11-20 — a small mark beside the community's name in the menu (from Protopia, Sonia)
+
+- v4.68.2 put the whole logo in the v4 menu, which hid the name. The menu is back to the mark plus "<name> on MyCoNet",
+  and the mark can now be an image: `brandMark` in `instance/config.jsonc` (a square image URL, passed as
+  `NEXT_PUBLIC_BRAND_MARK`). Without it, the first letter as before.
+
+## v4.70.0 — 2026-11-20 — Map: the land with every place on it (from Protopia, Sonia)
+
+- New module **M19 Map** at `/map` (v4 menu › Community, after Amenities & tools): the community's picture of the
+  land (`community_settings.site_map_url`, the Amenities map's picture) with a pin per place. A place has a kind
+  (accommodation, shared space, amenity, food & gardens, water, forest & trails, gathering spot, other), a photo,
+  a description, a circle that looks after it and a task. Its card opens beside the pin, or under the map on a phone,
+  with "Book …" for the bookable things whose pin sits on it, the circle and the task. Filter by kind;
+  `/map?place=<slug>` opens a card. Admins and circle leads (their circles) add and move places with "Edit places".
+- **Migration** `20261211000000_places.sql`: table `places` (slug, name, kind, map_x/map_y, photo_url, description,
+  circle, project_id). Signed-in people read; admins, and circle leads for their circles, write. Without it the
+  page still shows the bookable things.
+- The Amenities map's engine is now the shared `core/components/v4/SiteMap.tsx` (same behaviour). On phones, pins
+  are smaller until you zoom in. New icons `drop` and `tree`.
+- Second brain: places aren't written there yet (follow-up in `m19-map/README.md`).
+
+## v4.69.0 — 2026-11-20 — every Members screen in the v4 look (from Protopia, Sonia)
+
+v4 only; the classic look is unchanged.
+- **Matches** (`/members/matches`): uniform cards (match %, why, skills), chips All / Top / Good / Potential,
+  "How matching works" folded underneath; the visitor view keeps it open.
+- **My offers / My requests**: page header with "+ Add offer / request", calm cards with edit and delete; the same
+  form (now one `form` const, shared by both looks). Urgent and high requests are marked "Urgent" / "Soon".
+- **Discover**: one search box that searches as you type, member types as chips, the same cards. Visitors still see
+  only the public card (no skills, no score).
+- **My profile** (`/members/profile`) goes to your own `/u/<username>` (already v4, with Edit profile on it).
+- **Edit profile**: page header, Save draft, a progress bar, the 8 steps as chips with a tick, a calm card, and
+  "Next: <step>" buttons. Same fields and saving.
+- New `m01-network/PersonCardV4.tsx` (card + "How matching works"), `MatchesV4.tsx`, `lib/match-dimensions.ts`.
+
+## v4.68.2 — 2026-11-20 — the community's logo in the menu (from Protopia, Sonia)
+
+- The v4 menu (`MenuV4`) showed the first letter of the community's name. It now shows the logo set in the Blueprint
+  (`community_settings.logo_url`, via `useBranding`), up to 56px tall in the open menu and 38px in the slim rail; the
+  name stays for screen readers. Communities without a logo keep the letter.
+
+## v4.68.1 — 2026-11-20 — Members and profile take less room (from Protopia, Sonia)
+
+- `/members` (v4): your best matches are compact rows (avatar, name, reason, %), not tall cards; "Lately" is now
+  "Members activity"; the offers/requests box is gone (the My offers / My requests tabs stay).
+- Your own profile (v4) listed your circles twice. `MyCircles` takes `askOnly`: there it shows only circles you've
+  asked to join (with Withdraw) and "Ask to join a circle".
+
+## v4.68.0 — 2026-11-20 — one circle filter everywhere: "Circles ▾" (from Protopia, Sonia)
+
+- New shared `CircleFilter` (`core/components/v4/CircleFilter.tsx`, styles `.v4-cf*` in globals.css): a "Circles ▾"
+  button opens every circle with its colour dot, a count and a search box; pick one or several; the chosen ones show
+  as pills with ✕ and a Clear. A pop-over on a computer, a sheet from the bottom on a phone (on `<body>`, above the
+  assistant button). Nothing scrolls sideways any more. "My circles" at the top when the viewer has circles.
+- v4 pages use it instead of a sideways chip row or a dropdown: Members, the Operations board, Meetings and the
+  Calendar. Each page keeps its choice in the address (`?circle=a,b`); one slug still works as before, and
+  Meetings still takes `mine` / `all` and opens on My circles.
+- Several circles at once: Operations' project manager panel (`circle` prop now takes a list) and the Calendar
+  filter by any of them; new tasks and events start in the circle only when exactly one is chosen.
+- Helpers `parseCircleParam` / `setCircleParam` for pages that want `?circle=` in the URL.
+
 ## v4.67.1 — 2026-11-20 — Operations no longer crashes without the service key; requests show again
 
 - `m07-ops/lib/pm-data.ts`: the project manager's recent changes are read with the service key; a community

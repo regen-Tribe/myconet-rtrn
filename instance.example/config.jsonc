@@ -40,6 +40,10 @@
   // this repo only, Contents read and write)
   // "knowledge": { "repo": "owner/second-brain", "branch": "main", "meetingsFolder": "operations/meetings", "boardFolder": "operations/board" },
 
+  // Optional: Ask and Do read the second brain too (needs knowledge above). Members: meeting notes and circle
+  // boards (Circle-only ones only in that circle); leads and admins: also the notes people write by hand.
+  // "assistant": { "secondBrain": true },
+
   // Optional: email a meeting's notes to its circle's leads (needs MEETINGS_SMTP_PASSWORD, e.g. a
   // Gmail app password for `from`). alwaysTo: portal usernames who get every meeting's notes.
   // "meetings": { "notesEmail": { "from": "you@gmail.com", "smtpHost": "smtp.gmail.com", "smtpPort": 465, "alwaysTo": [] } }

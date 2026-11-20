@@ -14,6 +14,9 @@ import { Slider } from '@/core/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
 import { AvatarCropper } from '@/core/components/AvatarCropper'
 import { uploadAvatarBlob } from '@/core/lib/avatar'
+import { DESIGN } from '@/core/lib/instance'
+import { Button as V4Button, Icon as V4Icon, PageHeader } from '@/core/components/v4'
+import '@/modules/m01-network/members-v4.css'
 import {
   ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
   Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
@@ -477,8 +480,9 @@ export default function ProfileWizard() {
   const StepIcon = stepData.icon
   const progress = (step / STEPS.length) * 100
 
+  const V4 = DESIGN === 'v4'
   return (
-    <div className="p-3 sm:p-6 max-w-4xl mx-auto">
+    <div className={V4 ? 'v4-page pe4' : 'p-3 sm:p-6 max-w-4xl mx-auto'}>
 
       {pendingPhoto && (
         <AvatarCropper
@@ -520,8 +524,23 @@ export default function ProfileWizard() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-8">
+      {/* Header (v4: page header, steps as chips with a tick when passed) */}
+      {V4 && (
+        <>
+          <PageHeader eyebrow="Your profile" title="Edit your profile"
+            subtitle={<>Step <b>{step} of {STEPS.length}</b>: {stepData.title}. Saved when you go to the next step.</>}
+            actions={<V4Button variant="secondary" icon="check" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save draft'}</V4Button>} />
+          <div className="pe4-bar" aria-hidden><i style={{ width: `${progress}%` }} /></div>
+          <nav className="v4-chiprow pe4-steps" aria-label="Profile steps">
+            {STEPS.map(s => (
+              <button key={s.id} type="button" onClick={() => setStep(s.id)} className={`v4-chip${s.id === step ? ' v4-chip--on' : ''}`} aria-current={s.id === step ? 'step' : undefined}>
+                {s.id < step && <V4Icon name="check" size={13} />}{s.title}
+              </button>
+            ))}
+          </nav>
+        </>
+      )}
+      {!V4 && <div className="mb-8">
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold">Complete Your Profile</h1>
@@ -546,9 +565,9 @@ export default function ProfileWizard() {
             )
           })}
         </div>
-      </div>
+      </div>}
 
-      <Card className="border-card-border">
+      <Card className={V4 ? 'border-card-border pe4-card' : 'border-card-border'}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <StepIcon className="h-5 w-5 text-primary" />
@@ -1022,6 +1041,14 @@ export default function ProfileWizard() {
         </CardContent>
       </Card>
 
+      {V4 ? (
+        <div className="pe4-nav">
+          <V4Button variant="secondary" icon="left" onClick={() => setStep(s => s - 1)} disabled={step === 1}>Previous</V4Button>
+          <V4Button onClick={handleNext} disabled={saving} icon={step === STEPS.length ? 'check' : undefined}>
+            {saving ? 'Saving…' : step === STEPS.length ? 'Save and finish' : <>Next: {STEPS[step]?.title} <V4Icon name="right" size={15} /></>}
+          </V4Button>
+        </div>
+      ) : (
       <div className="flex justify-between mt-6 gap-4">
         <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 1}>
           <ArrowLeft className="mr-2 h-4 w-4" />Previous
@@ -1033,6 +1060,7 @@ export default function ProfileWizard() {
             : <>Next<ArrowRight className="ml-2 h-4 w-4" /></>}
         </Button>
       </div>
+      )}
     </div>
   )
 }

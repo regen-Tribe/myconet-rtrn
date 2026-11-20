@@ -17,6 +17,9 @@ import {
 } from '@/core/components/ui/select'
 import { Plus, Gift, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import { Button as V4Button, Icon as V4Icon, IconTile, PageHeader, Tag } from '@/core/components/v4'
+import './members-v4.css'
 
 const CATEGORIES = [
   'Permaculture','Construction','Healing','Education',
@@ -102,9 +105,98 @@ export default function OffersPage() {
     setDeletingId(null)
   }
 
+  const form = (
+  <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>{editing ? 'Edit offer' : 'New offer'}</DialogTitle>
+        <DialogDescription>Share a service, skill, or resource with the community.</DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4 mt-2">
+        <div className="space-y-2">
+          <Label>Title *</Label>
+          <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Permaculture Design Consultation" />
+        </div>
+        <div className="space-y-2">
+          <Label>Description</Label>
+          <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe what you offer..." />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Compensation</Label>
+            <Select value={compensation} onValueChange={setCompensation}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{COMPENSATION.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </div>
+        {(compensation === 'Fixed Price' || compensation === 'Hourly') && (
+          <div className="space-y-2">
+            <Label>Price</Label>
+            <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g., $50/hour" />
+          </div>
+        )}
+        <div className="flex gap-2 pt-2">
+          <Button onClick={handleSave} disabled={saving || !title.trim()} className="flex-1">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {editing ? 'Save' : 'Add offer'}
+          </Button>
+          <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+        </div>
+      </div>
+    </DialogContent>
+  )
+
   if (loading) return (
     <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 28px 80px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+    </div>
+  )
+
+  // The v4 look: same list, form and actions, in the shared building blocks
+  if (DESIGN === 'v4') return (
+    <div className="v4-page">
+      <PageHeader eyebrow="Members" title="My offers"
+        subtitle={offers.length ? <><b>{offers.length} {offers.length === 1 ? 'offer' : 'offers'}</b> on your profile: skills, services and things you can share.</> : 'Skills, services and things you can share with the community.'}
+        actions={offers.length > 0 && <V4Button icon="plus" onClick={openNew}>Add offer</V4Button>} />
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>{form}</Dialog>
+      {offers.length === 0 ? (
+        <div className="v4-empty">
+          <span className="v4-empty__art"><V4Icon name="gift" size={30} /></span>
+          <b>No offers yet</b>
+          <p>Share a skill, a service or something you can lend. It shows on your profile and on Members.</p>
+          <V4Button icon="plus" onClick={openNew}>Add your first offer</V4Button>
+        </div>
+      ) : (
+        <div className="mb4-mine">
+          {offers.map(o => (
+            <div key={o.id} className="mb4-mine__card">
+              <div className="mb4-mine__head">
+                <IconTile name="gift" tone="green" />
+                <b>{o.title}</b>
+                <span className="mb4-mine__acts">
+                  <button type="button" onClick={() => openEdit(o)} aria-label="Edit"><V4Icon name="pencil" size={15} /></button>
+                  <button type="button" onClick={() => handleDelete(o.id)} disabled={deletingId === o.id} aria-label="Delete"><V4Icon name="trash" size={15} /></button>
+                </span>
+              </div>
+              {o.description && <p>{o.description}</p>}
+              {(o.category || o.compensation_model || o.price) && (
+                <div className="mb4-mine__tags">
+                  {o.category && <Tag>{o.category}</Tag>}
+                  {o.compensation_model && <Tag>{o.compensation_model}</Tag>}
+                  {o.price && <b>{o.price}</b>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 
@@ -134,51 +226,7 @@ export default function OffersPage() {
                 Add offer
               </button>
             </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editing ? 'Edit offer' : 'New offer'}</DialogTitle>
-              <DialogDescription>Share a service, skill, or resource with the community.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-2">
-              <div className="space-y-2">
-                <Label>Title *</Label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Permaculture Design Consultation" />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe what you offer..." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Compensation</Label>
-                  <Select value={compensation} onValueChange={setCompensation}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{COMPENSATION.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
-              {(compensation === 'Fixed Price' || compensation === 'Hourly') && (
-                <div className="space-y-2">
-                  <Label>Price</Label>
-                  <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g., $50/hour" />
-                </div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button onClick={handleSave} disabled={saving || !title.trim()} className="flex-1">
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editing ? 'Save' : 'Add offer'}
-                </Button>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              </div>
-            </div>
-          </DialogContent>
+          {form}
         </Dialog>
         </div>
       </div>

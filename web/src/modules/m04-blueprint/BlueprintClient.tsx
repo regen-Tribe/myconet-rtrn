@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
 import { FW_DATA, PILLAR_STEPS, type StepDef, type PhaseDef, type GuideContent } from '@/modules/m04-blueprint/lib/wizard-data'
 import { computePillarScores, computeGatesPassed } from '@/modules/m04-blueprint/lib/blueprint-compute'
-import { communityName, FRAMEWORK_CREDIT } from '@/core/lib/instance'
+import { communityName, COMMUNITY_NAME, FRAMEWORK_CREDIT } from '@/core/lib/instance'
+import { fact, splitName } from './lib/about-text'
 import { useCircles } from '@/core/components/CirclesProvider'
 import CirclesStep from '@/modules/m04-blueprint/CirclesStep'
 import CommunityValuesEditor from '@/modules/m04-blueprint/CommunityValuesEditor'
@@ -1418,7 +1419,7 @@ function DashboardView({ values, onJump, onPrint, setupTodo }: {
   return (
     <div>
       <Crumb items={['Project', 'Dashboard']} />
-      <h1 className="step-title">{communityName(values)} — Plan</h1>
+      <h1 className="step-title">{splitName(communityName(values), COMMUNITY_NAME).name} — Plan</h1>
       <p className="step-lede">A live diagnostic across pillars, phases, and frameworks.</p>
 
       {setupTodo.length > 0 && (
@@ -1436,11 +1437,12 @@ function DashboardView({ values, onJump, onPrint, setupTodo }: {
       {/* Land & Scale stat boxes */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
         {[
-          { icon: '🏡', label: 'Homes planned', value: String(values.planned_homes ?? '') || null },
-          { icon: '🌍', label: 'Land size',     value: String(values.land_size ?? '') || null },
-          { icon: '📍', label: 'Country',       value: String(values.project_country ?? '') || null },
-        ].map(s => (
-          <div key={s.label} style={{
+          { icon: '🏡', label: 'Homes planned', full: String(values.planned_homes ?? '') || null },
+          { icon: '🌍', label: 'Land size',     full: String(values.land_size ?? '') || null },
+          { icon: '📍', label: 'Country',       full: String(values.project_country ?? '') || null },
+        ].map(s => ({ ...s, value: fact(s.full) })).map(s => (
+          // The short fact, as on About; the whole answer on hover (Sonia, 20 Nov: full answers here were unreadable)
+          <div key={s.label} title={s.full ?? undefined} style={{
             background: 'var(--surface)', border: '1px solid var(--rule)',
             borderRadius: 12, padding: '20px 22px',
             display: 'flex', flexDirection: 'column' as const, gap: 8,
@@ -1449,7 +1451,7 @@ function DashboardView({ values, onJump, onPrint, setupTodo }: {
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--ink-4)' }}>
               {s.label}
             </div>
-            <div style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.1 }}>
+            <div style={{ fontFamily: 'var(--display)', fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1.15 }}>
               {s.value ?? <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--ink-4)', fontFamily: 'inherit' }}>Not set — edit blueprint</span>}
             </div>
           </div>

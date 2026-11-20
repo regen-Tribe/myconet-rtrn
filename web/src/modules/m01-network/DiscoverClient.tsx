@@ -9,6 +9,9 @@ import {
 } from '@/core/components/ui/select'
 import { Search, Filter, X } from 'lucide-react'
 import { modLabel } from '@/core/lib/module-label'
+import { DESIGN } from '@/core/lib/instance'
+import { Button as V4Button, Card, Chip, ChipRow, EmptyState, Icon as V4Icon, IconTile, PageHeader } from '@/core/components/v4'
+import { PersonCardV4 } from './PersonCardV4'
 
 const ROLE_FILTERS = [
   { value: 'all',                     label: 'All Types' },
@@ -76,6 +79,38 @@ export default function DiscoverClient({ profiles, bioMap, myBio, isLoggedIn }: 
 
   const hasFilters = !!debouncedQuery || roleFilter !== 'all'
   const clearFilters = () => { setSearchQuery(''); setDebouncedQuery(''); setRoleFilter('all') }
+
+  // The v4 look: one search box (searches as you type), member types as chips, uniform cards best match first
+  if (DESIGN === 'v4') return (
+    <div className="v4-page">
+      <PageHeader eyebrow="Members" title="Discover" subtitle="Find people by name, skill, interest, place or what kind of member they are." />
+      {!isLoggedIn && <Card className="v4-note"><IconTile name="users" tone="red" /><span>Sign in to see each person’s skills and how well you match.</span></Card>}
+      <div className="mb4-find">
+        <label className="mb4-search">
+          <V4Icon name="search" size={17} />
+          <input type="search" className="mb4-search__input" value={searchQuery} placeholder="Search by name, skill, interest or place"
+            onChange={e => { setSearchQuery(e.target.value); setDebouncedQuery(e.target.value) }} />
+          {searchQuery && <button type="button" className="mb4-search__clear" aria-label="Clear search" onClick={() => { setSearchQuery(''); setDebouncedQuery('') }}><V4Icon name="x" size={14} /></button>}
+        </label>
+        <ChipRow>
+          {ROLE_FILTERS.map(r => <Chip key={r.value} on={roleFilter === r.value} onClick={() => setRoleFilter(r.value)}>{r.value === 'all' ? 'Everyone' : r.label}</Chip>)}
+        </ChipRow>
+      </div>
+      {hasFilters && <p className="mb4-count">{members.length} of {profiles.length} people</p>}
+      {members.length === 0
+        ? <EmptyState icon="search" title="No one found" text={hasFilters ? 'Try other words or another member type.' : 'No other members yet.'} />
+        : <div className="mb4-grid">{members.map(({ profile: p, bio, score, reasons }) => (
+            <PersonCardV4 key={p.id} p={{
+              id: p.id, username: p.username, avatar: p.avatar_url,
+              name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'Someone',
+              sub: p.headline || [p.city, p.country].filter(Boolean).join(', ') || (p.username ? `@${p.username}` : null),
+              score: isLoggedIn ? score : null, reason: isLoggedIn ? reasons.slice(0, 2).join(' · ') : null,
+              tags: isLoggedIn ? [...(bio?.skills ?? []), ...(bio?.interests ?? [])] : null,
+            }} />
+          ))}</div>}
+      {!isLoggedIn && <div style={{ display: 'flex', gap: 8, marginTop: 18 }}><V4Button href="/auth/signup">Create an account</V4Button><V4Button variant="secondary" href="/auth/login">Sign in</V4Button></div>}
+    </div>
+  )
 
   return (
     <div style={{ maxWidth: 980, margin: '0 auto', padding: '28px 28px 80px' }}>

@@ -205,7 +205,7 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
           ))}
         </div>
       ) : <p className="v4-hint">{isOwn ? 'You’re not in a circle yet.' : 'Not in a circle yet.'}</p>}
-      {isOwn && <div className="pf4-ask"><MyCircles userId={p.id} /></div>}
+      {isOwn && <div className="pf4-ask"><MyCircles userId={p.id} askOnly /></div>}
     </aside>
   )
 

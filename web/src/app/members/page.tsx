@@ -132,8 +132,7 @@ export default async function NetworkDashboard() {
   if (DESIGN === 'v4') {
     return (
       <MembersV4 supabase={supabase} userId={user?.id ?? null} memberCount={memberCount} profileSteps={profileSteps}
-        profileCompleteness={profileCompleteness} topMatches={topMatches as any} activity={memberActivity} hasBio={!!myBio}
-        offersCount={offersCount} requestsCount={seeksCount} matchScores={matchScores} />
+        profileCompleteness={profileCompleteness} topMatches={topMatches as any} activity={memberActivity} hasBio={!!myBio} matchScores={matchScores} />
     )
   }
 
