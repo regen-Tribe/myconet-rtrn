@@ -31,5 +31,9 @@
   // RTRN's own second brain (not rt-brain, which is the Regen Tribe collective's). MyCoNet keeps a folder per circle
   // there (README + board.md). Off until the SECOND_BRAIN_GITHUB_TOKEN secret exists (fine-grained, this repo only,
   // Contents read/write).
+  // Ask and Do read the second brain (v4.74.0; Oscar 2026-11-20: tiered — members the meeting notes and boards,
+  // leads and admins also the hand-written notes).
+  "assistant": { "secondBrain": true },
+
   "knowledge": { "repo": "regen-Tribe/rtrn-second-brain", "branch": "main", "meetingsFolder": "operations/meetings" }
 }
