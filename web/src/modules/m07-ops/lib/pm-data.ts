@@ -41,12 +41,13 @@ async function withSources(supabase: SupabaseClient, suggestions: AgentSuggestio
   if (!ids.length) return suggestions
   const [{ data: tasks }, { data: links }] = await Promise.all([
     supabase.from('deliverables')
-      .select('id, title, status, needs_review, notes, due_date, priority, assignee_id, assignee_name, source_meeting_id, source_item, created_by, created_at, projects(title, is_chores)')
+      .select('id, title, status, needs_review, notes, due_date, due_time, priority, circle, team_id, project_id, assignee_id, assignee_name, source_meeting_id, source_item, created_by, created_at, projects(title, is_chores)')
       .in('id', ids),
     supabase.from('meeting_action_links').select('deliverable_id, meeting_id, item_index, item_text, person_name').in('deliverable_id', ids),
   ])
   const rows = (tasks ?? []) as unknown as {
-    id: string; title: string; status: string; needs_review: boolean; notes: string | null; due_date: string | null; priority: string | null
+    id: string; title: string; status: string; needs_review: boolean; notes: string | null; due_date: string | null; due_time: string | null; priority: string | null
+    circle: string | null; team_id: string | null; project_id: string | null
     assignee_id: string | null; assignee_name: string | null; source_meeting_id: string | null; source_item: string | null
     created_by: string | null; created_at: string | null; projects: { title: string; is_chores: boolean } | null
   }[]
@@ -78,6 +79,7 @@ async function withSources(supabase: SupabaseClient, suggestions: AgentSuggestio
       said_by: item?.speaker?.trim() || l?.person_name?.trim() || null,
       added_by: t.created_by ? person.get(t.created_by) ?? null : null,
       added_at: t.created_at,
+      edit: { circle: t.circle, team_id: t.team_id, project_id: t.project_id, assignee_id: t.assignee_id, assignee_name: t.assignee_name, priority: t.priority, due_date: t.due_date, due_time: t.due_time },
     }
     return [t.id, out]
   }))

@@ -53,7 +53,9 @@ confirms the drafts it touches (`needs_review` false, logged as `confirmed`); Un
 **The Tasks list** (`DeliverablesTab.tsx`, v4.84.0): Circle, Subcircle, Part of and Status are pickers for anyone who may
 edit the task, and **✦ Tell the assistant** is on each row (`instructAgent` with `task_id`). Any change confirms a draft
 (`needs_review` false). So does a Do change to a draft task (`do-actions.ts` `upd`/`moveAll`; undo restores it).
-With "Only drafts" on, changed drafts stay listed (✓ Confirmed) until a reload. **On the circles** (Operations › Circles and
+With "Only drafts" on, changed drafts stay listed (✓ Confirmed) until a reload.
+**`TaskQuickEdit.tsx`** (v4.105.0): the same fields, plus Person, Priority and Due, as one block of pickers, used in the project manager
+panel (✎ Edit its tasks) and in a meeting's action items. The placement rules are in `lib/task-edit.ts` (`placeChange`), shared with the Tasks list. **On the circles** (Operations › Circles and
 `/circles`): a **🧭 Project manager (N)** button for its leads opens `/operations?circle=<slug>#pm`.
 
 ## The unified Kanban model

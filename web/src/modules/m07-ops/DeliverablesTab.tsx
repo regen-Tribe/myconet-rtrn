@@ -12,6 +12,7 @@ import type { Deliverable, ProjectSummary } from './types'
 import { NameTag } from './NameTag'
 import { PriorityBadge } from './Priority'
 import { taskHref, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
+import { placeChange } from './lib/task-edit'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
   backlog:     { label: 'To do',       color: 'var(--ink-4)', bg: 'var(--bg-3)' },
@@ -65,25 +66,10 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
     keep(d.id)
     setPatch(prev => ({ ...prev, [d.id]: { ...prev[d.id], ...data[0] } }))
   }
-  // The same rules as the task pop-up: a subcircle brings its circle; a task (project) brings its circle; what
-  // no longer fits the new circle is cleared
-  const projectCircle = (id: string | null | undefined) => projectOptions.find(p => p.id === id)?.circle ?? null
-  const teamCircle = (id: string | null | undefined) => teams.find(t => t.id === id)?.circle ?? null
-  function pickCircle(d: Deliverable, c: string) {
-    change(d, {
-      circle: c || null,
-      team_id: d.team_id && teamCircle(d.team_id) === c ? d.team_id : null,
-      project_id: d.project_id && projectCircle(d.project_id) && projectCircle(d.project_id) !== c ? null : d.project_id,
-    })
-  }
-  function pickTeam(d: Deliverable, id: string) {
-    const c = id ? teamCircle(id) : d.circle ?? null
-    change(d, { team_id: id || null, circle: c, project_id: d.project_id && projectCircle(d.project_id) && projectCircle(d.project_id) !== c ? null : d.project_id })
-  }
-  function pickProject(d: Deliverable, id: string) {
-    const c = (id && projectCircle(id)) || d.circle || null
-    change(d, { project_id: id || null, circle: c, team_id: d.team_id && teamCircle(d.team_id) === c ? d.team_id : null })
-  }
+  // The same rules as the task pop-up (lib/task-edit.ts), shared with the project manager and the meetings page
+  const pickCircle = (d: Deliverable, c: string) => change(d, placeChange(d, 'circle', c, projectOptions, teams))
+  const pickTeam = (d: Deliverable, id: string) => change(d, placeChange(d, 'team_id', id, projectOptions, teams))
+  const pickProject = (d: Deliverable, id: string) => change(d, placeChange(d, 'project_id', id, projectOptions, teams))
   function tell(d: Deliverable) {
     if (!told.trim()) return
     instructAgent(told.trim(), { task_id: d.id, ...(d.project_id ? { project_id: d.project_id } : {}) })

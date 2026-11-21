@@ -71,4 +71,11 @@ export interface MeetingTask {
   item_text: string
   /** May the viewer approve or decline this draft from its pill (v4.33.2): an admin, the project’s circle lead, or its project lead */
   can_decide: boolean
+  /** May the viewer change it right here (v4.105.0): the same people, draft or not */
+  can_edit: boolean
+  circle: string | null
+  team_id: string | null
+  assignee_id: string | null
+  assignee_name: string | null
+  priority: string | null
 }
