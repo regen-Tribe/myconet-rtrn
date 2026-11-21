@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
@@ -87,7 +88,7 @@ export default function QuestionsAdminClient({ initial }: { initial: QuestionRow
 
       {shown.length === 0 && (
         <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14, border: '1px dashed var(--rule)', borderRadius: 12 }}>
-          {rows.length === 0 ? 'No questions yet. They appear here as people use the assistant.' : filter === 'needs' ? 'Nothing waiting: every question so far was answered or handled. 🎉' : 'No questions match.'}
+          {rows.length === 0 ? 'No questions yet. They appear here as people use the assistant.' : filter === 'needs' ? 'Nothing waiting: every question so far was answered or handled.' : 'No questions match.'}
         </div>
       )}
 
@@ -101,7 +102,7 @@ export default function QuestionsAdminClient({ initial }: { initial: QuestionRow
                   <div style={{ fontSize: 14.5, fontWeight: 600, lineHeight: 1.4 }}>{r.question}</div>
                   <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
                     {r.asker ? <>{r.asker.name} <span style={{ color: 'var(--ink-4)' }}>@{r.asker.username}</span></> : 'Visitor'} · {new Date(r.created_at).toLocaleString()}
-                    {r.admin_note && <> · 📝 {r.admin_note}</>}
+                    {r.admin_note && <> · <InlineIcon name="file" />{r.admin_note}</>}
                   </div>
                 </div>
                 <span style={{ flexShrink: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -115,7 +116,7 @@ export default function QuestionsAdminClient({ initial }: { initial: QuestionRow
                   <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>The assistant answered</div>
                   <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap', background: 'var(--bg-2)', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>{r.answer || '(no reply)'}</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {r.status !== 'resolved' && <button onClick={() => update(r.id, { status: 'resolved' })} style={btn('#15803d')}>✓ Mark resolved</button>}
+                    {r.status !== 'resolved' && <button onClick={() => update(r.id, { status: 'resolved' })} style={btn('#15803d')}><InlineIcon name="check" />Mark resolved</button>}
                     {r.status !== 'dismissed' && <button onClick={() => update(r.id, { status: 'dismissed' })} style={btn('var(--ink-3)')}>Dismiss</button>}
                     {r.status !== 'open' && <button onClick={() => update(r.id, { status: 'open' })} style={btn('var(--ink-3)')}>Reopen</button>}
                     <input defaultValue={r.admin_note ?? ''} placeholder="Note (e.g. added to the handbook)" maxLength={1000}

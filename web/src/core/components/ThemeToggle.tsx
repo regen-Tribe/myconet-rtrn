@@ -1,4 +1,5 @@
 'use client'
+import { Icon } from '@/core/components/v4'
 import { useEffect, useState } from 'react'
 
 export default function ThemeToggle() {
@@ -25,7 +26,7 @@ export default function ThemeToggle() {
       cursor: 'pointer', display: 'flex', alignItems: 'center',
       visibility: mounted ? 'visible' : 'hidden',
     }}>
-      {dark ? '☀' : '☽'}
+      <Icon name={dark ? 'sun' : 'moon'} size={16} />
     </button>
   )
 }

@@ -4,13 +4,17 @@ import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import HomeClient from '@/modules/home/HomeClient'
 import { buildGlanceTiles } from '@/modules/home/lib/at-a-glance'
 import { loadModulePreviews } from '@/modules/home/lib/preview-data'
-import { communityName as getCommunityName } from '@/core/lib/instance'
+import { communityName as getCommunityName, DESIGN } from '@/core/lib/instance'
+import { redirect } from 'next/navigation'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { isFullMember as checkFullMember, isJoiningOrAbove } from '@/core/lib/roles'
 import { profileColumns } from '@/core/lib/public-profile'
 
 export default async function HomePage() {
+  // In the v4 look the dashboard is home (DESIGN-SYSTEM.md › v4); the old home stays for other communities.
+  if (DESIGN === 'v4') redirect('/dashboard')
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

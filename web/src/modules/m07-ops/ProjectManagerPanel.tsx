@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -10,35 +11,40 @@ import Link from 'next/link'
 const KIND: Record<string, string> = { merge: 'Same task twice', move: 'Belongs in a task', new_project: 'Start a task', assign: 'Who could take it' }
 const DONE: Record<string, string> = { pm_merge: 'Merged duplicates', pm_move: 'Filed into a task', pm_assign: 'Assigned' }
 
-// Arriving from a circle page's "🧭 Project manager" button (/operations?circle=…#pm) opens the panel
+// Arriving from a circle page's "Project manager" button (/operations?circle=…#pm) opens the panel
 const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
 const atPm = () => window.location.hash === '#pm'
 
 type Payload = { label?: string; title?: string; description?: string; tasks?: string[]; keep?: string; drop?: string; task?: string; project?: string; person?: string }
 const q = (t: string | undefined) => (t ? <strong style={{ fontWeight: 600 }}>{t}</strong> : 'a task')
+/** A task's name that opens its card (v4.79.0), when the board has it */
+type Opener = ((id: string) => void) | undefined
+const linkBtn: React.CSSProperties = { font: 'inherit', fontWeight: 600, color: 'var(--ink)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', textDecoration: 'underline', textDecorationColor: 'var(--rule)', textUnderlineOffset: 3 }
+const taskName = (open: Opener, id: string | undefined, t: string | undefined) =>
+  t && id && open ? <button type="button" onClick={() => open(id)} style={linkBtn} title="Open the task">{t}</button> : q(t)
 
 /**
  * What accepting does, in plain words (v4.38.4: Oscar found "A ⟵ B" and "A → B" unclear), and the button that says it.
  * The labels the agent wrote ("A → B") are only the fallback for a task or project that's no longer here.
  */
-function explain(s: AgentSuggestion, title: (id?: string) => string | undefined, projectTitle: (id?: string) => string | undefined): { what: React.ReactNode; button: string } {
+function explain(s: AgentSuggestion, title: (id?: string) => string | undefined, projectTitle: (id?: string) => string | undefined, open?: Opener): { what: React.ReactNode; button: string } {
   const p = s.payload as Payload
   const [left, right] = (p.label ?? '').split(/ [⟵→] /)
   if (s.kind === 'merge') return {
-    what: <>These look like the same piece of work. Keep {q(title(p.keep) ?? left)} and fold {q(title(p.drop) ?? right)} into it: its person, date and meeting link carry over, and it leaves the board.</>,
+    what: <>These look like the same piece of work. Keep {taskName(open, p.keep, title(p.keep) ?? left)} and fold {taskName(open, p.drop, title(p.drop) ?? right)} into it: its person, date and meeting link carry over, and it leaves the board.</>,
     button: 'Merge them',
   }
   if (s.kind === 'move') return {
-    what: <>Move the task {q(title(p.task) ?? left)} into the project {q(projectTitle(p.project) ?? right)}.</>,
+    what: <>Move the task {taskName(open, p.task, title(p.task) ?? left)} into the project {q(projectTitle(p.project) ?? right)}.</>,
     button: 'Move it',
   }
   if (s.kind === 'assign') return {
-    what: <>Give the task {q(title(p.task) ?? left)} to {q(p.person ?? right)}.</>,
+    what: <>Give the task {taskName(open, p.task, title(p.task) ?? left)} to {q(p.person ?? right)}.</>,
     button: `Give it to ${(p.person ?? right ?? 'them').split(' ')[0]}`,
   }
-  const tasks = (p.tasks ?? []).map(id => title(id)).filter((t): t is string => !!t)
+  const tasks = (p.tasks ?? []).map(id => ({ id, t: title(id) })).filter((x): x is { id: string; t: string } => !!x.t)
   return {
-    what: <>Start a new task {q(p.title)}{p.description ? <> ({p.description})</> : null} and move {tasks.length === 1 ? 'this one' : `these ${tasks.length}`} into it as subtasks: {tasks.map((t, i) => <span key={i}>{i ? ' · ' : ''}{t}</span>)}.</>,
+    what: <>Start a new task {q(p.title)}{p.description ? <> ({p.description})</> : null} and move {tasks.length === 1 ? 'this one' : `these ${tasks.length}`} into it as subtasks: {tasks.map((x, i) => <span key={x.id}>{i ? ' · ' : ''}{open ? <button type="button" onClick={() => open(x.id)} style={{ ...linkBtn, fontWeight: 400 }} title="Open the task">{x.t}</button> : x.t}</span>)}.</>,
     button: 'Create the task',
   }
 }
@@ -50,7 +56,7 @@ const STATUS: Record<string, string> = { backlog: 'To do', in_progress: 'In prog
  * "Where this comes from" (v4.77.0): each task the suggestion is about, with the meeting it was drafted from (its
  * date, who said it, what was said, who was there), or who added it by hand; and when the project manager reviewed.
  */
-function Sources({ s, tag }: { s: AgentSuggestion; tag: (c: string) => React.ReactNode }) {
+function Sources({ s, tag, open }: { s: AgentSuggestion; tag: (c: string) => React.ReactNode; open?: Opener }) {
   const list = s.sources ?? []
   const small: React.CSSProperties = { fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }
   const one = (x: SuggestionSource) => {
@@ -59,7 +65,9 @@ function Sources({ s, tag }: { s: AgentSuggestion; tag: (c: string) => React.Rea
       <div key={x.task_id} style={{ padding: '8px 0', borderTop: '1px solid var(--rule)' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <strong style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{x.title}</strong>
-          <Link href={`/operations?task=${x.task_id}`} style={{ ...small, color: 'var(--m7)', textDecoration: 'none' }}>Open task →</Link>
+          {open
+            ? <button type="button" onClick={() => open(x.task_id)} style={{ ...small, color: 'var(--m7)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Open task →</button>
+            : <Link href={`/operations?task=${x.task_id}`} style={{ ...small, color: 'var(--m7)', textDecoration: 'none' }}>Open task →</Link>}
         </div>
         <div style={small}>{facts.join(' · ')}</div>
         {x.meeting ? (
@@ -104,7 +112,7 @@ const btn = (primary = false): React.CSSProperties => ({
  * leads and admins decide. Filtered by the board's circle filter. Starts collapsed (v4.33.1), except when the
  * page was opened at #pm.
  */
-export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide, projects = [], teams = [] }: {
+export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide, projects = [], teams = [], onOpenTask }: {
   suggestions: AgentSuggestion[]; actions: PmAction[]; taskTitles: Record<string, string>
   /** The board's circle filter: one circle, several, or null / [] for all */
   circle: string | string[] | null; canDecide: (circle: string) => boolean
@@ -112,6 +120,8 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   /** Where a suggestion can be put instead (v4.38.3): open projects, and the circles' teams */
   projects?: { id: string; title: string; circle: string | null }[]
   teams?: { id: string; name: string; circle: string }[]
+  /** Opens a task's card on the board (v4.79.0); without it, task names are plain */
+  onOpenTask?: (id: string) => void
 }) {
   const circles = useCircles()
   const router = useRouter()
@@ -175,7 +185,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   return (
     <div id="pm" style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderTop: '3px solid var(--m7)', borderRadius: 10, padding: '12px 14px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>🧭 Project manager</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}><InlineIcon name="compass" />Project manager</span>
         <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{sugs.length} suggestion{sugs.length === 1 ? '' : 's'}{acceptedShown.length ? ` · ${acceptedShown.length} accepted` : ''}{done.length ? ` · ${done.length} change${done.length === 1 ? '' : 's'} made` : ''}</span>
         <button onClick={() => setToggled(!open)} style={{ ...btn(), marginLeft: 'auto', padding: '3px 10px' }}>{open ? 'Hide' : 'Show'}</button>
       </div>
@@ -185,7 +195,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
           {sugs.map(s => {
             const p = s.payload as { label?: string; title?: string; description?: string; tasks?: string[] }
             const mayDecide = canDecide(s.circle)
-            const plain = explain(s, id => (id ? taskTitles[id] : undefined), id => projects.find(x => x.id === id)?.title)
+            const plain = explain(s, id => (id ? taskTitles[id] : undefined), id => projects.find(x => x.id === id)?.title, onOpenTask)
             return (
               <div key={s.id} style={{ borderTop: '1px solid var(--rule)', padding: '10px 0 2px', marginTop: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
@@ -198,7 +208,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                   style={{ fontSize: 12, fontWeight: 600, color: 'var(--m7)', background: 'none', border: 'none', padding: 0, marginTop: 6, cursor: 'pointer' }}>
                   {showing === s.id ? 'Hide where this comes from' : 'Where this comes from'}
                 </button>
-                {showing === s.id && <Sources s={s} tag={tag} />}
+                {showing === s.id && <Sources s={s} tag={tag} open={onOpenTask} />}
                 {mayDecide && (s.kind === 'new_project' || s.kind === 'move') && (() => {
                   const v = where[s.id] ?? ''
                   const n = s.kind === 'new_project' ? (p.tasks ?? []).length : 1
@@ -238,7 +248,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                       {busy === s.id ? '…' : where[s.id]?.startsWith('p:') ? 'Move them in' : plain.button}
                     </button>
                     <button disabled={!!busy} onClick={() => post(`/api/ops/suggestions/${s.id}`, 'dismiss', s.id)} style={btn()}>Dismiss</button>
-                    <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}>✦ Tell the assistant…</button>
+                    <button disabled={!!busy} onClick={() => { setTelling(telling === s.id ? null : s.id); setTold('') }} style={btn()}><InlineIcon name="spark" />Tell the assistant…</button>
                   </div>
                 )}
                 {mayDecide && telling === s.id && (
@@ -256,7 +266,7 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
             const p = s.payload as { label?: string; title?: string }
             return (
               <div key={s.id} style={{ borderTop: '1px solid var(--rule)', padding: '10px 0 2px', marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>✓ Accepted</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}><InlineIcon name="check" />Accepted</span>
                 <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{s.kind === 'new_project' ? p.title : p.label}</span>
                 {tag(s.circle)}
                 {href && <Link href={href} style={{ ...btn(true), marginLeft: 'auto', textDecoration: 'none' }}>Open {href.startsWith('/operations/') ? 'task' : 'it'} →</Link>}

@@ -1,4 +1,5 @@
 'use client'
+import { Icon, InlineIcon, type IconName } from '@/core/components/v4'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -163,7 +164,7 @@ export default function AuthPage() {
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="auth-logo-wrap">
             {logo_url ? <img src={logo_url} alt="" style={{ height: 36, width: 'auto', maxWidth: 120, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />
-              : <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--ink)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>🌱</div>}
+              : <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--ink)', display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0 }}><Icon name="sprout" size={18} /></div>}
             <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--display)' }}>{COMMUNITY_NAME}</span>
             <span style={{ fontSize: 13, color: 'var(--ink-4)' }}>· MyCoNet</span>
           </div>
@@ -217,7 +218,7 @@ export default function AuthPage() {
 
           {mode === 'register' && (regSent ? (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
+              <div style={{ marginBottom: 16, color: 'var(--ink-3)' }}><Icon name="mail" size={44} /></div>
               <h2 style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>Check your inbox</h2>
               <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6 }}>
                 We sent a confirmation link to <strong style={{ color: 'var(--ink-2)' }}>{regEmail}</strong>.<br />Click it to activate your account — then fill in your profile.
@@ -248,13 +249,13 @@ export default function AuthPage() {
               </p>
               <ul className="auth-reg-bullets">
                 {[
-                  "👋 Meet the people involved and see who's building this",
-                  '📋 Read the community documentation and neighborhood plan',
-                  '🌱 Join the group if you align with the values',
-                  '⚙️ Contribute to shared goals and tasks',
-                  '☉ Participate in decisions together',
-                ].map(item => (
-                  <li key={item}><span>{item}</span></li>
+                  ['users', "Meet the people involved and see who's building this"],
+                  ['book', 'Read the community documentation and neighborhood plan'],
+                  ['sprout', 'Join the group if you align with the values'],
+                  ['tasks', 'Contribute to shared goals and tasks'],
+                  ['scale', 'Participate in decisions together'],
+                ].map(([icon, item]) => (
+                  <li key={item}><span><InlineIcon name={icon as IconName} />{item}</span></li>
                 ))}
               </ul>
               <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -296,7 +297,7 @@ export default function AuthPage() {
 
           {mode === 'forgot' && (forgotSent ? (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
+              <div style={{ marginBottom: 16, color: 'var(--ink-3)' }}><Icon name="mail" size={44} /></div>
               <h2 style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>Check your inbox</h2>
               <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6 }}>If <strong style={{ color: 'var(--ink-2)' }}>{forgotEmail}</strong> has an account, a reset link is on its way.</p>
               <p style={{ fontSize: 12.5, color: 'var(--ink-4)', lineHeight: 1.6, margin: '12px auto 0', maxWidth: 340 }}>
@@ -351,12 +352,12 @@ export default function AuthPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {[
-              { icon: '👤', title: 'Deep profiles', desc: 'Share your values, skills, and goals. Get matched with people who align.' },
-              { icon: '🗳️', title: 'Four checks on every proposal', desc: 'Circle leads, all members, admins and advisors, and an AI Blueprint check.' },
-              { icon: '⚙️', title: 'Real operations', desc: 'Suggest tasks, make agreements, track subtasks together.' },
+              { icon: 'user' as IconName, title: 'Deep profiles', desc: 'Share your values, skills, and goals. Get matched with people who align.' },
+              { icon: 'vote' as IconName, title: 'Four checks on every proposal', desc: 'Circle leads, all members, admins and advisors, and an AI Blueprint check.' },
+              { icon: 'board' as IconName, title: 'Real operations', desc: 'Suggest tasks, make agreements, track subtasks together.' },
             ].map(f => (
               <div key={f.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>{f.icon}</div>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0 }}><Icon name={f.icon} size={18} /></div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{f.title}</div>
                   <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55 }}>{f.desc}</div>

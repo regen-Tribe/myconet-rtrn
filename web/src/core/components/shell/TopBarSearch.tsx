@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
@@ -134,7 +135,7 @@ export default function TopBarSearch() {
                   background: i === active ? 'var(--bg-2)' : 'transparent', borderTop: h.group === 'Ask' ? '1px solid var(--rule-soft)' : undefined, marginTop: h.group === 'Ask' ? 4 : 0,
                 }}>
                 <span style={{ fontSize: 13.5, fontWeight: h.group === 'Ask' ? 700 : 500, color: h.group === 'Ask' ? 'var(--accent-color)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {h.group === 'Ask' ? '💬 ' : ''}{h.label}
+                  {h.group === 'Ask' && <InlineIcon name="chat" />}{h.label}
                 </span>
                 {h.detail && <span style={{ fontSize: 11.5, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{h.detail}</span>}
               </div>

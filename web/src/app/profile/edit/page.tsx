@@ -20,7 +20,7 @@ import '@/modules/m01-network/members-v4.css'
 import {
   ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
   Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
-} from 'lucide-react'
+} from '@/core/components/v4/lucide-compat'
 
 const STEPS = [
   { id: 1, title: 'Basic Info',        icon: User,       description: 'Your public identity' },
@@ -505,8 +505,8 @@ export default function ProfileWizard() {
             width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
             background: 'linear-gradient(135deg, var(--m1), var(--accent-color))',
             display: 'grid', placeItems: 'center',
-            fontSize: 22, boxShadow: '0 2px 8px color-mix(in srgb, var(--m1) 35%, transparent)',
-          }}>✦</div>
+            color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--m1) 35%, transparent)',
+          }}><V4Icon name="spark" size={22} /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>
               Achievement unlocked — Profile Pioneer

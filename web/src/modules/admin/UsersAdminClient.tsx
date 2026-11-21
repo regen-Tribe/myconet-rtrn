@@ -5,7 +5,7 @@ import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
 import { DESIGN } from '@/core/lib/instance'
-import { Button, Card, Chip, ChipRow, IconTile, List, ListRow, PageHeader, SectionHead, Icon, type IconName } from '@/core/components/v4'
+import { Button, Card, Chip, ChipRow, IconTile, List, ListRow, PageHeader, SectionHead, Icon, type IconName, InlineIcon } from '@/core/components/v4'
 
 export interface AdminUserRow {
   id: string
@@ -272,7 +272,7 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0, circ
                   transition: 'background 120ms',
                 }}
               >
-                {isSaving ? 'Saving…' : isSaved ? '✓ Saved' : 'Save'}
+                {isSaving ? 'Saving…' : isSaved ? <><InlineIcon name="check" />Saved</> : 'Save'}
               </button>}
             </div>
           )

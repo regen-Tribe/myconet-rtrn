@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from '@/core/components/ui/select'
-import { Plus, Gift, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Gift, Pencil, Trash2, Loader2 } from '@/core/components/v4/lucide-compat'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
 import { Button as V4Button, Icon as V4Icon, IconTile, PageHeader, Tag } from '@/core/components/v4'

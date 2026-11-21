@@ -5,13 +5,13 @@ import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { buildGlanceTiles } from '@/modules/home/lib/at-a-glance'
 import { loadModulePreviews } from '@/modules/home/lib/preview-data'
-import { communityName as getCommunityName } from '@/core/lib/instance'
+import { communityName as getCommunityName, DESIGN } from '@/core/lib/instance'
 
 export default async function LandingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) redirect('/home')
+  if (user) redirect(DESIGN === 'v4' ? '/dashboard' : '/home')
 
   const { data: bp } = await supabase
     .from('blueprints')

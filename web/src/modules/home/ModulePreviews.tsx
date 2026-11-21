@@ -1,3 +1,4 @@
+import { Icon } from '@/core/components/v4'
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleDirectory } from '@/core/lib/ops-permissions'
@@ -24,9 +25,9 @@ export interface CirclesPreviewData {
 }
 
 const CATEGORY_LOOK = {
-  accommodation: { emoji: '🏡', label: 'Accommodation', color: '#b45309' },
-  tools:         { emoji: '🔧', label: 'Tools',         color: '#0369a1' },
-  spaces:        { emoji: '🏛', label: 'Spaces',        color: '#7c3aed' },
+  accommodation: { icon: 'bed', label: 'Accommodation', color: '#b45309' },
+  tools:         { icon: 'wrench', label: 'Tools',         color: '#0369a1' },
+  spaces:        { icon: 'building', label: 'Spaces',        color: '#7c3aed' },
 } as const
 
 const card: React.CSSProperties = {
@@ -45,11 +46,11 @@ function ItemRow({ item }: { item: PreviewItem }) {
   const look = CATEGORY_LOOK[item.category]
   return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', borderRadius: 10, background: 'var(--bg-2)', borderLeft: `3px solid ${look.color}` }}>
-      <span style={{ fontSize: 18, lineHeight: 1.2 }} aria-hidden>{look.emoji}</span>
+      <span style={{ lineHeight: 1.2, color: look.color }}><Icon name={look.icon} size={18} /></span>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', overflowWrap: 'anywhere' }}>{item.name}</div>
         <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>
-          {[item.location && `📍 ${item.location}`, item.capacity && `👥 ${item.capacity}`, ...item.tags.slice(0, 3).map(t => `#${t}`)].filter(Boolean).join(' · ') || look.label}
+          {[item.location, item.capacity && `${item.capacity} people`, ...item.tags.slice(0, 3).map(t => `#${t}`)].filter(Boolean).join(' · ') || look.label}
         </div>
       </div>
     </div>
@@ -88,7 +89,7 @@ export function StaysPreview({ items }: { items: PreviewItem[] }) {
     <InventoryPreview
       title={modLabel('15', 'Places to stay')}
       items={items.filter(i => i.category === 'accommodation')}
-      emptyExamples={['🏡 Guest rooms', '🛖 Cabins', '⛺ Tent sites', '🛏 Bunks for work weeks']}
+      emptyExamples={['Guest rooms', 'Cabins', 'Tent sites', 'Bunks for work weeks']}
       href="/accommodation"
       color="var(--m15)"
       cta="See places to stay"
@@ -101,7 +102,7 @@ export function ResourcesPreview({ items }: { items: PreviewItem[] }) {
     <InventoryPreview
       title={modLabel('16', 'Shared tools & spaces')}
       items={items.filter(i => i.category !== 'accommodation')}
-      emptyExamples={['🔧 Power tools', '🚐 Community van', '🍳 Commercial kitchen', '🏛 Great hall', '🎨 Art studio']}
+      emptyExamples={['Power tools', 'Community van', 'Commercial kitchen', 'Great hall', 'Art studio']}
       href="/resources"
       color="var(--m16)"
       cta="Browse resources"

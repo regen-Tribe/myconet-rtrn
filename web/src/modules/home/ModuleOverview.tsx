@@ -1,5 +1,6 @@
 'use client'
 
+import { Icon } from '@/core/components/v4'
 import Link from 'next/link'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { ASK_EVENT } from '@/modules/assistant/AssistantChat'
@@ -40,7 +41,7 @@ export default function ModuleOverview() {
         ))}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '14px 16px', borderRadius: 12, border: '1px solid var(--accent-color)', background: 'color-mix(in srgb, var(--accent-color) 7%, var(--surface))' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 14 }}>💬</span>
+            <Icon name="chat" size={14} />
             <span style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--ink)' }}>Ask {COMMUNITY_NAME}</span>
           </div>
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0, flex: 1 }}>

@@ -1,4 +1,5 @@
 'use client'
+import { InlineIcon } from '@/core/components/v4'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { modLabel } from '@/core/lib/module-label'
@@ -215,7 +216,7 @@ export default function JoinAdminClient({ applications: initial, questions, canD
                             borderRadius: 'var(--radius)', cursor: 'pointer', opacity: loading === app.id ? 0.6 : 1,
                           }}
                         >
-                          {loading === app.id ? 'Saving…' : '✓ Accept'}
+                          {loading === app.id ? 'Saving…' : <><InlineIcon name="check" />Accept</>}
                         </button>
                       )}
                       {app.status !== 'reviewing' && app.status !== 'accepted' && (
@@ -246,7 +247,7 @@ export default function JoinAdminClient({ applications: initial, questions, canD
                       )}
                       {app.status === 'accepted' && saveError?.id !== app.id && (
                         <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600, padding: '8px 0' }}>
-                          ✓ Accepted — user role set to joining
+                          <InlineIcon name="check" />Accepted — user role set to joining
                         </span>
                       )}
                     </div>

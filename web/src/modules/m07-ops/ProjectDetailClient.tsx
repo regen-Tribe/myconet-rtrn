@@ -8,7 +8,7 @@ import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { DESIGN } from '@/core/lib/instance'
-import { Icon as V4Icon, StatusPill as V4Pill, Tag as V4Tag, statusFromDb } from '@/core/components/v4'
+import { Icon as V4Icon, StatusPill as V4Pill, Tag as V4Tag, statusFromDb, InlineIcon } from '@/core/components/v4'
 
 const V4 = (DESIGN as string) === 'v4'
 import type { Project, Deliverable, ProjectUpdate, CollaborationAgreement, MyProposal, SubscriberProfile } from './types'
@@ -790,7 +790,7 @@ export default function ProjectDetailClient({
                                 <PriorityBadge priority={d.priority} />
                                 {d.due_date && (
                                   <span style={{ color: isOverdue ? '#ef4444' : 'var(--ink-4)', fontWeight: isOverdue ? 700 : 400 }}>
-                                    {assignee || named ? '· ' : ''}{fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}
+                                    {assignee || named ? '· ' : ''}{fmtTaskWhen(d.due_date, d.due_time)}{isOverdue && <> <InlineIcon name="alert" label="Late" /></>}
                                   </span>
                                 )}
                                 {otherCircle && <span title={otherCircle.label}>· {otherCircle.emoji} {otherCircle.label}</span>}
@@ -890,7 +890,7 @@ export default function ProjectDetailClient({
 
               {settingsBlock && (
                 <div style={{ fontSize: 12, lineHeight: 1.5, color: '#b45309', background: 'color-mix(in srgb, #f59e0b 10%, var(--surface))', border: '1px solid #f59e0b', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
-                  🔒 You can view these settings but not change them.{' '}
+                  <InlineIcon name="lock" />You can view these settings but not change them.{' '}
                   <button type="button" onClick={() => setNotice(settingsBlock)} style={{ background: 'none', border: 'none', padding: 0, color: '#b45309', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
                     Why?
                   </button>

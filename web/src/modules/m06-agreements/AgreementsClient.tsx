@@ -394,7 +394,7 @@ export default function AgreementsClient({
         <div>
           {myAgreements.length === 0 ? (
             <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 12, padding: '48px 28px', textAlign: 'center' as const, maxWidth: 480 }}>
-              <div style={{ fontSize: 32, marginBottom: 14 }}>🤝</div>
+              <div style={{ marginBottom: 14, color: 'var(--ink-3)' }}><Icon name="handshake" size={32} /></div>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>No agreements yet</div>
               <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 20 }}>
                 Browse open projects and propose what you'll contribute and what you expect in return.
@@ -567,7 +567,7 @@ export default function AgreementsClient({
                       textAlign: 'center' as const,
                     }}
                   >
-                    <span style={{ fontSize: 28 }}>🔒</span>
+                    <span style={{ color: 'var(--ink-3)' }}><Icon name="lock" size={28} /></span>
                     <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-2)', margin: 0 }}>
                       {isGuest ? 'Sign in to propose' : 'Complete M05 Join to unlock'}
                     </p>
@@ -615,7 +615,7 @@ export default function AgreementsClient({
                 {/* Success state */}
                 {submitted ? (
                   <div style={{ textAlign: 'center' as const, padding: '24px 0' }}>
-                    <div style={{ fontSize: 36, marginBottom: 12 }}>🎉</div>
+                    <div style={{ marginBottom: 12, color: 'var(--ink-3)' }}><Icon name="party" size={36} /></div>
                     <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
                       Proposal sent!
                     </p>

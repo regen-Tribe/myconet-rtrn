@@ -1,4 +1,5 @@
 'use client'
+import { InlineIcon } from '@/core/components/v4'
 import { DOC_KINDS, type DocKind } from '@/modules/assistant/lib/library'
 
 /**
@@ -23,7 +24,7 @@ export default function DocumentKindPicker({ value, onChange }: {
           }}>
             <input type="radio" name="doc-kind" checked={value === o.id} onChange={() => onChange(o.id)} style={{ marginTop: 3 }} />
             <span>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{o.id === 'leads' ? '🔒 ' : o.id === 'everyone' ? '🌐 ' : ''}{o.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{o.id === 'leads' ? <InlineIcon name="lock" /> : o.id === 'everyone' ? <InlineIcon name="globe" /> : null}{o.label}</span>
               <span style={{ display: 'block', fontSize: 12, color: 'var(--ink-3)', marginTop: 1 }}>{o.help}</span>
             </span>
           </label>

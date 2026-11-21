@@ -20,7 +20,7 @@ import { CalendarFeedsModal } from './CalendarFeedsModal'
 import { PhotoImportModal } from './PhotoImportModal'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
-import { Button, Card, Icon, PageHeader } from '@/core/components/v4'
+import { Button, Card, Icon, PageHeader, InlineIcon } from '@/core/components/v4'
 
 const VIEWS: { id: EventsView; label: string }[] = [
   { id: 'day', label: 'Day' },
@@ -334,12 +334,12 @@ export default function EventsClient({
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {initialFeeds && (
             <button onClick={() => setShowFeeds(true)} title="Show events from Google Calendar or another calendar" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>
-              🔗 Linked calendars{initialFeeds.length > 0 ? ` (${initialFeeds.length})` : ''}
+              <InlineIcon name="link" />Linked calendars{initialFeeds.length > 0 ? ` (${initialFeeds.length})` : ''}
             </button>
           )}
           {canAddFromPhoto && userId && (
             <button onClick={() => setShowPhoto(true)} title="Read a photo of the schedule board and add its events" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>
-              📷 Add from a photo
+              <InlineIcon name="camera" />Add from a photo
             </button>
           )}
           {canPostCommunity ? (

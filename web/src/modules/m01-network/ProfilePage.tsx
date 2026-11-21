@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Pencil, MapPin, User, Heart, Brain, Star,
   Target, Gift, HelpCircle, Plane, Briefcase, Camera, Loader2,
-} from 'lucide-react'
+} from '@/core/components/v4/lucide-compat'
 import { AvatarCropper } from '@/core/components/AvatarCropper'
 import { uploadAvatarBlob } from '@/core/lib/avatar'
 import { modLabel } from '@/core/lib/module-label'

@@ -1,4 +1,5 @@
 'use client'
+import { Icon } from '@/core/components/v4'
 import { useState } from 'react'
 import Link from 'next/link'
 
@@ -72,7 +73,7 @@ export default function MemberList({ members, matchScores = {} }: { members: Mem
                 color: view === 'list' ? 'var(--ink)' : 'var(--ink-4)',
               }}
             >
-              ☰
+              <Icon name="menu" size={14} label="List" />
             </button>
           </div>
           <Link href="/members/discover" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>

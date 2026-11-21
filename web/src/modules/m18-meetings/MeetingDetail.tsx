@@ -10,7 +10,7 @@ import NotesText from './NotesText'
 import SummaryCards from './SummaryCards'
 import type { Meeting, MeetingTask } from './types'
 import { DESIGN } from '@/core/lib/instance'
-import { Button, Icon, StatusPill, Tag } from '@/core/components/v4'
+import { Button, Icon, StatusPill, Tag, InlineIcon } from '@/core/components/v4'
 import './meetings-v4.css'
 
 const V4 = DESIGN === 'v4'
@@ -162,7 +162,7 @@ function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn }: { m: Meetin
         </select>
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: circle ? 'var(--ink-2)' : 'var(--ink-4)', cursor: circle ? 'pointer' : 'default' }}>
           <input type="checkbox" checked={circleOnly && !!circle} disabled={!circle} onChange={e => setCircleOnly(e.target.checked)} />
-          🔒 Circle only
+          <InlineIcon name="lock" />Circle only
         </label>
         {changed && (
           <button onClick={() => saveSettings(!m.processed_at && ready)} disabled={!!busy} style={btn(true)}>
@@ -364,7 +364,7 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
         {fmtDay(m.meeting_date ?? m.created_at)}
         {meta ? <> · <span style={{ color: meta.color, fontWeight: 600 }}>{meta.emoji} {meta.label}</span>{m.circle_source === 'agent' && <span title={m.agent_note ?? ''}> (chosen by the assistant)</span>}</>
           : m.processed_at ? ' · Community-wide' : ''}
-        {m.visibility === 'circle' && ' · 🔒 Circle only'}
+        {m.visibility === 'circle' && <> · <InlineIcon name="lock" />Circle only</>}
         {m.attendees.length > 0 && ` · ${m.attendees.join(', ')}`}
       </div>
       {m.notes_url && <div style={{ fontSize: 12.5, marginTop: 6 }}><a href={m.notes_url} target="_blank" rel="noreferrer" style={{ color: 'var(--m18)' }}>Notes in the second brain ↗</a></div>}

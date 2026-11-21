@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { DraftSwipe } from './DraftSwipe'
 import Link from 'next/link'
 import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
@@ -96,7 +97,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
                   {d.assignee_username ?? (d.assignee_name ? <NameTag name={d.assignee_name} /> : '—')}
                 </td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, whiteSpace: 'nowrap', color: isOverdue ? '#ef4444' : 'inherit', fontWeight: isOverdue ? 700 : 'inherit' }}>
-                  {fmtTaskWhen(d.due_date, d.due_time)}{isOverdue ? ' ⚠' : ''}
+                  {fmtTaskWhen(d.due_date, d.due_time)}{isOverdue && <> <InlineIcon name="alert" label="Late" /></>}
                 </td>
                 <td style={tdStyle}>
                   <span style={{

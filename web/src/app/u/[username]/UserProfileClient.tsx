@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase, Pencil, Sparkles, Lock, Globe, AtSign } from 'lucide-react'
+import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase, Pencil, Sparkles, Lock, Globe, AtSign } from '@/core/components/v4/lucide-compat'
 import { socialLinks } from '@/core/lib/public-profile'
 import { MyCircles } from '@/modules/m17-org/MyCircles'
 import { modLabel } from '@/core/lib/module-label'

@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { type CircleDirectory, type PermissionNotice, type PersonRef } from '@/core/lib/ops-permissions'
@@ -58,7 +59,7 @@ export function PermissionNoticeModal({
         }}
       >
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>🔒 {notice.title}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}><InlineIcon name="lock" />{notice.title}</div>
           <button
             onClick={onClose}
             aria-label="Close"

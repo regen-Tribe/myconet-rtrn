@@ -9,7 +9,7 @@ import {
   monthGrid, sameDay, startOfDay, weekDays,
 } from './lib/calendar'
 import { DESIGN } from '@/core/lib/instance'
-import { Icon, StatusPill } from '@/core/components/v4'
+import { Icon, StatusPill, InlineIcon } from '@/core/components/v4'
 
 const V4 = DESIGN === 'v4'
 
@@ -276,7 +276,7 @@ function WeekGrid({ anchor, events, now, onOpen }: {
                         {e.title}
                       </div>
                       {height >= 30 && <div style={{ fontSize: 10, color, fontWeight: 600, lineHeight: 1.2 }}>{fmtTime(e.starts_at)}{e.ends_at ? ` – ${fmtTime(e.ends_at)}` : ''}</div>}
-                      {height >= 52 && e.location && <div style={{ fontSize: 10, color: 'var(--ink-3)', lineHeight: 1.2 }}>📍 {e.location}</div>}
+                      {height >= 52 && e.location && <div style={{ fontSize: 10, color: 'var(--ink-3)', lineHeight: 1.2 }}><InlineIcon name="pin" />{e.location}</div>}
                     </button>
                   )
                 })}
@@ -336,7 +336,7 @@ function WeekCards({ anchor, events, now, onOpen }: {
                       {e.all_day ? 'All day' : fmtTime(e.starts_at)}
                     </div>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{e.title}</div>
-                    {e.location && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, overflowWrap: 'anywhere' }}>📍 {e.location}</div>}
+                    {e.location && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, overflowWrap: 'anywhere' }}><InlineIcon name="pin" />{e.location}</div>}
                   </button>
                 )
               })}
@@ -395,11 +395,11 @@ function EventRow({ event: e, rsvps, userId, onOpen, dim = false }: {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{e.title}</div>
         <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, display: 'flex', flexWrap: 'wrap', gap: '2px 10px' }}>
-          {e.location && <span>📍 {e.location}</span>}
-          {e.online_url && <span>💻 Online</span>}
+          {e.location && <span><InlineIcon name="pin" />{e.location}</span>}
+          {e.online_url && <span><InlineIcon name="laptop" />Online</span>}
           {circles.has(e.circle) && <span style={{ color }}>{circles.meta(e.circle).emoji} {circles.meta(e.circle).label}</span>}
-          {e.project && <span>⚙️ {e.project.title}</span>}
-          {e.is_public && <span>🌍 Public</span>}
+          {e.project && <span><InlineIcon name="board" />{e.project.title}</span>}
+          {e.is_public && <span><InlineIcon name="globe" />Public</span>}
         </div>
       </div>
       <div style={{ flexShrink: 0, textAlign: 'right', fontSize: 11, color: 'var(--ink-3)' }}>
