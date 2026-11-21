@@ -1,4 +1,5 @@
 'use client'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -148,7 +149,7 @@ function CircleCards(p: Props) {
           return (
             <Link key={c} href={`/circles?c=${encodeURIComponent(c)}`} className="v4-card v4-card--link cv4-card" style={{ ['--c' as string]: meta.color }}>
               <div className="cv4-card__top">
-                <span className="cv4-ico" aria-hidden="true">{meta.emoji || <Icon name="circles" />}</span>
+                <CircleSeal slug={c} size={40} className="cv4-seal" />
                 <div className="cv4-card__name">
                   <b>{meta.label}</b>
                   <small>{[c === steward?.slug ? 'Looks after every circle' : null, teams.length ? plural(teams.length, 'subcircle') : null].filter(Boolean).join(' · ') || 'Circle'}</small>
@@ -356,7 +357,7 @@ function CirclePage(p: Props & { slug: string }) {
       <header className="v4-ph cv4-head">
         <div className="v4-ph__row">
           <div className="cv4-head__main">
-            <span className="cv4-ico cv4-ico--lg" aria-hidden="true">{meta.emoji || <Icon name="circles" />}</span>
+            <CircleSeal slug={c} size={56} className="cv4-seal" />
             <div>
               <div className="v4-tags cv4-gap">
                 <span className="v4-tag"><i className="cv4-dot" />{c === steward?.slug ? 'Stewards circle' : 'Circle'}</span>

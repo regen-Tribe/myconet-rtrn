@@ -5,15 +5,16 @@ import HomeClient from '@/modules/home/HomeClient'
 import { buildGlanceTiles } from '@/modules/home/lib/at-a-glance'
 import { loadModulePreviews } from '@/modules/home/lib/preview-data'
 import { communityName as getCommunityName, DESIGN } from '@/core/lib/instance'
-import { redirect } from 'next/navigation'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { isFullMember as checkFullMember, isJoiningOrAbove } from '@/core/lib/roles'
 import { profileColumns } from '@/core/lib/public-profile'
+import HomeV4 from './HomeV4'
 
-export default async function HomePage() {
-  // In the v4 look the dashboard is home (DESIGN-SYSTEM.md › v4); the old home stays for other communities.
-  if (DESIGN === 'v4') redirect('/dashboard')
+export default async function HomePage(props: { searchParams?: Promise<{ tour?: string }> }) {
+  // The v4 look has a calm Home (HomeV4) for everyone (Sonia, 21 Nov); the long module-by-module tour stays at /home?tour=1
+  const sp = (await props?.searchParams) ?? {}
+  if (DESIGN === 'v4' && !sp.tour) return <HomeV4 />
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -1,0 +1,131 @@
+/* Home in the v4 look (HomeV4.tsx). Only used with data-design="v4". Tokens: DESIGN-SYSTEM.md › v4. */
+.hv4 { padding-bottom: 48px; display: grid; gap: 14px; }
+.hv4-eyebrow { display: block; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); margin: 0 0 6px; }
+.hv4-h { font-family: var(--display); font-size: clamp(22px, 2.4vw, 26px); font-weight: 500; letter-spacing: -.03em; line-height: 1.1; margin: 0 0 12px; color: var(--ink, #111317); }
+.hv4-h--sm { font-size: 18px; letter-spacing: -.02em; margin-bottom: 10px; }
+
+/* 1 · The photo hero */
+.hv4-hero { position: relative; border-radius: 28px; overflow: hidden; min-height: 340px; display: flex; flex-direction: column; justify-content: space-between;
+  background: var(--cobalt, #1f3fb8) center 40% / cover no-repeat; }
+.hv4-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,14,12,.18) 0%, rgba(10,14,12,.12) 30%, rgba(10,14,12,.72) 100%); }
+.hv4-hero__chip { position: relative; align-self: flex-start; margin: 18px 0 0 20px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px;
+  border-radius: 999px; background: rgba(10,14,12,.38); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #fff; font-size: 13px; font-weight: 600; }
+.hv4-hero__chip img { width: 24px; height: 24px; border-radius: 8px; background: #fff; object-fit: contain; }
+.hv4-hero__chip i { font-style: normal; font-weight: 400; opacity: .85; }
+.hv4-hero__in { position: relative; padding: 24px; color: #fff; max-width: 720px; }
+.hv4-hero h1 { font-family: var(--display); font-size: clamp(38px, 5.6vw, 64px); font-weight: 400; letter-spacing: -.05em; line-height: .98; margin: 0 0 10px; color: #fff; }
+.hv4-hero h1 em { font-weight: 500; }
+.hv4-hero p { margin: 0; font-size: 15px; line-height: 1.45; color: rgba(255,255,255,.92); max-width: 520px; }
+.hv4-hero__acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.hv4-pill { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 600; text-decoration: none; transition: transform .15s; }
+.hv4-pill:hover { transform: translateY(-1px); }
+.hv4-pill--white { background: #fff; color: var(--ink, #111317); }
+.hv4-pill--glass { background: rgba(255,255,255,.18); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+/* 2 · About the community + Your portal */
+.hv4-pair { display: grid; gap: 14px; }
+@media (min-width: 900px) { .hv4-pair { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+.hv4-card { background: var(--surface, #fff); border-radius: 20px; padding: 20px; }
+.hv4-lead { font-size: 15px; line-height: 1.55; color: var(--ink-2, #3a3f4a); margin: 0 0 14px; }
+.hv4-why { margin: 0 0 14px; padding: 2px 0 2px 14px; border-left: 3px solid var(--ink, #111317); font-family: var(--display); font-size: 16px; line-height: 1.45; letter-spacing: -.01em; color: var(--ink, #111317); }
+.hv4-more { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink, #111317); text-decoration: none; }
+.hv4-portal { position: relative; overflow: hidden; border-radius: 20px; padding: 20px; background: var(--cobalt, #1f3fb8); color: #f3ead7; }
+.hv4-portal .hv4-eyebrow { color: rgba(243,234,215,.7); }
+.hv4-portal .hv4-h { color: #f3ead7; max-width: 340px; position: relative; }
+.hv4-portal > p { position: relative; font-size: 14.5px; line-height: 1.55; margin: 0 0 16px; color: rgba(243,234,215,.92); max-width: 520px; }
+.hv4-portal__art { position: absolute; right: -24px; top: -10px; width: 230px; height: 260px; fill: #f3ead7; stroke: #f3ead7; stroke-width: 1.6; opacity: .22; pointer-events: none; }
+.hv4-portal__art path { fill: none; }
+.hv4-how { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hv4-how li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: rgba(243,234,215,.1); font-size: 13.5px; line-height: 1.4; color: rgba(243,234,215,.88); }
+.hv4-how li > .v4-icon { flex-shrink: 0; margin-top: 1px; color: #f3ead7; }
+.hv4-how b { color: #f3ead7; font-weight: 600; }
+
+/* 3 · What happens here: tiles */
+.hv4-happens { margin-top: 10px; }
+.hv4-head { padding: 0 4px; }
+.hv4-tiles { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 900px) { .hv4-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.hv4-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 20px; background: var(--surface, #fff); color: inherit; text-decoration: none; min-height: 168px;
+  transition: transform .15s, box-shadow .15s; }
+a.hv4-tile:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -18px rgba(30,35,60,.35); }
+.hv4-tile--wide { grid-column: span 2; }
+.hv4-tile__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.hv4-tile .v4-tile { width: 44px; height: 44px; border-radius: 14px; }
+.hv4-tile b { font-size: 15px; font-weight: 600; color: var(--ink, #111317); letter-spacing: -.01em; }
+.hv4-tile small { font-size: 13px; line-height: 1.4; color: var(--ink-3, #6b7180); }
+.hv4-tile__meta { margin-top: auto; padding-top: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-2, #3a3f4a); }
+.hv4-tile--locked { opacity: .62; }
+.hv4-tile--locked .hv4-tile__meta { font-weight: 500; color: var(--ink-3, #6b7180); }
+.hv4-faces { display: flex; }
+.hv4-faces img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface, #fff); background: var(--bg-2, #f2f3f7); }
+.hv4-faces img + img { margin-left: -8px; }
+
+/* 2 · Your way in: the journey on the hero's edge */
+.hv4-hero--journey .hv4-hero__in { padding-bottom: 68px; }
+.hv4-journey { position: relative; z-index: 1; margin: -58px 20px 0; background: var(--surface, #fff); border-radius: 22px; padding: 18px;
+  box-shadow: 0 18px 40px -24px rgba(30,35,60,.45); display: grid; gap: 14px; }
+@media (min-width: 900px) { .hv4-journey { grid-template-columns: 190px minmax(0, 1fr); align-items: center; padding: 18px 18px 18px 24px; } }
+.hv4-journey__head .hv4-h { margin-bottom: 4px; }
+.hv4-journey__head small { display: block; font-size: 12.5px; color: var(--ink-3, #6b7180); }
+.hv4-journey__head small a { color: var(--ink, #111317); font-weight: 600; }
+.hv4-path { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.hv4-path li { position: relative; }
+.hv4-path a { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr) 16px; align-items: center; gap: 12px; padding: 12px; border-radius: 16px;
+  color: var(--ink-2, #3a3f4a); text-decoration: none; }
+.hv4-path a:hover { background: var(--bg-2, #f2f3f7); }
+.hv4-path a > .v4-icon { color: var(--ink-4, #9aa0ad); }
+.hv4-path__n { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 600;
+  background: var(--surface, #fff); color: var(--ink-3, #6b7180); box-shadow: inset 0 0 0 1.5px var(--line-2, rgba(17,19,23,.16)); }
+.hv4-path__t { display: grid; gap: 2px; min-width: 0; }
+.hv4-path__t b { font-size: 14px; font-weight: 600; color: var(--ink, #111317); }
+.hv4-path__t small { font-size: 12.5px; line-height: 1.35; color: var(--ink-3, #6b7180); }
+/* The thread between the steps: down on phones, across on wide screens; green once a step is done */
+.hv4-path li:not(:last-child)::before { content: ''; position: absolute; left: 27px; top: 46px; bottom: -14px; width: 2px; border-radius: 2px; background: var(--line-2, rgba(17,19,23,.12)); }
+.hv4-path li.done::before { background: var(--green-ink, #2e7a4a); opacity: .45; }
+.hv4-path li.done .hv4-path__n { background: var(--green, #d3f1dc); color: var(--green-ink, #2e7a4a); box-shadow: none; }
+.hv4-path li.done .hv4-path__t b { color: var(--ink-3, #6b7180); text-decoration: line-through; text-decoration-color: var(--ink-4, #9aa0ad); }
+/* The step to do now: black on wide screens (the menu holds the one green next step there), green on phones */
+.hv4-path li.now a { background: var(--bg-2, #f2f3f7); }
+.hv4-path li.now .hv4-path__n { background: var(--ink, #111317); color: #fff; box-shadow: none; }
+.hv4-path li.now a > .v4-icon { color: var(--ink, #111317); }
+@media (min-width: 900px) {
+  .hv4-path { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .hv4-path a { grid-template-columns: 1fr; align-items: start; gap: 10px; padding: 14px; height: 100%; }
+  .hv4-path a > .v4-icon { position: absolute; top: 22px; right: 14px; }
+  .hv4-path li:not(:last-child)::before { left: 54px; right: -2px; top: 29px; bottom: auto; width: auto; height: 2px; }
+  .hv4-path li.now:not(:last-child)::before, .hv4-path li:has(+ li.now)::before { z-index: 1; }
+}
+@media (max-width: 899px) {
+  .hv4-path li.now a { background: var(--action, #d4f0dd); }
+  .hv4-path li.now .hv4-path__n { background: var(--action-ink, #235c3b); }
+  .hv4-path li.now .hv4-path__t b, .hv4-path li.now a > .v4-icon { color: var(--action-ink, #235c3b); }
+}
+@media (max-width: 599px) { .hv4-journey { margin: -40px 10px 0; padding: 14px; } .hv4-hero--journey .hv4-hero__in { padding-bottom: 52px; } }
+
+/* 5 · Happening now */
+.hv4-now-wrap .hv4-card { padding: 18px 20px; }
+@media (min-width: 900px) { .hv4-rows--now { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+.hv4-rows { display: grid; gap: 4px; }
+.hv4-row { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 12px; color: inherit; text-decoration: none; }
+.hv4-row:hover { background: var(--bg-2, #f2f3f7); }
+.hv4-row > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.hv4-row b { font-size: 14px; font-weight: 600; color: var(--ink, #111317); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hv4-row small { font-size: 12.5px; color: var(--ink-3, #6b7180); }
+.hv4-date { width: 46px; height: 50px; border-radius: 12px; flex-shrink: 0; display: grid; place-content: center; text-align: center; background: var(--red, #ffd9d6); color: var(--red-ink, #ae3a35); }
+.hv4-date b { font-family: var(--display); font-size: 20px; line-height: 1; font-weight: 600; color: inherit; }
+.hv4-date small { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: inherit; }
+.hv4-date--vote { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); place-items: center; }
+.hv4-small { font-size: 13px; color: var(--ink-3, #6b7180); margin: 10px 4px 0; }
+.hv4-small a { color: var(--ink, #111317); font-weight: 600; }
+.hv4-phone-only { display: block; }
+@media (min-width: 900px) { .hv4-phone-only { display: none; } }
+
+.hv4-tour { margin: 8px 0 0; font-size: 13px; color: var(--ink-3, #6b7180); text-align: center; }
+.hv4-tour a { color: var(--ink, #111317); font-weight: 600; }
+
+@media (max-width: 599px) {
+  .hv4-hero { min-height: 300px; border-radius: 24px; }
+  .hv4-hero__in { padding: 20px; }
+  .hv4-tile { min-height: 150px; padding: 14px; }
+  .hv4-tile small { font-size: 12.5px; }
+}

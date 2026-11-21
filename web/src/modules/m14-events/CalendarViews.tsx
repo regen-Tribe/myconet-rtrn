@@ -1,4 +1,5 @@
 'use client'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
 
 import { useEffect, useRef } from 'react'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -368,7 +369,7 @@ function EventRow({ event: e, rsvps, userId, onOpen, dim = false }: {
           <small>
             {e.location && <span><Icon name="pin" size={13} />{e.location}</span>}
             {e.online_url && <span><Icon name="laptop" size={13} />Online</span>}
-            {circles.has(e.circle) && <span><span className="v4-dot" style={{ background: circles.meta(e.circle).color, width: 7, height: 7 }} />{circles.meta(e.circle).label}</span>}
+            {circles.has(e.circle) && <span><CircleSeal slug={e.circle} size={14} />{circles.meta(e.circle).label}</span>}
             {e.project && <span><Icon name="board" size={13} />{e.project.title}</span>}
             {e.is_public && <span><Icon name="globe" size={13} />Public</span>}
           </small>

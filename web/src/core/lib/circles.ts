@@ -1,3 +1,5 @@
+import { DESIGN } from './instance'
+
 /**
  * A community's circles, from the `circles` table (each community defines its own
  * during setup). Client components get them with `useCircles()`; server code loads
@@ -15,11 +17,13 @@ export interface Circle {
   leads_to_assign: string | null
   /** The circle that looks after every circle (shown at the top of the org chart) */
   is_steward: boolean
+  /** Its glyph on the circle seal (core/components/v4/circle-glyphs.ts); null shows the initial */
+  icon?: string | null
 }
 
 export type CircleSlug = string
 
-export interface CircleMeta { label: string; color: string; emoji: string }
+export interface CircleMeta { label: string; color: string; emoji: string; icon: string | null }
 
 export interface CircleSet {
   /** Active circles, in order: use for pickers, filters and lists. */
@@ -31,13 +35,15 @@ export interface CircleSet {
   /** The full row, including retired circles. */
   get(slug: CircleSlug): Circle | undefined
   meta(slug: CircleSlug): CircleMeta
-  /** "🌱 Ecology" */
+  /** "🌱 Ecology"; in the v4 look just "Ecology" (the seal is the circle's mark, never an emoji) */
   label(slug: CircleSlug): string
 }
 
-export const CIRCLE_SELECT = 'slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward'
+export const CIRCLE_SELECT = 'slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward, icon'
+/** Before the `circles.icon` migration (v4.79.0) */
+export const CIRCLE_SELECT_NO_ICON = 'slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward'
 
-const UNKNOWN: Omit<CircleMeta, 'label'> = { color: '#64748b', emoji: '◯' }
+const UNKNOWN: Omit<CircleMeta, 'label'> = { color: '#64748b', emoji: DESIGN === 'v4' ? '' : '◯', icon: null }
 
 export function circleSet(rows: Circle[]): CircleSet {
   const all = [...rows].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
@@ -45,7 +51,8 @@ export function circleSet(rows: Circle[]): CircleSet {
   const list = all.filter(c => !c.archived_at)
   const meta = (slug: CircleSlug): CircleMeta => {
     const c = bySlug.get(slug)
-    return c ? { label: c.name, color: c.color, emoji: c.emoji } : { label: slug, ...UNKNOWN }
+    // v4: no emoji in text; the circle's seal (CircleSeal) shows where it has room
+    return c ? { label: c.name, color: c.color, emoji: DESIGN === 'v4' ? '' : c.emoji, icon: c.icon ?? null } : { label: slug, ...UNKNOWN }
   }
   return {
     list,
@@ -53,6 +60,6 @@ export function circleSet(rows: Circle[]): CircleSet {
     has: (slug): slug is CircleSlug => typeof slug === 'string' && bySlug.has(slug),
     get: slug => bySlug.get(slug),
     meta,
-    label: slug => { const m = meta(slug); return `${m.emoji} ${m.label}` },
+    label: slug => { const m = meta(slug); return m.emoji ? `${m.emoji} ${m.label}` : m.label },
   }
 }

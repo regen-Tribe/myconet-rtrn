@@ -28,6 +28,17 @@ export default function AboutNav({ name, chapters, canEdit }: { name: string; ch
     return () => { s.disconnect(); o.disconnect() }
   }, [chapters])
 
+  // A fact tile or a shared link that points at a topic opens it
+  useEffect(() => {
+    const open = () => {
+      const el = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null
+      if (el instanceof HTMLDetailsElement) { el.open = true; el.classList.remove('ab-topic--flash'); void el.offsetWidth; el.classList.add('ab-topic--flash') }
+    }
+    open()
+    window.addEventListener('hashchange', open)
+    return () => window.removeEventListener('hashchange', open)
+  }, [])
+
   useEffect(() => {
     const chip = current ? bar.current?.querySelector<HTMLElement>(`[data-ch="${current}"]`) : null
     const row = chip?.parentElement

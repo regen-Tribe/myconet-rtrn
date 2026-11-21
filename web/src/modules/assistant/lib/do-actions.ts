@@ -132,6 +132,8 @@ export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: 
   const P = (id?: string | null) => b.projects.find(p => p.id === id)
   const T = (id: string) => b.tasks.find(t => t.id === id)!
   const upd = async (table: Row['table'], id: string, before: Record<string, unknown>, changes: Record<string, unknown>) => {
+    // Changing a draft confirms it (v4.84.0: Oscar, "when user changes any of those, it is no longer a draft"); undo makes it a draft again
+    if (table === 'deliverables' && T(id)?.needs_review && !('needs_review' in changes)) { changes = { ...changes, needs_review: false }; before = { ...before, needs_review: true } }
     const { error } = await admin.from(table).update(changes).eq('id', id)
     if (error) throw new Error(error.message)
     rows.push({ table, id, before })
@@ -142,7 +144,9 @@ export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: 
     if (!ids.length) return
     const { error } = await admin.from('deliverables').update({ project_id: to }).in('id', ids)
     if (error) throw new Error(error.message)
-    for (const id of ids) { rows.push({ table: 'deliverables', id, before: { project_id: T(id).project_id } }); T(id).project_id = to }
+    const drafts = ids.filter(id => T(id).needs_review)
+    if (drafts.length) { const { error: e } = await admin.from('deliverables').update({ needs_review: false }).in('id', drafts); if (e) throw new Error(e.message) }
+    for (const id of ids) { rows.push({ table: 'deliverables', id, before: { project_id: T(id).project_id, ...(T(id).needs_review ? { needs_review: true } : {}) } }); T(id).project_id = to; T(id).needs_review = false }
   }
   try {
     switch (a.kind) {
