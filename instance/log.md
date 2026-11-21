@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-21 — Core v4.84.0 via PR #75 (deployed, 6db3580b): sort drafts right in the Tasks list
+- Includes Sonia's v4.80–v4.83 (calm Home, circle seals, page colour, About chapters). Migrations applied via MCP: `booking_item_photos` (v4.76.0, missed at the v4.77.0 update) and `circle_icons` (v4.81.0).
+
 ## 2026-11-20 — Core v4.79.0 via PR #74 (deployed, 7558c813): open a suggestion's task; accepting confirms a draft
 - Includes Sonia's v4.78.0 (the v4 look on every screen). No migrations.
 
