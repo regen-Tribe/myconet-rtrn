@@ -6,7 +6,7 @@ import { loadCircleRows } from '@/core/lib/circles-server'
 import { Icon } from '@/core/components/v4'
 import NotesText from '@/modules/m18-meetings/NotesText'
 import { readFile, secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
-import { circleFolderOf, isGuidePath } from '@/modules/m17-org/lib/circle-extras'
+import { circleFolderOf, isGuidePath, readableName } from '@/modules/m17-org/lib/circle-extras'
 import '@/modules/m17-org/circles-v4.css'
 
 /**
@@ -32,7 +32,10 @@ export default async function CircleGuidePage({ searchParams }: { searchParams: 
   // Front matter: who may read it
   const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
   const vis = fm?.[1].match(/^visibility:\s*["']?(\w+)/m)?.[1]?.toLowerCase()
-  const body = fm ? raw.slice(fm[0].length) : raw
+  let body = fm ? raw.slice(fm[0].length) : raw
+  // The note's own first heading is its title; don't show it twice
+  const h1 = body.match(/^\s*#\s+(.+)\r?\n/)
+  if (h1) body = body.slice(h1[0].length)
   const isLead = role === 'admin' || (role === 'circle_lead' && (profile?.lead_circles ?? []).includes(c))
   if (vis === 'leads' && !isLead) notFound()
   if (vis === 'circle' && !isLead) {
@@ -44,7 +47,8 @@ export default async function CircleGuidePage({ searchParams }: { searchParams: 
 
   const rows = await loadCircleRows(supabase)
   const circle = rows.find(r => r.slug === c)
-  const name = path.split('/').pop()!.replace(/\.md$/, '')
+  const file = path.split('/').pop()!
+  const name = h1?.[1].trim() || (/^README\.md$/i.test(file) ? readableName(path.split('/').slice(-2, -1)[0] ?? 'Guide') : readableName(file))
   const repo = process.env.KNOWLEDGE_REPO
   const branch = process.env.KNOWLEDGE_BRANCH || 'main'
 

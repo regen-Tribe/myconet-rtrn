@@ -8,7 +8,6 @@ import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
 import { AddCircleButton } from '@/modules/m04-blueprint/AddCircleButton'
-import { MeetingNotesLink } from '@/modules/m18-meetings/MeetingNotesLink'
 import { PmLink } from '@/modules/m07-ops/PmLink'
 import { Button, Chip, Icon, PageHeader, SectionHead, StatusPill, Tag, statusFromDb } from '@/core/components/v4'
 import type { CircleSlug } from '@/core/lib/circles'
@@ -344,12 +343,6 @@ function CirclePage(p: Props & { slug: string }) {
       </Link>
     )
   }
-  const quickLinks = (p.meetingCounts || p.pmCounts?.[c]) ? (
-    <div className="v4-tags cv4-links">
-      {p.meetingCounts && <MeetingNotesLink circle={c} count={p.meetingCounts[c]} color={meta.color} />}
-      <PmLink circle={c} count={p.pmCounts?.[c]} color={meta.color} />
-    </div>
-  ) : null
 
   return (
     <div className="v4-page v4-page--wide cv4" style={{ ['--c' as string]: meta.color }}>
@@ -420,34 +413,34 @@ function CirclePage(p: Props & { slug: string }) {
 
           <div className="cv4-split">
             <div>
-              {cu?.description && cu.description.replace(/\s+/g, ' ').trim() !== firstSentence(cu.description) && (
-                <>
-                  <SectionHead title="Purpose" />
-                  <div className="v4-card cv4-purpose"><p className="cv4-pre">{cu.description}</p></div>
-                </>
-              )}
-              {quickLinks}
-              {teams.length > 0 && (
-                <>
-                  <SectionHead title={`Subcircles · ${teams.length}`} />
-                  <div className="v4-list">
-                    {teams.map(t => (
-                      <button key={t.id} type="button" className="v4-row v4-row--click" onClick={() => go('subcircles')}>
-                        <span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="users" /></span></span>
-                        <span className="v4-row__main"><b>{t.name}</b><small>{plural(f.membersOf(t.id).length, 'person', 'people')}</small></span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div className="v4-sec"><h2>Tasks</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('tasks')}>All tasks →</button></div>
+              {!signedIn ? <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to see this circle’s tasks.</p>
+                : taskItems.length ? <div className="v4-list">{taskItems.slice(0, 4).map(itemRow)}</div> : <p className="v4-hint">No open tasks.</p>}
             </div>
             <div>
-              <div className="v4-sec"><h2>Tasks</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('tasks')}>All tasks →</button></div>
-              {taskItems.length ? <div className="v4-list">{taskItems.slice(0, 4).map(itemRow)}</div> : <p className="v4-hint">No open tasks.</p>}
               <div className="v4-sec"><h2>Coming up</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('meetings')}>All meetings →</button></div>
-              {upcoming.length ? <div className="v4-list">{upcoming.slice(0, 3).map(eventRow)}</div> : <p className="v4-hint">Nothing on the calendar for this circle.</p>}
+              {upcoming.length ? <div className="v4-list">{upcoming.slice(0, 4).map(eventRow)}</div> : <p className="v4-hint">Nothing on the calendar for this circle.</p>}
             </div>
           </div>
+
+          {cu?.description && cu.description.replace(/\s+/g, ' ').trim() !== firstSentence(cu.description) && (
+            <>
+              <SectionHead title="Purpose" />
+              <div className="v4-card cv4-purpose"><p className="cv4-pre">{cu.description}</p></div>
+            </>
+          )}
+          {teams.length > 0 && (
+            <>
+              <div className="v4-sec"><h2>Subcircles · {teams.length}</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('subcircles')}>All subcircles →</button></div>
+              <div className="cv4-minis">
+                {teams.map(t => (
+                  <button key={t.id} type="button" className="v4-card cv4-mini" onClick={() => go('subcircles')}>
+                    <b>{t.name}</b><small>{plural(f.membersOf(t.id).length, 'person', 'people')}</small>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -458,15 +451,23 @@ function CirclePage(p: Props & { slug: string }) {
             : !isJoiningOrAbove(p.role) ? <p className="v4-hint">Guides open once you’ve <Link href="/join">joined</Link>.</p>
             : p.extras?.guides == null ? <p className="v4-hint">This community hasn’t connected its second brain yet, so there are no guides to show.</p>
             : p.extras.guides.length ? (
-              <div className="v4-list">
-                {p.extras.guides.map(g => (
-                  <Link key={g.path} href={`/circles/guide?c=${encodeURIComponent(c)}&path=${encodeURIComponent(g.path)}`} className="v4-row v4-row--click">
-                    <span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="book" /></span></span>
-                    <span className="v4-row__main"><b>{g.name}</b>{g.sub && <small>{g.sub}</small>}</span>
-                    <span className="v4-row__trail"><Icon name="right" size={14} /></span>
-                  </Link>
+              <>
+                <p className="v4-hint cv4-gap">What the {meta.label} circle keeps in the second brain (folder <code>{p.extras.guideFolder}/</code>): how it works, plans and references. Edit them there; they show here for everyone who has joined.</p>
+                {[...new Set(p.extras.guides.map(g => g.group))].map(grp => (
+                  <div key={grp ?? ''}>
+                    {grp && <h3 className="cv4-gtitle">{grp}</h3>}
+                    <div className="v4-list">
+                      {p.extras!.guides!.filter(g => g.group === grp).map(g => (
+                        <Link key={g.path} href={`/circles/guide?c=${encodeURIComponent(c)}&path=${encodeURIComponent(g.path)}`} className="v4-row v4-row--click">
+                          <span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="book" /></span></span>
+                          <span className="v4-row__main"><b>{g.name}</b>{g.sub && <small>{g.sub}</small>}</span>
+                          <span className="v4-row__trail"><Icon name="right" size={14} /></span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 ))}
-              </div>
+              </>
             ) : <p className="v4-hint">No guides yet. Notes kept in the circle’s folder of the second brain (<code>{p.extras.guideFolder}/</code>) show here: how-tos, manuals, checklists.</p>}
         </>
       )}
@@ -594,7 +595,6 @@ function CirclePage(p: Props & { slug: string }) {
                   ))}
                 </div>
               ) : <p className="v4-hint">No meeting notes yet.</p>}
-            {quickLinks}
           </div>
         </div>
       )}

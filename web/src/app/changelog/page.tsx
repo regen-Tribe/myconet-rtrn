@@ -3,6 +3,18 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.88.0',
+    date: '2026-11-21',
+    title: 'Notes between teammates reach you',
+    items: ['When a teammate or their assistant leaves a note in the community’s handoff folder, the next coding assistant to open the project tells you about it in its first reply, before anything else.'],
+  },
+  {
+    version: 'v4.87.0',
+    date: '2026-11-21',
+    title: 'A tidier circle page',
+    items: ['A circle’s Overview shows its tasks and what’s coming up side by side, with its purpose and subcircles below, instead of a half-empty column.', 'Manuals & guides says what they are (the notes the circle keeps in the second brain), groups them by topic and gives them readable names; a topic’s README shows as its introduction.'],
+  },
+  {
     version: 'v4.84.0',
     date: '2026-11-21',
     title: 'Sort drafts right in the list',
