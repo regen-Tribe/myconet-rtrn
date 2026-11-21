@@ -46,7 +46,9 @@ them. A review replaces the circle's open suggestions; dismissed ones (60 days) 
 **On the board:** the **🧭 Project manager** panel (`ProjectManagerPanel.tsx`, `#pm`, follows the circle filter; starts collapsed since v4.33.1 unless opened at `#pm`):
 suggestions with **Accept** / **Dismiss** and the agent's changes of the last two weeks with **Undo**, for
 admins and that circle's leads (`lib/pm-access.ts`; routes `/api/ops/suggestions/[id]`,
-`/api/ops/agent-actions/[id]`); everyone else sees them read-only. **On the circles** (Operations › Circles and
+`/api/ops/agent-actions/[id]`); everyone else sees them read-only. **Where this comes from** (v4.77.0) on each
+suggestion shows each task's origin: the meeting (with its date, who said it, the line and who was there; `lib/pm-data.ts`
+`withSources`) or who added it. **On the circles** (Operations › Circles and
 `/circles`): a **🧭 Project manager (N)** button for its leads opens `/operations?circle=<slug>#pm`.
 
 ## The unified Kanban model

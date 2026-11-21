@@ -105,6 +105,32 @@ export interface AgentSuggestion {
   kind: 'merge' | 'move' | 'new_project' | 'assign'
   payload: Record<string, unknown>
   reason: string | null
+  /** When the project manager reviewed the board and made it */
+  created_at?: string
+  /** Where its tasks came from (v4.77.0), for "Where this comes from" */
+  sources?: SuggestionSource[]
+}
+
+/** One task a suggestion is about, and where it came from: the meeting line it was drafted from, or who added it */
+export interface SuggestionSource {
+  task_id: string
+  title: string
+  status: string
+  draft: boolean
+  /** The project it's in now, if any */
+  project: string | null
+  person: string | null
+  due_date: string | null
+  priority: string | null
+  notes: string | null
+  /** The meeting it was drafted from; title null when the person can't open that meeting */
+  meeting: { id: string; title: string | null; date: string | null; circle: string | null; attendees: string[] } | null
+  /** What was said there (the meeting's action item), and who said it (Fireflies' speaker for that item) */
+  said: string | null
+  said_by: string | null
+  /** Who added it, and when */
+  added_by: string | null
+  added_at: string | null
 }
 
 /** A change the project manager made itself (agent_actions pm_*), undoable by the circle's leads */

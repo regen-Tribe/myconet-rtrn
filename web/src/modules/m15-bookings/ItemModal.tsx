@@ -87,7 +87,7 @@ export function ItemModal({
     return (
       <ModalShell title={<span className="v4-modal-title"><IconTile name={ci.icon} tone={ci.tone} />{item.name}</span>} onClose={onClose} maxWidth={560}>
         <div className="v4-modal">
-          {item.place?.photo_url && <img className="v4-modal__photo" src={item.place.photo_url} alt={item.place.name} />}
+          {(item.photo_url ?? item.place?.photo_url) && <img className="v4-modal__photo" src={(item.photo_url ?? item.place?.photo_url)!} alt={item.name} />}
           <div className="v4-tags">
             <Tag>{meta.label}</Tag>
             {circles.has(item.circle) && <Tag><span className="v4-dot" style={{ background: circles.meta(item.circle).color }} />{circles.meta(item.circle).label}</Tag>}

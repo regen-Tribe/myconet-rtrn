@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
-import type { AgentSuggestion, PmAction } from './types'
+import type { AgentSuggestion, PmAction, SuggestionSource } from './types'
 import { instructAgent } from '@/core/lib/agent-context'
 import Link from 'next/link'
 
@@ -43,6 +43,55 @@ function explain(s: AgentSuggestion, title: (id?: string) => string | undefined,
   }
 }
 
+const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : null)
+const STATUS: Record<string, string> = { backlog: 'To do', in_progress: 'In progress', review: 'In review', done: 'Done' }
+
+/**
+ * "Where this comes from" (v4.77.0): each task the suggestion is about, with the meeting it was drafted from (its
+ * date, who said it, what was said, who was there), or who added it by hand; and when the project manager reviewed.
+ */
+function Sources({ s, tag }: { s: AgentSuggestion; tag: (c: string) => React.ReactNode }) {
+  const list = s.sources ?? []
+  const small: React.CSSProperties = { fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }
+  const one = (x: SuggestionSource) => {
+    const facts = [x.draft ? 'Draft' : STATUS[x.status] ?? x.status, x.project ? `in ${x.project}` : 'on the board', x.person ?? 'nobody on it', x.due_date ? `due ${day(x.due_date)}` : null, x.priority ? `${x.priority} priority` : null].filter(Boolean)
+    return (
+      <div key={x.task_id} style={{ padding: '8px 0', borderTop: '1px solid var(--rule)' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+          <strong style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{x.title}</strong>
+          <Link href={`/operations?task=${x.task_id}`} style={{ ...small, color: 'var(--m7)', textDecoration: 'none' }}>Open task →</Link>
+        </div>
+        <div style={small}>{facts.join(' · ')}</div>
+        {x.meeting ? (
+          <div style={{ marginTop: 6, paddingLeft: 10, borderLeft: '2px solid var(--rule)' }}>
+            <div style={{ ...small, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span>From the meeting</span>
+              {x.meeting.title
+                ? <Link href={`/meetings/${x.meeting.id}`} style={{ fontWeight: 600, color: 'var(--ink)', textDecoration: 'none' }}>{x.meeting.title} →</Link>
+                : <span style={{ fontStyle: 'italic' }}>(a meeting you can’t open)</span>}
+              {x.meeting.date && <span>· {day(x.meeting.date)}</span>}
+              {x.meeting.circle && tag(x.meeting.circle)}
+            </div>
+            {x.said && <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 4, lineHeight: 1.5 }}>“{x.said}”{x.said_by && <span style={{ color: 'var(--ink-3)' }}> · {x.said_by}</span>}</div>}
+            {x.meeting.attendees.length > 0 && <div style={{ ...small, marginTop: 2 }}>There: {x.meeting.attendees.join(', ')}</div>}
+          </div>
+        ) : (
+          <div style={{ ...small, marginTop: 4 }}>Added by hand{x.added_by ? ` by ${x.added_by}` : ''}{x.added_at ? ` on ${day(x.added_at)}` : ''}, not from a meeting.</div>
+        )}
+        {x.notes && <div style={{ ...small, marginTop: 4 }}><span style={{ fontWeight: 600 }}>Notes:</span> {x.notes}</div>}
+      </div>
+    )
+  }
+  return (
+    <div style={{ marginTop: 8, background: 'var(--bg, var(--surface))', border: '1px solid var(--rule)', borderRadius: 8, padding: '4px 12px 8px' }}>
+      {list.length ? list.map(one) : <div style={{ ...small, padding: '8px 0' }}>The tasks it’s about are no longer on the board.</div>}
+      <div style={{ ...small, borderTop: '1px solid var(--rule)', paddingTop: 6, fontSize: 11.5 }}>
+        The project manager read the circle’s whole board{s.created_at ? ` on ${day(s.created_at)}` : ''}: its open tasks, projects and people, and what leads turned down before.
+      </div>
+    </div>
+  )
+}
+
 const btn = (primary = false): React.CSSProperties => ({
   fontSize: 12, fontWeight: 600, borderRadius: 8, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap',
   color: primary ? '#fff' : 'var(--ink-2)', background: primary ? 'var(--m7)' : 'var(--surface)',
@@ -74,6 +123,8 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   // Accepted here: they stay, marked accepted and linked to where they went, until the page is reloaded (v4.36.1)
   const [accepted, setAccepted] = useState<{ s: AgentSuggestion; href: string | null }[]>([])
   // "Tell the agent…" on a suggestion: what the lead wants instead (v4.36.0)
+  // "Where this comes from", open per suggestion (v4.77.0)
+  const [showing, setShowing] = useState<string | null>(null)
   const [telling, setTelling] = useState<string | null>(null)
   const [told, setTold] = useState('')
   function tell(s: AgentSuggestion) {
@@ -143,6 +194,11 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 </div>
                 <div style={{ fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5 }}>{plain.what}</div>
                 {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}><span style={{ fontWeight: 600 }}>Why:</span> {s.reason}</div>}
+                <button onClick={() => setShowing(showing === s.id ? null : s.id)} aria-expanded={showing === s.id}
+                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--m7)', background: 'none', border: 'none', padding: 0, marginTop: 6, cursor: 'pointer' }}>
+                  {showing === s.id ? 'Hide where this comes from' : 'Where this comes from'}
+                </button>
+                {showing === s.id && <Sources s={s} tag={tag} />}
                 {mayDecide && (s.kind === 'new_project' || s.kind === 'move') && (() => {
                   const v = where[s.id] ?? ''
                   const n = s.kind === 'new_project' ? (p.tasks ?? []).length : 1
