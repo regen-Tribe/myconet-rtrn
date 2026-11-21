@@ -8,6 +8,7 @@
  */
 import type { ActionItem, MeetingVisibility, NotesTask } from '../types'
 import type { FirefliesNotes } from './fireflies'
+import { withoutDate } from './title'
 
 export const secondBrainOn = () => Boolean(process.env.KNOWLEDGE_REPO && process.env.SECOND_BRAIN_GITHUB_TOKEN)
 
@@ -38,8 +39,6 @@ export interface NoteInput {
 
 const safe = (s: string) => s.replace(/[\\/:*?"<>|#^[\]]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Meeting'
 
-// A date at the start of the title (the meeting's name has one) isn't repeated in the file name
-const withoutDate = (title: string) => title.replace(/^\s*\d{1,2}[./ -]\d{1,2}[./ -]\d{4}\s*[-–·:]?\s*/, '')
 
 /** "<folder>/2026-11-17 Kitchen lead handover.md": sorts by date in the folder */
 export const notePath = (date: string, title: string) => `${meetingsFolder()}/${date} ${safe(withoutDate(title))}.md`
@@ -55,7 +54,7 @@ export function buildNote(n: NoteInput): string {
   const meetingUrl = `${n.appUrl}/meetings/${n.id}`
   const fm = [
     '---',
-    `title: ${JSON.stringify(n.title)}`,
+    `title: ${JSON.stringify(withoutDate(n.title))}`,
     `date: ${n.date}`,
     `circle: ${n.circle?.slug ?? 'community'}`,
     `circles: [${n.circles.map(c => c.slug).join(', ')}]`,
@@ -69,7 +68,7 @@ export function buildNote(n: NoteInput): string {
   const lines = [
     ...fm,
     '',
-    `# ${n.title}`,
+    `# ${withoutDate(n.title)}`,
     '',
     `*${n.date} · ${n.circle ? `${n.circle.name} circle` : 'community-wide'}${n.visibility === 'circle' ? ' · circle only' : ''}. Notes from Fireflies, saved by the MyCoNet agent. [Open in the portal](${meetingUrl})${n.transcriptLink ? ` · [Transcript](<${n.transcriptLink}>)` : ''}.*`,
     '',

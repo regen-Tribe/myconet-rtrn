@@ -43,6 +43,15 @@ export const CIRCLE_SELECT = 'slug, name, emoji, color, sort_order, archived_at,
 /** Before the `circles.icon` migration (v4.79.0) */
 export const CIRCLE_SELECT_NO_ICON = 'slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward'
 
+/**
+ * True when a write failed only because this community hasn't applied the `circles.icon` migration yet
+ * (PostgREST: column not in the schema cache; Postgres: undefined column). The glyph is then skipped quietly.
+ */
+export function isMissingIconColumn(error: { code?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false
+  return error.code === 'PGRST204' || error.code === '42703' || /column.*icon|'icon' column/i.test(error.message ?? '')
+}
+
 const UNKNOWN: Omit<CircleMeta, 'label'> = { color: '#64748b', emoji: DESIGN === 'v4' ? '' : '◯', icon: null }
 
 export function circleSet(rows: Circle[]): CircleSet {

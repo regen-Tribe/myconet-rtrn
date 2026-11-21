@@ -29,3 +29,8 @@ jobs:
       - name: Lint
         working-directory: web
         run: npm run lint
+
+      # One icon set: no emoji on screens, no lucide-react (DESIGN-SYSTEM.md › v4)
+      - name: Icons
+        working-directory: web
+        run: npm run icon-check

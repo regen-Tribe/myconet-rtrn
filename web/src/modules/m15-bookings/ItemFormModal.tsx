@@ -7,7 +7,7 @@ import type { CircleSlug } from '@/core/lib/circles'
 import type { BookingCategory, BookingItem } from './types'
 import { CATEGORY_META } from './lib/inventory'
 import { DESIGN } from '@/core/lib/instance'
-import { Button, Chip, ChipRow } from '@/core/components/v4'
+import { Button, Chip, ChipRow, InlineIcon } from '@/core/components/v4'
 
 export interface ItemPayload {
   name: string
@@ -217,7 +217,7 @@ export function ItemFormModal({
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {categories.map(c => (
               <button key={c} type="button" onClick={() => setCategory(c)} style={chip(category === c, CATEGORY_META[c].color)}>
-                {CATEGORY_META[c].emoji} {CATEGORY_META[c].label}
+                <InlineIcon name={CATEGORY_META[c].icon} />{CATEGORY_META[c].label}
               </button>
             ))}
           </div>

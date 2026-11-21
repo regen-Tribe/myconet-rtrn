@@ -44,6 +44,7 @@ Where its names differ from the table above, these win, and each has its own add
 | **My dashboard** | `/dashboard` | Dashboard (in the menu; "Dashboard" on the phone tab) |
 | **About {community}** | `/about` | Blueprint as the page's name. "The Blueprint" is the document it's built from ("Edit Blueprint") |
 | **Amenities & tools** | `/amenities` | Accommodation and Resources (one page now), Our place |
+| **The space** | menu item (`/amenities`, `/map`) | the one menu item for Amenities & tools and the Map (v4.102.0); each page keeps its own name |
 | **Applications** | `/admin/applications` | join applications in the menu, Join › admin review |
 | **Bookings** | `/admin/bookings` | Manage (the booking requests and the inventory) |
 | **Permissions** | `/admin/permissions` | Users (admin) |

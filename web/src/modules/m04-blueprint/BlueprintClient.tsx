@@ -1,5 +1,6 @@
 'use client'
 
+import { Icon, InlineIcon, type IconName } from '@/core/components/v4'
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
@@ -123,7 +124,7 @@ function FileDropzone({ onFile, fileName, disabled = false }: { onFile: (f: File
       onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f && !disabled) onFile(f) }}
     >
       <input ref={inputRef} type="file" accept=".pdf,.txt,.md,.markdown,.json,text/*,application/pdf" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) onFile(e.target.files[0]) }} />
-      <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
+      <div style={{ marginBottom: 8, color: 'var(--ink-2)' }}><Icon name="file" size={30} /></div>
       <div style={{ fontFamily: 'var(--display)', fontSize: 18 }}>
         {disabled ? 'Choose what kind of document it is first' : fileName ? <span>Loaded: <strong>{fileName}</strong></span> : 'Drop a document, or click to browse'}
       </div>
@@ -394,7 +395,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                 style={{ padding: 4, borderRadius: 8, cursor: 'pointer', background: kind === 'logo' ? 'repeating-conic-gradient(var(--bg-2) 0 25%, var(--surface) 0 50%) 0 0 / 12px 12px' : 'var(--surface)',
                   border: `2px solid ${on ? 'var(--accent)' : 'var(--rule)'}`, boxShadow: on ? '0 0 0 2px var(--accent-soft)' : 'none' }}>
                 <img src={img.url} alt="" style={{ display: 'block', height: kind === 'logo' ? 56 : 72, width: kind === 'logo' ? 'auto' : 160, maxWidth: 160, objectFit: kind === 'logo' ? 'contain' : 'cover', borderRadius: 4 }} />
-                {aiPicked[kind] === img.id && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', marginTop: 3 }}>✨ AI pick</div>}
+                {aiPicked[kind] === img.id && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', marginTop: 3 }}><InlineIcon name="spark" />AI pick</div>}
               </button>
             )
           })}
@@ -419,7 +420,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
         <span style={{ fontWeight: 700, color: colour, border: `1px solid ${colour}55`, borderRadius: 20, padding: '0 7px' }}>{m.confidence} confidence</span>
         {m.pages.length > 0 && <span style={{ color: 'var(--ink-3)' }}>{pageUrls.length ? m.pages.slice(0, 6).map(pageLabel).join(', ') : `p. ${m.pages.slice(0, 6).join(', ')}`}</span>}
         {m.why && <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>{m.why}</span>}
-        {m.conflict && <span style={{ flexBasis: '100%', color: '#b45309' }}>⚠ {m.conflict}</span>}
+        {m.conflict && <span style={{ flexBasis: '100%', color: '#b45309' }}><InlineIcon name="alert" />{m.conflict}</span>}
       </div>
     )
   }
@@ -572,17 +573,17 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               </div>
               {fromSite && siteCapped && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
-                  ⚠ Big site: we read {pageUrls.length} pages (the most useful first) and stopped there, to keep the scan to a few minutes. Import a document for anything it missed.
+                  <InlineIcon name="alert" />Big site: we read {pageUrls.length} pages (the most useful first) and stopped there, to keep the scan to a few minutes. Import a document for anything it missed.
                 </div>
               )}
               {wasTruncated && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
-                  ⚠ Large document — read the first 1,200,000 characters (about 400 pages). If key content comes later, import the rest separately.
+                  <InlineIcon name="alert" />Large document — read the first 1,200,000 characters (about 400 pages). If key content comes later, import the rest separately.
                 </div>
               )}
               {failedParts > 0 && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
-                  ⚠ {failedParts} part{failedParts === 1 ? '' : 's'} of the scan didn&rsquo;t come back, so some answers may be missing. You can run the import again later; it only proposes, nothing is overwritten.
+                  <InlineIcon name="alert" />{failedParts} part{failedParts === 1 ? '' : 's'} of the scan didn&rsquo;t come back, so some answers may be missing. You can run the import again later; it only proposes, nothing is overwritten.
                 </div>
               )}
               {gaps.length > 0 && (
@@ -599,7 +600,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
               <div style={{ marginBottom: 20, padding: '12px 14px', border: '1px solid var(--rule)', borderRadius: 'var(--radius)' }}>
                 <div style={{ fontFamily: 'var(--display)', fontSize: 16, marginBottom: 4 }}>Logo &amp; banner from your document</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>
-                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. {aiPicked.logo || aiPicked.banner ? 'The AI looked at them and its picks are marked ✨.' : 'Our best guesses are marked.'} Click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
+                  Found {pdfImages.length} image{pdfImages.length === 1 ? '' : 's'}. {aiPicked.logo || aiPicked.banner ? 'The AI looked at them and its picks are marked “AI pick”.' : 'Our best guesses are marked.'} Click to change, or choose None. They&rsquo;re saved with your answers and can be changed later in Look &amp; feel.
                 </div>
                 {imagePicker('logo', 'Logo', suggestions.logos, branding.logo_url)}
                 {imagePicker('banner', 'Banner image', suggestions.banners, branding.banner_url)}
@@ -638,7 +639,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
 
                 const renderVal = (v: unknown) =>
                   meta.kind === 'slider' ? `${v}/10`
-                  : meta.kind === 'check' ? (v ? '☑ Yes' : '☐ No')
+                  : meta.kind === 'check' ? (v ? 'Yes' : 'No')
                   : String(v)
 
                 if (conflict) {
@@ -1179,7 +1180,7 @@ function GateView({ step, phase, values, onPrev, onNext }: {
 
       {status !== 'ready' && (
         <div className="card card-warm">
-          <div style={{ fontFamily: 'var(--display)', fontSize: 18, marginBottom: 8 }}>⚠ Soft gate</div>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 18, marginBottom: 8 }}><InlineIcon name="alert" />Soft gate</div>
           <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
             You can continue, but the unfinished items will compound. Consider returning to earlier steps to strengthen them before moving on.
           </div>
@@ -1214,7 +1215,7 @@ function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onP
   const importButton = (section: string) => (
     <button className="btn-section-import" onClick={() => onImport(step, section)}
       title="Use AI to fill this section from a document">
-      <span className="btn-section-import-icon">✨</span>
+      <span className="btn-section-import-icon"><Icon name="spark" size={16} /></span>
       Import doc
     </button>
   )
@@ -1341,7 +1342,7 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport, readOn
           {!readOnly && (
             <div className="helper-card helper-card-action">
               <div className="helper-icon-wrap">
-                <span style={{ fontSize: 22 }}>✨</span>
+                <Icon name="spark" size={24} />
               </div>
               <div className="helper-body">
                 <div className="helper-title">Already have documents? Let AI fill it in.</div>
@@ -1349,7 +1350,7 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport, readOn
                   Upload a charter, vision deck, business plan, or meeting notes. The wizard reads your document and proposes answers across every section — text fields, scores, and checklist notes. You review and confirm each one before it&rsquo;s saved.
                 </div>
                 <button className="btn btn-primary helper-btn" onClick={onImport}>
-                  ✨ Upload a document to start
+                  <InlineIcon name="spark" />Upload a document to start
                 </button>
                 <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.08em' }}>v3.07</div>
               </div>
@@ -1381,7 +1382,7 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport, readOn
       <div className="nav-row">
         <div className="row gap-8">
           {hasProgress && <button className="btn btn-ghost" onClick={onJumpToDashboard}>View dashboard</button>}
-          <button className="btn" onClick={onImport}>✨ Import from document</button>
+          <button className="btn" onClick={onImport}><InlineIcon name="spark" />Import from document</button>
         </div>
         <button className="btn btn-primary" onClick={onStart}>
           {hasProgress ? 'Resume →' : 'Begin Phase 1 →'}
@@ -1437,9 +1438,9 @@ function DashboardView({ values, onJump, onPrint, setupTodo }: {
       {/* Land & Scale stat boxes */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
         {[
-          { icon: '🏡', label: 'Homes planned', full: String(values.planned_homes ?? '') || null },
-          { icon: '🌍', label: 'Land size',     full: String(values.land_size ?? '') || null },
-          { icon: '📍', label: 'Country',       full: String(values.project_country ?? '') || null },
+          { icon: 'home' as IconName, label: 'Homes planned', full: String(values.planned_homes ?? '') || null },
+          { icon: 'globe' as IconName, label: 'Land size',     full: String(values.land_size ?? '') || null },
+          { icon: 'pin' as IconName, label: 'Country',       full: String(values.project_country ?? '') || null },
         ].map(s => ({ ...s, value: fact(s.full) })).map(s => (
           // The short fact, as on About; the whole answer on hover (Sonia, 20 Nov: full answers here were unreadable)
           <div key={s.label} title={s.full ?? undefined} style={{
@@ -1447,7 +1448,7 @@ function DashboardView({ values, onJump, onPrint, setupTodo }: {
             borderRadius: 12, padding: '20px 22px',
             display: 'flex', flexDirection: 'column' as const, gap: 8,
           }}>
-            <span style={{ fontSize: 28 }}>{s.icon}</span>
+            <Icon name={s.icon} size={28} />
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--ink-4)' }}>
               {s.label}
             </div>
@@ -1517,7 +1518,7 @@ function DashboardView({ values, onJump, onPrint, setupTodo }: {
       <div className="nav-row">
         <button className="btn btn-ghost" onClick={() => onJump('welcome')}>← Welcome</button>
         <div className="row gap-8">
-          <button className="btn" onClick={onPrint}>📄 Export project document</button>
+          <button className="btn" onClick={onPrint}><InlineIcon name="file" />Export project document</button>
           <button className="btn btn-primary" onClick={() => {
             const next = phaseProgress.find(p => p.ratio < 1)
             const firstNonGate = next?.phase.steps.find(s => s.kind !== 'gate')?.id
@@ -1751,7 +1752,7 @@ function DocBody({ values }: { values: Values }) {
                     {step.checklist!.map(c => (
                       <div key={c.id} style={{ padding: '5px 0', borderBottom: '1px solid var(--rule-soft)', fontSize: 13 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ fontWeight: 600, color: values[c.id] ? 'var(--accent)' : 'var(--ink-4)', flexShrink: 0 }}>{values[c.id] ? '☑' : '☐'}</span>
+                          <span style={{ fontWeight: 600, color: values[c.id] ? 'var(--accent)' : 'var(--ink-4)', flexShrink: 0 }}>{values[c.id] ? <Icon name="tasks" size={15} label="Done" /> : '☐'}</span>
                           <span style={{ color: values[c.id] ? 'var(--ink)' : 'var(--ink-3)' }}>{c.text}</span>
                         </div>
                         {!!values[c.id + '_note'] && <div style={{ fontSize: 11.5, color: 'var(--ink-2)', marginTop: 3, marginLeft: 20, fontStyle: 'italic' }}>{String(values[c.id + '_note'])}</div>}
@@ -1838,8 +1839,8 @@ function ProjectDocumentModal({ values, onClose, onPrint }: { values: Values; on
             <div style={{ fontFamily: 'var(--display)', fontSize: 24 }}>Project Document</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => downloadMarkdown(values)}>⬇ Download Markdown</button>
-            <button className="btn btn-primary" onClick={onPrint}>🖨 Print / Save PDF</button>
+            <button className="btn" onClick={() => downloadMarkdown(values)}>↓ Download Markdown</button>
+            <button className="btn btn-primary" onClick={onPrint}><InlineIcon name="file" />Print / Save PDF</button>
           </div>
         </div>
 
@@ -2007,12 +2008,12 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
         {(['nav', 'content', 'stats'] as const).map(tab => (
           <button key={tab} className={`mobile-tab${mobileTab === tab ? ' active' : ''}`}
             onClick={() => setMobileTab(tab)}>
-            <span className="mobile-tab-icon">{tab === 'nav' ? '☰' : tab === 'content' ? '✏' : '◎'}</span>
+            <span className="mobile-tab-icon"><Icon name={tab === 'nav' ? 'menu' : tab === 'content' ? 'pencil' : 'target'} size={18} /></span>
             <span>{tab === 'nav' ? 'Steps' : tab === 'content' ? 'Content' : 'Radar'}</span>
           </button>
         ))}
         <Link href="/" className="mobile-tab" style={{ textDecoration: 'none' }}>
-          <span className="mobile-tab-icon">⌂</span>
+          <span className="mobile-tab-icon"><Icon name="home" size={18} /></span>
           <span>Home</span>
         </Link>
       </nav>
@@ -2030,8 +2031,8 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               <div className="brand-sub">Regen Neighborhood Framework</div>
             </div>
             <div className="theme-toggle">
-              <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')} aria-label="Light">☀</button>
-              <button className={theme === 'dark' ? 'on' : ''} onClick={() => setTheme('dark')} aria-label="Dark">☾</button>
+              <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')} aria-label="Light"><Icon name="sun" size={14} /></button>
+              <button className={theme === 'dark' ? 'on' : ''} onClick={() => setTheme('dark')} aria-label="Dark"><Icon name="moon" size={14} /></button>
             </div>
           </div>
 
@@ -2083,7 +2084,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               style={{ paddingLeft: 0, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--rule-soft)' }}
               onClick={() => jumpTo('branding')}>
               <div className="step-dot"></div>
-              <div>🎨 Look &amp; feel</div>
+              <div><InlineIcon name="image" />Look &amp; feel</div>
             </li>
 
             <li className={`step${currentId === 'documents' ? ' active' : ''}`}
@@ -2091,7 +2092,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               style={{ paddingLeft: 0, marginTop: 8 }}
               onClick={() => jumpTo('documents')}>
               <div className="step-dot"></div>
-              <div>📚 Documents</div>
+              <div><InlineIcon name="file" />Documents</div>
             </li>
 
             <li className={`step${currentId === 'circles' ? ' active' : ''}${circles.list.length ? ' complete' : ''}`}
@@ -2099,7 +2100,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               style={{ paddingLeft: 0, marginTop: 8 }}
               onClick={() => jumpTo('circles')}>
               <div className="step-dot"></div>
-              <div>◯ Circles</div>
+              <div><InlineIcon name="circles" />Circles</div>
             </li>
 
             <li className={`step${currentId === 'dashboard' ? ' active' : ''}`}
@@ -2107,7 +2108,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
               style={{ paddingLeft: 0, marginTop: 8 }}
               onClick={() => jumpTo('dashboard')}>
               <div className="step-dot"></div>
-              <div>📊 Dashboard</div>
+              <div><InlineIcon name="grid" />Dashboard</div>
             </li>
           </ul>
 
@@ -2203,13 +2204,13 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
           </div>
           {readOnly ? (
             <div className="rail-section" style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5, background: 'var(--bg-2)', borderRadius: 6, padding: '10px 12px' }}>
-              📖 Viewing the community blueprint. Only admins can edit.
+              <InlineIcon name="book" />Viewing the community blueprint. Only admins can edit.
             </div>
           ) : (
             <div className="rail-section">
               <button className="btn" style={{ width: '100%', justifyContent: 'center' }}
                 onClick={() => setShowImport(true)}>
-                ✨ Import from document
+                <InlineIcon name="spark" />Import from document
               </button>
               <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: 8, fontSize: 11 }}
                 onClick={() => {

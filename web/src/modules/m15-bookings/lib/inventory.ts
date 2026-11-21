@@ -5,19 +5,23 @@
  */
 
 import { isJoiningOrAbove } from '@/core/lib/roles'
+import type { IconName } from '@/core/components/v4/icons'
 import type { Booking, BookingCategory, BookingItem, BookingStatus, PersonLite } from '../types'
 
 export const CATEGORIES: BookingCategory[] = ['accommodation', 'tools', 'spaces']
 
 export const CATEGORY_META: Record<BookingCategory, {
-  label: string; emoji: string; color: string
+  label: string
+  /** From the shared icon set (core/components/v4/icons.ts) */
+  icon: IconName
+  color: string
   /** Accommodation is booked by night (check-in/check-out dates); the rest by time. */
   unit: 'night' | 'time'
   suggestedTags: string[]
 }> = {
-  accommodation: { label: 'Accommodation', emoji: '🏡', color: '#b45309', unit: 'night', suggestedTags: ['guest room', 'tent site', 'cabin', 'bunk', 'family'] },
-  tools:         { label: 'Tools',         emoji: '🔧', color: '#0369a1', unit: 'time',  suggestedTags: ['power tools', 'garden', 'kitchen', 'vehicle', 'workshop'] },
-  spaces:        { label: 'Spaces',        emoji: '🏛', color: '#7c3aed', unit: 'time',  suggestedTags: ['meeting room', 'kitchen', 'outdoor', 'studio', 'workshop'] },
+  accommodation: { label: 'Accommodation', icon: 'bed', color: '#b45309', unit: 'night', suggestedTags: ['guest room', 'tent site', 'cabin', 'bunk', 'family'] },
+  tools:         { label: 'Tools',         icon: 'wrench', color: '#0369a1', unit: 'time',  suggestedTags: ['power tools', 'garden', 'kitchen', 'vehicle', 'workshop'] },
+  spaces:        { label: 'Spaces',        icon: 'building', color: '#7c3aed', unit: 'time',  suggestedTags: ['meeting room', 'kitchen', 'outdoor', 'studio', 'workshop'] },
 }
 
 export const STATUS_META: Record<BookingStatus, { label: string; color: string }> = {

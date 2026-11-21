@@ -12,6 +12,7 @@ import type { Meeting, MeetingTask } from './types'
 import { DESIGN } from '@/core/lib/instance'
 import { Button, Icon, StatusPill, Tag, InlineIcon } from '@/core/components/v4'
 import './meetings-v4.css'
+import { withoutDate } from './lib/title'
 
 const V4 = DESIGN === 'v4'
 
@@ -276,8 +277,8 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
             {m.attendees.length > 0 && <span className="v4-tag" title={m.attendees.join(', ')}><Icon name="users" size={13} />{m.attendees.length} {m.attendees.length === 1 ? 'person' : 'people'}</span>}
             {m.visibility === 'circle' && <Tag icon="lock">Circle only</Tag>}
           </div>
-          <h1 className="v4-ph__title">{m.title}</h1>
-          {m.original_title && m.original_title !== m.title && <p className="v4-ph__sub">Recorded as “{m.original_title}”</p>}
+          <h1 className="v4-ph__title">{withoutDate(m.title)}</h1>
+          {m.original_title && withoutDate(m.original_title) !== withoutDate(m.title) && <p className="v4-ph__sub">Recorded as “{m.original_title}”</p>}
           {m.attendees.length > 0 && <p className="v4-hint mt4-people">{m.attendees.join(', ')}</p>}
         </header>
 
@@ -356,8 +357,8 @@ export default function MeetingDetail({ meeting: m, tasks, canManage, emailOn, s
         <Link href="/meetings" style={{ color: 'var(--m18)', textDecoration: 'none' }}>← Meetings</Link>
         {meta && <Link href={`/meetings?circle=${m.circle}`} style={{ color: meta.color, textDecoration: 'none' }}>{meta.emoji} {meta.label} meetings</Link>}
       </div>
-      <h1 style={{ fontFamily: 'var(--display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, margin: '16px 0 8px' }}>{m.title}</h1>
-      {m.original_title && m.original_title !== m.title && (
+      <h1 style={{ fontFamily: 'var(--display)', fontSize: 27, color: 'var(--ink)', lineHeight: 1.15, margin: '16px 0 8px' }}>{withoutDate(m.title)}</h1>
+      {m.original_title && withoutDate(m.original_title) !== withoutDate(m.title) && (
         <div style={{ fontSize: 12, color: 'var(--ink-4)', marginBottom: 6 }}>Recorded as “{m.original_title}”</div>
       )}
       <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>

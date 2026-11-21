@@ -18,8 +18,9 @@ import './home-v4.css'
  *      to do (people still finding their feet only; members get their next step instead)
  *   3. Two cards side by side: About {community} (the Blueprint's words) and "Your portal" (what MyCoNet is
  *      and how to find your way: the cobalt-and-cream of the v4 drawings)
- *   4. What happens on MyCoNet: the menu's own pages as tiles, told as what people do, with live numbers
- *   5. Happening now: what's on and what needs a vote
+ *   4. What's here, grouped like the menu (Community, then Working together) with the menu's own names and
+ *      icons, in one colour. The inviting pages come first and large, with what's live inside them: members'
+ *      faces, the next events, projects under way, the open proposals. The rest follow as small rows.
  * The long module-by-module tour stays at /home?tour=1 (HomeClient), linked at the foot.
  */
 
@@ -37,19 +38,20 @@ function closesIn(iso: string | null) {
 }
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`
 
-type Tone = 'blue' | 'red' | 'yellow' | 'green' | 'violet' | 'grey'
-type IconKey = 'users' | 'calendar' | 'circles' | 'pin' | 'board' | 'chat' | 'scale'
-
-// What people do here, one line each, linked to the page (LEXICON words, sentence case)
-const HAPPENS: { key: string; icon: IconKey; tone: Tone; title: string; text: string }[] = [
-  { key: 'members', icon: 'users', tone: 'red', title: 'Meet the people', text: 'Who’s here, what they offer and what they’re looking for' },
-  { key: 'calendar', icon: 'calendar', tone: 'red', title: 'Gather', text: 'Meals, workshops, work days and community meetings' },
-  { key: 'circles', icon: 'circles', tone: 'violet', title: 'Find your circle', text: 'The working circles and who leads what' },
-  { key: 'amenities', icon: 'pin', tone: 'yellow', title: 'Book and borrow', text: 'Rooms, cabins, tools and spaces, on the Map' },
-  { key: 'operations', icon: 'board', tone: 'blue', title: 'Work together', text: 'Every task, from idea to done' },
-  { key: 'meetings', icon: 'chat', tone: 'violet', title: 'Keep track', text: 'Notes and decisions from our meetings' },
-  { key: 'governance', icon: 'scale', tone: 'yellow', title: 'Decide together', text: 'Proposals, and the votes that settle them' },
-]
+// One line per page of the menu, saying what you do there (LEXICON words). The menu gives the name, icon and order.
+const LINE: Record<string, string> = {
+  members: 'Meet the people: who’s here, what they offer and what they’re looking for',
+  calendar: 'Meals, workshops, work days and community meetings',
+  circles: 'The working circles and who leads what',
+  amenities: 'Rooms, cabins, tools and spaces to book and borrow',
+  map: 'The land, with every place on it',
+  operations: 'Every project and task, from idea to done',
+  governance: 'Proposals, and the votes that settle them',
+  agreements: 'Who has agreed to do what',
+  meetings: 'Notes and decisions from our meetings',
+}
+// The pages shown large, most inviting first; the rest follow small, in the menu's order
+const BIG = ['members', 'calendar', 'operations', 'governance']
 
 export default async function HomeV4() {
   const supabase = await createClient()
@@ -68,13 +70,14 @@ export default async function HomeV4() {
     supabase.from('events').select('id, title, starts_at, all_day, location')
       .gte('starts_at', now).order('starts_at', { ascending: true }).limit(3),
     supabase.from('proposals').select('id, title, closes_at', { count: 'exact' }).eq('status', 'open')
-      .order('closes_at', { ascending: true }).limit(1),
+      .order('closes_at', { ascending: true }).limit(2),
     // The live numbers on the tiles; each one RLS lets the viewer see (a zero just isn't shown)
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('user_profiles').select('id, first_name, avatar_url').not('avatar_url', 'is', null).limit(5),
+    supabase.from('user_profiles').select('id, first_name, avatar_url').not('avatar_url', 'is', null).limit(7),
     supabase.from('org_units').select('id', { count: 'exact', head: true }).eq('kind', 'circle'),
     supabase.from('events').select('id', { count: 'exact', head: true }).gte('starts_at', now).lte('starts_at', inMonth),
-    supabase.from('projects').select('id', { count: 'exact', head: true }).in('status', [...ACTIVE_PROJECT_STATUSES]),
+    supabase.from('projects').select('id, title', { count: 'exact' }).in('status', [...ACTIVE_PROJECT_STATUSES])
+      .order('updated_at', { ascending: false }).limit(3),
   ])
 
   const answers = ((bp as { answers?: Record<string, unknown> } | null)?.answers ?? {}) as Record<string, unknown>
@@ -119,23 +122,33 @@ export default async function HomeV4() {
   const current = steps?.findIndex(s => !s.done) ?? -1
 
   const events = (eventsRes.data ?? []) as { id: string; title: string; starts_at: string; all_day: boolean | null; location: string | null }[]
-  const proposal = ((proposalsRes.data ?? []) as { id: string; title: string; closes_at: string | null }[])[0] ?? null
+  const proposals = (proposalsRes.data ?? []) as { id: string; title: string; closes_at: string | null }[]
   const openVotes = proposalsRes.count ?? 0
+  const projects = (projectsRes.data ?? []) as { id: string; title: string }[]
   const faces = ((facesRes.data ?? []) as { id: string; first_name: string | null; avatar_url: string | null }[]).filter(f => f.avatar_url)
 
-  // A live number per tile, when there is one to show
+  // A live number per page, when there is one to show
   const meta: Record<string, string | null> = {
     members: peopleRes.count ? plural(peopleRes.count, 'person', 'people') : null,
     calendar: monthRes.count ? `${monthRes.count} in the next 30 days` : null,
     circles: circlesRes.count ? plural(circlesRes.count, 'circle') : null,
     operations: projectsRes.count ? `${plural(projectsRes.count, 'project')} under way` : null,
-    governance: openVotes ? `${plural(openVotes, 'open proposal')}` : null,
+    governance: openVotes ? plural(openVotes, 'open proposal') : null,
   }
 
-  // What happens on MyCoNet: the menu's pages, told as what people do here (locked ones say when they open)
-  const pages = new Map(menuGroups(name).flatMap(g => g.items).map(i => [i.key, i]))
-  const happens = HAPPENS.filter(h => pages.has(h.key))
-    .map(h => ({ ...h, href: pages.get(h.key)!.href, locked: !!pages.get(h.key)!.joiningUp && !joined, meta: meta[h.key] ?? null }))
+  // What's here, in the menu's own groups (Community, then Working together) and with its names and icons.
+  // In each group the inviting pages come first and large; pages that open on joining say so.
+  const groups = menuGroups(name)
+    .filter(g => g.items.some(i => LINE[i.key]))
+    .map(g => {
+      const items = g.items.filter(i => LINE[i.key] && !i.admin).map(i => ({ ...i, text: LINE[i.key], locked: !!i.joiningUp && !joined, meta: meta[i.key] ?? null }))
+      return {
+        label: g.label,
+        line: g.line,
+        big: BIG.map(k => items.find(i => i.key === k)).filter((i): i is (typeof items)[number] => !!i),
+        small: items.filter(i => !BIG.includes(i.key)),
+      }
+    })
 
   const heroLinks = uid
     ? [{ href: '/dashboard', label: 'My dashboard' }, { href: '/about', label: `About ${name}` }]
@@ -209,66 +222,73 @@ export default async function HomeV4() {
         </div>
       </section>
 
-      {/* 4 · What happens on MyCoNet */}
-      <section aria-labelledby="hv4-happens" className="hv4-happens">
-        <div className="hv4-head">
-          <span className="hv4-eyebrow">What happens here</span>
-          <h2 id="hv4-happens" className="hv4-h">What we do on MyCoNet</h2>
-        </div>
-        <div className="hv4-tiles">
-          {happens.map((h, i) => {
-            const inner = (
-              <>
-                <div className="hv4-tile__top">
-                  <IconTile name={h.icon} tone={h.tone} />
-                  {i === 0 && faces.length > 0 && (
-                    <span className="hv4-faces" aria-hidden="true">
-                      {faces.map(f => <img key={f.id} src={f.avatar_url!} alt="" />)}
-                    </span>
-                  )}
-                </div>
-                <b>{h.title}</b>
-                <small>{h.text}</small>
-                <span className="hv4-tile__meta">
-                  {h.locked ? <><Icon name="lock" size={13} /> Opens when you join</> : h.meta ?? <>Open <Icon name="right" size={13} /></>}
-                </span>
-              </>
-            )
-            return h.locked
-              ? <span key={h.key} className={`hv4-tile hv4-tile--locked${i === 0 ? ' hv4-tile--wide' : ''}`} aria-disabled="true">{inner}</span>
-              : <Link key={h.key} href={h.href} className={`hv4-tile${i === 0 ? ' hv4-tile--wide' : ''}`}>{inner}</Link>
-          })}
-        </div>
-      </section>
-
       {/* Members' next step: the menu shows it on wide screens, so here only on phones */}
       {!steps && menu.next && <div className="hv4-phone-only"><NextStep title={menu.next.title} text={menu.next.line} href={menu.next.href} /></div>}
 
-      {/* 5 · What's on */}
-      <div className="hv4-now-wrap">
-        <section className="hv4-card" aria-labelledby="hv4-now">
-          <span className="hv4-eyebrow">This week</span>
-          <h2 id="hv4-now" className="hv4-h hv4-h--sm">Happening now</h2>
-          <div className="hv4-rows hv4-rows--now">
-            {events.map(e => (
-              <Link key={e.id} href="/calendar" className="hv4-row">
-                <span className="hv4-date" aria-hidden="true">
-                  <b>{fmt(e.starts_at, { day: 'numeric' })}</b>
-                  <small>{fmt(e.starts_at, { month: 'short' })}</small>
-                </span>
-                <span><b>{e.title}</b><small>{when(e.starts_at, e.all_day)}{e.location ? ` · ${e.location}` : ''}</small></span>
-              </Link>
-            ))}
-            {proposal && (
-              <Link href="/governance" className="hv4-row">
-                <span className="hv4-date hv4-date--vote" aria-hidden="true"><Icon name="vote" size={20} /></span>
-                <span><b>{proposal.title}</b><small>{closesIn(proposal.closes_at)}{openVotes > 1 ? ` · ${openVotes} open proposals` : ''}</small></span>
-              </Link>
-            )}
-            {!events.length && !proposal && <p className="hv4-small">Nothing on the calendar yet. <Link href="/calendar">Open Calendar</Link></p>}
+      {/* 4 · What's here, grouped like the menu */}
+      {groups.map(g => (
+        <section key={g.label} className="hv4-group" aria-label={g.label}>
+          <div className="hv4-group__head">
+            <h2 className="hv4-h">{g.label}</h2>
+            {g.line && <span>{g.line}</span>}
           </div>
+          <div className="hv4-big">
+            {g.big.map(t => {
+              const inner = (
+                <>
+                  <div className="hv4-tile__top">
+                    <IconTile name={t.icon} tone="grey" />
+                    <span className="hv4-tile__t"><b>{t.name}</b><small>{t.text}</small></span>
+                    <Icon name={t.locked ? 'lock' : 'right'} size={16} />
+                  </div>
+                  {t.key === 'members' && faces.length > 0 && (
+                    <span className="hv4-faces" aria-hidden="true">{faces.map(f => <img key={f.id} src={f.avatar_url!} alt="" />)}</span>
+                  )}
+                  {t.key === 'calendar' && events.length > 0 && (
+                    <span className="hv4-list">
+                      {events.map(e => (
+                        <span key={e.id} className="hv4-li">
+                          <span className="hv4-date" aria-hidden="true"><b>{fmt(e.starts_at, { day: 'numeric' })}</b><small>{fmt(e.starts_at, { month: 'short' })}</small></span>
+                          <span><b>{e.title}</b><small>{when(e.starts_at, e.all_day)}{e.location ? ` · ${e.location}` : ''}</small></span>
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                  {t.key === 'operations' && projects.length > 0 && (
+                    <span className="hv4-list">{projects.map(p => <span key={p.id} className="hv4-li hv4-li--dot"><span><b>{p.title}</b></span></span>)}</span>
+                  )}
+                  {t.key === 'governance' && proposals.length > 0 && (
+                    <span className="hv4-list">
+                      {proposals.map(p => <span key={p.id} className="hv4-li hv4-li--dot"><span><b>{p.title}</b><small>{closesIn(p.closes_at)}</small></span></span>)}
+                    </span>
+                  )}
+                  <span className="hv4-tile__meta">{t.locked ? 'Opens when you join' : t.meta ?? `Open ${t.name}`}</span>
+                </>
+              )
+              return t.locked
+                ? <span key={t.key} className="hv4-tile hv4-tile--big hv4-tile--locked" aria-disabled="true">{inner}</span>
+                : <Link key={t.key} href={t.href} className="hv4-tile hv4-tile--big">{inner}</Link>
+            })}
+          </div>
+          {g.small.length > 0 && (
+            <div className="hv4-smalls">
+              {g.small.map(t => {
+                const inner = (
+                  <>
+                    <IconTile name={t.icon} tone="grey" />
+                    <span className="hv4-tile__t"><b>{t.name}</b><small>{t.locked ? 'Opens when you join' : t.text}</small></span>
+                    {!t.locked && t.meta && <span className="hv4-tile__n">{t.meta}</span>}
+                    <Icon name={t.locked ? 'lock' : 'right'} size={15} />
+                  </>
+                )
+                return t.locked
+                  ? <span key={t.key} className="hv4-tile hv4-tile--small hv4-tile--locked" aria-disabled="true">{inner}</span>
+                  : <Link key={t.key} href={t.href} className="hv4-tile hv4-tile--small">{inner}</Link>
+              })}
+            </div>
+          )}
         </section>
-      </div>
+      ))}
 
       <p className="hv4-tour">New here and want the long version? <Link href="/home?tour=1">Take the full tour →</Link></p>
     </div>

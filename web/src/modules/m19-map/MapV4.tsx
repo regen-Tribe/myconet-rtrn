@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
+import { SpaceTabs } from '@/core/components/SpaceTabs'
 import { Button, Chip, ChipRow, EmptyState, Icon, IconTile, List, ListRow, PageHeader } from '@/core/components/v4'
 import SiteMap, { type SitePin } from '@/core/components/v4/SiteMap'
 import { canEditPlace, KIND_META, KINDS, near, PLACE_SELECT, type Place, type PlaceKind } from './lib/places'
@@ -180,6 +181,7 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
             : <Button variant="secondary" onClick={() => setEditing(true)} icon="pencil">Edit places</Button>
         )}
       />
+      <SpaceTabs on="map" />
 
       {!mapUrl ? (
         <EmptyState icon="map" title="No map yet"

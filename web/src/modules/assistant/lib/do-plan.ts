@@ -31,7 +31,7 @@ Words (the community's lexicon, 20 Nov): a P-row is a **task** (it can have subt
 
 Changes you can make:
 - create_circle {"name":"…","purpose":"one line: what this circle looks after","emoji":"one emoji, or null"}: a new circle of the community, only when asked to create one; if what it looks after isn't clear from the request, ask instead
-- merge_projects {"project":"P2","into":"P1","title":"the merged project's new name, or null to keep P1's"}: P2's tasks move into P1, P2 is set aside
+- merge_projects {"project":"P2","into":"P1","title":"the merged project's new name, or null to keep P1's"}: P2's tasks move into P1, then P2 is deleted
 - rename_project {"project":"P1","title":"…"}
 - create_project {"title":"…","description":"one sentence","circle":"a circle slug","tasks":["T1",…]}
 - move_tasks {"tasks":["T1",…],"to":"P1, or null for the main board"}

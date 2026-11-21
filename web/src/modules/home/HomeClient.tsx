@@ -15,6 +15,7 @@ import ModuleOverview from '@/modules/home/ModuleOverview'
 import AskSection from '@/modules/home/AskSection'
 import type { GlanceTile } from './lib/at-a-glance'
 import { modLabel } from '@/core/lib/module-label'
+import { Icon, InlineIcon, type IconName } from '@/core/components/v4'
 
 type PhaseP = { id: string; name: string; answered: number; total: number; ratio: number }
 type Member = { id: string; first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null; avatar_url: string | null; username: string | null }
@@ -77,7 +78,7 @@ function smoothScrollTo(targetId: string) {
 }
 
 function ModulePill({ mod, icon, text, target, color }: {
-  mod: string; icon: string; text: string; target: string; color: string
+  mod: string; icon: IconName; text: string; target: string; color: string
 }) {
   const [hovered, setHovered] = useState(false)
   return (
@@ -100,7 +101,7 @@ function ModulePill({ mod, icon, text, target, color }: {
       }}
     >
       <span className="mod-num" style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: hovered ? color : 'var(--ink-4)', letterSpacing: '0.04em', flexShrink: 0 }}>M{mod}</span>
-      <span style={{ fontSize: 13 }}>{icon}</span>
+      <Icon name={icon} size={14} />
       <span>{text}</span>
     </button>
   )
@@ -309,20 +310,20 @@ export default function HomeClient({
           Scroll to explore what you can do in the {COMMUNITY_NAME} portal ↓
         </div>
         <div className="home-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
-          {[
-            { mod: '00', icon: '⊞', text: 'See how the portal works',          target: 'clubhouse', color: 'var(--ink)' },
-            { mod: '01', icon: '👋', text: 'Meet the community & invite others', target: 'meet',   color: 'var(--m1)' },
-            { mod: '14', icon: '🗓', text: 'Gather and pitch in on the calendar', target: 'events',  color: 'var(--m14)' },
-            { mod: '04', icon: '📋', text: 'Read the community plan',           target: 'blueprint', color: 'var(--m4)' },
-            { mod: '05', icon: '🌱', text: 'Join if you align with the values', target: 'join',    color: 'var(--m5)' },
-            { mod: '15', icon: '🏡', text: 'Book a place to stay',              target: 'stays',   color: 'var(--m15)' },
-            { mod: '16', icon: '🔑', text: 'Borrow shared tools & spaces',      target: 'resources', color: 'var(--m16)' },
-            { mod: '06', icon: '🤝', text: "Make agreements on how you'll collaborate", target: 'agreements', color: 'var(--m6)' },
-            { mod: '17', icon: '🧭', text: 'See who leads what',                target: 'circles', color: 'var(--m17)' },
-            { mod: '07', icon: '⚙️', text: 'Contribute to goals & tasks',  target: 'ops',        color: 'var(--m7)' },
-            ...(moduleOn('points') ? [{ mod: '08', icon: '✦',  text: 'Get rewards for your contributions', target: 'contributions', color: 'var(--m8)' }] : []),
-            { mod: '09', icon: '☉',  text: 'Make decisions together',          target: 'governance', color: 'var(--m9)' },
-          ].map(({ mod, icon, text, target, color }) => (
+          {([
+            { mod: '00', icon: 'grid', text: 'See how the portal works',          target: 'clubhouse', color: 'var(--ink)' },
+            { mod: '01', icon: 'hand', text: 'Meet the community & invite others', target: 'meet',   color: 'var(--m1)' },
+            { mod: '14', icon: 'calendar', text: 'Gather and pitch in on the calendar', target: 'events',  color: 'var(--m14)' },
+            { mod: '04', icon: 'book', text: 'Read the community plan',           target: 'blueprint', color: 'var(--m4)' },
+            { mod: '05', icon: 'sprout', text: 'Join if you align with the values', target: 'join',    color: 'var(--m5)' },
+            { mod: '15', icon: 'bed', text: 'Book a place to stay',              target: 'stays',   color: 'var(--m15)' },
+            { mod: '16', icon: 'key', text: 'Borrow shared tools & spaces',      target: 'resources', color: 'var(--m16)' },
+            { mod: '06', icon: 'handshake', text: "Make agreements on how you'll collaborate", target: 'agreements', color: 'var(--m6)' },
+            { mod: '17', icon: 'circles', text: 'See who leads what',                target: 'circles', color: 'var(--m17)' },
+            { mod: '07', icon: 'board', text: 'Contribute to goals & tasks',  target: 'ops',        color: 'var(--m7)' },
+            ...(moduleOn('points') ? [{ mod: '08', icon: 'star' as IconName,  text: 'Get rewards for your contributions', target: 'contributions', color: 'var(--m8)' }] : []),
+            { mod: '09', icon: 'scale',  text: 'Make decisions together',          target: 'governance', color: 'var(--m9)' },
+          ] as { mod: string; icon: IconName; text: string; target: string; color: string }[]).map(({ mod, icon, text, target, color }) => (
             <ModulePill key={mod} mod={mod} icon={icon} text={text} target={target} color={color} />
           ))}
         </div>
@@ -362,7 +363,7 @@ export default function HomeClient({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--rule)' }}>
           {([
             {
-              step: '01', icon: '👁', label: 'Browse',
+              step: '01', icon: 'eye', label: 'Browse',
               sublabel: 'No account needed',
               color: 'var(--ink-4)',
               items: ['Read all proposals', 'View member profiles', 'See the Blueprint', 'Explore tasks'],
@@ -370,7 +371,7 @@ export default function HomeClient({
               tier: null,
             },
             {
-              step: '02', icon: '✦', label: 'Create an account',
+              step: '02', icon: 'spark', label: 'Create an account',
               sublabel: 'Free · Takes 2 minutes',
               color: 'var(--m1)',
               items: ['Your own profile', 'AI match scores', 'Apply to join', 'Save your place'],
@@ -378,7 +379,7 @@ export default function HomeClient({
               tier: 'explorer',
             },
             {
-              step: '03', icon: '🏡', label: 'Join the community',
+              step: '03', icon: 'home', label: 'Join the community',
               sublabel: 'Sign the values · M05',
               color: 'var(--m5)',
               items: ['Vote on proposals', 'Submit proposals', 'Help on tasks', 'Earn badges'],
@@ -386,7 +387,7 @@ export default function HomeClient({
               tier: 'joining',
             },
             {
-              step: '04', icon: '⊕', label: 'Member',
+              step: '04', icon: 'badge', label: 'Member',
               sublabel: 'Full member',
               color: 'var(--m9)',
               items: ['All modules active', 'Lead tasks', 'Governance rights', 'Build together'],
@@ -416,7 +417,7 @@ export default function HomeClient({
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: 22 }}>{t.icon}</span>
+                  <span style={{ display: 'grid', color: isCurrent ? '#fff' : 'var(--ink-2)' }}><Icon name={t.icon} size={24} /></span>
                   <div>
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: isCurrent ? 'rgba(255,255,255,.5)' : 'var(--ink-4)', letterSpacing: '0.08em' }}>STEP {t.step}</div>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: isCurrent ? '#fff' : 'var(--ink)', lineHeight: 1.2 }}>{t.label}</div>
@@ -453,13 +454,13 @@ export default function HomeClient({
             borderRadius: 14, padding: '18px 24px',
             display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
           }}>
-            <div style={{ fontSize: 32, flexShrink: 0 }}>🎉</div>
+            <div style={{ flexShrink: 0, color: '#d97706', display: 'grid' }}><Icon name="party" size={34} /></div>
             <div className="joining-banner-text" style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>
                 Welcome to {communityName}, {firstName || 'Member'}! You're now a <span style={{ color: '#d97706' }}>{roleLabel}</span>.
               </div>
               <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                You've earned the <strong>Community Joiner</strong> badge 🏡 — Agreements, Operations, Achievements and Governance are now unlocked.
+                You've earned the <strong>Community Joiner</strong> badge — Agreements, Operations, Achievements and Governance are now unlocked.
               </div>
             </div>
             <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--ink)', padding: '9px 18px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>
@@ -536,7 +537,7 @@ export default function HomeClient({
               fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--mono)',
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              <span>🔒</span> {communityName.toLowerCase().replace(/\s+/g, '')}.myco.net/dashboard
+              <Icon name="lock" size={12} /> {communityName.toLowerCase().replace(/\s+/g, '')}.myco.net/dashboard
             </div>
           </div>
           {/* Body: sidebar + main */}
@@ -724,7 +725,7 @@ export default function HomeClient({
                         ) : null}
                       </div>
                       {m.headline && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 2 }}>{m.headline}</div>}
-                      {location && <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>📍 {location}</div>}
+                      {location && <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}><InlineIcon name="pin" />{location}</div>}
                     </div>
                   </div>
                 )
@@ -788,17 +789,17 @@ export default function HomeClient({
               {/* Land stats */}
               {(landSize || plannedHomes || projectCountry) && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
-                  {[
-                    { icon: '🏡', label: 'Homes planned', value: plannedHomes },
-                    { icon: '🌍', label: 'Land size',     value: landSize },
-                    { icon: '📍', label: 'Country',       value: projectCountry },
-                  ].map(s => (
+                  {([
+                    { icon: 'home', label: 'Homes planned', value: plannedHomes },
+                    { icon: 'globe', label: 'Land size',     value: landSize },
+                    { icon: 'pin', label: 'Country',       value: projectCountry },
+                  ] as { icon: IconName; label: string; value: typeof plannedHomes }[]).map(s => (
                     <div key={s.label} style={{
                       background: 'var(--bg-2)', border: '1px solid var(--rule)',
                       borderRadius: 8, padding: '10px 12px',
                       display: 'flex', flexDirection: 'column', gap: 4,
                     }}>
-                      <span style={{ fontSize: 18 }}>{s.icon}</span>
+                      <Icon name={s.icon} size={19} />
                       <div style={{ fontFamily: 'var(--mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: s.value ? 'var(--ink)' : 'var(--ink-4)', lineHeight: 1.3 }}>
                         {s.value ?? '—'}
@@ -1197,15 +1198,15 @@ export default function HomeClient({
                     background: 'rgba(255,255,255,.18)', borderRadius: 20,
                     padding: '4px 12px 4px 6px',
                   }}>
-                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,.25)', display: 'grid', placeItems: 'center', fontSize: 13, flexShrink: 0 }}>🏡</span>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,.25)', display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0 }}><Icon name="home" size={14} /></span>
                     <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>Community Joiner</span>
                   </span>
                 ) : (
-                  ['🪨', '🤝', '💰', '🌿', '⚖️', '✦'].map((b, i) => (
+                  (['badge', 'handshake', 'gift', 'sprout', 'scale', 'spark'] as IconName[]).map((b, i) => (
                     <span key={i} style={{
                       width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,.15)',
-                      display: 'grid', placeItems: 'center', fontSize: 14, opacity: i < 3 ? 1 : 0.3,
-                    }}>{b}</span>
+                      display: 'grid', placeItems: 'center', color: '#fff', opacity: i < 3 ? 1 : 0.3,
+                    }}><Icon name={b} size={15} /></span>
                   ))
                 )}
               </div>
@@ -1313,7 +1314,7 @@ export default function HomeClient({
               <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: 20, marginBottom: 3 }}>☉</div>
+                    <div style={{ marginBottom: 3 }}><Icon name="circles" size={21} /></div>
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 01</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Circle leads · consent</div>
                   </div>
@@ -1326,7 +1327,7 @@ export default function HomeClient({
                   <>
                     <p style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 8, lineHeight: 1.4 }}>No principled objections = passes. Cast your vote:</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                      {([['consent', '✓ I consent', '#22c55e'], ['concern', '⚠ Concern', '#f59e0b'], ['object', '✗ I object', '#ef4444']] as const).map(([v, label, c]) => (
+                      {([['consent', '✓ I consent', '#22c55e'], ['concern', 'Concern', '#f59e0b'], ['object', '✗ I object', '#ef4444']] as const).map(([v, label, c]) => (
                         <button key={v} onClick={() => setConsentVote(prev => prev === v ? null : v)}
                           style={{
                             padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600,
@@ -1334,7 +1335,7 @@ export default function HomeClient({
                             border: `1px solid ${consentVote === v ? c : 'var(--rule)'}`,
                             background: consentVote === v ? c : 'var(--surface)',
                             color: consentVote === v ? '#fff' : 'var(--ink-2)',
-                          }}>{label}</button>
+                          }}>{v === 'concern' && <InlineIcon name="alert" />}{label}</button>
                       ))}
                     </div>
                     {consentVote === 'object' && (
@@ -1353,7 +1354,7 @@ export default function HomeClient({
               <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: 20, marginBottom: 3 }}>☑</div>
+                    <div style={{ marginBottom: 3 }}><Icon name="vote" size={21} /></div>
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 02</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>All members · majority vote</div>
                   </div>
@@ -1375,10 +1376,10 @@ export default function HomeClient({
                 </div>
                 {!democVote && (
                   <div style={{ display: 'flex', gap: 4 }}>
-                    {([['yes', '✓', '#22c55e'], ['concern', '⚠', '#f59e0b'], ['no', '✗', '#ef4444']] as const).map(([v, label, c]) => (
+                    {([['yes', '✓', '#22c55e'], ['concern', '', '#f59e0b'], ['no', '✗', '#ef4444']] as const).map(([v, label, c]) => (
                       <button key={v} onClick={() => setDemocVote(v)}
                         style={{ flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: `1px solid ${c}`, background: 'var(--surface)', color: c }}>
-                        {label}
+                        {v === 'concern' ? <span style={{ display: 'inline-grid', verticalAlign: 'middle' }}><Icon name="alert" size={13} label="Concern" /></span> : label}
                       </button>
                     ))}
                   </div>
@@ -1390,7 +1391,7 @@ export default function HomeClient({
               <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: 20, marginBottom: 3 }}>△</div>
+                    <div style={{ marginBottom: 3 }}><Icon name="shield" size={21} /></div>
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 03</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Admins & advisors · expert review</div>
                   </div>
@@ -1412,7 +1413,7 @@ export default function HomeClient({
               <div style={{ padding: '16px 18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: 20, marginBottom: 3 }}>◇</div>
+                    <div style={{ marginBottom: 3 }}><Icon name="spark" size={21} /></div>
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Check 04</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>AI · Blueprint check</div>
                   </div>

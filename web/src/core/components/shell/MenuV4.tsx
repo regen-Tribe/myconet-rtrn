@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { isCircleAdmin, isJoiningOrAbove, ROLE_LABELS } from '@/core/lib/roles'
 import { isMenuActive, menuGroups, type MenuItem } from '@/core/lib/nav'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
@@ -13,6 +14,10 @@ import { Icon } from '@/core/components/v4'
  * sets "design": "v4". Full height, like the prototype: the community's letter mark and name on top, the
  * next step, You / Community / Working together / Admin, and you at the foot. Collapsed, it becomes a
  * slim rail of icons (names on hover) instead of disappearing. Today's AppSideNav stays for everyone else.
+ *
+ * Arrows mean "go somewhere" only on the next-step card. The open/slim switch is a sidebar icon (top right
+ * when open, at the foot of the rail), and the rail's next step is a green flag, so no two arrows sit side
+ * by side (v4.99.0). The rail's names show in a quick label beside the icon, on hover and keyboard focus.
  */
 
 // The community's small square mark (instance config "brandMark", e.g. Protopia's spiral); the letter otherwise
@@ -25,8 +30,8 @@ function NextStepCard({ state, onClose, collapsed }: { state: MenuState; onClose
   if (!n) return null
   if (collapsed) {
     return (
-      <Link href={n.href} onClick={onClose} className="mv4-next mv4-next--rail" title={`Your next step: ${n.title}`} aria-label={`Your next step: ${n.title}`}>
-        <Icon name="right" size={16} />
+      <Link href={n.href} onClick={onClose} className="mv4-next mv4-next--rail" data-tip={`Your next step: ${n.title}`} aria-label={`Your next step: ${n.title}`}>
+        <Icon name="flag" size={17} />
       </Link>
     )
   }
@@ -61,7 +66,8 @@ function Item({ item, active, locked, count, onClose, collapsed }: {
     // Locked items say why (O5); they aren't links, since the page would turn the person away
     const why = 'Opens when you’re a joining member'
     return (
-      <span role="link" aria-disabled="true" title={`${item.name}: ${why}`} className={cls}>
+      <span role="link" aria-disabled="true" title={collapsed ? undefined : `${item.name}: ${why}`} data-tip={collapsed ? `${item.name} · ${why}` : undefined}
+        tabIndex={collapsed ? 0 : undefined} className={cls}>
         <span className="mv4-ic"><Icon name={item.icon} /></span>
         <span className="mv4-name">{item.name}<span className="sr-only"> ({why})</span></span>
         <span className="mv4-note"><Icon name="lock" size={13} /></span>
@@ -71,7 +77,8 @@ function Item({ item, active, locked, count, onClose, collapsed }: {
   return (
     <Link
       href={item.href}
-      title={collapsed ? (count ? `${item.name} · ${count}` : item.name) : undefined}
+      data-tip={collapsed ? (count ? `${item.name} · ${count}` : item.name) : undefined}
+      aria-label={collapsed ? (count ? `${item.name}, ${count}` : item.name) : undefined}
       onClick={e => {
         onClose?.()
         // The page you're already on: load it fresh, its front page with the latest data (v4.38.2)
@@ -98,6 +105,29 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
   // On a phone the menu opens full, whatever the desktop setting
   const rail = collapsed && !mobileOpen
 
+  // The rail's quick labels: one fixed label beside the hovered or focused icon (the menu clips
+  // anything drawn outside it, and the browser's own tooltip takes a second to appear)
+  const [tip, setTip] = useState<{ text: string; top: number; left: number } | null>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  // On a phone, the opened drawer takes the keyboard focus, so Tab and screen readers start in it
+  useEffect(() => { if (mobileOpen) closeRef.current?.focus({ preventScroll: true }) }, [mobileOpen])
+  const showTip = (e: React.SyntheticEvent) => {
+    if (!rail) return
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-tip]')
+    if (!el || !navRef.current?.contains(el)) return setTip(null)
+    const r = el.getBoundingClientRect()
+    setTip({ text: el.dataset.tip!, top: r.top + r.height / 2, left: navRef.current.getBoundingClientRect().right + 8 })
+  }
+
+  const toggle = onToggleCollapse && (
+    <button type="button" className="mv4-collapse" onClick={() => { setTip(null); onToggleCollapse() }}
+      aria-expanded={!collapsed} aria-label={collapsed ? 'Open the menu' : 'Make the menu slim'}
+      data-tip={rail ? 'Open the menu' : undefined} title={rail ? undefined : 'Make the menu slim'}>
+      <Icon name="sidebar" size={17} />
+    </button>
+  )
+
   const countFor = (key: string): number | undefined => {
     if (key === 'dashboard') return joined ? state.counts.tasks : undefined
     if (key === 'applications') return state.counts.applications || undefined
@@ -106,21 +136,17 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
   }
 
   return (
-    <nav aria-label="Menu" className={`app-shell-sidenav menu-v4${mobileOpen ? ' mobile-open' : ''}${rail ? ' mv4--rail' : ''}`}>
+    <nav ref={navRef} id="app-menu" aria-label="Menu" className={`app-shell-sidenav menu-v4${mobileOpen ? ' mobile-open' : ''}${rail ? ' mv4--rail' : ''}`}
+      onMouseOver={showTip} onFocus={showTip} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)} onScroll={() => setTip(null)}>
       <div className="mv4-top">
-        <Link href="/home" className="mv4-brand" title={COMMUNITY_NAME} onClick={onClose}>
+        <Link href="/home" className="mv4-brand" title={rail ? undefined : COMMUNITY_NAME} data-tip={rail ? COMMUNITY_NAME : undefined} aria-label={rail ? COMMUNITY_NAME : undefined} onClick={onClose}>
           {BRAND_MARK
             ? <img className="mv4-mark mv4-mark--img" src={BRAND_MARK} alt="" aria-hidden="true" />
             : <span className="mv4-mark" aria-hidden="true">{COMMUNITY_NAME.slice(0, 1).toUpperCase()}</span>}
           <span className="mv4-brand__txt"><b>{COMMUNITY_NAME}</b><small>on MyCoNet</small></span>
         </Link>
-        {onToggleCollapse && (
-          <button type="button" className="mv4-collapse" onClick={onToggleCollapse}
-            aria-label={collapsed ? 'Open the menu' : 'Make the menu slim'} title={collapsed ? 'Open the menu' : 'Make the menu slim'}>
-            <Icon name={collapsed ? 'right' : 'left'} size={15} />
-          </button>
-        )}
-        <button type="button" className="mv4-close" onClick={onClose} aria-label="Close the menu"><Icon name="x" size={16} /></button>
+        {!rail && toggle}
+        <button ref={closeRef} type="button" className="mv4-close" onClick={onClose} aria-label="Close the menu"><Icon name="x" size={16} /></button>
       </div>
 
       {/* My dashboard shows its own next step (DashboardV4), so the menu doesn't repeat it there (O3) */}
@@ -144,8 +170,10 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
       </div>
 
       <div className="mv4-foot">
+        {rail && toggle}
         {state.me ? (
-          <Link href={state.me.username ? `/u/${state.me.username}` : '/profile/edit'} className="mv4-me" onClick={onClose} title={rail ? state.me.name : undefined}>
+          <Link href={state.me.username ? `/u/${state.me.username}` : '/profile/edit'} className="mv4-me" onClick={onClose}
+            data-tip={rail ? state.me.name : undefined} aria-label={rail ? state.me.name : undefined}>
             {state.me.avatar ? <img loading="lazy" decoding="async" src={state.me.avatar} alt="" className="mv4-av" /> : <span className="mv4-av">{state.me.name.slice(0, 1).toUpperCase()}</span>}
             <span className="mv4-me__txt"><b>{state.me.name}</b><small>{ROLE_LABELS[role] ?? 'Explorer'}</small></span>
             <span className="mv4-me__go"><Icon name="right" size={15} /></span>
@@ -153,6 +181,7 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
         ) : null}
         <Link href="/changelog" className="mv4-version" onClick={onClose}>{VERSION}</Link>
       </div>
+      {rail && tip && <span className="mv4-tip" role="presentation" style={{ top: tip.top, left: tip.left }}>{tip.text}</span>}
     </nav>
   )
 }

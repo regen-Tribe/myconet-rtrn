@@ -68,11 +68,11 @@ export async function POST(req: NextRequest) {
     const circle = circleOf(a, board)
     const r = await execute(admin, a, board, me)
     let undo: string | undefined
-    if (r.rows.length || r.created.length) {
+    if (r.rows.length || r.created.length || r.removed.length) {
       const { data } = await admin.from('agent_actions').insert({
         actor: 'agent-do', requested_by: me.id, action: `do_${a.kind}`,
-        target_table: r.created[0]?.table ?? r.rows[0]?.table ?? null, target_id: r.created[0]?.id ?? r.rows[0]?.id ?? null,
-        detail: { circle, summary, instruction: instruction?.slice(0, 500) ?? null, rows: r.rows, created: r.created },
+        target_table: r.created[0]?.table ?? r.removed[0]?.table ?? r.rows[0]?.table ?? null, target_id: r.created[0]?.id ?? r.removed[0]?.id ?? r.rows[0]?.id ?? null,
+        detail: { circle, summary, instruction: instruction?.slice(0, 500) ?? null, rows: r.rows, created: r.created, removed: r.removed },
       }).select('id').single()
       undo = data?.id
     }

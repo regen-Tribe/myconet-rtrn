@@ -632,10 +632,22 @@ a:has(.dash-stat-card--link):hover .dash-stat-card--link {
    Styles for the shared building blocks. They read the v4 tokens with
    fallbacks, so they also work where v4 is off. */
 .v4-icon { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; overflow: visible; }
-.v4-inl { vertical-align: -.18em; margin-right: .28em; }
+/* inline-block: the CSS reset makes every svg a block, which put the icon on its own line outside a flex row */
+.v4-inl { display: inline-block; vertical-align: -.18em; margin-right: .28em; }
 /* Circle seals (CircleSeal): the only coloured icons; a circle's colour round with its cream glyph */
 .v4-seal { flex-shrink: 0; display: inline-block; vertical-align: middle; }
+/* The glyph is a stamp: solid cream shapes; .l a cream line, .c a line cut in the circle's colour, .h a hole */
+.v4-seal__art .l { fill: none; }
+.v4-seal__art .c { fill: none; stroke: var(--seal); stroke-width: 1.5; }
+.v4-seal__art .h { fill: var(--seal); stroke: none; }
 .v4-cf__pill .v4-seal, .ops4-circ .v4-seal, .pj4-pill .v4-seal { margin-right: 6px; }
+/* GlyphPicker: the seals to choose from; the chosen one has an ink ring */
+.v4-glyphs { display: flex; flex-wrap: wrap; gap: 4px; }
+.v4-glyphs__opt { width: 46px; height: 46px; display: grid; place-items: center; padding: 0; border-radius: 50%; border: 2px solid transparent; background: none; cursor: pointer; }
+.v4-glyphs__opt:hover { background: var(--bg-2, #f5f7fd); }
+.v4-glyphs__opt--on { border-color: var(--ink, #14161c); }
+.v4-glyphs__opt:focus-visible { outline: 2px solid var(--ink, #14161c); outline-offset: 2px; }
+.v4-glyphs__opt:disabled { cursor: default; opacity: .6; }
 .v4-spin { animation: v4-spin 0.9s linear infinite; }
 @keyframes v4-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .v4-spin { animation-duration: 2.4s; } }
@@ -802,11 +814,27 @@ a:has(.dash-stat-card--link):hover .dash-stat-card--link {
 button.v4-tag { cursor: pointer; border: 0; font: inherit; font-size: 11px; }
 .v4-tag--on { background: var(--ink, #111317); color: #fff; box-shadow: none; }
 .v4-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-.v4-item { text-align: left; border: 0; font: inherit; cursor: pointer; display: grid; gap: 10px; align-content: start; }
-.v4-item .v4-card-head { margin: 0; }
-/* The photo of the place an item sits in (v4.74.0) */
-.v4-item--photo { padding-top: 0; overflow: hidden; }
-.v4-item__photo { display: block; width: calc(100% + 2 * 16px); max-width: none; margin: 0 calc(-1 * 16px); aspect-ratio: 16 / 9; object-fit: cover; background: var(--bg-2, #eee); }
+/* Amenities cards (v4.83.0): the photo leads, the name and what's free sit under and on it */
+.v4-grid--gallery { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+.v4-item { text-align: left; border: 0; font: inherit; cursor: pointer; display: flex; flex-direction: column; padding: 0; overflow: hidden; box-shadow: 0 1px 2px rgba(20, 24, 40, .04); transition: transform .2s, box-shadow .2s; }
+.v4-item:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(20, 24, 40, .10); }
+.v4-item__media { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; background: var(--bg-2, #f2f3f7); }
+.v4-item__media img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; transition: transform .5s ease; }
+.v4-item:hover .v4-item__media img { transform: scale(1.05); }
+.v4-item__ph { position: absolute; inset: 0; display: grid; place-items: center; opacity: .75; }
+.v4-item__badge { position: absolute; left: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--green-ink, #2e7a4a); background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+.v4-item__badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.v4-item__badge--busy { color: var(--yellow-ink, #7a5b00); }
+.v4-item__body { display: grid; gap: 6px; padding: 14px 16px 16px; align-content: start; }
+.v4-item__body > b { font-size: 17px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.v4-item__body > small { font-size: 12.5px; color: var(--ink-3, #6b7180); }
+.v4-item__body .v4-tags, .v4-item__body .v4-unitpick { margin-top: 4px; }
+.v4-item--group { cursor: default; }
+@media (prefers-reduced-motion: reduce) { .v4-item, .v4-item__media img { transition: none; } .v4-item:hover { transform: none; } .v4-item:hover .v4-item__media img { transform: none; } }
+.v4-unitpick { display: flex; flex-wrap: wrap; gap: 6px; }
+.v4-unit { font: inherit; font-size: 13px; font-weight: 600; min-width: 40px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--rule, #ddd); background: var(--surface, #fff); color: var(--ink, #222); cursor: pointer; }
+.v4-unit:hover { border-color: var(--ink-3, #888); }
+.v4-unit--busy { color: var(--ink-4, #999); background: var(--bg-2, #f2f2f2); }
 .v4-modal__photo { display: block; width: 100%; max-width: none; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius); }
 .v4-avail { font-size: 11.5px; font-weight: 600; color: var(--green-ink, #2e7a4a); display: inline-flex; align-items: center; gap: 6px; }
 .v4-avail::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
@@ -889,6 +917,10 @@ textarea.v4-input { resize: vertical; line-height: 1.55; }
 .v4-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface, #fff); }
 .v4-seg button { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font: inherit; font-size: 13px; font-weight: 500; color: var(--ink-3, #6b7180); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .v4-seg button.on { background: var(--ink, #111317); color: #fff; }
+/* The same switch made of links: The space (Amenities & tools | Map) */
+.v4-seg--links a { height: 32px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink-3, #6b7180); display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.v4-seg--links a.on { background: var(--blue, #d6e4ff); color: var(--blue-ink, #2350b0); }
+.v4-spacetabs { margin: -4px 0 14px; }
 .v4-mapwrap { display: grid; gap: 12px; }
 .v4-mapwrap--list { grid-template-columns: minmax(0, 1fr) 240px; align-items: start; }
 .v4-map { position: relative; border-radius: 22px; overflow: hidden; background: var(--green, #d3f1dc); line-height: 0; user-select: none; touch-action: pan-y; cursor: grab; }
@@ -1003,6 +1035,9 @@ img.v4-avatar { object-fit: cover; padding: 0; }
 /* ─── The v4 menu, full height like the prototype (MenuV4.tsx, v4.48.0) ─── */
 .menu-v4 { display: flex; flex-direction: column; gap: 2px; background: var(--surface, #fff); border-right: 1px solid var(--rule-soft, rgba(17,19,23,.07)); padding: 16px 12px 14px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .menu-v4::-webkit-scrollbar { display: none; }
+/* Nothing in the menu shrinks when it's taller than the window: it scrolls instead (the rail's next-step
+   button used to flatten into an oval) */
+.menu-v4 > * { flex-shrink: 0; }
 .mv4-top { display: flex; align-items: center; gap: 8px; padding: 0 4px 6px; }
 .mv4-brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; text-decoration: none; color: var(--ink, #111317); }
 .mv4-mark { width: 38px; height: 38px; border-radius: 50%; background: var(--ink, #111317); color: #fff; display: grid; place-items: center; font-family: var(--display); font-size: 19px; font-weight: 600; flex-shrink: 0; }
@@ -1011,7 +1046,8 @@ img.v4-avatar { object-fit: cover; padding: 0; }
 .mv4-brand__txt b { font-size: 15px; font-weight: 600; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mv4-brand__txt small { font-size: 11px; color: var(--ink-3, #6b7180); }
 .mv4-collapse, .mv4-close { width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--bg-2, #f6f7fa); color: var(--ink-2, #3a3f4a); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
-.mv4-collapse:hover { background: var(--bg-3, #eef0f5); color: var(--ink, #111317); }
+.mv4-collapse { background: transparent; color: var(--ink-3, #6b7180); }
+.mv4-collapse:hover, .mv4-collapse:focus-visible { background: var(--bg-2, #f6f7fa); color: var(--ink, #111317); }
 .mv4-close { display: none; }
 .mv4-nextwrap { margin: 12px 0 4px; }
 .mv4-next { display: flex; align-items: center; gap: 10px; text-decoration: none; background: var(--action, #d4f0dd); color: var(--action-ink, #235c3b); border-radius: 16px; padding: 10px 8px 10px 14px; }
@@ -1057,10 +1093,14 @@ img.v4-avatar { object-fit: cover; padding: 0; }
   .mv4--rail .mv4-top { flex-direction: column; padding: 0 0 4px; }
   .mv4--rail .mv4-brand { justify-content: center; flex: none; }
   .mv4--rail .mv4-brand__txt, .mv4--rail .mv4-name, .mv4--rail .mv4-count, .mv4--rail .mv4-note, .mv4--rail .mv4-me__txt, .mv4--rail .mv4-me__go, .mv4--rail .mv4-version { display: none; }
-  .mv4--rail .mv4-label { font-size: 0; margin: 12px 14px 6px; height: 1px; background: var(--rule-soft, rgba(17,19,23,.07)); }
-  .mv4--rail .mv4-item { justify-content: center; padding: 10px 0; }
-  .mv4-next--rail { margin: 10px auto 2px; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--action-ink, #235c3b); color: #fff; }
+  .mv4--rail .mv4-label { font-size: 0; margin: 8px 14px 4px; height: 1px; background: var(--rule-soft, rgba(17,19,23,.07)); }
+  .mv4--rail .mv4-item { justify-content: center; padding: 9px 0; }
+  .mv4-next--rail { margin: 10px auto 2px; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--action, #d4f0dd); color: var(--action-ink, #235c3b); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-ink, #235c3b) 18%, transparent); }
   .mv4--rail .mv4-me { justify-content: center; padding: 6px; box-shadow: none; }
+  .mv4--rail .mv4-foot { padding-top: 10px; justify-items: center; gap: 4px; }
+  .mv4--rail .mv4-collapse { width: 40px; height: 40px; border-radius: 12px; }
+  /* The quick label beside a rail icon (MenuV4 places it) */
+  .mv4-tip { position: fixed; z-index: 80; transform: translateY(-50%); pointer-events: none; white-space: nowrap; background: var(--ink, #111317); color: #fff; font-size: 12.5px; font-weight: 500; line-height: 1; padding: 7px 10px; border-radius: 8px; box-shadow: 0 6px 18px -8px rgba(17,19,23,.45); }
 }
 @media (min-width: 769px) {
   .app-shell-layout.shell-v4 { grid-template-columns: 256px minmax(0, 1fr); transition: grid-template-columns .2s ease; }

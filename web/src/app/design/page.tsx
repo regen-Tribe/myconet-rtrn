@@ -4,10 +4,20 @@ import {
   StatusPill, Tag, type IconName, type Status,
 } from '@/core/components/v4'
 import { ICONS } from '@/core/components/v4/icons'
+import { Seal } from '@/core/components/v4/CircleSeal'
+import { GlyphPickerDemo } from './GlyphPickerDemo'
+import { CIRCLE_GLYPHS, CIRCLE_GLYPH_LABEL, type CircleGlyph } from '@/core/components/v4/circle-glyphs'
 
 export const metadata: Metadata = { title: 'Design · MyCoNet', robots: { index: false } }
 
 const STATUSES: Status[] = ['idea', 'todo', 'doing', 'review', 'done', 'paused', 'no']
+
+/** Sample circle colours for the seals (evenly spaced, each at least 3:1 on the page). Not a community's own. */
+const SEAL_COLORS = ['#1F3FB8', '#34893C', '#88470D', '#BD4238', '#008796', '#6F4BAC', '#B44E9B', '#A1790C', '#3389BA', '#912946', '#126052', '#535F00', '#6C6158']
+const GLYPHS = Object.keys(CIRCLE_GLYPHS) as CircleGlyph[]
+const SIZES = [16, 24, 40] as const
+const cell: React.CSSProperties = { display: 'grid', justifyItems: 'center', gap: 8, padding: '14px 6px 10px', borderRadius: 12, background: 'var(--bg-2)', fontSize: 11, color: 'var(--ink-2)' }
+const sizesRow: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 40, color: 'var(--ink)' }
 
 /** The v4 building blocks in one place (DESIGN-SYSTEM.md › v4). Sample words only, no real data. */
 export default function DesignPage() {
@@ -66,12 +76,46 @@ export default function DesignPage() {
         <EmptyState title="No agreements yet" text="Find a task you'd like to help on and offer what you can give." action={{ href: '/operations', label: 'Open Operations →' }} />
       </div>
 
-      <SectionHead title={`Icons · ${Object.keys(ICONS).length}`} />
+      <SectionHead title={`Circle seals · ${GLYPHS.length}`} />
+      <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>
+        A circle&apos;s mark: its colour with a cream stamp. Solid shapes, so a seal never looks like an interface icon.
+        The only coloured icons in the app. Shown at 16, 24 and 40px, then at 64px.
+      </p>
       <Card>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(132px, 1fr))', gap: 8 }}>
+          {GLYPHS.map((g, i) => (
+            <div key={g} style={cell}>
+              <Seal color={SEAL_COLORS[i % SEAL_COLORS.length]} glyph={g} size={64} name={CIRCLE_GLYPH_LABEL[g]} title />
+              <div style={sizesRow}>
+                {SIZES.map(s => <Seal key={s} color={SEAL_COLORS[i % SEAL_COLORS.length]} glyph={g} size={s} />)}
+              </div>
+              <span>{g}</span>
+            </div>
+          ))}
+          <div style={cell}>
+            <Seal color="#8a8f9c" name="Garden" size={64} title />
+            <div style={sizesRow}>{SIZES.map(s => <Seal key={s} color="#8a8f9c" name="Garden" size={s} />)}</div>
+            <span>no glyph: the initial</span>
+          </div>
+        </div>
+      </Card>
+
+      <SectionHead title="Seal picker" />
+      <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>
+        How an admin chooses a circle&apos;s seal (Blueprint › Circles › Edit, and the circle&apos;s Edit window): every stamp in the circle&apos;s colour, or its first letter.
+      </p>
+      <Card><GlyphPickerDemo color="#BD4238" name="Kitchen" /></Card>
+
+      <SectionHead title={`Icons · ${Object.keys(ICONS).length}`} />
+      <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>
+        Interface icons: one thin marker line in ink, never coloured, never an emoji. Shown at 16, 24 and 40px.
+      </p>
+      <Card>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(132px, 1fr))', gap: 8 }}>
           {(Object.keys(ICONS) as IconName[]).map(n => (
-            <div key={n} style={{ display: 'grid', justifyItems: 'center', gap: 6, padding: '12px 4px', borderRadius: 12, background: 'var(--bg-2)', fontSize: 11, color: 'var(--ink-2)' }}>
-              <Icon name={n} size={24} /><span>{n}</span>
+            <div key={n} style={cell}>
+              <div style={sizesRow}>{SIZES.map(s => <Icon key={s} name={n} size={s} />)}</div>
+              <span>{n}</span>
             </div>
           ))}
         </div>

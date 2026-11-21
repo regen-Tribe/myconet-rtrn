@@ -109,11 +109,11 @@ const INITIAL_LOG = [
 ]
 
 const LAYERS = [
-  { num: '01', name: 'Circle leads · consent',            desc: 'Move forward if there are no principled objections — not unanimous applause.', mark: '☉' },
-  { num: '02', name: 'All members · majority vote',       desc: 'Big shared choices. Open vote, simple majority, public results.',              mark: '☑' },
-  { num: '03', name: 'Admins & advisors · expert review', desc: 'Technical calls go to the person with skin in the game.',                    mark: '△' },
-  { num: '04', name: 'AI · Blueprint check',              desc: 'Checks that the proposal fits the Blueprint and the community’s goals.',        mark: '◇' },
-]
+  { num: '01', name: 'Circle leads · consent',            desc: 'Move forward if there are no principled objections — not unanimous applause.', mark: 'circles' },
+  { num: '02', name: 'All members · majority vote',       desc: 'Big shared choices. Open vote, simple majority, public results.',              mark: 'vote' },
+  { num: '03', name: 'Admins & advisors · expert review', desc: 'Technical calls go to the person with skin in the game.',                    mark: 'shield' },
+  { num: '04', name: 'AI · Blueprint check',              desc: 'Checks that the proposal fits the Blueprint and the community’s goals.',        mark: 'spark' },
+] as const
 
 /* ── Section header (reused 7×) ── */
 function SectionHead({ mod, label, color, h, lead }: { mod: string; label: string; color: string; h: string; lead: string }) {
@@ -690,7 +690,7 @@ function GovernanceSection() {
       <div className="lp-gov-layers" style={{ marginTop: 32 }}>
         {LAYERS.map((l, i) => (
           <div key={i} className={`lp-gov-layer${i === layer ? ' active' : ''}`} onClick={() => setLayer(i)}>
-            <span className="lp-layer-mark">{l.mark}</span>
+            <span className="lp-layer-mark"><Icon name={l.mark} size={18} /></span>
             <div className="lp-layer-num">CHECK {l.num}</div>
             <div className="lp-layer-name">{l.name}</div>
             <div className="lp-layer-desc">{l.desc}</div>

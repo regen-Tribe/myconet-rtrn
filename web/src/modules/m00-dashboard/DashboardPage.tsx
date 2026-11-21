@@ -7,6 +7,7 @@ import BannerImage from '@/core/components/BannerImage'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { DESIGN } from '@/core/lib/instance'
 import DashboardV4 from './DashboardV4'
+import { InlineIcon } from '@/core/components/v4'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/modules/m04-blueprint/lib/blueprint-compute'
 import { modLabel } from '@/core/lib/module-label'
 
@@ -485,7 +486,7 @@ function ModCard({ num, name, desc, color, href, locked, cta }: ModuleCard) {
           </span>
         )}
         {locked && (
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)' }}>🔒 Member</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)' }}><InlineIcon name="lock" />Member</span>
         )}
       </div>
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>{name}</div>

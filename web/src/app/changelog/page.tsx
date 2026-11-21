@@ -3,6 +3,66 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.103.0',
+    date: '2026-11-21',
+    title: 'Merged tasks are deleted, not paused',
+    items: ['When the assistant merges two tasks, everything moves into the one you keep, and the other is deleted. It no longer sits in Paused. Undo brings it back.'],
+  },
+  {
+    version: 'v4.102.0',
+    date: '2026-11-21',
+    title: 'The space: amenities and the map behind one menu item',
+    items: ['The menu has one item, “The space”, instead of “Amenities & tools” and “Map”. Both pages have a switch under the heading to go from one to the other.'],
+  },
+  {
+    version: 'v4.101.0',
+    date: '2026-11-21',
+    title: 'Home follows the menu',
+    items: ['Home shows the pages in the menu’s own two groups, Community and then Working together, with the same names and icons.', 'Members and Calendar come first and large, with faces and the next events. Operations and Governance show the projects under way and the open proposals. The other pages are small rows.', 'Everything is one quiet colour. “Happening now” moved into the Calendar and Governance tiles.'],
+  },
+  {
+    version: 'v4.100.0',
+    date: '2026-11-21',
+    title: 'Meeting names without the date',
+    items: ['A meeting’s name no longer repeats its date; the date is shown beside it.', 'The assistant is stricter about tasks from meetings: only work someone agreed to do, still to be done, and not on the board yet.'],
+  },
+  {
+    version: 'v4.99.0',
+    date: '2026-11-21',
+    title: 'A clearer menu: no more look-alike arrows',
+    items: ['In the new look, the button that makes the menu slim or opens it again is now a sidebar icon. Open, it sits top right; slim, it sits at the bottom. Your next step in the slim menu is a green flag. Before, two arrows sat one above the other and did different things.', 'In the slim menu, a page’s name shows beside its icon as soon as you point at it. The slim menu scrolls when the window is short instead of squeezing its buttons, and it no longer opens wide for a moment each time a page loads.', 'On a phone, the menu closes with Escape and when you go back a page.'],
+  },
+  {
+    version: 'v4.98.0',
+    date: '2026-11-21',
+    title: 'Amenities & tools as a gallery',
+    items: ['Every card leads with a large photo, with what’s free right on it.', 'Numbered things of one kind are one card: Dorm 1 with its 10 beds, Rooms 1–9. Pick a bed or room on the card to see it and book it.'],
+  },
+  {
+    version: 'v4.97.0',
+    date: '2026-11-21',
+    title: 'One icon set, kept that way',
+    items: ['Behind the scenes: a check now stops emoji and other icon sets from coming back onto screens, so the portal keeps one set of line icons, with coloured seals only for circles.'],
+  },
+  {
+    version: 'v4.96.0',
+    date: '2026-11-21',
+    title: 'One icon set everywhere',
+    items: ['The last emoji on screens are now the same line icons as the rest of the portal: in the Blueprint editor, the older Home, Governance and Bookings screens, the account menu and the landing page.', 'Small icons inside a line of text (the pin before a place name) now sit in the line instead of above it.', 'Why two members match is written in words only, without emoji.'],
+  },
+  {
+    version: 'v4.95.0',
+    date: '2026-11-21',
+    title: 'Choose a circle’s seal',
+    items: ['Admins can now choose the drawing on a circle’s seal: in About › setup › Circles › Edit, and in the circle’s Edit window on the Circles page. Pick one of the stamps, or keep the circle’s first letter.', 'A new circle gets a fitting seal from its name (a pot for Kitchen, a wheat ear for Farming); you can change it any time.'],
+  },
+  {
+    version: 'v4.93.0',
+    date: '2026-11-21',
+    title: 'Circle seals you can tell from the menu icons',
+    items: ['In the v4 look the drawing on each circle’s seal is now a solid cream stamp (a pot, a flame, a wheat ear) instead of a thin line, so a circle’s seal never looks like one of the menu icons.', 'The Design page (/design) shows every icon and every circle seal at each size, with its name.'],
+  },
+  {
     version: 'v4.88.0',
     date: '2026-11-21',
     title: 'Notes between teammates reach you',

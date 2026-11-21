@@ -184,7 +184,7 @@ export function EventDetailModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span><InlineIcon name="calendar" />{fmtEventWhen(event)}</span>
               {canChangeTime && onSaveTimes && (
-                <button onClick={openTimeEditor} style={{ fontSize: 12.5, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--m14)', background: 'var(--surface)', color: 'var(--m14)', cursor: 'pointer' }}>🕒 Change time</button>
+                <button onClick={openTimeEditor} style={{ fontSize: 12.5, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--m14)', background: 'var(--surface)', color: 'var(--m14)', cursor: 'pointer' }}><InlineIcon name="clock" />Change time</button>
               )}
             </div>
           )}

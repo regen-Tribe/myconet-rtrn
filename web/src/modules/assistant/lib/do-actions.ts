@@ -66,7 +66,7 @@ export function describe(a: DoAction, b: Board): string | null {
       const from = P(a.project), into = P(a.into)
       if (!from || !into || from.id === into.id) return null
       const n = b.tasks.filter(t => t.project_id === from.id).length
-      return `Merge ${q(from.title)} (${n} task${n === 1 ? '' : 's'}) into ${q(into.title)}${a.title && a.title !== into.title ? `, renamed ${q(a.title)}` : ''}; ${q(from.title)} is set aside`
+      return `Merge ${q(from.title)} (${n} task${n === 1 ? '' : 's'}) into ${q(into.title)}${a.title && a.title !== into.title ? `, renamed ${q(a.title)}` : ''}; ${q(from.title)} is then deleted`
     }
     case 'rename_project': { const p = P(a.project); return p && a.title ? `Rename the task ${q(p.title)} to ${q(a.title)}` : null }
     case 'create_project':
@@ -124,11 +124,12 @@ export function blocked(a: DoAction, b: Board, me: Me): string | null {
   }
 }
 
-type Row = { table: 'deliverables' | 'projects' | 'circles'; id: string; before: Record<string, unknown> }
+type Row = { table: 'deliverables' | 'projects' | 'circles' | 'project_updates' | 'collaboration_agreements' | 'events' | 'places'; id: string; before: Record<string, unknown> }
 
 /** Makes the change and updates the board in memory to match (so one read serves several changes); returns what to log so it can be undone */
-export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: Me): Promise<{ rows: Row[]; created: Row[]; error?: string }> {
-  const rows: Row[] = [], created: Row[] = []
+export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: Me): Promise<{ rows: Row[]; created: Row[]; removed: Row[]; error?: string }> {
+  // removed: rows deleted whole (a merged-away task), put back first on Undo
+  const rows: Row[] = [], created: Row[] = [], removed: Row[] = []
   const P = (id?: string | null) => b.projects.find(p => p.id === id)
   const T = (id: string) => b.tasks.find(t => t.id === id)!
   const upd = async (table: Row['table'], id: string, before: Record<string, unknown>, changes: Record<string, unknown>) => {
@@ -173,7 +174,20 @@ export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: 
         await moveAll(b.tasks.filter(t => t.project_id === from.id).map(t => t.id), into.id)
         const title = a.title?.trim() || into.title
         if (title !== into.title) await upd('projects', into.id, { title: into.title }, { title })
-        await upd('projects', from.id, { title: from.title, status: from.status }, { status: 'paused', title: `${from.title} (merged into ${title})`.slice(0, 300) })
+        // What else hangs on the merged-away task comes along: its updates, agreements, events and places
+        for (const table of ['project_updates', 'collaboration_agreements', 'events', 'places'] as const) {
+          const { data, error } = await admin.from(table).update({ project_id: into.id }).eq('project_id', from.id).select('id')
+          if (error) throw new Error(error.message)
+          for (const r of data ?? []) rows.push({ table, id: r.id as string, before: { project_id: from.id } })
+        }
+        // Then it's deleted, not left in Paused (v4.103.0: Oscar, "why are merged tasks in the pause column, lets just
+        // delete them"); Undo puts it back, whole
+        const { data: full, error: readErr } = await admin.from('projects').select('*').eq('id', from.id).single()
+        if (readErr || !full) throw new Error(readErr?.message ?? 'Task not found')
+        const { error: delErr } = await admin.from('projects').delete().eq('id', from.id)
+        if (delErr) throw new Error(delErr.message)
+        removed.push({ table: 'projects', id: from.id, before: full })
+        b.projects.splice(b.projects.indexOf(from), 1)
         break
       }
       case 'rename_project': { const p = P(a.project)!; await upd('projects', p.id, { title: p.title }, { title: a.title!.slice(0, 300) }); break }
@@ -210,14 +224,19 @@ export async function execute(admin: SupabaseClient, a: DoAction, b: Board, me: 
         break
       }
     }
-    return { rows, created }
+    return { rows, created, removed }
   } catch (e) {
-    return { rows, created, error: (e as Error).message }
+    return { rows, created, removed, error: (e as Error).message }
   }
 }
 
 /** Puts back what a Do change changed (agent_actions.detail.rows / created) */
-export async function undoRows(admin: SupabaseClient, detail: { rows?: Row[]; created?: Row[] }) {
+export async function undoRows(admin: SupabaseClient, detail: { rows?: Row[]; created?: Row[]; removed?: Row[] }) {
+  // A deleted task first, so its subtasks, updates and agreements can point back to it
+  for (const r of detail.removed ?? []) {
+    const { error } = await admin.from(r.table).insert(r.before)
+    if (error) throw new Error(error.message)
+  }
   for (const r of [...(detail.rows ?? [])].reverse()) {
     const { error } = await admin.from(r.table).update(r.before).eq('id', r.id)
     if (error) throw new Error(error.message)

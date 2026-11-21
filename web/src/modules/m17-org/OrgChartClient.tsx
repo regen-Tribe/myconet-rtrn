@@ -8,9 +8,10 @@ import { AddCircleButton } from '@/modules/m04-blueprint/AddCircleButton'
 import { AddCircleMember } from './AddCircleMember'
 import { JoinRequests, type JoinRequest } from './JoinRequests'
 import { createClient } from '@/core/lib/supabase/client'
-import { useCircles } from '@/core/components/CirclesProvider'
+import { useCircles, usePatchCircle } from '@/core/components/CirclesProvider'
 import { CircleLeadName } from '@/core/components/CircleLeadName'
-import type { CircleSlug } from '@/core/lib/circles'
+import { isMissingIconColumn, type CircleSlug } from '@/core/lib/circles'
+import { isAdmin } from '@/core/lib/roles'
 import type { CircleDirectory, PersonRef } from '@/core/lib/ops-permissions'
 import type { OrgMember, OrgPerson, OrgUnit } from './types'
 import { canEditUnit, canLeadCircle, MEMBER_SELECT, toMember } from './lib/org'
@@ -72,6 +73,7 @@ export default function OrgChartClient({
   extras?: CircleExtras
 }) {
   const circles = useCircles()
+  const patchCircle = usePatchCircle()
   const supabase = createClient()
   // The circle that looks after every circle sits at the top; the rest are columns
   const steward = circles.list.find(c => c.is_steward) ?? null
@@ -124,6 +126,14 @@ export default function OrgChartClient({
     }
     const saved = unit
 
+    // The circle's seal (admins): saved on `circles`, and skipped quietly where the column isn't there yet
+    if (saved.kind === 'circle' && draft.icon !== undefined) {
+      const { data, error } = await supabase.from('circles').update({ icon: draft.icon }).eq('slug', saved.circle).select('slug')
+      if (error && !isMissingIconColumn(error)) return error.message
+      if (!error && !data?.length) return 'Only admins can change a circle’s seal.'
+      if (!error) patchCircle(saved.circle, { icon: draft.icon })
+    }
+
     // Members: remove the dropped ones first, then upsert the rest
     const before = members.filter(m => m.unit_id === saved.id)
     const removed = before.filter(m => !draft.members.some(d => d.user_id === m.user_id)).map(m => m.user_id)
@@ -167,6 +177,7 @@ export default function OrgChartClient({
           members={editing.unit ? membersOf(editing.unit.id) : []}
           people={people}
           canDelete={canLeadCircle(editing.circle, role, leadCircles)}
+          canEditSeal={isAdmin(role)}
           onClose={() => setEditing(null)}
           onSave={saveUnit}
           onDelete={deleteUnit}
@@ -394,6 +405,7 @@ export default function OrgChartClient({
           members={editing.unit ? membersOf(editing.unit.id) : []}
           people={people}
           canDelete={canLeadCircle(editing.circle, role, leadCircles)}
+          canEditSeal={isAdmin(role)}
           onClose={() => setEditing(null)}
           onSave={saveUnit}
           onDelete={deleteUnit}

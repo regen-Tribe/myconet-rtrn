@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { Geist, Geist_Mono, Inter, Inter_Tight } from 'next/font/google'
 import './globals.css'
 // The v4 look on phones; after globals.css so it can adjust it (rules only apply with data-design="v4")
@@ -70,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <BrandingProvider branding={branding}>
           <CirclesProvider rows={circles}>
-            <AppShell role={role} isLoggedIn={!!user} menu={menu}>{children}</AppShell>
+            <AppShell role={role} isLoggedIn={!!user} menu={menu} navCollapsed={(await cookies()).get('navCollapsed')?.value === '1'}>{children}</AppShell>
           </CirclesProvider>
         </BrandingProvider>
       </body>

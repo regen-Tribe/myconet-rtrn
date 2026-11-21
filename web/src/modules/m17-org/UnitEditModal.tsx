@@ -4,12 +4,16 @@ import { useState } from 'react'
 import { ModalShell } from '@/core/components/ModalShell'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
+import { GlyphPicker } from '@/core/components/v4/GlyphPicker'
+import { DESIGN } from '@/core/lib/instance'
 import type { OrgMember, OrgPerson, OrgUnit, UnitRole } from './types'
 
 export interface UnitDraft {
   name: string
   description: string | null
   members: { user_id: string; role: UnitRole; title: string | null }[]
+  /** The circle's seal glyph, only when an admin changed it (circles.icon) */
+  icon?: string | null
 }
 
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }
@@ -20,7 +24,7 @@ const inputStyle: React.CSSProperties = {
 
 /** Edit a circle (purpose + members) or a team (name, description, leads and members). */
 export function UnitEditModal({
-  unit, circle, members, people, canDelete, onClose, onSave, onDelete,
+  unit, circle, members, people, canDelete, canEditSeal = false, onClose, onSave, onDelete,
 }: {
   /** null when creating a new team */
   unit: OrgUnit | null
@@ -28,6 +32,8 @@ export function UnitEditModal({
   members: OrgMember[]
   people: OrgPerson[]
   canDelete: boolean
+  /** Admins choose the circle's seal here (the `circles` table is theirs to edit) */
+  canEditSeal?: boolean
   onClose: () => void
   onSave: (draft: UnitDraft) => Promise<string | null>
   onDelete: () => Promise<string | null>
@@ -37,6 +43,10 @@ export function UnitEditModal({
   const meta = circles.meta(circle)
   const [name, setName] = useState(unit?.name ?? '')
   const [description, setDescription] = useState(unit?.description ?? '')
+  // `icon` is undefined when this community's database has no circles.icon column yet: then no picker
+  const sealNow = circles.get(circle)?.icon
+  const showSeal = isCircle && canEditSeal && DESIGN === 'v4' && sealNow !== undefined
+  const [icon, setIcon] = useState<string | null>(sealNow ?? null)
   const [rows, setRows] = useState(members.map(m => ({ user_id: m.user_id, role: m.role, title: m.title ?? '' })))
   const [adding, setAdding] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +72,7 @@ export function UnitEditModal({
       name: isCircle ? unit!.name : name.trim(),
       description: description.trim() || null,
       members: rows.map(r => ({ user_id: r.user_id, role: isCircle ? 'member' : r.role, title: r.title.trim() || null })),
+      ...(showSeal && icon !== (sealNow ?? null) ? { icon } : {}),
     })
     setBusy(false)
     if (err) setError(err)
@@ -74,7 +85,7 @@ export function UnitEditModal({
     if (err) setError(err)
   }
 
-  const title = isCircle ? `${meta.emoji} ${meta.label} circle` : unit ? `Edit subcircle · ${unit.name}` : `New subcircle in ${meta.emoji} ${meta.label}`
+  const title = isCircle ? `${circles.label(circle)} circle` : unit ? `Edit subcircle · ${unit.name}` : `New subcircle in ${circles.label(circle)}`
 
   return (
     <ModalShell title={title} onClose={onClose} maxWidth={560}>
@@ -91,6 +102,14 @@ export function UnitEditModal({
           <textarea id="ou-desc" value={description} onChange={e => setDescription(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.55 }}
             placeholder={isCircle ? 'What this circle is responsible for…' : 'Responsibilities, rhythms, how to get involved…'} />
         </div>
+
+        {showSeal && (
+          <div>
+            <span style={labelStyle}>Seal</span>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 8 }}>The circle&rsquo;s mark, in its colour. It shows wherever the circle is named.</div>
+            <GlyphPicker color={meta.color} name={meta.label} value={icon} onChange={setIcon} disabled={busy} />
+          </div>
+        )}
 
         <div>
           <span style={labelStyle}>{isCircle ? 'Circle members' : 'People'}</span>
