@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-21 — Core v4.104.0 via PR #78 (deployed, 9e608156): subcircles on each circle's card, one click away
+- No migration.
+
 ## 2026-11-21 — Core v4.103.0 via PR #77 (deployed, 57662898): merged tasks are deleted, not paused; Sonia's v4.89–v4.102
 - Merged by hand: the core-update workflow's merge failed in CI but was clean locally (instance/ untouched).
 - Migration `meeting_titles_without_date` applied via MCP (1 meeting renamed).
