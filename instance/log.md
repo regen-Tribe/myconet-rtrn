@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-20 — Core v4.77.0 via PR #73 (deployed, 5ac959c7): where a project manager suggestion comes from
+- "Where this comes from" on each suggestion: the meeting, its date, who said it, the line and who was there; or who added the task. No migration.
+
 ## 2026-11-20 — Core v4.75.1 via PR #72 (deployed, 310f4ee3): one map, place photos on booking cards
 - Amenities is a list with "See the map" (/map); items take their place's photo (shown once per place). No migrations.
 
