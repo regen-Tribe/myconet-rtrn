@@ -5,6 +5,19 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.104.0 — 2026-11-21 — Subcircles on each circle's card, one click away
+
+Oscar: "showing the number of subcircles on each circle on the circles page… click the subcircle bubble and see the
+sub circles to be able to pick one directly and go to its page. or add a new subcircle". On the Circles page (M17,
+v4 look):
+- Each circle's card shows **N subcircles** beside open tasks and meetings, including 0, for everyone. Tasks and
+  meetings still need sign-in. The count used to be in the small line under the name, and only when there were some.
+- **Clicking the count** opens a small list of the circle's subcircles. Picking one opens the circle's Subcircles
+  tab (`?tab=subcircles&sub=<id>`), scrolled to that subcircle and outlined.
+- For the circle's leads and admins, the list ends with **Add a subcircle**. It opens the same tab with the
+  add form ready (`&add=1`).
+- Escape or a click outside closes the list. No migration.
+
 ## v4.103.0 — 2026-11-21 — A merged task is deleted, not paused
 
 Oscar: "why are merged tasks in the pause column, lets just delete them". When the assistant merges one task into

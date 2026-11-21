@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.104.0',
+    date: '2026-11-21',
+    title: 'Subcircles, one click away',
+    items: ['On the Circles page, every circle’s card shows how many subcircles it has.', 'Click the count to see them, then pick one to go straight to it. Circle leads and admins can add a subcircle from there too.'],
+  },
+  {
     version: 'v4.103.0',
     date: '2026-11-21',
     title: 'Merged tasks are deleted, not paused',
