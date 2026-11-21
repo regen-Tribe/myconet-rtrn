@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-20 — Core v4.75.1 via PR #72 (deployed, 310f4ee3): one map, place photos on booking cards
+- Amenities is a list with "See the map" (/map); items take their place's photo (shown once per place). No migrations.
+
 ## 2026-11-20 — Checked out working (no code change)
 - Oz: "its working perfect". First uploaded meeting reached the second brain (18cfef7). Site picture: Admin › Bookings ›
   Map; room photos: Map › Edit places. Next: v4.75.0 (photos on booking cards); delete Vault
