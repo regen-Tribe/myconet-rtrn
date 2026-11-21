@@ -5,6 +5,24 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.105.0 — 2026-11-21 — Change a task right where you review it
+
+Oscar: "on the project manager functionality, I want to be able to edit all the fields like circle, sub circle,
+person assigned to, priority, etc so we can edit it right away and move it along. i also want that same
+functionality in the meetings page - action items to confirm".
+- **New `TaskQuickEdit`** (M07): a task's Circle, Subcircle, Part of, Person, Priority, Due and Status as pickers.
+  Each change saves straight away and confirms a draft. Its placement rules live in `lib/task-edit.ts`, shared with
+  the Tasks list (v4.84.0) and the same as the task pop-up's: a subcircle or task brings its circle, and what no longer
+  fits the new circle is cleared.
+- **Project manager panel:** for a circle's leads and admins, **✎ Edit its tasks · where they come from** opens the
+  suggestion's tasks with their fields, next to the meeting each came from. Everyone else still sees the read-only
+  view.
+- **A meeting's action items** (v4 look): for those who may change a task, a draft shows its fields straight away, and
+  a confirmed one opens them with **Edit**. A changed or approved item stays in the list with its new values until the
+  page is reloaded.
+
+No migration.
+
 ## v4.104.0 — 2026-11-21 — Subcircles on each circle's card, one click away
 
 Oscar: "showing the number of subcircles on each circle on the circles page… click the subcircle bubble and see the

@@ -131,6 +131,8 @@ export interface SuggestionSource {
   /** Who added it, and when */
   added_by: string | null
   added_at: string | null
+  /** The raw fields, for editing it right in the panel (v4.105.0) */
+  edit: { circle: string | null; team_id: string | null; project_id: string | null; assignee_id: string | null; assignee_name: string | null; priority: string | null; due_date: string | null; due_time: string | null }
 }
 
 /** A change the project manager made itself (agent_actions pm_*), undoable by the circle's leads */

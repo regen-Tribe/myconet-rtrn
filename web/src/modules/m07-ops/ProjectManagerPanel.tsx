@@ -5,6 +5,8 @@ import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { AgentSuggestion, PmAction, SuggestionSource } from './types'
+import { TaskQuickEdit } from './TaskQuickEdit'
+import type { TaskPerson, TaskProjectOption, TaskTeamOption } from './TaskModal'
 import { instructAgent } from '@/core/lib/agent-context'
 import Link from 'next/link'
 
@@ -56,7 +58,10 @@ const STATUS: Record<string, string> = { backlog: 'To do', in_progress: 'In prog
  * "Where this comes from" (v4.77.0): each task the suggestion is about, with the meeting it was drafted from (its
  * date, who said it, what was said, who was there), or who added it by hand; and when the project manager reviewed.
  */
-function Sources({ s, tag, open }: { s: AgentSuggestion; tag: (c: string) => React.ReactNode; open?: Opener }) {
+/** What the panel can offer when a task is edited in it (v4.105.0); without it, the task's facts are read-only */
+type EditOptions = { people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[] }
+
+function Sources({ s, tag, open, edit }: { s: AgentSuggestion; tag: (c: string) => React.ReactNode; open?: Opener; edit?: EditOptions }) {
   const list = s.sources ?? []
   const small: React.CSSProperties = { fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }
   const one = (x: SuggestionSource) => {
@@ -69,7 +74,9 @@ function Sources({ s, tag, open }: { s: AgentSuggestion; tag: (c: string) => Rea
             ? <button type="button" onClick={() => open(x.task_id)} style={{ ...small, color: 'var(--m7)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Open task →</button>
             : <Link href={`/operations?task=${x.task_id}`} style={{ ...small, color: 'var(--m7)', textDecoration: 'none' }}>Open task →</Link>}
         </div>
-        <div style={small}>{facts.join(' · ')}</div>
+        {edit
+          ? <TaskQuickEdit task={{ id: x.task_id, title: x.title, status: x.status, needs_review: x.draft, ...x.edit }} {...edit} />
+          : <div style={small}>{facts.join(' · ')}</div>}
         {x.meeting ? (
           <div style={{ marginTop: 6, paddingLeft: 10, borderLeft: '2px solid var(--rule)' }}>
             <div style={{ ...small, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -112,7 +119,7 @@ const btn = (primary = false): React.CSSProperties => ({
  * leads and admins decide. Filtered by the board's circle filter. Starts collapsed (v4.33.1), except when the
  * page was opened at #pm.
  */
-export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide, projects = [], teams = [], onOpenTask }: {
+export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, canDecide, projects = [], teams = [], onOpenTask, editOptions }: {
   suggestions: AgentSuggestion[]; actions: PmAction[]; taskTitles: Record<string, string>
   /** The board's circle filter: one circle, several, or null / [] for all */
   circle: string | string[] | null; canDecide: (circle: string) => boolean
@@ -122,6 +129,8 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
   teams?: { id: string; name: string; circle: string }[]
   /** Opens a task's card on the board (v4.79.0); without it, task names are plain */
   onOpenTask?: (id: string) => void
+  /** Lets leads change the suggestion's tasks right here (v4.105.0): circle, subcircle, person, priority… */
+  editOptions?: EditOptions
 }) {
   const circles = useCircles()
   const router = useRouter()
@@ -206,9 +215,9 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}><span style={{ fontWeight: 600 }}>Why:</span> {s.reason}</div>}
                 <button onClick={() => setShowing(showing === s.id ? null : s.id)} aria-expanded={showing === s.id}
                   style={{ fontSize: 12, fontWeight: 600, color: 'var(--m7)', background: 'none', border: 'none', padding: 0, marginTop: 6, cursor: 'pointer' }}>
-                  {showing === s.id ? 'Hide where this comes from' : 'Where this comes from'}
+                  {showing === s.id ? (mayDecide && editOptions ? 'Hide its tasks' : 'Hide where this comes from') : mayDecide && editOptions ? '✎ Edit its tasks · where they come from' : 'Where this comes from'}
                 </button>
-                {showing === s.id && <Sources s={s} tag={tag} open={onOpenTask} />}
+                {showing === s.id && <Sources s={s} tag={tag} open={onOpenTask} edit={mayDecide ? editOptions : undefined} />}
                 {mayDecide && (s.kind === 'new_project' || s.kind === 'move') && (() => {
                   const v = where[s.id] ?? ''
                   const n = s.kind === 'new_project' ? (p.tasks ?? []).length : 1
