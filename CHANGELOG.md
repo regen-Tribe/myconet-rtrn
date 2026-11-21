@@ -5,6 +5,31 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.77.0 — 2026-11-20 — Where the project manager's suggestion comes from
+
+Oscar: "click something that shows me where the project manager is pulling this info from… what meeting it came
+from, date, who said it, any other facts about it". Each suggestion in the 🧭 Project manager panel (M07) has
+**Where this comes from**. For each task it's about, that shows:
+- The task's status, its project, who's on it, the due date and the priority.
+- Where it came from. For a meeting, that's the meeting's name (a link), its date, its circle, the line that was
+  said and who said it (Fireflies' speaker on that action item), and who was there. Otherwise, who added it by
+  hand and when.
+- The task's notes.
+- When the project manager reviewed the board.
+
+It's read with the person's own session, so a meeting they may not open shows as "a meeting you can't open". No
+migration.
+
+## v4.76.0 — 2026-11-20 — A photo of its own for each bookable thing
+
+Sonia: "these photos should actually represent the accommodation".
+- Migration `20261214000000_booking_item_photos.sql`: `booking_items.photo_url` (https only). Who may change it:
+  the existing item policies. Read separately, so a community that hasn't applied it keeps its bookings page.
+- Admins add, replace or remove an item's photo in its edit form (the public `branding` bucket, which only
+  admins upload to; the file is `item-<id>-<time>.<ext>`, the old one is removed).
+- Cards and the item's window show its own photo first, else the place's photo (v4.75.0). In the list each
+  picture shows once, on the first card that has it (the 20 dorm beds share one).
+
 ## v4.75.1 — 2026-11-20 — A place's photo shows once
 
 Sonia: "show the photo once per place". In Amenities & tools (M15) Browse, a place's photo shows on the first card

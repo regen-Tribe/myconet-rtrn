@@ -120,6 +120,8 @@ export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals
 
 /* ─── Browse ─────────────────────────────────────────────────────── */
 
+const shownPhoto = (i: BookingItem) => i.photo_url ?? i.place?.photo_url ?? null
+
 function Browse({ vm }: { vm: BookingsV4Model }) {
   return (
     <>
@@ -161,8 +163,8 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
       ) : (
         <div className="v4-grid">
           {vm.shown.map((item, k) => {
-            // A place's photo shows once, on its first card (20 dorm beds share one picture)
-            const photo = item.place?.photo_url && vm.shown.findIndex(o => o.place?.slug === item.place?.slug) === k ? item.place.photo_url : null
+            // Its own photo, else its place's; each picture shows once, on the first card that has it (20 dorm beds share one)
+            const photo = shownPhoto(item) && vm.shown.findIndex(o => shownPhoto(o) === shownPhoto(item)) === k ? shownPhoto(item) : null
             const ci = CATEGORY_ICON[item.category]
             const avail = vm.availability(item)
             return (

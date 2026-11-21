@@ -40,7 +40,8 @@ export function ItemFormModal({
   /** Tags already used in the inventory, offered as suggestions. */
   knownTags: string[]
   onClose: () => void
-  onSave: (payload: ItemPayload) => Promise<string | null>
+  /** The photo: a new file, 'remove', or null to keep it as it is (v4.76.0) */
+  onSave: (payload: ItemPayload, photo?: File | 'remove' | null) => Promise<string | null>
 }) {
   const circles = useCircles()
   const [name, setName] = useState(existing?.name ?? '')
@@ -54,6 +55,8 @@ export function ItemFormModal({
   const [requiresApproval, setRequiresApproval] = useState(existing?.requires_approval ?? category === 'accommodation')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [photo, setPhoto] = useState<File | 'remove' | null>(null)
+  const [preview, setPreview] = useState<string | null>(existing?.photo_url ?? null)
 
   // Circle leads can only place items in circles they lead (or no circle)
   const circleAllowed = (c: CircleSlug) => role === 'admin' || leadCircles.includes(c) || existing?.circle === c
@@ -82,7 +85,7 @@ export function ItemFormModal({
       location: location.trim() || null,
       capacity: cap,
       requires_approval: requiresApproval,
-    })
+    }, photo)
     setSaving(false)
     if (err) setError(err)
   }
@@ -129,6 +132,27 @@ export function ItemFormModal({
               </div>
             )}
           </div>
+
+          {/* Photos go in the branding bucket, which admins upload to */}
+          {role === 'admin' && (
+            <div className="v4-field">
+              <span>Photo <small>without one, it shows the photo of the place it’s in</small></span>
+              <div className="v4-placephoto">
+                {preview ? <img src={preview} alt="" /> : <span className="v4-placephoto__none">No photo yet</span>}
+                <span className="v4-placephoto__btns">
+                  <label className="v4-btn v4-btn--secondary v4-btn--sm">
+                    <span>{preview ? 'Replace photo' : 'Add a photo'}</span>
+                    <input type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => {
+                      const f = e.target.files?.[0]
+                      if (f) { setPhoto(f); setPreview(URL.createObjectURL(f)) }
+                      e.target.value = ''
+                    }} />
+                  </label>
+                  {preview && <Button size="sm" variant="quiet" onClick={() => { setPhoto(existing?.photo_url ? 'remove' : null); setPreview(null) }}>Remove</Button>}
+                </span>
+              </div>
+            </div>
+          )}
 
           <label className="v4-field">
             <span>Description</span>

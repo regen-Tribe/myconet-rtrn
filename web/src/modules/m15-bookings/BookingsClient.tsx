@@ -127,13 +127,35 @@ export default function BookingsClient({
     setToast(okMsg)
   }
 
-  async function saveItem(payload: ItemPayload): Promise<string | null> {
+  /** The item's own photo (v4.76.0): uploaded to the public branding bucket, its URL kept on the item */
+  async function saveItemPhoto(item: BookingItem, photo: File | 'remove'): Promise<string | null | Error> {
+    const old = item.photo_url?.split('/object/public/branding/')[1]?.split('?')[0] ?? null
+    let url: string | null = null
+    if (photo !== 'remove') {
+      const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[photo.type] ?? 'jpg'
+      const path = `item-${item.id}-${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('branding').upload(path, photo, { contentType: photo.type })
+      if (error) return new Error(`The photo didn’t upload: ${error.message}`)
+      url = supabase.storage.from('branding').getPublicUrl(path).data.publicUrl
+    }
+    const { data, error } = await supabase.from('booking_items').update({ photo_url: url }).eq('id', item.id).select('id')
+    if (error || !data?.length) return new Error('The photo didn’t save.')
+    if (old) await supabase.storage.from('branding').remove([old])
+    return url
+  }
+
+  async function saveItem(payload: ItemPayload, photo?: File | 'remove' | null): Promise<string | null> {
     const existing = form?.existing
     if (existing) {
       const { data, error } = await supabase.from('booking_items').update(payload).eq('id', existing.id).select(ITEM_SELECT)
       if (error) return bookingErrorMessage(error)
       if (!data?.length) return 'You can’t edit this item. Admins, and circle leads of its circle, can.'
-      const saved = toItem(data[0])
+      let saved: BookingItem = { ...existing, ...toItem(data[0]) }
+      if (photo) {
+        const res = await saveItemPhoto(saved, photo)
+        if (res instanceof Error) return res.message
+        saved = { ...saved, photo_url: res }
+      }
       setItems(list => list.map(i => (i.id === saved.id ? saved : i)))
       setForm(null)
       setOpenId(saved.id)
@@ -146,7 +168,12 @@ export default function BookingsClient({
         ? 'Circle leads can only add items to circles they lead, or with no circle.'
         : bookingErrorMessage(error)
     }
-    const saved = toItem(data)
+    let saved: BookingItem = toItem(data)
+    if (photo && photo !== 'remove') {
+      const res = await saveItemPhoto(saved, photo)
+      if (res instanceof Error) setToast(res.message)
+      else saved = { ...saved, photo_url: res }
+    }
     if (!CATEGORIES.includes(saved.category)) {
       // Added from the other page's category — send them where it lives
       window.location.assign(`${SCOPE_META[scopeForCategory(saved.category)].path}?item=${saved.id}`)
