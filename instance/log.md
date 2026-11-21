@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-21 — Core v4.103.0 via PR #77 (deployed, 57662898): merged tasks are deleted, not paused; Sonia's v4.89–v4.102
+- Merged by hand: the core-update workflow's merge failed in CI but was clean locally (instance/ untouched).
+- Migration `meeting_titles_without_date` applied via MCP (1 meeting renamed).
+
 ## 2026-11-21 — Core v4.88.0 via PR #76 (deployed, 9e6f27b8): Sonia's v4.85–v4.87 (circles overview, About chapters) and agents read handoff notes first
 - No migrations.
 
