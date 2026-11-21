@@ -1329,10 +1329,10 @@ svg { display: block; }
   --display: var(--font-inter-tight), 'Inter Tight', system-ui, sans-serif;
   --sans: var(--font-inter), 'Inter', system-ui, sans-serif;
   --mono: var(--font-inter), 'Inter', system-ui, sans-serif;
-  --bg: #E9EFFD; --bg-2: #EEF3FF; --bg-3: #E2E9FA;
-  --surface: #FFFFFF; --surface-2: #F5F8FF;
+  --bg: #F1F4FC; --bg-2: #F5F7FD; --bg-3: #E8ECF5;
+  --surface: #FFFFFF; --surface-2: #F8F9FC;
   --ink: #111317; --ink-2: #3A3F4A; --ink-3: #6B7180; --ink-4: #9AA0AD;
-  --rule: rgba(35, 80, 176, .13); --rule-soft: rgba(35, 80, 176, .07);
+  --rule: rgba(17, 19, 23, .09); --rule-soft: rgba(17, 19, 23, .05);
   --accent: #235C3B; --accent-2: #1B4A2F; --accent-soft: #D4F0DD;
   --shadow-sm: none; --shadow: 0 1px 2px rgba(17,19,23,.04); --shadow-lg: 0 18px 48px -18px rgba(17,19,23,.25);
   --radius: 14px; --radius-sm: 10px; --radius-lg: 20px;

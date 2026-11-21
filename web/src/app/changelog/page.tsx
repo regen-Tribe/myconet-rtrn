@@ -3,6 +3,42 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.84.0',
+    date: '2026-11-21',
+    title: 'Sort drafts right in the list',
+    items: ['In Operations › Tasks you can change a task’s status, circle, subcircle and the task it’s part of right in the list. Changing a draft confirms it.', '“✦ Tell the assistant” on each row asks the assistant to do something with that task.', 'Drafts you change or confirm stay in the drafts list with their new values until you reload the page.'],
+  },
+  {
+    version: 'v4.83.0',
+    date: '2026-11-21',
+    title: 'About reads as chapters',
+    items: ['About is easier to read through: each chapter keeps its heading, a short intro and a photo of the place in view while you read its topics, and each topic opens to the whole answer. A day here is a timeline.', 'The tiles under the photo each show a figure and what it means: the size of the land, how many people, places to sleep, the climate, the year it began, and off-grid power and water. Click one to read the whole answer.', 'The photo at the top fits the screen better, and the name and the line under it stay readable without covering the place.'],
+  },
+  {
+    version: 'v4.82.0',
+    date: '2026-11-21',
+    title: 'A calmer page colour',
+    items: ['In the v4 look the page behind the cards is half as blue, and the thin lines between things are a soft grey instead of blue. Cobalt stays for the drawings, so they stand out more.'],
+  },
+  {
+    version: 'v4.81.0',
+    date: '2026-11-21',
+    title: 'Circle seals',
+    items: ['In the v4 look each circle has a seal: its colour as a hand-drawn round with a small drawing in a cream line (a wheat stalk for farming, a pot for the kitchen). It shows on the circle cards, in the Circles filter, on board cards, on a task’s page and in the calendar.', 'Circles are now the only coloured icons, so a coloured seal always means a circle. Circle names no longer carry an emoji. A circle without a drawing shows its first letter.'],
+  },
+  {
+    version: 'v4.80.0',
+    date: '2026-11-21',
+    title: 'A calm Home that tells you where you are',
+    items: ['In the new look, Home is short and everyone lands there again. It welcomes you with a photo and says in one line what the community is, then shows Start here: three steps for your way in, with what you’ve already done ticked.', 'Below are About the community, in its own words, and Your portal: what MyCoNet is, how to ask it anything and where every page is. Then what we do here as tiles with live numbers, and what’s happening this week.', 'The logo takes you to Home; My dashboard is in the menu. The long tour of every page is still there, linked at the bottom.'],
+  },
+  {
+    version: 'v4.79.1',
+    date: '2026-11-21',
+    title: 'A bigger Draft pill to slide',
+    items: ['The Draft pill on a task the agent drafted is bigger, so it’s easier to grab and slide on a phone or with a mouse. Slide it right to approve, left to decline, as before.'],
+  },
+  {
     version: 'v4.79.0',
     date: '2026-11-20',
     title: 'Open a suggestion’s task, and accepting confirms a draft',

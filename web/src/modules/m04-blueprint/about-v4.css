@@ -1,46 +1,62 @@
 /* ─── v4 About {community} (AboutV4.tsx), as in the prototype (app.css › .ab-*). Moved out of globals.css (v4.67) ─── */
-.v4-about .ab-hero { border-radius: 28px; min-height: 420px; background: var(--cobalt, #1f3fb8) center / cover no-repeat; position: relative; overflow: hidden; display: flex; align-items: flex-end; }
-.v4-about .ab-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(17,19,23,0) 30%, rgba(17,19,23,.72) 100%); }
-.ab-hero-in { position: relative; padding: 28px; color: #fff; display: grid; gap: 12px; max-width: 780px; }
-.ab-hero-in h1 { font-family: var(--display); font-size: clamp(48px, 8vw, 88px); font-weight: 500; letter-spacing: -.05em; line-height: .95; margin: 0; color: #fff; }
-.ab-hero-in p { font-size: 17px; line-height: 1.45; opacity: .92; max-width: 580px; margin: 0; }
+/* The heading: the photo as a fixed wide frame (it never grows taller than a screen allows, so the tiles show
+   below it), the name sized to the frame rather than the window, and a scrim that darkens only where the words
+   sit (left and bottom), so the place itself stays bright on the right. */
+.v4-about .ab-hero { container-type: inline-size; border-radius: 28px; aspect-ratio: 12 / 5; min-height: 300px; max-height: min(460px, 58vh); background: var(--cobalt, #1f3fb8) center 42% / cover no-repeat; position: relative; overflow: hidden; display: flex; align-items: flex-end; }
+.v4-about .ab-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,16,14,.55) 0%, rgba(12,16,14,.28) 42%, rgba(12,16,14,0) 68%), linear-gradient(180deg, rgba(12,16,14,0) 40%, rgba(12,16,14,.6) 100%); }
+.ab-hero-in { position: relative; padding: clamp(20px, 4cqi, 36px); color: #fff; display: grid; gap: 10px; max-width: min(640px, 62cqi); }
+.ab-hero-in h1 { font-family: var(--display); font-size: clamp(44px, 8cqi, 80px); font-weight: 500; letter-spacing: -.045em; line-height: .95; margin: 0; color: #fff; text-shadow: 0 2px 24px rgba(0,0,0,.18); }
+.ab-hero-in p { font-size: clamp(15px, 1.7cqi, 18px); line-height: 1.4; margin: 0; max-width: 34ch; text-wrap: balance; text-shadow: 0 1px 12px rgba(0,0,0,.35); }
 .ab-place { justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.92); color: var(--ink, #111317); font-size: 12px; font-weight: 500; }
-.ab-hero-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-/* At a glance: one calm strip, label on top. A tile never opens in place: it jumps to the whole answer in
-   its chapter, which lights up briefly (Sonia, 20 Nov). Even rows at every width: one row, two, then pairs. */
-.ab-facts { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 1px; background: var(--rule-soft, rgba(17,19,23,.07)); border-radius: 22px; overflow: hidden; margin: 12px 0; }
-.ab-fact { position: relative; background: var(--surface, #fff); padding: 16px 16px 18px; display: grid; gap: 6px; align-content: start; color: var(--ink, #111317); text-decoration: none; transition: background .15s; }
-.ab-fact:hover { background: var(--blue-soft, #f3f7ff); }
-.ab-fact:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: -2px; }
-.ab-fact span { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); padding-right: 18px; }
-.ab-fact b { font-family: var(--display); font-size: 19px; font-weight: 500; letter-spacing: -.02em; line-height: 1.2; }
-.ab-fact svg { position: absolute; top: 14px; right: 14px; color: var(--ink-4, #9aa0ad); transition: color .15s, transform .15s; }
-.ab-fact:hover svg { color: var(--blue-ink, #2350b0); transform: translateY(2px); }
+.ab-hero-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+/* Phones: a taller frame (the photo stays a photo), the words across the bottom, the two buttons side by side */
+@container (max-width: 560px) {
+  .ab-hero-in { max-width: none; }
+  .ab-hero-acts { flex-wrap: nowrap; }
+}
+/* A narrow phone has no room for both labels in one row: the main step keeps its words, Ask (and Edit) become
+   round icon buttons; the words stay as their accessible names */
+@container (max-width: 400px) {
+  .ab-hero-acts .v4-btn:not(.v4-btn--next) { font-size: 0; gap: 0; width: 44px; min-width: 44px; padding: 0; justify-content: center; flex: none; }
+}
+@media (max-width: 640px) {
+  .v4-about .ab-hero { aspect-ratio: 4 / 5; max-height: 72vh; border-radius: 24px; }
+  .v4-about .ab-hero::before { background: linear-gradient(180deg, rgba(12,16,14,0) 30%, rgba(12,16,14,.7) 100%); }
+}
+/* At a glance: a tile per fact, the label, a figure you take in at once and one line on what it means (Sonia,
+   20 Nov: tiles, "make it make sense for the content"). A tile jumps to the whole answer in its chapter. */
+.ab-facts { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.ab-fact { background: var(--surface, #fff); border-radius: 18px; padding: 14px 16px 15px; display: grid; gap: 2px; align-content: start; color: var(--ink, #111317); text-decoration: none; transition: background .15s, transform .15s; }
+.ab-fact:hover { filter: brightness(.97) saturate(1.1); transform: translateY(-1px); }
+.ab-fact:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: 2px; }
+/* A colour per tile, kept faint (Sonia, 20 Nov: "to colorful, but i like these being different colour"): a light
+   tint of the pastel, the label in its darker ink, the figure and line as on any card */
+.ab-fact--green { background: color-mix(in srgb, var(--green, #d3f1dc) 32%, var(--surface, #fff)); --tone-ink: var(--green-ink, #2e7a4a); }
+.ab-fact--violet { background: color-mix(in srgb, var(--violet, #e5dcff) 32%, var(--surface, #fff)); --tone-ink: var(--violet-ink, #5b3fb0); }
+.ab-fact--blue { background: color-mix(in srgb, var(--blue, #d6e4ff) 32%, var(--surface, #fff)); --tone-ink: var(--blue-ink, #2350b0); }
+.ab-fact--yellow { background: color-mix(in srgb, var(--yellow, #fff0b3) 32%, var(--surface, #fff)); --tone-ink: var(--yellow-ink, #7a5b00); }
+.ab-fact--red { background: color-mix(in srgb, var(--red, #ffd9d6) 32%, var(--surface, #fff)); --tone-ink: var(--red-ink, #ae3a35); }
+.ab-fact span { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--tone-ink, var(--ink-4, #9aa0ad)); margin-bottom: 4px; }
+.ab-fact b { font-family: var(--display); font-size: 26px; font-weight: 500; letter-spacing: -.035em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ab-fact small { font-size: 12.5px; line-height: 1.35; color: var(--ink-3, #6b7280); }
 @media (max-width: 1180px) { .ab-facts { grid-template-columns: repeat(var(--half, 3), minmax(0, 1fr)); } }
 @media (max-width: 640px) {
-  .ab-facts { grid-template-columns: 1fr 1fr; }
+  .ab-facts { grid-template-columns: 1fr 1fr; gap: 6px; }
   .ab-fact:last-child:nth-child(odd) { grid-column: 1 / -1; }
-  .ab-fact { padding: 14px 14px 16px; }
-  .ab-fact b { font-size: 17px; }
+  .ab-fact { padding: 12px 13px 13px; border-radius: 16px; }
+  .ab-fact b { font-size: 22px; }
 }
-/* The facts' whole answers, in their chapter */
-.ab-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; margin: 0 0 16px; }
-.ab-spec { background: var(--surface, #fff); border-radius: 20px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; scroll-margin-top: 130px; transition: box-shadow .3s; }
-.ab-spec .v4-prose { margin: 0; }
-.ab-spec:target { box-shadow: 0 0 0 2px var(--blue-ink, #2350b0); animation: abSpecIn 1.6s ease; }
-@keyframes abSpecIn { 0%, 40% { background: var(--blue, #d6e4ff); } 100% { background: var(--surface, #fff); } }
 /* Sticky heading: the name once the photo is gone, the chapters (the one you're reading in soft blue), Edit */
-.ab-nav { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 10px; margin: 0 -12px; padding: 10px 12px; background: color-mix(in srgb, var(--bg, #e9effd) 95%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 0 0 18px 18px; transition: box-shadow .2s; }
+.ab-nav { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 10px; margin: 0 -12px; padding: 10px 12px; background: color-mix(in srgb, var(--bg, #f1f4fc) 95%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 0 0 18px 18px; transition: box-shadow .2s; }
 .ab-nav--stuck { box-shadow: 0 10px 24px -18px rgba(17,19,23,.35); }
 .ab-nav__name { font-family: var(--display); font-size: 18px; font-weight: 500; letter-spacing: -.03em; color: var(--ink, #111317); text-decoration: none; white-space: nowrap; max-width: 0; opacity: 0; overflow: hidden; transition: max-width .25s, opacity .2s; }
 .ab-nav--stuck .ab-nav__name { max-width: 220px; opacity: 1; }
-.ab-nav__chips { flex: 1; min-width: 0; margin: 0; padding: 0; }
+.ab-nav__chips { flex: 1; min-width: 0; margin: 0; padding: 0; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
 .ab-nav .v4-chip { text-decoration: none; }
 .ab-nav .v4-chip[aria-current] { background: var(--blue, #d6e4ff); color: var(--blue-ink, #2350b0); }
 .ab-nav__edit { flex-shrink: 0; }
 .ab-why { scroll-margin-top: 64px; }
 @media (max-width: 640px) { .ab-nav--stuck .ab-nav__name { display: none; } .ab-nav__edit span { display: none; } }
-.ab-why { padding: 28px 0 8px; }
 .ab-why blockquote { font-family: var(--display); font-size: clamp(24px, 3.4vw, 36px); font-weight: 400; letter-spacing: -.03em; line-height: 1.15; margin: 10px 0 12px; max-width: 900px; }
 .ab-sec { padding: 34px 0 6px; scroll-margin-top: 64px; }
 .ab-h { font-family: var(--display); font-size: clamp(26px, 3.2vw, 34px); font-weight: 500; letter-spacing: -.03em; line-height: 1.1; margin: 6px 0 16px; max-width: 760px; }
@@ -87,7 +103,7 @@
 .ab-bars__row { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2, #3a3f4a); }
 .ab-bar { height: 6px; border-radius: 999px; background: var(--bg-2, #f2f3f7); overflow: hidden; }
 .ab-bar i { display: block; height: 100%; background: var(--ink, #111317); border-radius: 999px; }
-@media (max-width: 860px) { .ab-split, .ab-split--even { grid-template-columns: 1fr; } .v4-about .ab-hero { min-height: 340px; } }
+@media (max-width: 860px) { .ab-split, .ab-split--even { grid-template-columns: 1fr; } }
 .ab-more summary { list-style: none; cursor: pointer; display: grid; gap: 6px; }
 .ab-more summary::-webkit-details-marker { display: none; }
 .ab-more__btn { font-size: 13px; font-weight: 600; color: var(--ink, #111317); text-decoration: underline; text-underline-offset: 3px; }
@@ -99,3 +115,66 @@
 
 /* Notes under a card's answer (v4.64) */
 .ab-note .v4-prose { color: var(--ink-3, #6b7180); font-size: 13px; }
+
+/* ─── Chapters (v4.73): headline, lead and a photo on one side, the topics as quiet rows on the other ─── */
+.ab-ch { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; padding: 56px 0 8px; scroll-margin-top: 64px; align-items: start; }
+.ab-ch + .ab-ch, .ab-why + .ab-ch { border-top: 1px solid var(--rule-soft, rgba(35,80,176,.07)); }
+.ab-ch__side { position: sticky; top: 76px; display: grid; gap: 12px; align-content: start; }
+.ab-ch__side .ab-h { margin: 0; }
+.ab-ch__side .ab-lead, .ab-why .ab-lead { font-size: 16.5px !important; line-height: 1.65; color: var(--ink-2, #3a3f4a); margin: 0 !important; }
+.ab-ch__photo { margin: 6px 0 0; display: grid; gap: 6px; }
+.ab-ch__photo > a, .ab-ch__photo > div { display: block; aspect-ratio: 4 / 3; border-radius: 22px; background: var(--bg-3, #e2e9fa) center / cover no-repeat; transition: transform .25s, box-shadow .25s; }
+.ab-ch__photo > a:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -22px rgba(17,19,23,.5); }
+.ab-ch__photo figcaption { font-size: 12px; color: var(--ink-3, #6b7180); padding-left: 4px; }
+.ab-ch__tags { margin-top: 4px; }
+.ab-ch__main { display: grid; gap: 28px; min-width: 0; }
+.ab-ch .ab-links { margin: 0; }
+.ab-more--lead .ab-more__btn { font-size: 13px; }
+
+/* Topics: one white list, a row per topic: icon, title, the first sentence; opens to the whole answer */
+.ab-topics { display: grid; gap: 10px; }
+.ab-topics__h { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3, #6b7180); margin: 0 4px; }
+.ab-topics__list { background: var(--surface, #fff); border-radius: 22px; overflow: hidden; }
+.ab-topic + .ab-topic { border-top: 1px solid var(--rule-soft, rgba(35,80,176,.07)); }
+.ab-topic { scroll-margin-top: 120px; }
+.ab-topic summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 18px; transition: background .15s; }
+.ab-topic summary::-webkit-details-marker { display: none; }
+.ab-topic summary:hover { background: var(--bg-2, #f5f8ff); }
+.ab-topic summary:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: -2px; }
+.ab-topic summary > .v4-icon, .ab-topic summary > svg { color: var(--ink-4, #9aa0ad); transition: transform .2s; }
+.ab-topic[open] summary > .v4-icon, .ab-topic[open] summary > svg { transform: rotate(180deg); color: var(--ink, #111317); }
+.ab-topic__t { display: grid; gap: 2px; min-width: 0; }
+.ab-topic__t b { font-size: 15px; font-weight: 600; color: var(--ink, #111317); }
+.ab-topic__peek { font-size: 13.5px; color: var(--ink-3, #6b7180); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ab-topic[open] .ab-topic__peek { display: none; }
+.ab-topic__body { padding: 0 18px 18px 72px; display: grid; gap: 10px; animation: abTopicIn .18s ease; }
+.ab-topic__body .v4-prose { margin: 0; font-size: 15px; line-height: 1.65; }
+.ab-topic__note { color: var(--ink-3, #6b7180) !important; font-size: 13.5px !important; padding-left: 12px; border-left: 2px solid var(--rule, rgba(35,80,176,.13)); }
+.ab-topic:target summary, .ab-topic--flash summary { animation: abSpecIn 1.8s ease; }
+@keyframes abTopicIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+@keyframes abSpecIn { 0%, 40% { background: var(--blue, #d6e4ff); } 100% { background: transparent; } }
+
+/* Values: a numbered list, calm, one per line */
+.ab-vals { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ab-vals .ab-val { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: start; padding: 18px 20px; }
+.ab-vals .ab-val .n { margin: 0; }
+.ab-vals .ab-val b { display: block; margin-bottom: 4px; }
+.ab-vals .ab-val .v4-prose { margin: 0; }
+
+.ab-why { padding: 40px 0 8px; display: grid; gap: 16px; max-width: 860px; }
+.ab-why blockquote { margin: 4px 0 0; font-size: clamp(22px, 2.7vw, 31px); line-height: 1.22; }
+
+@media (max-width: 900px) {
+  .ab-ch { grid-template-columns: 1fr; gap: 20px; padding-top: 40px; }
+  .ab-ch__side { position: static; }
+  .ab-ch__photo > a, .ab-ch__photo > div { aspect-ratio: 16 / 10; }
+}
+@media (max-width: 640px) {
+  .ab-topic summary { padding: 13px 14px; gap: 12px; }
+  .ab-topic__body { padding: 0 14px 16px; }
+  .ab-vals .ab-val { grid-template-columns: 40px minmax(0, 1fr); padding: 16px; }
+}
+.ab-ch .ab-day { padding: 6px 20px; border-radius: 22px; }
+.ab-ch .ab-day li { grid-template-columns: 116px minmax(0, 1fr); align-items: baseline; padding: 11px 0; }
+.ab-ch .ab-day .t { font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .ab-ch .ab-day li { grid-template-columns: 100px minmax(0, 1fr); } .ab-ch .ab-day .t { font-size: 13px; } }

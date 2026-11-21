@@ -54,7 +54,7 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
 
   if (state === 'declining') {
     return (
-      <span onClick={stop} onPointerDown={e => e.stopPropagation()} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#b91c1c', background: '#fee2e2', borderRadius: 4, padding: '1px 5px', marginRight: 6, verticalAlign: 1 }}>
+      <span onClick={stop} onPointerDown={e => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, lineHeight: 1.2, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#b91c1c', background: '#fee2e2', borderRadius: 6, padding: '5px 11px', marginRight: 8, verticalAlign: 'middle' }}>
         Declined ·{' '}
         <button type="button" onClick={e => { stop(e); undo() }} style={{ all: 'unset', cursor: 'pointer', textDecoration: 'underline' }}>Undo</button>
       </span>
@@ -102,9 +102,9 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
         else if (e.key === 'ArrowLeft') { stop(e); decline() }
       }}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4, position: 'relative',
-        fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
-        color, background: bg, borderRadius: 4, padding: '1px 5px', marginRight: 6, verticalAlign: 1,
+        display: 'inline-flex', alignItems: 'center', gap: 5, position: 'relative',
+        fontSize: 11, lineHeight: 1.2, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+        color, background: bg, borderRadius: 6, padding: '5px 11px', marginRight: 8, verticalAlign: 'middle',
         outline: error ? '1px solid #b91c1c' : undefined,
         transform: `translateX(${pull}px)`, transition: sliding ? 'none' : 'transform 150ms, background 150ms',
         cursor: state === 'saving' ? 'progress' : 'grab', touchAction: 'pan-y', userSelect: 'none',

@@ -1,4 +1,5 @@
 'use client'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
 import { DraftSwipe } from './DraftSwipe'
 import { useEffect, useState } from 'react'
 import { setAgentContext } from '@/core/lib/agent-context'
@@ -357,7 +358,7 @@ export default function ProjectDetailClient({
           {/* The prototype's project hero: the circle's colour, its name, the lead and the calendar at hand */}
           <div className="pj4-hero" style={{ ['--c' as string]: circles.has(project.circle) ? circles.meta(project.circle).color : '#8a8f9c' }}>
             {circles.has(project.circle) && (
-              <span className="pj4-pill"><V4Icon name="circles" size={14} />{circles.meta(project.circle).label} circle{teams.find(t => t.id === project.team_id) ? ` · ${teams.find(t => t.id === project.team_id)!.name}` : ''}</span>
+              <span className="pj4-pill"><CircleSeal slug={project.circle} size={16} />{circles.meta(project.circle).label} circle{teams.find(t => t.id === project.team_id) ? ` · ${teams.find(t => t.id === project.team_id)!.name}` : ''}</span>
             )}
             <span className="pj4-round">
               {leadProfile?.username && <Link href={`/u/${leadProfile.username}`} aria-label="The task lead" className="pj4-rbtn"><V4Icon name="user" /></Link>}

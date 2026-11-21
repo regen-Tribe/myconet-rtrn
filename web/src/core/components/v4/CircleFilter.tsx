@@ -1,4 +1,5 @@
 'use client'
+import { CircleSeal } from './CircleSeal'
 
 /**
  * The one way to filter by circle in the v4 look (v4.68.0, Sonia's option A).
@@ -79,7 +80,7 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
           return (
             <label key={o.slug} className={cx('v4-cf__row', on && 'v4-cf__row--on')}>
               <input type="checkbox" checked={on} onChange={() => toggle(o.slug)} />
-              <i className="v4-dot" style={{ background: o.color }} />
+              <CircleSeal slug={o.slug} size={18} />
               <span className="v4-cf__name">{o.label}</span>
               {o.count != null && <span className="v4-cf__count">{o.count}</span>}
             </label>
@@ -105,7 +106,7 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
         const o = byslug.get(s)!
         return (
           <span key={s} className="v4-cf__pill">
-            <i className="v4-dot" style={{ background: o.color }} />{o.label}
+            <CircleSeal slug={o.slug} size={16} />{o.label}
             <button type="button" className="no-min-height" onClick={() => toggle(s)} aria-label={`Stop filtering by ${o.label}`}><Icon name="x" size={11} /></button>
           </span>
         )

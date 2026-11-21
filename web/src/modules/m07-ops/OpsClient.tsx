@@ -1,4 +1,5 @@
 'use client'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -339,7 +340,7 @@ function V4ProjectCard({ project, subtaskCount, doneCount, canMove, people, watc
         <b className="ops4-title">{project.title}</b>
         {(meta || teamName) && (
           <div className="ops4-circ">
-            {meta && <span className="v4-dot" style={{ background: meta.color }} />}
+            {meta && <CircleSeal slug={project.circle} size={16} />}
             {meta?.label}{teamName ? `${meta ? ' · ' : ''}${teamName}` : ''}
           </div>
         )}
@@ -917,6 +918,7 @@ export default function OpsClient({
           deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly}
           canDecide={canEditTask}
           onOpen={setOpenTask}
+          projectOptions={projectOptions} teams={teams}
           onDecided={() => router.refresh()}
         />
       )}

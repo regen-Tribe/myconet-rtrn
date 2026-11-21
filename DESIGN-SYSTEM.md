@@ -17,7 +17,7 @@ in the rest of this file until v4 is finished and becomes the default. Words fol
 (2) Main buttons are black pills; secondary buttons are white with a hairline. (3) Colour shows status, never a
 module: To do blue, In progress violet, Review red, Done green, Paused yellow, Ideas grey (`--st-*`). The module
 colours (`--m*`) are black in v4. (4) Labels above headings (eyebrows) are light sans capitals, wide letter-spacing,
-`--ink-4`; no mono font. (5) A pale blue page (`--bg`) with white cards, no shadows; three radii: pill, card 20px,
+`--ink-4`; no mono font. (5) A faintly blue page (`--bg`, half the first v4 wash; hairlines neutral grey) with white cards, no shadows; three radii: pill, card 20px,
 inner 12px; six text sizes 11/13/15/18/24/40. (6) One hand-drawn icon set (marker line); no emoji in the interface.
 (7) Drawings (cream on cobalt) only for empty screens and page headers. (8) The board keeps its Paused column
 (Oscar, 2026-11-19), for projects only, after Done.
@@ -34,6 +34,18 @@ one release each, behind the same switch:
 3. My dashboard (done in v4.41.0, `m00-dashboard/DashboardV4.tsx`); 4. About {community} (the Blueprint as a page); 5. Amenities & tools (Accommodation and Resources
    together, with a map); 6. Admin: Bookings calendar (who stays where) and Permissions; 7. the remaining modules.
 Each release replaces that module's hard-coded colours and sizes with tokens and components.
+
+**Three visual layers, never mixed (v4.78.0–v4.79.0).** Each look means one thing:
+- **Interface icons:** the marker-line set in ink (`Icon`, `InlineIcon` in a line of text). Never coloured, never
+  an emoji. Older code that imported `lucide-react` gets the same icons through `v4/lucide-compat.tsx`.
+- **Circles:** the circle seal (`CircleSeal`): the circle's colour as a hand-drawn round with its glyph in a cream
+  line (`v4/circle-glyphs.ts`, `circles.icon`; no glyph shows the initial). The only coloured icons in the app,
+  so colour plus seal always means "a circle". Sizes 16 (pills, filters, cards), 24, 40 (circle cards), 64.
+  Circle colours are evenly spaced and at least 3:1 against the page; the cream line is at least 3:1 on every seal.
+- **Status:** the pastel pills (`StatusPill`). Never a dot in a circle's colour.
+
+Older screens without v4 components still get the look: the bridge in `globals.css` restyles their common inline
+patterns everywhere inside the shell (`main.v4-main`). New screens use the components, not the bridge.
 
 The prototype these come from: `design/redesign-prototype/app.html` (open it in a browser; sample data, with a "View as" role switch). `index.html` beside it has the rules, colours, icons and drawings.
 
