@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-20 — Checked out working (no code change)
+- Oz: "its working perfect". First uploaded meeting reached the second brain (18cfef7). Site picture: Admin › Bookings ›
+  Map; room photos: Map › Edit places. Next: v4.75.0 (photos on booking cards); delete Vault
+  `meetings_sweep_secret_old_20261120`.
+
 ## 2026-11-20 — Core v4.74.0 via PR #71 (deployed, d0ea8db3): Ask and Do read the second brain
 - `"assistant": { "secondBrain": true }` on (ffec2a0). Tiered: members the meeting notes + boards, leads/admins also
   the hand-written notes. Includes Sonia's v4.68–v4.73 (Map M19 etc.). Migration `places` applied via MCP (without the
