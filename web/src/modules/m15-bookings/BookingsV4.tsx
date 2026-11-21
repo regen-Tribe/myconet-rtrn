@@ -9,6 +9,7 @@ import {
 import type { Booking, BookingCategory, BookingItem, BookingsTab } from './types'
 import { CATEGORY_META, STATUS_META, canManageItem, fmtBookingRange, personName } from './lib/inventory'
 import AmenitiesMap from './AmenitiesMap'
+import { SpaceTabs } from '@/core/components/SpaceTabs'
 
 /**
  * Amenities & tools and Admin › Bookings in the v4 look (Sonia's prototype, 19 Nov). Same data, rules and
@@ -78,6 +79,7 @@ export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals
         subtitle={vm.admin ? 'Who stays where, the requests waiting for you, and the inventory.' : counts}
         actions={vm.isManager ? <Button icon="plus" onClick={vm.add}>Add item</Button> : undefined}
       />
+      {!vm.admin && <SpaceTabs on="amenities" />}
 
       {!vm.admin && !vm.userId && (
         <Card className="v4-note"><Icon name="lock" /><span>Browse what the community shares. <Link href="/auth/login">Sign in</Link> to book.</span></Card>
@@ -122,6 +124,84 @@ export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals
 
 const shownPhoto = (i: BookingItem) => i.photo_url ?? i.place?.photo_url ?? null
 
+/** The top of a card: the photo (or a tinted tile with the category's icon), with what's free on it */
+function ItemMedia({ photo, category, badge, busy }: { photo: string | null; category: BookingCategory; badge?: string | null; busy?: boolean }) {
+  const ci = CATEGORY_ICON[category]
+  return (
+    <span className="v4-item__media">
+      {photo
+        ? <img src={photo} alt="" loading="lazy" />
+        : <span className={`v4-item__ph v4-tile--${ci.tone}`}><Icon name={ci.icon} size={34} /></span>}
+      {badge && <span className={`v4-item__badge${busy ? ' v4-item__badge--busy' : ''}`}>{badge}</span>}
+    </span>
+  )
+}
+
+/**
+ * Numbered things of one kind show as one card (v4.80.0): "Dorm 1 – bed 1…10" is Dorm 1 with 10 beds to pick from,
+ * "Room 1…9" is Rooms 1–9. Three or more items of a category whose names differ only in the last number group up.
+ */
+type GroupEntry = { kind: 'group'; key: string; title: string; unit: string; items: BookingItem[] }
+type BrowseEntry = { kind: 'item'; item: BookingItem } | GroupEntry
+
+const GROUP_MIN = 3
+const numbered = (name: string) => name.match(/^(.*?)\s*(\d+)$/)
+
+function groupItems(items: BookingItem[]): BrowseEntry[] {
+  const byStem = new Map<string, BookingItem[]>()
+  for (const i of items) {
+    const m = numbered(i.name)
+    if (!m || !m[1]) continue
+    const key = `${i.category}|${m[1]}`
+    byStem.set(key, [...(byStem.get(key) ?? []), i])
+  }
+  const out: BrowseEntry[] = []
+  const done = new Set<string>()
+  for (const i of items) {
+    const m = numbered(i.name)
+    const key = m && m[1] ? `${i.category}|${m[1]}` : null
+    const members = key ? byStem.get(key) ?? [] : []
+    if (!key || members.length < GROUP_MIN) { out.push({ kind: 'item', item: i }); continue }
+    if (done.has(key)) continue
+    done.add(key)
+    const sorted = [...members].sort((x, y) => Number(numbered(x.name)![2]) - Number(numbered(y.name)![2]))
+    const stem = numbered(sorted[0].name)![1]
+    // "Dorm 1 – bed" → Dorm 1, beds; "Room" → Rooms 1–9, rooms
+    const split = stem.match(/^(.*\S)\s*[–—-]\s*(\S+)$/)
+    const nums = sorted.map(x => numbered(x.name)![2])
+    const title = split ? split[1] : `${stem}s ${nums[0]}–${nums[nums.length - 1]}`
+    const unit = (split ? split[2] : stem).toLowerCase()
+    out.push({ kind: 'group', key, title, unit, items: sorted })
+  }
+  return out
+}
+
+function GroupCard({ vm, group }: { vm: BookingsV4Model; group: GroupEntry }) {
+  const first = group.items[0]
+  const photo = group.items.map(shownPhoto).find(Boolean) ?? null
+  const isFree = (i: BookingItem) => { const a = vm.availability(i); return !a || !a.text.startsWith('In use') }
+  const free = group.items.filter(isFree).length
+  const cap = first.capacity && group.items.every(i => i.capacity === first.capacity) ? first.capacity : null
+  const where = first.location ?? first.place?.name ?? null
+  return (
+    <div className="v4-card v4-item v4-item--group">
+      <ItemMedia photo={photo} category={first.category} badge={vm.now ? (free === 0 ? 'All in use now' : `${free} of ${group.items.length} free now`) : null} busy={free === 0} />
+      <div className="v4-item__body">
+        <b>{group.title}</b>
+        <small>{[`${group.items.length} ${group.unit}s`, cap ? `${cap} ${cap === 1 ? 'person' : 'people'} each` : null, where].filter(Boolean).join(' · ')}</small>
+        <div className="v4-unitpick" role="group" aria-label={`Pick a ${group.unit}`}>
+        {group.items.map(i => (
+          <button key={i.id} type="button" className={`v4-unit${isFree(i) ? '' : ' v4-unit--busy'}`} onClick={() => vm.open(i.id)}
+            title={vm.availability(i)?.text ?? i.name}>
+            {group.unit === 'room' ? numbered(i.name)![2] : `${group.unit[0].toUpperCase()}${group.unit.slice(1)} ${numbered(i.name)![2]}`}
+          </button>
+        ))}
+      </div>
+      </div>
+    </div>
+  )
+}
+
 function Browse({ vm }: { vm: BookingsV4Model }) {
   return (
     <>
@@ -136,8 +216,6 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
           </ChipRow>
         )}
         <span className="v4-toolbar__end">
-          {/* One map for the whole land: the Map page (v4.74.0) shows where each of these is */}
-          {vm.mapUrl && <Link href="/map" className="v4-btn v4-btn--secondary v4-btn--sm"><Icon name="map" size={15} />See the map</Link>}
           <label className="v4-search">
             <Icon name="search" size={16} />
             <input value={vm.query} onChange={e => vm.setQuery(e.target.value)} placeholder="Search" aria-label="Search the inventory" />
@@ -161,29 +239,24 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
             : 'Try another category or clear the search.'}
         />
       ) : (
-        <div className="v4-grid">
-          {vm.shown.map((item, k) => {
-            // Its own photo, else its place's; each picture shows once, on the first card that has it (20 dorm beds share one)
-            const photo = shownPhoto(item) && vm.shown.findIndex(o => shownPhoto(o) === shownPhoto(item)) === k ? shownPhoto(item) : null
-            const ci = CATEGORY_ICON[item.category]
+        <div className="v4-grid v4-grid--gallery">
+          {groupItems(vm.shown).map(entry => {
+            if (entry.kind === 'group') return <GroupCard key={entry.key} vm={vm} group={entry} />
+            const item = entry.item
             const avail = vm.availability(item)
             return (
-              <button key={item.id} type="button" className={`v4-card v4-card--link v4-item${photo ? ' v4-item--photo' : ''}`} onClick={() => vm.open(item.id)}>
-                {photo && <img className="v4-item__photo" src={photo} alt="" loading="lazy" />}
-                <div className="v4-card-head">
-                  <IconTile name={ci.icon} tone={ci.tone} />
-                  <div>
-                    <b>{item.name}</b>
-                    <small>{[CATEGORY_META[item.category].label, item.location ?? (item.place?.name !== item.name ? item.place?.name : null), item.capacity ? `${item.capacity} people` : null].filter(Boolean).join(' · ')}</small>
-                  </div>
-                </div>
-                {(item.tags.length > 0 || item.requires_approval) && (
-                  <div className="v4-tags">
-                    {item.requires_approval && <Tag icon="hand">Needs approval</Tag>}
-                    {item.tags.slice(0, 3).map(t => <Tag key={t}>{t}</Tag>)}
-                  </div>
-                )}
-                {avail && <span className={`v4-avail${avail.text.startsWith('In use') ? ' v4-avail--busy' : ''}`}>{avail.text}</span>}
+              <button key={item.id} type="button" className="v4-card v4-card--link v4-item" onClick={() => vm.open(item.id)}>
+                <ItemMedia photo={shownPhoto(item)} category={item.category} badge={avail?.text} busy={avail?.text.startsWith('In use')} />
+                <span className="v4-item__body">
+                  <b>{item.name}</b>
+                  <small>{[CATEGORY_META[item.category].label, item.location ?? (item.place?.name !== item.name ? item.place?.name : null), item.capacity ? `${item.capacity} ${item.capacity === 1 ? 'person' : 'people'}` : null].filter(Boolean).join(' · ')}</small>
+                  {(item.tags.length > 0 || item.requires_approval) && (
+                    <span className="v4-tags">
+                      {item.requires_approval && <Tag icon="hand">Needs approval</Tag>}
+                      {item.tags.slice(0, 3).map(t => <Tag key={t}>{t}</Tag>)}
+                    </span>
+                  )}
+                </span>
               </button>
             )
           })}

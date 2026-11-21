@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { isMenuActive, menuGroups } from '@/core/lib/nav'
-import { Icon } from '@/core/components/v4'
+import { Icon, type IconName } from '@/core/components/v4'
 import { createClient } from '@/core/lib/supabase/client'
 import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -153,23 +153,23 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
     { label: 'Achievements', href: '/achievements', icon: '' },
     'divider',
     { label: 'Sign out', action: signOut, icon: '', danger: true },
-  ].filter(Boolean) as (string | { label: string; href?: string; action?: () => void; icon: string; danger?: boolean })[] : [
-    username ? { label: 'View my profile', href: `/u/${username}`, icon: '👤' } : null,
-    { label: 'Edit profile', href: '/profile/edit', icon: '✏️' },
-    { label: 'Change password', href: '/account/password', icon: '🔒' },
-    { label: 'Dashboard', href: '/dashboard', icon: '⊞' },
-    { label: 'Members', href: '/members', icon: '🌐' },
-    { label: 'Circles', href: '/circles', icon: '🧭' },
-    { label: 'Achievements', href: '/achievements', icon: '✦' },
-    { label: 'Governance', href: '/governance', icon: '☉' },
-    { label: 'Calendar', href: '/calendar', icon: '🗓' },
-    { label: 'Accommodation', href: '/accommodation', icon: '🏡' },
-    { label: 'Resources', href: '/resources', icon: '🔑' },
+  ].filter(Boolean) as (string | { label: string; href?: string; action?: () => void; icon: IconName | ''; danger?: boolean })[] : [
+    username ? { label: 'View my profile', href: `/u/${username}`, icon: 'user' } : null,
+    { label: 'Edit profile', href: '/profile/edit', icon: 'pencil' },
+    { label: 'Change password', href: '/account/password', icon: 'lock' },
+    { label: 'Dashboard', href: '/dashboard', icon: 'grid' },
+    { label: 'Members', href: '/members', icon: 'users' },
+    { label: 'Circles', href: '/circles', icon: 'circles' },
+    { label: 'Achievements', href: '/achievements', icon: 'star' },
+    { label: 'Governance', href: '/governance', icon: 'scale' },
+    { label: 'Calendar', href: '/calendar', icon: 'calendar' },
+    { label: 'Accommodation', href: '/accommodation', icon: 'bed' },
+    { label: 'Resources', href: '/resources', icon: 'key' },
     'divider',
-    { label: isDark ? 'Light mode' : 'Dark mode', action: toggleTheme, icon: isDark ? '☀' : '◑' },
+    { label: isDark ? 'Light mode' : 'Dark mode', action: toggleTheme, icon: isDark ? 'sun' : 'moon' },
     'divider',
-    { label: 'Sign out', action: signOut, icon: '→', danger: true },
-  ].filter(Boolean) as (string | { label: string; href?: string; action?: () => void; icon: string; danger?: boolean })[]
+    { label: 'Sign out', action: signOut, icon: 'logout', danger: true },
+  ].filter(Boolean) as (string | { label: string; href?: string; action?: () => void; icon: IconName | ''; danger?: boolean })[]
 
   return (
     <header ref={headerRef} className="topbar" style={{
@@ -356,7 +356,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
 
                 {menuItems.map((item, i) => {
                   if (item === 'divider') return <div key={i} style={{ height: 1, background: 'var(--rule)', margin: '4px 0' }} />
-                  const it = item as { label: string; href?: string; action?: () => void; icon: string; danger?: boolean }
+                  const it = item as { label: string; href?: string; action?: () => void; icon: IconName | ''; danger?: boolean }
                   const style: React.CSSProperties = {
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
@@ -365,7 +365,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
                     background: 'none', border: 'none', textDecoration: 'none',
                     transition: 'background 100ms',
                   }
-                  const iconEl = it.icon ? <span style={{ fontSize: 13, width: 18, textAlign: 'center', flexShrink: 0 }}>{it.icon}</span> : null
+                  const iconEl = it.icon ? <span style={{ width: 18, display: 'inline-grid', placeItems: 'center', flexShrink: 0 }}><Icon name={it.icon} size={15} /></span> : null
                   const labelEl = <span>{it.label}</span>
 
                   if (it.action) {

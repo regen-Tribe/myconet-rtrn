@@ -63,10 +63,9 @@ export function menuGroups(communityName: string): MenuGroup[] {
       { key: 'members', name: 'Members', href: '/members', icon: 'users' },
       { key: 'calendar', name: 'Calendar', href: '/calendar', icon: 'calendar' },
       { key: 'circles', name: 'Circles', href: '/circles', icon: 'circles' },
+      // The space (v4.102.0): Amenities & tools and the Map behind one item; both pages switch between the two.
       // Readable by explorers; only booking waits (O5)
-      { key: 'amenities', name: 'Amenities & tools', href: '/amenities', icon: 'pin' },
-      // The land with every place on it (M19, v4.70.0)
-      { key: 'map', name: 'Map', href: '/map', icon: 'map' },
+      { key: 'space', name: 'The space', href: '/amenities', icon: 'pin' },
     ] },
     { label: 'Working together', line: 'How we plan, agree and decide', items: [
       { key: 'operations', name: 'Operations', href: '/operations', icon: 'board' },
@@ -92,7 +91,7 @@ export function tabKeys(newcomer: boolean): string[] {
 const ALSO: Record<string, string[]> = {
   '/members': ['/u/'],
   '/about': ['/blueprint'],
-  '/amenities': ['/accommodation', '/resources'],
+  '/amenities': ['/accommodation', '/resources', '/map'],
   '/admin/permissions': ['/admin/users', '/admin/questions'],
 }
 

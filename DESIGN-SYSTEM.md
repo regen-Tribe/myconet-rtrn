@@ -37,11 +37,18 @@ Each release replaces that module's hard-coded colours and sizes with tokens and
 
 **Three visual layers, never mixed (v4.78.0–v4.79.0).** Each look means one thing:
 - **Interface icons:** the marker-line set in ink (`Icon`, `InlineIcon` in a line of text). Never coloured, never
-  an emoji. Older code that imported `lucide-react` gets the same icons through `v4/lucide-compat.tsx`.
-- **Circles:** the circle seal (`CircleSeal`): the circle's colour as a hand-drawn round with its glyph in a cream
-  line (`v4/circle-glyphs.ts`, `circles.icon`; no glyph shows the initial). The only coloured icons in the app,
+  an emoji. Older code that used lucide names gets the same icons through `v4/lucide-compat.tsx`; the
+  `lucide-react` package is gone. `cd web && npm run icon-check` (also in the Lint workflow) fails on an emoji in
+  `web/src` or a `lucide-react` import; its short allow list is at the top of `web/scripts/icon-check.mjs`.
+- **Circles:** the circle seal (`CircleSeal`; `Seal` when you already have a colour and a glyph): the circle's
+  colour as a hand-drawn round with its glyph stamped on it in cream (`v4/circle-glyphs.ts`, `circles.icon`; no
+  glyph shows the initial). The glyphs are **stamps, not line icons**: solid cream shapes with details cut out in
+  the circle's colour, so a seal never looks like an interface icon (v4.93.0). The only coloured icons in the app,
   so colour plus seal always means "a circle". Sizes 16 (pills, filters, cards), 24, 40 (circle cards), 64.
-  Circle colours are evenly spaced and at least 3:1 against the page; the cream line is at least 3:1 on every seal.
+  Circle colours are evenly spaced and at least 3:1 against the page; the cream is at least 3:1 on every seal.
+  The whole set, at every size, is on `/design`. Admins choose a circle's glyph with `GlyphPicker` (Blueprint ›
+  Circles › Edit, and the circle's Edit window on the Circles page); a new circle gets a first guess from its name
+  (`glyphFor`).
 - **Status:** the pastel pills (`StatusPill`). Never a dot in a circle's colour.
 
 Older screens without v4 components still get the look: the bridge in `globals.css` restyles their common inline

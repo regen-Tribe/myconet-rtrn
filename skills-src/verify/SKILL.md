@@ -19,8 +19,11 @@ it was not run.
 ## App
 
 ```sh
-cd web && npm run lint && npx tsc --noEmit
+cd web && npm run lint && npx tsc --noEmit && npm run icon-check
 ```
+
+`icon-check` fails on an emoji in a `.ts` or `.tsx` file under `web/src`, or an import of
+`lucide-react`. Use `<Icon>` or `<InlineIcon>` from `@/core/components/v4` instead.
 
 ## Skills
 

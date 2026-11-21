@@ -1,6 +1,12 @@
 'use client'
 
 import { Icon } from '@/core/components/v4'
+import { Seal } from '@/core/components/v4/CircleSeal'
+import { GlyphPicker } from '@/core/components/v4/GlyphPicker'
+import { glyphFor } from '@/core/components/v4/circle-glyphs'
+import { usePatchCircle } from '@/core/components/CirclesProvider'
+import { isMissingIconColumn } from '@/core/lib/circles'
+import { DESIGN } from '@/core/lib/instance'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -21,6 +27,8 @@ import {
 interface CircleRow {
   slug: string; name: string; emoji: string; color: string; sort_order: number
   archived_at: string | null; leads_to_assign: string | null; is_steward: boolean
+  /** The glyph on its seal; undefined when this community's database has no `circles.icon` column yet */
+  icon?: string | null
 }
 
 interface Draft {
@@ -30,7 +38,9 @@ interface Draft {
   roles?: CircleRole[]
 }
 
-interface Edit { slug: string; name: string; purpose: string; leads: string; emoji: string; color: string; steward: boolean }
+interface Edit { slug: string; name: string; purpose: string; leads: string; emoji: string; color: string; steward: boolean; icon: string | null }
+
+const CIRCLE_COLS = 'slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward'
 
 let draftSeq = 0
 const draftKey = () => `d${++draftSeq}`
@@ -50,6 +60,9 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
   onNext: () => void
 }) {
   const router = useRouter()
+  const patchCircle = usePatchCircle()
+  // False until the `circles.icon` migration is applied here: then no seal picker, and `icon` is never sent
+  const [hasIcon, setHasIcon] = useState(false)
   const [rows, setRows] = useState<CircleRow[] | null>(null)
   const [purposes, setPurposes] = useState<Record<string, string>>({})
   // People with an account who lead each circle (role circle_lead), as on the org chart
@@ -61,12 +74,19 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
 
   const load = useCallback(async () => {
     const supabase = createClient()
-    const [{ data: circles }, { data: units }, { data: directory }] = await Promise.all([
-      supabase.from('circles').select('slug, name, emoji, color, sort_order, archived_at, leads_to_assign, is_steward').order('sort_order'),
+    const loadRows = async () => {
+      const withIcon = await supabase.from('circles').select(`${CIRCLE_COLS}, icon`).order('sort_order')
+      if (!withIcon.error) { setHasIcon(true); return withIcon.data as CircleRow[] }
+      setHasIcon(false)
+      const { data } = await supabase.from('circles').select(CIRCLE_COLS).order('sort_order')
+      return (data ?? []) as CircleRow[]
+    }
+    const [circles, { data: units }, { data: directory }] = await Promise.all([
+      loadRows(),
       supabase.from('org_units').select('circle, description').eq('kind', 'circle'),
       supabase.rpc('public_circle_directory'),
     ])
-    setRows((circles ?? []) as CircleRow[])
+    setRows(circles)
     setPurposes(Object.fromEntries((units ?? []).map(u => [u.circle as string, (u.description as string | null) ?? ''])))
     const leads: Record<string, { id: string; name: string; username: string | null }[]> = {}
     for (const p of directory ?? []) {
@@ -120,6 +140,8 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
         emoji: d.emoji ?? emojiFor(d.name),
         color: d.color ?? free[i] ?? CIRCLE_COLORS[(active.length + i) % CIRCLE_COLORS.length],
         leads_to_assign: d.leads.trim() || null,
+        // A first guess from the name; an admin changes it under Edit
+        ...(hasIcon ? { icon: glyphFor(d.name) } : {}),
       }
     })
     const supabase = createClient()
@@ -156,8 +178,17 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
     if (!upErr) {
       await supabase.from('org_units').update({ description: edit.purpose.trim() || null }).eq('kind', 'circle').eq('circle', edit.slug)
     }
+    // The seal's glyph is saved on its own, so a database without the column still saves the rest
+    let iconErr: string | null = null
+    if (!upErr && hasIcon) {
+      const { error } = await supabase.from('circles').update({ icon: edit.icon }).eq('slug', edit.slug)
+      if (error && !isMissingIconColumn(error)) iconErr = error.message
+    }
     if (upErr) setError(upErr.message)
+    else if (iconErr) setError(`Saved, but not the seal: ${iconErr}`)
     else setEdit(null)
+    // Every other screen shows the circle from the shared list
+    if (!upErr) patchCircle(edit.slug, { name: edit.name.trim(), emoji: edit.emoji, color: edit.color, leads_to_assign: edit.leads.trim() || null, is_steward: edit.steward, ...(hasIcon && !iconErr ? { icon: edit.icon } : {}) })
     await load()
     setBusy(false)
     router.refresh()
@@ -212,13 +243,17 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
                 <input type="checkbox" checked={edit.steward} onChange={e => setEdit({ ...edit, steward: e.target.checked })} style={{ marginTop: 3 }} />
                 <span><strong>Community stewards:</strong> this circle looks after every circle. It goes at the top of the Circles page. Only one circle can be the stewards.</span>
               </label>
-              <div style={label}>Emoji</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
-                {CIRCLE_EMOJIS.map(em => (
-                  <button key={em} type="button" onClick={() => setEdit({ ...edit, emoji: em })} aria-label={`Emoji ${em}`}
-                    style={{ width: 32, height: 32, fontSize: 16, borderRadius: 6, cursor: 'pointer', background: 'var(--surface)', border: `1.5px solid ${edit.emoji === em ? 'var(--ink)' : 'var(--rule)'}` }}>{em}</button>
-                ))}
-              </div>
+              {DESIGN !== 'v4' && (
+                <>
+                  <div style={label}>Emoji</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+                    {CIRCLE_EMOJIS.map(em => (
+                      <button key={em} type="button" onClick={() => setEdit({ ...edit, emoji: em })} aria-label={`Emoji ${em}`}
+                        style={{ width: 32, height: 32, fontSize: 16, borderRadius: 6, cursor: 'pointer', background: 'var(--surface)', border: `1.5px solid ${edit.emoji === em ? 'var(--ink)' : 'var(--rule)'}` }}>{em}</button>
+                    ))}
+                  </div>
+                </>
+              )}
               <div style={label}>Colour</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                 {CIRCLE_COLORS.map(c => (
@@ -226,6 +261,14 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
                     style={{ width: 24, height: 24, borderRadius: '50%', cursor: 'pointer', background: c, border: edit.color === c ? '3px solid var(--ink)' : '2px solid var(--surface)' }} />
                 ))}
               </div>
+              {DESIGN === 'v4' && hasIcon && (
+                <>
+                  <div style={label}>Seal (the circle&rsquo;s mark, in its colour)</div>
+                  <div style={{ marginBottom: 12 }}>
+                    <GlyphPicker color={edit.color} name={edit.name} value={edit.icon} onChange={g => setEdit({ ...edit, icon: g })} disabled={busy} />
+                  </div>
+                </>
+              )}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button className="btn btn-ghost" onClick={() => setEdit(null)} disabled={busy}>Cancel</button>
                 <button className="btn btn-primary" onClick={saveEdit} disabled={busy}>Save</button>
@@ -233,7 +276,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
             </div>
           ) : (
             <div key={r.slug} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', marginBottom: 8, border: '1px solid var(--rule)', borderLeft: `4px solid ${r.color}`, borderRadius: 6, background: 'var(--surface)' }}>
-              <span style={{ fontSize: 20, lineHeight: 1.2 }}>{r.emoji}</span>
+              {DESIGN === 'v4' ? <Seal color={r.color} glyph={r.icon} name={r.name} size={28} /> : <span style={{ fontSize: 20, lineHeight: 1.2 }}>{r.emoji}</span>}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}{r.is_steward && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: 'var(--ink-3)' }}>· Community stewards</span>}</div>
                 <div style={{ fontSize: 12.5, color: purposes[r.slug] ? 'var(--ink-2)' : 'var(--ink-4)', lineHeight: 1.45, marginTop: 2 }}>{purposes[r.slug] || 'No purpose written yet.'}</div>
@@ -253,7 +296,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
               {canEdit && (
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy}
-                    onClick={() => setEdit({ slug: r.slug, name: r.name, purpose: purposes[r.slug] ?? '', leads: r.leads_to_assign ?? '', emoji: r.emoji, color: r.color, steward: r.is_steward })}>Edit</button>
+                    onClick={() => setEdit({ slug: r.slug, name: r.name, purpose: purposes[r.slug] ?? '', leads: r.leads_to_assign ?? '', emoji: r.emoji, color: r.color, steward: r.is_steward, icon: r.icon ?? null })}>Edit</button>
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy} onClick={() => setArchived(r.slug, true)}
                     title="Hide it from pickers; its tasks and events keep it">Retire</button>
                 </div>
@@ -264,7 +307,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
             <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 10 }}>
               Retired: {retired.map((r, i) => (
                 <span key={r.slug}>
-                  {i > 0 && ' · '}{r.emoji} {r.name}
+                  {i > 0 && ' · '}{DESIGN === 'v4' ? '' : `${r.emoji} `}{r.name}
                   {canEdit && <button onClick={() => setArchived(r.slug, false)} disabled={busy}
                     style={{ marginLeft: 6, background: 'none', border: 'none', padding: 0, color: 'var(--accent)', cursor: 'pointer', fontSize: 12 }}>restore</button>}
                 </span>

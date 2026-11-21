@@ -19,7 +19,7 @@ Each circle has two kinds of lead. The **lead name** (`circles.leads_to_assign`)
 | File | Purpose |
 |------|---------|
 | `OrgChartClient.tsx` | Stewards node, one column per circle with leads, members and teams; save/delete |
-| `UnitEditModal.tsx` | Edit a circle (purpose + members) or a team (name, description, leads/members, titles) |
+| `UnitEditModal.tsx` | Edit a circle (purpose + members; admins also choose its seal, `circles.icon`) or a team (name, description, leads/members, titles) |
 | `AddCircleMember.tsx` | "+ Add member" under a circle (Circles page, Ops › Circles), v4.35.0 |
 | `JoinRequests.tsx` | Requests to join a circle, for its leads and admins: Approve / Decline (`decide_circle_join()`) |
 | `MyCircles.tsx` | "My circles" on your own profile: your circles, ask to join, withdraw |

@@ -15,6 +15,7 @@ import { ItemFormModal, type ItemPayload } from './ItemFormModal'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
 import BookingsV4 from './BookingsV4'
+import { Icon, InlineIcon } from '@/core/components/v4'
 
 export default function BookingsClient({
   scope, initialItems, initialBookings, userId, me, role, leadCircles, initialTab, initialCategory, initialItemId, admin = false, siteMapUrl = null,
@@ -300,7 +301,7 @@ export default function BookingsClient({
     const status = STATUS_META[b.status]
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '12px 14px' }}>
-        <div style={{ fontSize: 22 }}>{item ? CATEGORY_META[item.category].emoji : '📦'}</div>
+        <div style={{ color: 'var(--ink-2)', display: 'grid' }}><Icon name={item ? CATEGORY_META[item.category].icon : 'box'} size={22} /></div>
         <div style={{ flex: 1, minWidth: 180 }}>
           <button onClick={() => item && setOpenId(item.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--ink)', textAlign: 'left' }}>
             {item?.name ?? 'Removed item'}
@@ -345,7 +346,7 @@ export default function BookingsClient({
         </div>
       ) : !canBook(role) && (
         <div style={{ fontSize: 13, color: 'var(--ink-2)', background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
-          🔒 Booking opens when you’re a joining member. <Link href="/join" style={{ color: 'var(--bk-accent)', fontWeight: 600 }}>Start joining →</Link>
+          <InlineIcon name="lock" />Booking opens when you’re a joining member. <Link href="/join" style={{ color: 'var(--bk-accent)', fontWeight: 600 }}>Start joining →</Link>
         </div>
       )}
 
@@ -372,7 +373,7 @@ export default function BookingsClient({
               {CATEGORIES.length > 1 && <button onClick={() => { setCategory(null); setTag(null) }} style={pill(category === null)}>All</button>}
               {CATEGORIES.length > 1 && CATEGORIES.map(c => (
                 <button key={c} onClick={() => { setCategory(c); setTag(null) }} style={pill(category === c, CATEGORY_META[c].color)}>
-                  {CATEGORY_META[c].emoji} {CATEGORY_META[c].label}
+                  <InlineIcon name={CATEGORY_META[c].icon} />{CATEGORY_META[c].label}
                 </button>
               ))}
             </div>
@@ -411,13 +412,13 @@ export default function BookingsClient({
                     borderTop: `3px solid ${meta.color}`, borderRadius: 10, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: meta.color }}>{meta.emoji} {meta.label}</span>
-                      {item.requires_approval && <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>✋ approval</span>}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: meta.color }}><InlineIcon name={meta.icon} />{meta.label}</span>
+                      {item.requires_approval && <span style={{ fontSize: 10, color: 'var(--ink-4)' }}><InlineIcon name="hand" />approval</span>}
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{item.name}</div>
                     {(item.location || item.capacity) && (
                       <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                        {item.location && <>📍 {item.location}</>}{item.location && item.capacity ? ' · ' : ''}{item.capacity && <>👥 {item.capacity}</>}
+                        {item.location && <><InlineIcon name="pin" />{item.location}</>}{item.location && item.capacity ? ' · ' : ''}{item.capacity && <><InlineIcon name="users" />{item.capacity}</>}
                       </div>
                     )}
                     {item.tags.length > 0 && (
@@ -491,7 +492,7 @@ export default function BookingsClient({
                 .sort((a, b) => Number(b.is_active) - Number(a.is_active) || a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
                 .map(i => (
                   <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 8, padding: '9px 12px', opacity: i.is_active ? 1 : 0.6 }}>
-                    <span>{CATEGORY_META[i.category].emoji}</span>
+                    <Icon name={CATEGORY_META[i.category].icon} size={16} />
                     <button onClick={() => setOpenId(i.id)} style={{ flex: 1, minWidth: 140, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>
                       {i.name}{!i.is_active && <span style={{ fontSize: 11, color: '#dc2626', marginLeft: 6 }}>archived</span>}
                     </button>

@@ -10,6 +10,7 @@ import type { MeetingListItem, MeetingStatus } from './types'
 import { modLabel } from '@/core/lib/module-label'
 import { CircleFilter, parseCircleParam } from '@/core/components/v4/CircleFilter'
 import './meetings-v4.css'
+import { withoutDate } from './lib/title'
 
 const STATUS: Record<MeetingStatus, { label: string; color: string }> = {
   processing: { label: 'Transcribing', color: '#b45309' },
@@ -210,9 +211,6 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
   )
 }
 
-/** "19.11.2026 Incubator workshop" → "Incubator workshop": the date has its own box */
-const cleanTitle = (t: string) =>
-  t.replace(/^\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2})\s*[-–:·|]?\s*/, '') || t
 
 /** The summary's first point as plain text (no "- **Topic:**" markdown) */
 const firstPoint = (s: string) => {
@@ -286,7 +284,7 @@ function V4Rows({ shown, taskCounts }: { shown: MeetingListItem[]; taskCounts: R
                       {m.visibility === 'circle' && <span className="mt4-lock"><Icon name="lock" size={12} />Circle only</span>}
                       {pill && <span className="mt4-pill-phone">{pill}</span>}
                     </span>
-                    <b className="mt4-title">{cleanTitle(m.title)}</b>
+                    <b className="mt4-title">{withoutDate(m.title)}</b>
                     {point && <small className="mt4-sum">{point}</small>}
                     {facts && <small>{facts}</small>}
                   </span>

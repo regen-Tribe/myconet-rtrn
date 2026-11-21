@@ -11,19 +11,40 @@ import { ProfileCompletionProvider } from '@/core/contexts/ProfileCompletion'
 import AssistantChat from '@/modules/assistant/AssistantChat'
 
 /** `menu` is set only for the v4 look (layout.tsx): the v4 menu and phone tab bar replace AppSideNav. */
-export default function AppShell({ children, role, isLoggedIn = false, menu = null }: { children: React.ReactNode; role: string; isLoggedIn?: boolean; menu?: MenuState | null }) {
+/** `navCollapsed` comes from the `navCollapsed` cookie (layout.tsx), so the slim menu is slim from the first paint. */
+export default function AppShell({ children, role, isLoggedIn = false, menu = null, navCollapsed: initialCollapsed = false }: {
+  children: React.ReactNode; role: string; isLoggedIn?: boolean; menu?: MenuState | null; navCollapsed?: boolean
+}) {
   const pathname = usePathname()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [navCollapsed, setNavCollapsed] = useState(false)
+  const [navCollapsed, setNavCollapsed] = useState(initialCollapsed)
 
   useEffect(() => {
-    try { setNavCollapsed(localStorage.getItem('navCollapsed') === '1') } catch {}
+    // Moves an older choice (kept only in this browser) to the cookie, once
+    try {
+      const old = localStorage.getItem('navCollapsed')
+      if (old !== null) {
+        localStorage.removeItem('navCollapsed')
+        document.cookie = `navCollapsed=${old === '1' ? '1' : '0'}; path=/; max-age=31536000; samesite=lax`
+        setNavCollapsed(old === '1')
+      }
+    } catch {}
   }, [])
+
+  // The phone drawer closes when you go to another page (also with the back button) and on Escape
+  const [drawerPath, setDrawerPath] = useState(pathname)
+  if (drawerPath !== pathname) { setDrawerPath(pathname); setMobileNavOpen(false) }
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileNavOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileNavOpen])
 
   const toggleDesktopNav = () =>
     setNavCollapsed(prev => {
       const next = !prev
-      try { localStorage.setItem('navCollapsed', next ? '1' : '0') } catch {}
+      document.cookie = `navCollapsed=${next ? '1' : '0'}; path=/; max-age=31536000; samesite=lax`
       return next
     })
 

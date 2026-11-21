@@ -84,9 +84,9 @@ function mbtiCompat(a?: string | null, b?: string | null): { points: number; lab
   if (!a || !b) return { points: 0, label: null }
   if (a === b) return { points: 10, label: `Same MBTI type (${a})` }
   if (MBTI_IDEAL_PAIRS[a]?.[0] === b || MBTI_IDEAL_PAIRS[b]?.[0] === a)
-    return { points: 20, label: `🎯 Ideal MBTI pair (${a} & ${b})` }
+    return { points: 20, label: `Ideal MBTI pair (${a} & ${b})` }
   if (MBTI_IDEAL_PAIRS[a]?.includes(b))
-    return { points: 15, label: `🎯 MBTI complement (${a} & ${b})` }
+    return { points: 15, label: `MBTI complement (${a} & ${b})` }
   if (MBTI_TEMPERAMENT[a] === MBTI_TEMPERAMENT[b])
     return { points: 8, label: 'Same temperament' }
   const shared = [...a].filter((ch, i) => ch === b[i]).length
@@ -115,8 +115,8 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
     score += Math.min(sharedSkills.length * 5, 25)
     const list = sharedSkills.slice(0, 2).join(', ')
     reasons.push(sharedSkills.length === 1
-      ? `✨ Shared skill: ${sharedSkills[0]}`
-      : `✨ ${sharedSkills.length} shared skills (${list}${sharedSkills.length > 2 ? '...' : ''})`)
+      ? `Shared skill: ${sharedSkills[0]}`
+      : `${sharedSkills.length} shared skills (${list}${sharedSkills.length > 2 ? '...' : ''})`)
   }
 
   // Interests (fuzzy) — 15 max
@@ -127,8 +127,8 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
     score += Math.min(sharedInterests.length * 3, 15)
     const list = sharedInterests.slice(0, 2).join(', ')
     reasons.push(sharedInterests.length === 1
-      ? `💚 Shared interest: ${sharedInterests[0]}`
-      : `💚 ${sharedInterests.length} shared interests (${list}${sharedInterests.length > 2 ? '...' : ''})`)
+      ? `Shared interest: ${sharedInterests[0]}`
+      : `${sharedInterests.length} shared interests (${list}${sharedInterests.length > 2 ? '...' : ''})`)
   }
 
   // OCEAN similarity — 20 max
@@ -139,8 +139,8 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
     const avgDiff = keys.reduce((sum, k) => sum + Math.abs((mOcean[k] ?? 50) - (tOcean[k] ?? 50)), 0) / 5
     const oceanPts = Math.round((1 - avgDiff / 100) * 20)
     score += oceanPts
-    if (avgDiff <= 15) reasons.push('🧠 Remarkably similar personality traits')
-    else if (avgDiff <= 25) reasons.push('🧠 Compatible personality profile')
+    if (avgDiff <= 15) reasons.push('Remarkably similar personality traits')
+    else if (avgDiff <= 25) reasons.push('Compatible personality profile')
   }
 
   // MBTI — 20 max
@@ -155,10 +155,10 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
   if (mine.country && theirs.country && fuzzyMatch(mine.country, theirs.country)) {
     if (mine.city && theirs.city && fuzzyMatch(mine.city, theirs.city)) {
       score += 5
-      reasons.push(`📍 Both in ${theirs.city}, ${theirs.country}`)
+      reasons.push(`Both in ${theirs.city}, ${theirs.country}`)
     } else {
       score += 3
-      reasons.push(`📍 Both in ${theirs.country}`)
+      reasons.push(`Both in ${theirs.country}`)
     }
   }
 
@@ -180,7 +180,7 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
           const overlaps = mStart <= tEnd && tStart <= mEnd
           if (overlaps) {
             const month = (mStart > tStart ? mStart : tStart).toLocaleDateString('en-US', { month: 'short' })
-            if (10 > bestPts) { bestPts = 10; bestReason = `✈️ Both in ${dest} at the same time (${month})` }
+            if (10 > bestPts) { bestPts = 10; bestReason = `Both in ${dest} at the same time (${month})` }
             continue
           }
           const daysApart = Math.min(
@@ -189,11 +189,11 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
           ) / 86_400_000
           if (daysApart <= 30 && 6 > bestPts) {
             bestPts = 6
-            bestReason = `✈️ Both visiting ${dest} within a month of each other`
+            bestReason = `Both visiting ${dest} within a month of each other`
             continue
           }
         }
-        if (4 > bestPts) { bestPts = 4; bestReason = `✈️ Both have ${dest} on travel list` }
+        if (4 > bestPts) { bestPts = 4; bestReason = `Both have ${dest} on travel list` }
       }
     }
     if (bestReason) {
@@ -210,8 +210,8 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
     if (common.length) {
       score += Math.min(common.length * 2, 5)
       reasons.push(common.length === 1
-        ? `🎯 Aligned on ${common[0]}`
-        : `🎯 Aligned aspirations (${common.slice(0, 2).join(', ')})`)
+        ? `Aligned on ${common[0]}`
+        : `Aligned aspirations (${common.slice(0, 2).join(', ')})`)
     }
   }
 

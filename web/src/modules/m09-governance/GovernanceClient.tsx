@@ -1,5 +1,5 @@
 'use client'
-import { Button, Icon, PageHeader, StatusPill as V4Pill, Tag } from '@/core/components/v4'
+import { Button, Icon, InlineIcon, PageHeader, StatusPill as V4Pill, Tag, type IconName } from '@/core/components/v4'
 import { ModalShell } from '@/core/components/ModalShell'
 import { DESIGN } from '@/core/lib/instance'
 import { useState, useEffect } from 'react'
@@ -125,7 +125,7 @@ function StatusPill({ isLive }: { isLive: boolean }) {
 }
 
 function VoteButton({ label, active, color, bg, onClick, disabled }: {
-  vote: string; label: string; active: boolean; color: string; bg: string; onClick: () => void; disabled?: boolean
+  vote: string; label: React.ReactNode; active: boolean; color: string; bg: string; onClick: () => void; disabled?: boolean
 }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
@@ -480,14 +480,14 @@ export default function GovernanceClient({
           Every proposal gets 4 checks at once
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {[
-            { mark: '☉', name: 'Circle leads · consent', n: '01', who: 'No circle lead objects' },
-            { mark: '☑', name: 'All members · majority vote', n: '02', who: 'More yes than no' },
-            { mark: '△', name: 'Admins & advisors · expert review', n: '03', who: 'At least one approves, none reject' },
-            { mark: '◇', name: 'AI · Blueprint check', n: '04', who: 'Advice only: does it fit the Blueprint and goals?' },
-          ].map(l => (
+          {([
+            { mark: 'circles', name: 'Circle leads · consent', n: '01', who: 'No circle lead objects' },
+            { mark: 'vote', name: 'All members · majority vote', n: '02', who: 'More yes than no' },
+            { mark: 'shield', name: 'Admins & advisors · expert review', n: '03', who: 'At least one approves, none reject' },
+            { mark: 'spark', name: 'AI · Blueprint check', n: '04', who: 'Advice only: does it fit the Blueprint and goals?' },
+          ] as { mark: IconName; name: string; n: string; who: string }[]).map(l => (
             <span key={l.n} title={l.who} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--ink-3)', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 20, padding: '3px 10px' }}>
-              <span style={{ fontSize: 12 }}>{l.mark}</span>
+              <Icon name={l.mark} size={13} />
               {l.name}
             </span>
           ))}
@@ -499,7 +499,7 @@ export default function GovernanceClient({
       {!isFullMember && (
         <div style={{ padding: '10px 24px', flexShrink: 0, background: !isLoggedIn ? 'color-mix(in srgb, var(--m9) 5%, var(--surface))' : 'color-mix(in srgb, #f59e0b 5%, var(--surface))', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 16 }}>{!isLoggedIn ? '👁' : role === 'joining' ? '🌱' : '🔓'}</span>
+            <Icon name={!isLoggedIn ? 'eye' : role === 'joining' ? 'sprout' : 'unlock'} size={17} />
             <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)' }}>
               {!isLoggedIn ? 'You\'re previewing Governance — create a free account to vote and comment.'
                 : role === 'joining' ? 'You\'re Joining — become a Member to vote and submit proposals.'
@@ -610,7 +610,7 @@ export default function GovernanceClient({
                   <div style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${sociocracyPassed ? 'color-mix(in srgb, #22c55e 30%, var(--rule))' : 'var(--rule)'}`, background: sociocracyPassed ? 'color-mix(in srgb, #22c55e 4%, var(--surface))' : 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: 18, marginBottom: 2 }}>☉</div>
+                        <div style={{ marginBottom: 2 }}><Icon name="circles" size={19} /></div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Circle leads</div>
                         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Consent</div>
                         <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Passes when no circle lead objects</div>
@@ -624,12 +624,12 @@ export default function GovernanceClient({
                     </div>
                     {[
                       { label: '✓ Consent', count: s.clConsent, color: 'var(--m1)' },
-                      { label: '⚠ Concern', count: s.clConcern, color: '#f59e0b' },
+                      { label: 'Concern', icon: true, count: s.clConcern, color: '#f59e0b' },
                       { label: '✗ Object',  count: s.clObject,  color: 'var(--m9)' },
                     ].map(row => (
                       <div key={row.label} style={{ marginBottom: 6 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                          <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{row.label}</span>
+                          <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{'icon' in row && <InlineIcon name="alert" />}{row.label}</span>
                           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>{row.count}</span>
                         </div>
                         <div style={{ height: 5, borderRadius: 3, background: 'var(--rule)', overflow: 'hidden' }}>
@@ -642,7 +642,7 @@ export default function GovernanceClient({
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', marginBottom: 2 }}>Your vote {myL.sociocracy && '· click to remove'}</div>
                         {[
                           { vote: 'consent', label: '✓ I consent',       c: 'var(--m1)',  bg: 'color-mix(in srgb, var(--m1) 12%, transparent)' },
-                          { vote: 'concern', label: '⚠ I have a concern', c: '#f59e0b',    bg: 'color-mix(in srgb, #f59e0b 12%, transparent)' },
+                          { vote: 'concern', label: <><InlineIcon name="alert" />I have a concern</>, c: '#f59e0b',    bg: 'color-mix(in srgb, #f59e0b 12%, transparent)' },
                           { vote: 'object',  label: '✗ I object',         c: 'var(--m9)',  bg: 'color-mix(in srgb, var(--m9) 12%, transparent)' },
                         ].map(opt => (
                           <VoteButton key={opt.vote} vote={opt.vote} label={opt.label} active={myL.sociocracy === opt.vote} color={opt.c} bg={opt.bg} onClick={() => castVote(selected.id, opt.vote, 'sociocracy')} disabled={voting} />
@@ -658,7 +658,7 @@ export default function GovernanceClient({
                   <div style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${democPassed ? 'color-mix(in srgb, #22c55e 30%, var(--rule))' : 'var(--rule)'}`, background: democPassed ? 'color-mix(in srgb, #22c55e 4%, var(--surface))' : 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: 18, marginBottom: 2 }}>☑</div>
+                        <div style={{ marginBottom: 2 }}><Icon name="vote" size={19} /></div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>All members</div>
                         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Majority vote</div>
                         <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Every member votes</div>
@@ -703,7 +703,7 @@ export default function GovernanceClient({
                   <div style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${meritPassed ? 'color-mix(in srgb, #22c55e 30%, var(--rule))' : 'var(--rule)'}`, background: meritPassed ? 'color-mix(in srgb, #22c55e 4%, var(--surface))' : 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: 18, marginBottom: 2 }}>△</div>
+                        <div style={{ marginBottom: 2 }}><Icon name="shield" size={19} /></div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>Admins & advisors</div>
                         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Expert review</div>
                         <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>At least one approves, none reject</div>
@@ -741,7 +741,7 @@ export default function GovernanceClient({
                   <div style={{ padding: '14px 16px', borderRadius: 10, border: '1px dashed var(--rule)', background: 'var(--surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: 18, marginBottom: 2 }}>◇</div>
+                        <div style={{ marginBottom: 2 }}><Icon name="spark" size={19} /></div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 1 }}>AI</div>
                         <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>Blueprint check</div>
                         <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>Advice only: doesn’t count toward approval</div>
@@ -832,14 +832,14 @@ export default function GovernanceClient({
               </div>
               <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--rule)' }}>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 8 }}>The 4 checks</div>
-                {[
-                  { mark: '☉', n: '01', name: 'Circle leads · consent',            desc: 'passes when no circle lead objects' },
-                  { mark: '☑', n: '02', name: 'All members · majority vote',       desc: 'passes with more yes than no' },
-                  { mark: '△', n: '03', name: 'Admins & advisors · expert review', desc: 'at least one approves, none reject' },
-                  { mark: '◇', n: '04', name: 'AI · Blueprint check',              desc: 'advice only, doesn’t count' },
-                ].map(l => (
+                {([
+                  { mark: 'circles', n: '01', name: 'Circle leads · consent',            desc: 'passes when no circle lead objects' },
+                  { mark: 'vote', n: '02', name: 'All members · majority vote',       desc: 'passes with more yes than no' },
+                  { mark: 'shield', n: '03', name: 'Admins & advisors · expert review', desc: 'at least one approves, none reject' },
+                  { mark: 'spark', n: '04', name: 'AI · Blueprint check',              desc: 'advice only, doesn’t count' },
+                ] as { mark: IconName; n: string; name: string; desc: string }[]).map(l => (
                   <div key={l.n} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                    <span style={{ fontSize: 14, width: 20, textAlign: 'center', flexShrink: 0 }}>{l.mark}</span>
+                    <span style={{ width: 20, display: 'inline-grid', placeItems: 'center', flexShrink: 0 }}><Icon name={l.mark} size={15} /></span>
                     <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', minWidth: 130 }}>{l.name}</span>
                     <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>{l.desc}</span>
                   </div>

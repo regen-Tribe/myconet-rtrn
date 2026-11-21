@@ -6,11 +6,12 @@
  *   - the tasks: one per agreed piece of work, each with its own circle, person, date/time said,
  *     tagged with that circle on the main board (its Chores), or in an open project of that circle only
  *     when the agent is very sure it's part of that project's work (v4.24.3).
- *   - its name: the title people gave, made to say what the meeting was about (the date goes in front)
+ *   - its name: the title people gave, made to say what the meeting was about (no date: it's shown beside it)
  * It skips what's already on the board and adds what was clearly agreed but missed by Fireflies.
  * Without the AI the action items go on as they are, but only when a person already set the circle.
  */
 import type { ActionItem } from '../types'
+import { withoutDate } from './title'
 
 const MODEL = 'MiniMax-M3.1-Flash'
 const MAX_TRANSCRIPT = 40_000
@@ -73,8 +74,10 @@ export function localDay(iso: string, timeZone: string): { date: string; weekday
 /** "17.11.2026" for the community's YYYY-MM-DD */
 export const dottedDate = (ymd: string) => ymd.split('-').reverse().join('.')
 
-/** "17.11.2026 Kitchen lead handover": the date, then the agent's name for it */
-export const meetingName = (ymd: string, title: string) => `${dottedDate(ymd)} ${title.replace(/^\s*\d{1,2}[./ -]\d{1,2}[./ -]\d{4}\s*[-–·:]?\s*/, '').trim()}`
+export { withoutDate } from './title'
+
+/** "Kitchen lead handover": the agent's name for the meeting, without a date (v4.100.0; before, the date went in front) */
+export const meetingName = (title: string) => withoutDate(title)
 
 // Fireflies' headings that aren't people ("Unassigned", "Kitchen Circle")
 const NOT_A_PERSON = /^(unassigned|no one|nobody|everyone|everybody|all|team|the team|group|tbd|n\/a|.+ circle)$/i
@@ -103,13 +106,19 @@ The meeting was on ${weekday} ${date} (time zone ${input.timeZone}).
 
 1. ${input.fixedCircle ? `A person confirmed this is a meeting of ${input.community}: set "community": true.` : `Decide whether this is a meeting of ${input.community} (its people, its land, its projects, its circles). The same Fireflies account may record other calls (personal, client, other organisations): for those, or when you're not sure, set "community": false and return no tasks.`}
 2. ${input.fixedCircle ? `A person set this meeting's circle: ${input.fixedCircle} (${circleName(input.fixedCircle)}). Keep it as the main circle.` : 'Choose the meeting\'s main circle: the circle most of the discussion and work belongs to, even if a task or two belong to other circles. Use null only when it is community-wide: a general sync, community circle or logistics meeting with reports from several circles.'}
-3. Make one task per concrete thing someone agreed to do. Start from the action items, and use the summary and transcript for who does it, by when, and anything clearly agreed that the action items missed. Skip anything already in "Open tasks on the board". Leave out vague intentions, discussion points and decisions that need no work.
+3. Make one task per concrete thing someone agreed to do. Fireflies' action items are only suggestions and are often wrong: check each one against the transcript. Keep a task only when ALL of these are true:
+   a. It is a piece of work with a result you could see when it is done (buy, fix, send, book, write, build, ask X about Y). Not a topic, an idea, a question, a feeling or a status report.
+   b. Someone agreed to do it or was asked and said yes. "We could…", "maybe…", "it would be nice…", "let's think about…" and open questions are not tasks.
+   c. It still has to be done after the meeting: not done during the meeting, not already finished, not a routine that already runs every week.
+   d. It is work for ${input.community} (its land, circles, projects, events), not someone's personal errand or another organisation's job.
+   e. It is not already in "Open tasks on the board", even in other words.
+   Use the summary and transcript for who does it, by when, and anything clearly agreed that the action items missed. Merge steps of the same job into one task. When in doubt, leave it out: fewer right tasks are better than many doubtful ones. A meeting with no agreed work returns no tasks.
 4. Give each task the circle whose work it is (it can differ from the meeting's circle). By default it goes on the community's main board tagged with that circle (project_id null). Put it in one of the open projects below only when you are very sure it is part of that project's work: the meeting names the project, or the work is unmistakably a piece of it, and the project is in the same circle. Then say why in project_reason. If in any doubt, leave project_id null.
 
-5. Name the meeting: start from its title ("${input.meeting.title}") when that says something, and use the content to make it say what the meeting was about: the circle or group and the main topics, under 70 characters, no date (it is added in front), no quotes. A title that is only a time or a date ("Nov 12, 10:36 AM") says nothing: name it from the content alone.
+5. Name the meeting: start from its title ("${input.meeting.title}") when that says something, and use the content to make it say what the meeting was about: the circle or group and the main topics, under 70 characters, no date or time (the date is shown beside it), no quotes. A title that is only a time or a date ("Nov 12, 10:36 AM") says nothing: name it from the content alone.
 
 Return JSON only:
-{"community":true|false,"title":"the meeting's name","circle":"a circle slug or null","reason":"one short sentence: why this circle, or why it isn't a community meeting","tasks":[{"title":"short imperative, under 90 characters, no person's name","circle":"a circle slug","person":"the person's name as said, or null","project_id":"an open project's id, only when very sure, else null","project_reason":"why it is part of that project, or null","due_date":"YYYY-MM-DD or null","due_time":"HH:MM 24h or null","item":the action item number it comes from, or null,"source":"the action item's words, or a short quote from the transcript"}]}
+{"community":true|false,"title":"the meeting's name","circle":"a circle slug or null","reason":"one short sentence: why this circle, or why it isn't a community meeting","tasks":[{"title":"short imperative, under 90 characters, no person's name","circle":"a circle slug","person":"the person's name as said, or null","project_id":"an open project's id, only when very sure, else null","project_reason":"why it is part of that project, or null","due_date":"YYYY-MM-DD or null","due_time":"HH:MM 24h or null","item":the action item number it comes from, or null,"source":"the words where it was agreed: a short quote from the transcript, else the action item"}]}
 
 Dates only when the meeting says one; work relative ones ("by Friday", "next week", "tomorrow") out from ${weekday} ${date}. "Next week" with no day means the Monday after. At most ${MAX_TASKS} tasks.
 ${input.people.length ? `\nMembers' names (use these spellings when one matches): ${input.people.slice(0, 200).join(', ')}` : ''}

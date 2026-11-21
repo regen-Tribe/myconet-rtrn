@@ -1,5 +1,5 @@
 'use client'
-import { Button, Icon, PageHeader, StatusPill as V4Pill } from '@/core/components/v4'
+import { Button, Icon, InlineIcon, PageHeader, StatusPill as V4Pill } from '@/core/components/v4'
 import { DESIGN } from '@/core/lib/instance'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
@@ -714,7 +714,7 @@ export default function AgreementsClient({
                         lineHeight: 1.55,
                       }}
                     >
-                      <span style={{ marginRight: 6 }}>ℹ</span>
+                      <InlineIcon name="info" />
                       The project lead reviews proposals within 48 hours. If accepted, your agreement is logged and feeds Operations (tasks) and Contributions (points) automatically.
                     </div>
 

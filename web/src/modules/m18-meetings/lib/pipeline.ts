@@ -6,7 +6,7 @@
  *      each in its own circle's best-matching project or that circle's Chores. Not a community
  *      meeting, or not sure → nothing else happens; a lead can set the circle to go on.
  *   2. the tasks go on the board as drafts (needs_review);
- *   3. the meeting gets its name ("17.11.2026 Kitchen lead handover": the title people gave, made to
+ *   3. the meeting gets its name ("Kitchen lead handover", no date: the title people gave, made to
  *      say what it was about) and goes to the second brain (lib/second-brain.ts): a note with the
  *      summary, Fireflies' notes and the tasks, and the transcript in its own file;
  *   4. the leads of the circles involved get the notes by email (lib/notes-email.ts);
@@ -18,7 +18,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { fmtTaskWhen } from '@/core/lib/tasks'
 import { one } from '@/core/lib/rows'
 import type { ActionItem, MeetingVisibility } from '../types'
-import { draftTasks, localDay, meetingName } from './draft-tasks'
+import { draftTasks, localDay, meetingName, withoutDate } from './draft-tasks'
 import { itemKey, matchPerson, displayName, type PersonProfile } from './people'
 import { buildNote, buildTranscript, deleteFile, legacyNotePaths, listPaths, notePath, NOTES_VERSION, saveNote, secondBrainOn, transcriptPath } from './second-brain'
 import type { FirefliesNotes } from './fireflies'
@@ -106,8 +106,8 @@ export async function processMeeting(
     }
     const meetingCircle = read.circle
     const day = localDay(m.meeting_date ?? m.created_at, timeZone)
-    // Its name: the date, then the agent's title from the content (kept as it was without the AI)
-    const title = read.title ? meetingName(day.date, read.title) : (m.title as string)
+    // Its name: the agent's title from the content, no date (without the AI, the old name minus its date)
+    const title = read.title ? meetingName(read.title) : withoutDate(m.title as string)
     await admin.from('meeting_transcripts').update({
       circle: meetingCircle, circle_source: fixedCircle ? 'person' : 'agent', agent_note: read.reason, needs_review: false,
       ...(title !== m.title ? { title, original_title: m.original_title ?? m.title } : {}),

@@ -5,6 +5,130 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.103.0 — 2026-11-21 — A merged task is deleted, not paused
+
+Oscar: "why are merged tasks in the pause column, lets just delete them". When the assistant merges one task into
+another (Do: `merge_projects`), the merged-away task used to be set to Paused with "(merged into …)" in its title.
+Now:
+- Its subtasks move into the other task, along with its updates, agreements, events and places.
+- Then it's deleted.
+- **Undo** puts it back whole, with everything that came from it.
+
+No migration. Protopia's two leftover merged tasks were empty and have been deleted by hand.
+
+## v4.102.0 — 2026-11-21 — The space: Amenities & tools and the Map behind one menu item
+
+Sonia: "we should also put the map and amenities and tools into 'the space' so we have less things on the side".
+- `nav.ts`: one item **The space** (`/amenities`, highlighted on `/map` too) replaces "Amenities & tools" and "Map".
+- New `core/components/SpaceTabs.tsx`: a switch under the heading of both pages (Amenities & tools | Map). It
+  replaces the "See the map" button in Browse. The pages keep their own headings and addresses.
+
+## v4.101.0 — 2026-11-21 — Home follows the menu (v4)
+
+Sonia: "this should be organized by the nav bar: community, then working together, and be less busy visually with
+different sizes but same colors; start from most attractive: meet members, calendar of events". In `HomeV4`
+(`web/src/modules/home/HomeV4.tsx`):
+- The pages come straight from `menuGroups` (`core/lib/nav.ts`), in its two groups with their labels and lines, and
+  with the menu's names and icons. A page added to the menu needs one line in `LINE` to show on Home.
+- Two sizes. Large first: Members (faces, head count), Calendar (the next three events), Operations (three projects
+  under way) and Governance (the open proposals and when they close). The rest are small rows; pages that open on
+  joining show a lock.
+- One colour: every icon tile and date block is the same grey.
+- "Happening now" is gone as a block; its events and votes live in the Calendar and Governance tiles.
+
+No migration.
+
+## v4.100.0 — 2026-11-21 — Meetings: names without the date; only real tasks (from Protopia, Sonia)
+
+- The assistant names a meeting without its date ("Kitchen lead handover", not "17.11.2026 Kitchen lead handover"):
+  the date is shown beside it. `lib/title.ts` (`withoutDate`) takes a date off the start or end of older or typed
+  names on the list, the meeting page and the second-brain note.
+- **Migration** `20261215000100_meeting_titles_without_date.sql`: takes the leading date off existing meeting names.
+- The assistant keeps a task only when it has a visible result, someone agreed to it, it is still to do, it is the
+  community's work and it isn't on the board yet. Fireflies' action items are checked against the transcript; when in
+  doubt, it's left out. The quote kept with a task is where it was agreed.
+
+## v4.99.0 — 2026-11-21 — A clearer menu: no look-alike arrows
+
+Sonia, on the slim menu: "the arrows are confusing". v4 only (`MenuV4`); `AppSideNav` is unchanged.
+- The open/slim switch is a `sidebar` icon (new in `v4/icons.ts`), the same in both states, with `aria-expanded`.
+  Open, it sits top right; in the rail it sits at the foot, above your photo. The rail's next step is a round
+  light-green `flag` button. Arrows now only mean "go there" (the next-step card, your name).
+- `.menu-v4 > * { flex-shrink: 0 }`: a rail taller than the window scrolls instead of flattening the next-step
+  button into an oval. Slightly tighter rail spacing.
+- The rail's names: one fixed label beside the hovered or focused icon (`.mv4-tip`, placed by `MenuV4`), instead
+  of the browser's slow `title` tooltip. Rail links carry `aria-label`, since their text is hidden.
+- The slim/open choice moved from `localStorage` to a `navCollapsed` cookie that `layout.tsx` reads, so the page
+  arrives slim instead of opening wide and shrinking. An older choice is moved over once.
+- Phone drawer (both menus): closes on Escape and when the page changes (back and forward too); in v4 the
+  keyboard focus moves to its close button when it opens.
+- No migration, no new setting, no new secret.
+- Second brain: this changes no knowledge (no decision, task, project, agreement, role, event or document), so
+  nothing lands there.
+
+## v4.98.0 — 2026-11-21 — Amenities & tools as a gallery
+
+Sonia, on a page of 20 near-identical dorm-bed cards: "this looks bad… the gallery needs to look amazing".
+- Browse cards lead with a 4:3 photo (the item's own, else its place's; without either a tinted tile with the
+  category's icon), with the availability as a badge on it and the name, facts and tags under it (`ItemMedia`).
+- Three or more items of one category whose names differ only in their last number show as one card
+  (`groupItems` in `BookingsV4.tsx`): "Dorm 1 – bed 1…10" is **Dorm 1** with 10 beds, "Room 1…9" is **Rooms 1–9**,
+  with "n of m free now" and a button per bed or room that opens it to book. No data changes.
+
+## v4.97.0 — 2026-11-21 — icon-check: one icon set, kept that way
+
+- **`cd web && npm run icon-check`** (`web/scripts/icon-check.mjs`): fails when a `.ts` or `.tsx` file under `web/src`
+  has an emoji outside a comment, or imports `lucide-react`. Allow list, with reasons, at the top of the script: the
+  changelog page (quotes old button names) and `m04-blueprint/lib/circle-setup.ts` (circle emoji for communities
+  without the v4 look). Text marks and arrows (✓ ✗ ☐ → ↕) pass.
+- Runs in the **Lint workflow** (step "Icons") and is part of the `verify` skill.
+- **`lucide-react` removed** from `web/package.json`: nothing imported it since v4.78.0 (`v4/lucide-compat.tsx` draws
+  the old names from the marker-line set).
+- New icon `info`; the two ℹ notes in Agreements use it. DESIGN-SYSTEM.md › v4 names the check. No migration.
+
+## v4.96.0 — 2026-11-21 — The last emoji on screens become icons
+
+v4.78.0 replaced emoji with the marker-line icons on most screens; these are the files it skipped. Every community.
+- **Screens:** the Blueprint editor (`BlueprintClient.tsx`: import buttons, warnings, fact tiles, side list, phone tabs,
+  light/dark switch), the older Home (`HomeClient.tsx`: module pills, access steps, badges, facts, the governance demo),
+  the older Governance body (`GovernanceClient.tsx`), the older Bookings screens (`BookingsClient`, `ItemModal`,
+  `ItemFormModal`), the older account menu (`AppTopBar.tsx`), the older dashboard's lock, the landing page's four
+  checks, and "Change time" on an event.
+- **The four governance checks** have one icon each everywhere: circles (consent), vote (majority), shield (expert
+  review), spark (AI check). They were ☉ ☑ △ ◇.
+- `CATEGORY_META` (`m15-bookings/lib/inventory.ts`): `emoji` is now `icon`, a name from the icon set (bed, wrench, building).
+- **Match reasons** on Members (`m01-network/lib/match-score.ts`) are words only ("Shared skill: carpentry").
+- **`InlineIcon` stays in its line of text:** `.v4-inl` is `inline-block`. The CSS reset makes every svg a block, so
+  outside a flex row the icon sat on a line of its own (place names in the calendar, among others).
+- Kept: text marks (✓ ✗ ☐ → ←), and circle emoji from the database for communities without the v4 look
+  (`circle-setup.ts`). No content, setting or permission changed. No migration.
+
+## v4.95.0 — 2026-11-21 — Admins choose a circle's seal
+
+The picker v4.81.0 left open ("set `circles.icon` in a community migration for now"). v4 only.
+- **`GlyphPicker`** (`core/components/v4/GlyphPicker.tsx`): every stamp as a seal in the circle's colour, or its first
+  letter. In **Blueprint › Circles › Edit** (`CirclesStep.tsx`, where v4 showed an emoji picker that no screen used)
+  and in the **circle's Edit window** on the Circles page (`UnitEditModal.tsx`, admins only: the `circles` table is
+  theirs to edit). The shared list is patched (`usePatchCircle`), so every screen shows the new seal at once.
+- **A new circle gets a first guess** from its name (`glyphFor`: "Kitchen" → pot, "Farming" → wheat); null shows the initial.
+- **Without the migration nothing breaks:** where `circles.icon` isn't there yet (`20261215000000_circle_icons.sql` not
+  applied) the picker doesn't show and `icon` is never sent; a failed write for that reason is skipped quietly
+  (`isMissingIconColumn`), and the rest of the circle still saves.
+- Blueprint › Circles shows each circle's seal in the list (v4); other communities keep the emoji and its picker.
+- `/design`: the picker with sample values. No migration, no new setting.
+
+## v4.93.0 — 2026-11-21 — Circle seals are stamps; the whole icon set on /design
+
+Sonia: "custom cool icons for each circle in the right colour … distinct from the nav bar icons".
+- **Circle glyphs redrawn as stamps** (`core/components/v4/circle-glyphs.ts`): solid cream shapes with details cut
+  out in the circle's colour, instead of the thin line the interface icons use. Same 13 keys (spiral, wheat, hammer,
+  pot, key, fire, megaphone, coins, broom, brush, ring, egg, bag), so nothing stored changes. `CIRCLE_GLYPH_LABEL`
+  names them for the pickers to come.
+- `Seal` (`CircleSeal.tsx`): the seal for a colour and a glyph you already have; `CircleSeal` uses it.
+- **`/design` shows every icon** at 16, 24 and 40px with its name, and every seal at 16, 24, 40 and 64px.
+- Icon review: `moon` redrawn (it was a thin sliver). The other twelve added in v4.78.0 hold up beside the originals.
+- DESIGN-SYSTEM.md › v4 › three layers: seals are stamps. No migration.
+
 ## v4.88.0 — 2026-11-21 — Agents read the handoff notes first
 
 Oscar: "make sure sonias agent receives our messages and tells her so she cant miss it". `CLAUDE.md` and

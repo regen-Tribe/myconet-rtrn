@@ -1,5 +1,5 @@
 'use client'
-import { Icon } from '@/core/components/v4'
+import { Icon, InlineIcon } from '@/core/components/v4'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { FormField, FocusInput, FocusTextarea, inputStyle } from './AgreementFormFields'
@@ -149,7 +149,7 @@ export default function NewProjectModal({ userId, onClose }: Props) {
                 borderRadius: 8, padding: '10px 14px', marginBottom: 20,
                 fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.55,
               }}>
-                <span style={{ marginRight: 6 }}>ℹ</span>
+                <InlineIcon name="info" />
                 Your proposal goes to the admin team for review. Once activated it will appear in the open projects list and in Operations.
               </div>
 

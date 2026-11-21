@@ -69,11 +69,15 @@ the AI themselves: a Worker gets only about 30 s after replying, too little for 
 2. **People:** `lib/people.ts` matches the name to a member (full name, username, a first name only one
    member has). No match is normal (not everyone has an account): the task keeps "(for Name)" and no
    assignee, and the email lists them as "not on MyCoNet yet".
-3. **No duplicates:** `meeting_action_links` (meeting + normalised title) is claimed before each task is
+3. **Only real tasks** (v4.100.0): Fireflies' action items are checked against the transcript; a task is kept
+   only when it is a piece of work with a visible result, someone agreed to it, it is still to do, it is the
+   community's work and it isn't on the board yet. When in doubt the agent leaves it out.
+   **No duplicates:** `meeting_action_links` (meeting + normalised title) is claimed before each task is
    written, so a re-run or a repeated webhook adds only new tasks. A task a lead declines or deletes keeps its link
    (with no task, v4.33.0), so it isn't drafted again.
 4. **Name** (v4.23.0): the same AI call names the meeting from the title people gave and the content;
-   the title becomes `17.11.2026 <name>` (date in `COMMUNITY_TIME_ZONE`), what they called it stays in
+   the title is just `<name>`, no date (v4.100.0; the date is shown beside it, and `lib/title.ts` takes a date
+   off older names on screen), what they called it stays in
    `original_title` (shown small on the meeting page; the AI reads it, not its own earlier name).
    **Second brain** (`lib/second-brain.ts`): `<knowledge.meetingsFolder>/YYYY-MM-DD <name>.md` in `knowledge.repo`
    (default `operations/meetings`; Protopia `community coordination operations/meetings`), committed by
