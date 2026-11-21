@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-21 — Core v4.106.0 via PR #80 (deployed, a6175651): the project manager's tasks are editable at a glance
+- No migration.
+
 ## 2026-11-21 — Core v4.105.0 via PR #79 (deployed, 19525fda): change a task right where you review it
 - No migration.
 
