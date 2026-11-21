@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-20 — Core v4.79.0 via PR #74 (deployed, 7558c813): open a suggestion's task; accepting confirms a draft
+- Includes Sonia's v4.78.0 (the v4 look on every screen). No migrations.
+
 ## 2026-11-20 — Core v4.77.0 via PR #73 (deployed, 5ac959c7): where a project manager suggestion comes from
 - "Where this comes from" on each suggestion: the meeting, its date, who said it, the line and who was there; or who added the task. No migration.
 
