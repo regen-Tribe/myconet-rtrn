@@ -117,7 +117,18 @@ function useCircleFacts(p: Props) {
 
 function CircleCards(p: Props) {
   const circles = useCircles()
+  const router = useRouter()
   const f = useCircleFacts(p)
+  // The subcircles bubble on a card, open (v4.104.0): pick one to go to it, or add one
+  const [subsOf, setSubsOf] = useState<string | null>(null)
+  useEffect(() => {
+    if (!subsOf) return
+    const close = (e: Event) => { if (!(e.target as HTMLElement).closest?.('.cv4-subpick')) setSubsOf(null) }
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setSubsOf(null) }
+    document.addEventListener('click', close)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('click', close); document.removeEventListener('keydown', esc) }
+  }, [subsOf])
   const steward = circles.list.find(c => c.is_steward) ?? null
   const order = [...(steward ? [steward.slug] : []), ...circles.slugs.filter(c => c !== steward?.slug)]
   const mine = order.filter(f.inCircle)
@@ -151,7 +162,7 @@ function CircleCards(p: Props) {
                 <CircleSeal slug={c} size={40} className="cv4-seal" />
                 <div className="cv4-card__name">
                   <b>{meta.label}</b>
-                  <small>{[c === steward?.slug ? 'Looks after every circle' : null, teams.length ? plural(teams.length, 'subcircle') : null].filter(Boolean).join(' · ') || 'Circle'}</small>
+                  <small>{c === steward?.slug ? 'Looks after every circle' : 'Circle'}</small>
                 </div>
                 <span className="v4-tags cv4-card__tags">
                   {asking > 0 && <Tag icon="hand">{asking} asking</Tag>}
@@ -185,12 +196,44 @@ function CircleCards(p: Props) {
                 </div>
               </div>
 
-              {signedIn && (
-                <div className="cv4-stats">
+              {/* How many subcircles, for everyone (v4.104.0: Oscar wanted the number on each circle); tasks and meetings when signed in */}
+              <div className="cv4-stats">
+                {(() => {
+                  const label = <><Icon name="circles" size={15} /><b>{teams.length}</b> {teams.length === 1 ? 'subcircle' : 'subcircles'}</>
+                  const mayAdd = canLeadCircle(c, p.role, p.leadCircles)
+                  if (!teams.length && !mayAdd) return <span className="cv4-stat">{label}</span>
+                  // Inside the card's link: these are buttons that stop the card from opening, and go where they say
+                  const goTo = (e: React.MouseEvent, href: string) => { e.preventDefault(); e.stopPropagation(); setSubsOf(null); router.push(href) }
+                  const base = `/circles?c=${encodeURIComponent(c)}&tab=subcircles`
+                  return (
+                    <span className="cv4-subpick">
+                      <button type="button" className="cv4-stat cv4-stat--btn" aria-expanded={subsOf === c} aria-haspopup="menu"
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setSubsOf(subsOf === c ? null : c) }}>
+                        {label}<Icon name="down" size={13} />
+                      </button>
+                      {subsOf === c && (
+                        <span className="cv4-subpick__menu" role="menu">
+                          {teams.map(t => (
+                            <button key={t.id} type="button" role="menuitem" className="cv4-subpick__item" onClick={e => goTo(e, `${base}&sub=${t.id}`)}>
+                              <span>{t.name}</span><small>{plural(f.membersOf(t.id).length, 'person', 'people')}</small>
+                            </button>
+                          ))}
+                          {!teams.length && <span className="cv4-subpick__empty">No subcircles yet</span>}
+                          {mayAdd && (
+                            <button type="button" role="menuitem" className="cv4-subpick__item cv4-subpick__add" onClick={e => goTo(e, `${base}&add=1`)}>
+                              <Icon name="plus" size={14} /><span>Add a subcircle</span>
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  )
+                })()}
+                {signedIn && <>
                   <span className="cv4-stat"><Icon name="tasks" size={15} /><b>{tasks}</b> open {tasks === 1 ? 'task' : 'tasks'}</span>
                   <span className="cv4-stat"><Icon name="calendar" size={15} /><b>{notes}</b> {notes === 1 ? 'meeting' : 'meetings'}{next && <em suppressHydrationWarning> · next {day(next.starts_at)}</em>}</span>
-                </div>
-              )}
+                </>}
+              </div>
             </Link>
           )
         })}
@@ -259,6 +302,20 @@ function CirclePage(p: Props & { slug: string }) {
     if (t === 'overview') q.delete('tab'); else q.set('tab', t)
     window.history.replaceState(null, '', `/circles?${q.toString()}`)
   }
+
+  // From a card's subcircles bubble (v4.104.0): ?sub=<id> scrolls to that subcircle and marks it; ?add=1 opens
+  // "Add subcircle" for those who may. Both leave the address once used.
+  const picked = params.get('sub')
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('add') === '1') {
+      if (manage) p.onEdit(null, c)
+      q.delete('add'); window.history.replaceState(null, '', `/circles?${q.toString()}`)
+    }
+    if (picked) document.getElementById(`sub-${picked}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  // Once, when the page opens
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Your own request to join this circle (members ask; leads answer)
   const [asked, setAsked] = useState<boolean | null>(null)
@@ -525,7 +582,7 @@ function CirclePage(p: Props & { slug: string }) {
                 const tp = p.teamProjects.filter(x => x.team_id === t.id)
                 const tt = tasks.filter(x => x.team_id === t.id)
                 return (
-                  <article key={t.id} className="v4-card cv4-sub">
+                  <article key={t.id} id={`sub-${t.id}`} className={`v4-card cv4-sub${picked === t.id ? ' cv4-sub--picked' : ''}`}>
                     <div className="cv4-card__top">
                       <span className="cv4-ico cv4-ico--sm" aria-hidden="true"><Icon name="users" size={18} /></span>
                       <div className="cv4-card__name"><b>{t.name}</b><small>Subcircle of {meta.label}</small></div>

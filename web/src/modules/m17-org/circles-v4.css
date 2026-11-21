@@ -119,3 +119,15 @@ img.cv4-av { object-fit: cover; padding: 0; }
 /* Manuals & guides: one group per topic */
 .cv4-gtitle { margin: 18px 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-3, #6b7280); }
 .cv4-gtitle:first-of-type { margin-top: 4px; }
+
+/* The subcircles bubble on a circle's card (v4.104.0): pick one, or add one */
+.cv4-subpick { position: relative; display: inline-flex; }
+.cv4-stat--btn { font: inherit; background: none; border: 1px solid transparent; border-radius: 999px; padding: 2px 8px; margin: -3px -8px; cursor: pointer; }
+.cv4-stat--btn:hover, .cv4-stat--btn[aria-expanded="true"] { border-color: var(--rule, #e7e9ef); background: var(--surface, #fff); }
+.cv4-subpick__menu { position: absolute; left: -8px; bottom: calc(100% + 8px); z-index: 20; min-width: 220px; max-width: min(300px, calc(100vw - 48px)); max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; padding: 6px; background: var(--surface, #fff); border: 1px solid var(--rule, #e7e9ef); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.14); }
+.cv4-subpick__item { font: inherit; display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; padding: 9px 10px; border: none; background: none; border-radius: 9px; cursor: pointer; color: var(--ink, #111317); font-size: 13.5px; }
+.cv4-subpick__item:hover, .cv4-subpick__item:focus-visible { background: color-mix(in srgb, var(--c, #8a8f9c) 10%, var(--surface, #fff)); }
+.cv4-subpick__item small { color: var(--ink-3, #6b7180); font-size: 12px; white-space: nowrap; }
+.cv4-subpick__add { justify-content: flex-start; color: var(--c, var(--ink-2, #3a3f4a)); font-weight: 600; border-top: 1px solid var(--rule, #e7e9ef); border-radius: 0 0 9px 9px; margin-top: 4px; }
+.cv4-subpick__empty { padding: 9px 10px; font-size: 13px; color: var(--ink-3, #6b7180); }
+.cv4-sub--picked { outline: 2px solid var(--c, #8a8f9c); outline-offset: 2px; }
