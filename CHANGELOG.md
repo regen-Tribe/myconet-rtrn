@@ -5,6 +5,22 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.75.1 — 2026-11-20 — A place's photo shows once
+
+Sonia: "show the photo once per place". In Amenities & tools (M15) Browse, a place's photo shows on the first card
+of that place in the list only (items sharing a place, like 20 dorm beds, no longer repeat it). The item's window
+still shows the photo.
+
+## v4.75.0 — 2026-11-20 — One map, and place photos on bookable things
+
+Sonia: "I don't see accommodation photos, also map in both places is redundant".
+- Amenities & tools (M15) Browse drops its Map / List switch and is a list, with a "See the map" button to `/map`
+  (M19). The Map page already shows every bookable thing in its place's card. Admin › Bookings › Map (putting
+  items' pins) stays: it's where items are placed.
+- An item belongs to the place its pin sits in (within `NEAR`, 3% of the picture; the closest wins). Its card and
+  its window show that place's photo, and the window links to `/map?place=<slug>`. Read separately, so a
+  community without the `places` table still gets its bookings page. No migration.
+
 ## v4.74.0 — 2026-11-20 — Ask and Do read the second brain
 
 Off by default: a community turns it on with `"assistant": { "secondBrain": true }` (needs `knowledge.repo` and

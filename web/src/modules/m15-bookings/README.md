@@ -34,7 +34,7 @@ Query params: `tab=browse|mine|manage`, `category=accommodation|tools|spaces`, `
 | File | Purpose |
 |------|---------|
 | `BookingsClient.tsx` | Page: tabs, filters, book / cancel / approve, item save and archive |
-| `AmenitiesMap.tsx` | The Amenities map (v4.43.0): the picture of the land (`community_settings.site_map_url`) with a pin per item (`map_x`, `map_y`, percent); `placing` turns a click into a pin (Admin › Bookings › Map). Since v4.70.0 a thin wrapper over the shared `core/components/v4/SiteMap.tsx`, which the Map page (M19) uses too |
+| `AmenitiesMap.tsx` | The Amenities map (v4.43.0): the picture of the land (`community_settings.site_map_url`) with a pin per item (`map_x`, `map_y`, percent); `placing` turns a click into a pin (Admin › Bookings › Map). Since v4.70.0 a thin wrapper over the shared `core/components/v4/SiteMap.tsx`, which the Map page (M19) uses too. Since v4.75.0 members browse a list (each item shows the photo of the place its pin sits in) and the one map is `/map` |
 | `BookingsV4.tsx` | The v4 look's view of the same page (BookingsClient passes its state and actions as `vm`); Admin › Bookings adds the Calendar (who stays where, two weeks) |
 | `ItemModal.tsx` | Item details, schedule, booking form, manager actions (with v4, its own view in the shared building blocks) |
 | `ItemFormModal.tsx` | Add/edit item: category, tags, circle, capacity, approval toggle (with v4, its own view) |

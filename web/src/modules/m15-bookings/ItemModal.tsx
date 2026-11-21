@@ -87,6 +87,7 @@ export function ItemModal({
     return (
       <ModalShell title={<span className="v4-modal-title"><IconTile name={ci.icon} tone={ci.tone} />{item.name}</span>} onClose={onClose} maxWidth={560}>
         <div className="v4-modal">
+          {item.place?.photo_url && <img className="v4-modal__photo" src={item.place.photo_url} alt={item.place.name} />}
           <div className="v4-tags">
             <Tag>{meta.label}</Tag>
             {circles.has(item.circle) && <Tag><span className="v4-dot" style={{ background: circles.meta(item.circle).color }} />{circles.meta(item.circle).label}</Tag>}
@@ -95,7 +96,9 @@ export function ItemModal({
           </div>
 
           <ul className="v4-facts-list">
-            {item.location && <li><Icon name="pin" size={16} />{item.location}</li>}
+            {item.place
+              ? <li><Icon name="pin" size={16} /><Link href={`/map?place=${encodeURIComponent(item.place.slug)}`}>{item.location ?? item.place.name} · see it on the map</Link></li>
+              : item.location && <li><Icon name="pin" size={16} />{item.location}</li>}
             {item.capacity && <li><Icon name="users" size={16} />Up to {item.capacity} {item.capacity === 1 ? 'person' : 'people'}</li>}
             <li><Icon name={item.requires_approval ? 'hand' : 'check'} size={16} />{item.requires_approval ? 'Bookings need a lead’s approval' : 'Bookings confirm instantly'}</li>
           </ul>

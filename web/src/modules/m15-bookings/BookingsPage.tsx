@@ -4,6 +4,7 @@ import BookingsClient from './BookingsClient'
 import { canAddItems, isCategory, SCOPE_META, type BookingScope } from './lib/inventory'
 import { BOOKING_SELECT, ITEM_SELECT, toBooking, toItem } from './lib/queries'
 import type { BookingsTab } from './types'
+import { NEAR } from '@/modules/m19-map/lib/places'
 
 const TABS: BookingsTab[] = ['browse', 'mine', 'manage']
 
@@ -43,13 +44,30 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
   ])
   // The Amenities map (v4.43.0): read on their own, so a community that hasn't applied the
   // migration yet still gets its bookings page (just without the map)
-  const [pinsRes, mapRes] = await Promise.all([
+  const [pinsRes, mapRes, placesRes] = await Promise.all([
     supabase.from('booking_items').select('id, map_x, map_y').not('map_x', 'is', null),
     supabase.from('community_settings').select('site_map_url').maybeSingle(),
+    supabase.from('places').select('slug, name, photo_url, map_x, map_y').not('map_x', 'is', null),
   ])
   const pins = new Map(((pinsRes.error ? [] : pinsRes.data) ?? []).map(p => [p.id as string, p as { map_x: number; map_y: number }]))
   const siteMapUrl = mapRes.error ? null : ((mapRes.data as { site_map_url: string | null } | null)?.site_map_url ?? null)
-  const items = (itemsRes.data ?? []).map(toItem).map(i => ({ ...i, map_x: pins.get(i.id)?.map_x ?? null, map_y: pins.get(i.id)?.map_y ?? null }))
+  // Each item belongs to the place its pin sits in (the Map page, v4.70.0): the card shows that place's photo
+  const places = ((placesRes.error ? [] : placesRes.data) ?? []) as { slug: string; name: string; photo_url: string | null; map_x: number; map_y: number }[]
+  const placeAt = (x: number | null | undefined, y: number | null | undefined) => {
+    if (x == null || y == null) return null
+    let best: (typeof places)[number] | null = null
+    let bestD = NEAR
+    for (const p of places) {
+      const d = Math.hypot(p.map_x - x, p.map_y - y)
+      if (d <= bestD) { best = p; bestD = d }
+    }
+    return best ? { slug: best.slug, name: best.name, photo_url: best.photo_url } : null
+  }
+  const items = (itemsRes.data ?? []).map(toItem).map(i => {
+    const map_x = pins.get(i.id)?.map_x ?? null
+    const map_y = pins.get(i.id)?.map_y ?? null
+    return { ...i, map_x, map_y, place: placeAt(map_x, map_y) }
+  })
   const inScope = (id: string | undefined) => items.some(i => i.id === id && SCOPE_META[scope].categories.includes(i.category))
 
   return (
