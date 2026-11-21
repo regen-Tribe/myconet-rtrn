@@ -15,6 +15,8 @@ export interface MeetingListItem {
   needs_review: boolean
   created_at: string
   circle: string | null
+  /** The subcircle it belongs to (v4.108.0), within its circle; read on its own so a community without the column keeps its pages */
+  team_id?: string | null
   visibility: MeetingVisibility
   summary: string | null
   action_items: ActionItem[]
@@ -78,4 +80,6 @@ export interface MeetingTask {
   assignee_id: string | null
   assignee_name: string | null
   priority: string | null
+  /** The meeting it came from (v4.107.0: the board's project manager lists drafts by meeting); title null when the viewer can't open it */
+  meeting?: { id: string; title: string | null; date: string | null; circle: string | null }
 }

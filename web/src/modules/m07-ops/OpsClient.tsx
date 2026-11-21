@@ -24,6 +24,7 @@ import { fmtTaskWhen, isTaskOverdue, taskDate } from '@/core/lib/tasks'
 import { DraftSwipe } from './DraftSwipe'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
 import { ProjectManagerPanel } from './ProjectManagerPanel'
+import type { MeetingTask } from '@/modules/m18-meetings/types'
 import { NameTag } from './NameTag'
 import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
 import { PriorityBadge } from './Priority'
@@ -58,6 +59,8 @@ interface OpsClientProps {
   /** ?circle= : the board opens filtered to it (the circles' Project manager buttons) */
   initialCircle: string | null
   pmSuggestions: AgentSuggestion[]
+  /** Meetings' drafts waiting to be confirmed, for the project manager panel (v4.107.0) */
+  meetingDrafts?: MeetingTask[]
   pmActions: PmAction[]
   /** Open this task's pop-up on arrival (/operations?task=<id>) */
   initialTaskId?: string | null
@@ -399,7 +402,7 @@ export default function OpsClient({
   activeCount, deliverableCount, doneCount, atRiskCount,
   isAdmin, userId, userRole, leadCircles, sprintName,
   projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
-  initialCircle, pmSuggestions, pmActions, initialTaskId = null, people = [], projectOptions = [], teams = [],
+  initialCircle, pmSuggestions, pmActions, meetingDrafts = [], initialTaskId = null, people = [], projectOptions = [], teams = [],
   circleUnits = [], circleMembers = [], initialView = 'projects',
 }: OpsClientProps) {
   const circles = useCircles()
@@ -792,6 +795,7 @@ export default function OpsClient({
           projects={projectOptions} teams={teams}
           taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
           editOptions={{ people, projectOptions, teams }}
+          meetingDrafts={meetingDrafts}
           onOpenTask={id => { const t = boardTasks.find(x => x.id === id) ?? initialDeliverables.find(x => x.id === id); if (t) setOpenTask(t) }}
         />
         <div className={DESIGN === 'v4' ? 'ops4-board' : undefined} style={DESIGN === 'v4' ? undefined : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>

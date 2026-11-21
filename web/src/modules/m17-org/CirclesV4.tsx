@@ -67,6 +67,23 @@ const day = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : is
 const time = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
+/** Where you are, and the way back (v4.108.0): Circles › a circle › a subcircle. The last is where you are. */
+function Crumbs({ trail }: { trail: { label: string; href?: string }[] }) {
+  const router = useRouter()
+  return (
+    <nav className="cv4-crumbs" aria-label="Breadcrumb">
+      {trail.map((x, i) => (
+        <span key={i} className="cv4-crumbs__item">
+          {i > 0 && <Icon name="right" size={12} className="cv4-crumbs__sep" />}
+          {x.href ? <Link href={x.href} onClick={e => { if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); router.push(x.href!) } }}>{x.label}</Link> : <b aria-current="page">{x.label}</b>}
+        </span>
+      ))}
+    </nav>
+  )
+}
+/** A subcircle's page */
+const subHref = (c: string, teamId: string) => `/circles?c=${encodeURIComponent(c)}&t=${teamId}`
+
 function Av({ name, url, color, size }: { name: string; url?: string; color?: string; size?: 'lg' }) {
   const cls = `v4-avatar cv4-av${size === 'lg' ? ' cv4-av--lg' : ''}`
   if (url) return <img className={cls} src={url} alt="" title={name} loading="lazy" />
@@ -84,6 +101,9 @@ export default function CirclesV4(p: Props) {
   const circles = useCircles()
   const params = useSearchParams()
   const open = params.get('c')
+  // A subcircle's own page (v4.108.0): /circles?c=<circle>&t=<subcircle>
+  const sub = params.get('t')
+  if (open && circles.has(open) && sub && p.units.some(u => u.id === sub && u.kind === 'team' && u.circle === open)) return <SubcirclePage key={sub} {...p} slug={open} teamId={sub} />
   if (open && circles.has(open)) return <CirclePage key={open} {...p} slug={open} />
   return <CircleCards {...p} />
 }
@@ -214,7 +234,7 @@ function CircleCards(p: Props) {
                       {subsOf === c && (
                         <span className="cv4-subpick__menu" role="menu">
                           {teams.map(t => (
-                            <button key={t.id} type="button" role="menuitem" className="cv4-subpick__item" onClick={e => goTo(e, `${base}&sub=${t.id}`)}>
+                            <button key={t.id} type="button" role="menuitem" className="cv4-subpick__item" onClick={e => goTo(e, subHref(c, t.id))}>
                               <span>{t.name}</span><small>{plural(f.membersOf(t.id).length, 'person', 'people')}</small>
                             </button>
                           ))}
@@ -265,7 +285,6 @@ function CircleCards(p: Props) {
 
 function CirclePage(p: Props & { slug: string }) {
   const circles = useCircles()
-  const router = useRouter()
   const params = useSearchParams()
   const f = useCircleFacts(p)
   const c = p.slug
@@ -403,7 +422,7 @@ function CirclePage(p: Props & { slug: string }) {
 
   return (
     <div className="v4-page v4-page--wide cv4" style={{ ['--c' as string]: meta.color }}>
-      <Link href="/circles" className="v4-back" onClick={e => { if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); router.push('/circles') } }}><Icon name="left" size={14} />Circles</Link>
+      <Crumbs trail={[{ label: 'Circles', href: '/circles' }, { label: meta.label }]} />
       <header className="v4-ph cv4-head">
         <div className="v4-ph__row">
           <div className="cv4-head__main">
@@ -491,9 +510,9 @@ function CirclePage(p: Props & { slug: string }) {
               <div className="v4-sec"><h2>Subcircles · {teams.length}</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('subcircles')}>All subcircles →</button></div>
               <div className="cv4-minis">
                 {teams.map(t => (
-                  <button key={t.id} type="button" className="v4-card cv4-mini" onClick={() => go('subcircles')}>
+                  <Link key={t.id} href={subHref(c, t.id)} className="v4-card v4-card--link cv4-mini">
                     <b>{t.name}</b><small>{plural(f.membersOf(t.id).length, 'person', 'people')}</small>
-                  </button>
+                  </Link>
                 ))}
               </div>
             </>
@@ -585,7 +604,7 @@ function CirclePage(p: Props & { slug: string }) {
                   <article key={t.id} id={`sub-${t.id}`} className={`v4-card cv4-sub${picked === t.id ? ' cv4-sub--picked' : ''}`}>
                     <div className="cv4-card__top">
                       <span className="cv4-ico cv4-ico--sm" aria-hidden="true"><Icon name="users" size={18} /></span>
-                      <div className="cv4-card__name"><b>{t.name}</b><small>Subcircle of {meta.label}</small></div>
+                      <Link href={subHref(c, t.id)} className="cv4-card__name cv4-sub__link"><b>{t.name}</b><small>Subcircle of {meta.label} · open it →</small></Link>
                       {canEditUnit(t, p.members, p.userId, p.role, p.leadCircles) && <Button size="sm" variant="secondary" icon="pencil" onClick={() => p.onEdit(t, c)}>Edit</Button>}
                     </div>
                     {t.description ? <p className="cv4-sub__about cv4-pre">{t.description}</p> : <p className="cv4-sub__about v4-hint">No purpose written yet.</p>}
@@ -654,6 +673,189 @@ function CirclePage(p: Props & { slug: string }) {
               ) : <p className="v4-hint">No meeting notes yet.</p>}
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── /circles?c=slug&t=id: one subcircle, in tabs, like its circle (v4.108.0) ─────── */
+
+const SUB_TABS = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'people', label: 'People' },
+  { key: 'tasks', label: 'Tasks' },
+  { key: 'meetings', label: 'Meetings' },
+] as const
+type SubTabKey = typeof SUB_TABS[number]['key']
+
+/**
+ * A subcircle's page (v4.108.0: Oscar, "sub circles should have a subpage the same abilities as a circle subpage… like a
+ * russian doll effect so it's familiar… and a bread crumb on top so users can see their way back"). The circle's page,
+ * one level in: its purpose, its people (leads add people here), its tasks (given to the subcircle) and its meeting
+ * notes (meetings set to the subcircle). The breadcrumb leads back to the circle and to Circles.
+ */
+function SubcirclePage(p: Props & { slug: string; teamId: string }) {
+  const circles = useCircles()
+  const params = useSearchParams()
+  const f = useCircleFacts(p)
+  const c = p.slug
+  const meta = circles.meta(c)
+  const team = p.units.find(u => u.id === p.teamId)!
+  const members = f.membersOf(team.id)
+  const leads = members.filter(m => m.role === 'lead')
+  const others = members.filter(m => m.role !== 'lead')
+  const manage = canEditUnit(team, p.members, p.userId, p.role, p.leadCircles)
+  const inIt = !!p.userId && members.some(m => m.user_id === p.userId)
+  const signedIn = !!p.userId
+  const tasks = f.tasksOf(c).filter(t => t.team_id === team.id)
+  const projects = p.teamProjects.filter(x => x.team_id === team.id)
+  const notes = f.meetingsOf(c).filter(m => m.team_id === team.id)
+  const openCount = projects.length + tasks.filter(t => !t.project_id).length
+
+  const asked0 = params.get('tab')
+  const [tab, setTab] = useState<SubTabKey>(SUB_TABS.some(t => t.key === asked0) ? asked0 as SubTabKey : 'overview')
+  function go(t: SubTabKey) {
+    setTab(t)
+    const q = new URLSearchParams(window.location.search)
+    if (t === 'overview') q.delete('tab'); else q.set('tab', t)
+    window.history.replaceState(null, '', `/circles?${q.toString()}`)
+  }
+  const counts: Partial<Record<SubTabKey, number>> = { people: members.length, tasks: signedIn ? openCount : undefined, meetings: signedIn ? notes.length : undefined }
+
+  const personCard = (m: OrgMember) => (
+    <Link key={m.user_id} href={m.person?.username ? `/u/${m.person.username}` : '#'} className="v4-card v4-card--link cv4-person">
+      <Av name={m.person!.name} url={f.avatar(m.user_id)} color={meta.color} size="lg" />
+      <span className="cv4-person__main">
+        <b>{m.person!.name}{m.user_id === p.userId ? ' (you)' : ''}</b>
+        <small>{m.role === 'lead' ? 'Subcircle lead' : m.title || 'Member'}</small>
+      </span>
+    </Link>
+  )
+  const taskRow = (t: CircleTask) => (
+    <Link key={t.id} href={t.project_id ? `/operations/${t.project_id}` : `/operations?task=${t.id}`} className="v4-row v4-row--click">
+      <span className="v4-row__main">
+        <b>{t.title}</b>
+        <small suppressHydrationWarning>{[t.project_title ? `in ${t.project_title}` : null, t.assignee_id === p.userId ? 'you' : t.assignee_name, t.due_date ? `due ${day(t.due_date)}` : null].filter(Boolean).join(' · ') || 'Not assigned yet'}</small>
+      </span>
+      <span className="v4-row__trail"><StatusPill status={statusFromDb(t.status)} /></span>
+    </Link>
+  )
+  const projectRow = (x: { id: string; title: string }) => (
+    <Link key={x.id} href={`/operations/${x.id}`} className="v4-row v4-row--click">
+      <span className="v4-row__main"><b>{x.title}</b>{signedIn && <small>{plural(tasks.filter(t => t.project_id === x.id).length, 'open subtask')}</small>}</span>
+      <span className="v4-row__trail"><Icon name="right" size={14} /></span>
+    </Link>
+  )
+  const noteRow = (m: typeof notes[number]) => (
+    <Link key={m.id} href={`/meetings/${m.id}`} className="v4-row v4-row--click">
+      <span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="file" /></span></span>
+      <span className="v4-row__main"><b>{m.title || 'Meeting'}</b>{m.meeting_date && <small suppressHydrationWarning>{day(m.meeting_date)}</small>}</span>
+    </Link>
+  )
+  const taskList = (n?: number) => {
+    const rows = [...projects.map(projectRow), ...tasks.filter(t => !t.project_id).map(taskRow)]
+    return rows.length ? <div className="v4-list">{n ? rows.slice(0, n) : rows}</div> : <p className="v4-hint">No open tasks given to this subcircle.</p>
+  }
+  const noteList = (n?: number) => !signedIn ? <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to read meeting notes.</p>
+    : notes.length ? <div className="v4-list">{(n ? notes.slice(0, n) : notes).map(noteRow)}</div>
+    : <p className="v4-hint">No meetings set to this subcircle yet. A lead sets a meeting’s subcircle on its page, under Review this meeting.</p>
+
+  return (
+    <div className="v4-page v4-page--wide cv4" style={{ ['--c' as string]: meta.color }}>
+      <Crumbs trail={[{ label: 'Circles', href: '/circles' }, { label: meta.label, href: `/circles?c=${encodeURIComponent(c)}&tab=subcircles` }, { label: team.name }]} />
+      <header className="v4-ph cv4-head">
+        <div className="v4-ph__row">
+          <div className="cv4-head__main">
+            <span className="cv4-ico cv4-ico--lg" aria-hidden="true"><Icon name="users" size={26} /></span>
+            <div>
+              <div className="v4-tags cv4-gap">
+                <span className="v4-tag"><i className="cv4-dot" />Subcircle of {meta.label}</span>
+                {inIt && <Tag icon="check">You’re in it</Tag>}
+                {manage && <Tag icon="shield">You can manage it</Tag>}
+              </div>
+              <h1 className="v4-ph__title">{team.name}</h1>
+              {team.description ? <p className="v4-ph__sub">{firstSentence(team.description)}</p> : manage && <p className="v4-ph__sub">Add this subcircle’s purpose with Edit.</p>}
+            </div>
+          </div>
+          <div className="v4-ph__actions">
+            {manage && <Button variant="secondary" icon="pencil" onClick={() => p.onEdit(team, c)}>Edit</Button>}
+          </div>
+        </div>
+      </header>
+
+      <div className="v4-chiprow cv4-tabs" role="tablist">
+        {SUB_TABS.map(t => <Chip key={t.key} on={tab === t.key} onClick={() => go(t.key)} count={counts[t.key] || undefined}>{t.label}</Chip>)}
+      </div>
+
+      {tab === 'overview' && (
+        <>
+          <div className="cv4-strip">
+            <button type="button" className="v4-card cv4-tile" onClick={() => go('people')}>
+              <small>Lead</small>
+              {leads.length ? <span className="cv4-lead"><span className="cv4-avs">{leads.slice(0, 3).map(m => <Av key={m.user_id} name={m.person!.name} url={f.avatar(m.user_id)} color={meta.color} />)}</span><b>{leads.map(m => first(m.person!.name)).join(', ')}</b></span>
+                : <b className="cv4-muted">No lead yet</b>}
+            </button>
+            <button type="button" className="v4-card cv4-tile" onClick={() => go('people')}>
+              <small>People</small>
+              <span className="cv4-lead"><b className="cv4-num">{members.length}</b><span className="cv4-avs">{members.slice(0, 6).map(m => <Av key={m.user_id} name={m.person!.name} url={f.avatar(m.user_id)} color={meta.color} />)}</span></span>
+            </button>
+            {signedIn && (
+              <button type="button" className="v4-card cv4-tile" onClick={() => go('tasks')}>
+                <small>Open tasks</small><b className="cv4-num">{openCount}</b>
+              </button>
+            )}
+            {signedIn && (
+              <button type="button" className="v4-card cv4-tile" onClick={() => go('meetings')}>
+                <small>Meeting notes</small><b className="cv4-num">{notes.length}</b>
+              </button>
+            )}
+          </div>
+          <div className="cv4-split">
+            <div>
+              <div className="v4-sec"><h2>Tasks</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('tasks')}>All tasks →</button></div>
+              {signedIn ? taskList(4) : <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to see this subcircle’s tasks.</p>}
+            </div>
+            <div>
+              <div className="v4-sec"><h2>Meeting notes</h2><button type="button" className="cv4-link no-min-height" onClick={() => go('meetings')}>All notes →</button></div>
+              {noteList(4)}
+            </div>
+          </div>
+          {team.description && team.description.replace(/\s+/g, ' ').trim() !== firstSentence(team.description) && (
+            <>
+              <SectionHead title="Purpose" />
+              <div className="v4-card cv4-purpose"><p className="cv4-pre">{team.description}</p></div>
+            </>
+          )}
+          <SectionHead title={`Part of ${meta.label}`} action={{ href: `/circles?c=${encodeURIComponent(c)}`, label: `Open ${meta.label} →` }} />
+        </>
+      )}
+
+      {tab === 'people' && (
+        <>
+          <SectionHead title={leads.length === 1 ? 'Lead' : 'Leads'} />
+          {leads.length ? <div className="cv4-people">{leads.map(personCard)}</div> : <p className="v4-hint">No lead yet{manage ? ': choose one with Edit.' : '.'}</p>}
+          <SectionHead title={`Members · ${others.length}`} />
+          {others.length ? <div className="cv4-people">{others.map(personCard)}</div> : <p className="v4-hint">No members yet beside its {leads.length === 1 ? 'lead' : 'leads'}.</p>}
+          {manage ? (
+            <div className="cv4-add">
+              <AddCircleMember unitId={team.id} color={meta.color} people={p.people} existing={members.map(m => m.user_id)} onAdded={m => p.onMemberAdded(m, team.name)} />
+            </div>
+          ) : signedIn && !inIt && <p className="v4-hint">To join, ask a lead of {team.name} or of {meta.label} to add you.</p>}
+        </>
+      )}
+
+      {tab === 'tasks' && (
+        <>
+          <SectionHead title={`Open tasks · ${openCount}`} action={{ href: `/operations?circle=${encodeURIComponent(c)}`, label: 'On the board →' }} />
+          {signedIn ? taskList() : <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to see this subcircle’s tasks.</p>}
+        </>
+      )}
+
+      {tab === 'meetings' && (
+        <>
+          <SectionHead title={signedIn ? `Meeting notes · ${notes.length}` : 'Meeting notes'} action={p.meetingCounts ? { href: `/meetings?circle=${encodeURIComponent(c)}`, label: `All ${meta.label} notes →` } : undefined} />
+          {noteList()}
+        </>
       )}
     </div>
   )
