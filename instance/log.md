@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-21 — Core v4.105.0 via PR #79 (deployed, 19525fda): change a task right where you review it
+- No migration.
+
 ## 2026-11-21 — Core v4.104.0 via PR #78 (deployed, 9e608156): subcircles on each circle's card, one click away
 - No migration.
 
