@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
@@ -94,9 +95,9 @@ export function CalendarFeedsModal({ initial, onClose }: { initial: CalendarFeed
           <div key={f.id} style={{ border: '1px solid var(--rule)', borderRadius: 10, padding: '12px 14px', background: 'var(--surface)' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>🔗 {f.name}{!f.enabled && <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}> · paused</span>}</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}><InlineIcon name="link" />{f.name}{!f.enabled && <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}> · paused</span>}</div>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 3 }}>
-                  {busy === f.id ? 'Syncing…' : f.last_error ? <span style={{ color: '#b91c1c' }}>⚠ {f.last_error}</span>
+                  {busy === f.id ? 'Syncing…' : f.last_error ? <span style={{ color: '#b91c1c' }}><InlineIcon name="alert" />{f.last_error}</span>
                     : f.last_synced_at ? `${f.last_count ?? 0} events · synced ${new Date(f.last_synced_at).toLocaleString()}` : 'Not synced yet'}
                 </div>
               </div>
@@ -201,7 +202,7 @@ function PhotoAccess() {
   }
   return (
     <div style={{ marginTop: 18, borderTop: '1px solid var(--rule)', paddingTop: 14, fontSize: 13, color: 'var(--ink-2)' }}>
-      <div style={{ fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>📷 Add from a photo</div>
+      <div style={{ fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}><InlineIcon name="camera" />Add from a photo</div>
       <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8, lineHeight: 1.5 }}>
         Admins can read a photo of the schedule board into the calendar. So can the leads and people of this circle (as listed on the Circles page):
       </div>

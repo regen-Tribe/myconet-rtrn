@@ -108,7 +108,7 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
   return (
     <nav aria-label="Menu" className={`app-shell-sidenav menu-v4${mobileOpen ? ' mobile-open' : ''}${rail ? ' mv4--rail' : ''}`}>
       <div className="mv4-top">
-        <Link href="/home" className="mv4-brand" title={COMMUNITY_NAME} onClick={onClose}>
+        <Link href="/dashboard" className="mv4-brand" title={COMMUNITY_NAME} onClick={onClose}>
           {BRAND_MARK
             ? <img className="mv4-mark mv4-mark--img" src={BRAND_MARK} alt="" aria-hidden="true" />
             : <span className="mv4-mark" aria-hidden="true">{COMMUNITY_NAME.slice(0, 1).toUpperCase()}</span>}

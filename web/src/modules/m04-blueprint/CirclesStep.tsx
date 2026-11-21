@@ -1,5 +1,6 @@
 'use client'
 
+import { Icon } from '@/core/components/v4'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -279,7 +280,7 @@ export default function CirclesStep({ values, canEdit, onImport, onClearFound, o
             <div className="section-title">{active.length ? 'Add circles' : 'Establish your circles'}</div>
             <div className="section-meta-row">
               <button className="btn-section-import" onClick={onImport} title="Use AI to find circles in a document">
-                <span className="btn-section-import-icon">✨</span>
+                <span className="btn-section-import-icon"><Icon name="spark" size={16} /></span>
                 Find in a document
               </button>
             </div>

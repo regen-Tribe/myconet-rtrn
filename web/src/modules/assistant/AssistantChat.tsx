@@ -1,5 +1,6 @@
 'use client'
 
+import { Icon, InlineIcon } from '@/core/components/v4'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -40,7 +41,7 @@ function DoCard({ m, onDo, onCancel, onUndo }: { m: DoMessage; onDo: () => void;
     <div style={{ marginTop: 8, background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '8px 10px' }}>
       {(m.results ?? m.changes.map(c => ({ summary: c.summary, ok: !c.blocked, error: c.blocked ?? undefined }) as DoResult)).map((r, i) => (
         <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45, padding: '4px 0', borderTop: i ? '1px solid var(--rule)' : 'none', color: r.error && m.state !== 'done' ? 'var(--ink-4)' : 'var(--ink)' }}>
-          <span aria-hidden>{m.state === 'done' ? (r.undone ? '↩︎ ' : r.ok ? '✓ ' : '✗ ') : '• '}</span>{r.summary}
+          {m.state === 'done' ? <InlineIcon name={r.undone ? 'undo' : r.ok ? 'check' : 'x'} /> : <span aria-hidden>• </span>}{r.summary}
           {r.error && <div style={{ fontSize: 11.5, color: m.state === 'done' ? '#b91c1c' : 'var(--ink-4)' }}>{r.error}</div>}
           {m.state === 'done' && r.ok && r.undo && !r.undone && (
             <button onClick={() => onUndo(r)} style={{ ...cardBtn(false), padding: '2px 8px', fontSize: 11.5, marginLeft: 6 }}>Undo</button>
@@ -232,7 +233,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
         background: 'var(--accent-color)', color: '#fff', fontSize: 22,
         boxShadow: '0 6px 20px rgba(0,0,0,.18)',
       }}>
-        <span aria-hidden>✦</span>
+        <Icon name="spark" size={22} />
       </button>
     )
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Loader2, ZoomIn, ZoomOut } from '@/core/components/v4/lucide-compat'
 
 const FRAME = 260      // on-screen size of the square crop window (px)
 const OUTPUT = 512     // size of the saved square image (px)

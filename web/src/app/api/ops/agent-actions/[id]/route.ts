@@ -13,6 +13,7 @@ import { createClient } from '@/core/lib/supabase/server'
 //   pm_move   → the task goes back to where it was (a project the change made is removed when empty)
 //   pm_merge  → the merged-away task comes back, with its meeting links
 //   pm_assign → the task has nobody again
+//   (each: a draft that accepting confirmed is a draft again)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const me = await circleDecider()
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } else {
     return NextResponse.json({ error: 'This change can’t be undone here.' }, { status: 409 })
   }
+  // Accepting a suggestion confirmed a draft (v4.79.0): undoing it makes it a draft again
+  if (d.confirmed === true && a.target_id) await admin.from('deliverables').update({ needs_review: true }).eq('id', a.target_id)
   await admin.from('agent_actions').update({ undone_at: new Date().toISOString(), undone_by: me.user.id }).eq('id', id)
   return NextResponse.json({ ok: true })
 }

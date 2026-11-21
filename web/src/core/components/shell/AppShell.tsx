@@ -58,7 +58,7 @@ export default function AppShell({ children, role, isLoggedIn = false, menu = nu
             isLoggedIn={isLoggedIn}
           />
         )}
-        <main style={{ overflowY: 'auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+        <main className={menu ? 'v4-main' : undefined} style={{ overflowY: 'auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1 }}>{children}</div>
           <AppFooter />
         </main>

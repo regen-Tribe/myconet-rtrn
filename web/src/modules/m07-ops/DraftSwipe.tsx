@@ -1,5 +1,6 @@
 'use client'
 
+import { Icon } from '@/core/components/v4'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { DraftBadge } from '@/core/components/DraftBadge'
@@ -109,9 +110,9 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
         cursor: state === 'saving' ? 'progress' : 'grab', touchAction: 'pan-y', userSelect: 'none',
       }}
     >
-      {toward === 'decline' && <span aria-hidden>{ready ? '✕' : '‹'}</span>}
+      {toward === 'decline' && <span aria-hidden>{ready ? <Icon name="x" size={16} /> : '‹'}</span>}
       {state === 'saving' ? '…' : toward === 'approve' ? (ready ? 'Approve' : 'Draft') : toward === 'decline' ? (ready ? 'Decline' : 'Draft') : '‹ Draft ›'}
-      {toward === 'approve' && <span aria-hidden>{ready ? '✓' : '›'}</span>}
+      {toward === 'approve' && <span aria-hidden>{ready ? <Icon name="check" size={16} /> : '›'}</span>}
     </span>
   )
 }

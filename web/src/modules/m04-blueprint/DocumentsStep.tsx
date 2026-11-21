@@ -1,4 +1,5 @@
 'use client'
+import { Icon } from '@/core/components/v4'
 import { BLUEPRINT_EDITORS_LABEL } from '@/core/lib/roles'
 
 import { useCallback, useEffect, useState } from 'react'
@@ -78,7 +79,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
         )}
         {(docs ?? []).map(d => (
           <div key={d.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', marginBottom: 8, border: '1px solid var(--rule)', borderRadius: 8, background: 'var(--surface)', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 18 }}>{d.visibility === 'leads' ? '🔒' : '🌐'}</span>
+            <span style={{ color: 'var(--ink-3)' }}><Icon name={d.visibility === 'leads' ? 'lock' : 'globe'} size={18} /></span>
             <div style={{ flex: 1, minWidth: 180 }}>
               {renaming?.id === d.id ? (
                 <input className="input" value={renaming.title} maxLength={200} autoFocus

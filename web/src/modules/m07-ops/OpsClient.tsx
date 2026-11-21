@@ -28,7 +28,7 @@ import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption
 import { PriorityBadge } from './Priority'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
-import { Button, Chip, ChipRow, PageHeader } from '@/core/components/v4'
+import { Button, Chip, ChipRow, PageHeader, InlineIcon } from '@/core/components/v4'
 import { CircleFilter, parseCircleParam, setCircleParam } from '@/core/components/v4/CircleFilter'
 import './ops-v4.css'
 
@@ -688,12 +688,12 @@ export default function OpsClient({
               border: '1px solid #f59e0b', borderRadius: 8,
               padding: '8px 14px', marginBottom: 12,
             }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#b45309' }}>⚠ Showing only tasks with late subtasks</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#b45309' }}><InlineIcon name="alert" />Showing only tasks with late subtasks</span>
               <button
                 onClick={() => setOverdueOnly(false)}
                 style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
               >
-                Clear filter ✕
+                Clear filter <InlineIcon name="x" />
               </button>
             </div>
           )}
@@ -705,7 +705,7 @@ export default function OpsClient({
             />
             {atRiskCount > 0 && (
               <button type="button" aria-pressed={overdueOnly} className={`v4-chip ops4-latechip${overdueOnly ? ' v4-chip--on' : ''}`} onClick={() => setOverdueOnly(v => !v)}>
-                {atRiskCount} late{overdueOnly ? ' ✕' : ''}
+                {atRiskCount} late{overdueOnly && <> <InlineIcon name="x" label="Clear" /></>}
               </button>
             )}
             <span className="ops4-spacer" />
@@ -790,6 +790,7 @@ export default function OpsClient({
           suggestions={pmSuggestions} actions={pmActions} circle={selectedCircles} canDecide={canDecide}
           projects={projectOptions} teams={teams}
           taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
+          onOpenTask={id => { const t = boardTasks.find(x => x.id === id) ?? initialDeliverables.find(x => x.id === id); if (t) setOpenTask(t) }}
         />
         <div className={DESIGN === 'v4' ? 'ops4-board' : undefined} style={DESIGN === 'v4' ? undefined : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {columns.map(col => {

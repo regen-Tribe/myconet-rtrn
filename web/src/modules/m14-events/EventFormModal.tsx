@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -169,13 +170,13 @@ export function EventFormModal({
                     opacity: locked ? 0.6 : 1,
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: active ? 'var(--m14)' : 'var(--ink)' }}>{locked ? '🔒 ' : ''}{KIND_META[k].label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: active ? 'var(--m14)' : 'var(--ink)' }}>{locked && <InlineIcon name="lock" />}{KIND_META[k].label}</div>
                   <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>{KIND_META[k].blurb}</div>
                 </button>
               )
             })}
           </div>
-          {kindNote && <div style={{ fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', marginTop: 8, lineHeight: 1.5 }}>🔒 {kindNote}</div>}
+          {kindNote && <div style={{ fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', marginTop: 8, lineHeight: 1.5 }}><InlineIcon name="lock" />{kindNote}</div>}
           {!existing && (
             <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
               Something to get done rather than an event? Tasks go on the <Link href="/operations" style={{ color: 'var(--m7)', fontWeight: 600 }}>task board</Link>; dated tasks show here too.

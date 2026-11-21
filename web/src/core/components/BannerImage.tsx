@@ -1,4 +1,5 @@
 'use client'
+import { InlineIcon } from '@/core/components/v4'
 import Link from 'next/link'
 import { useBranding } from '@/core/components/BrandingProvider'
 import { BRANDING_STEP_HREF } from '@/core/lib/branding'
@@ -28,7 +29,7 @@ export default function BannerImage({ isAdmin = false, height = 220, style }: {
       height: Math.min(height, 120), borderRadius: 14, border: '1.5px dashed var(--rule)',
       background: 'var(--bg-2)', color: 'var(--ink-3)', fontSize: 13, textDecoration: 'none', ...style,
     }}>
-      🖼️ Add a banner image for {COMMUNITY_NAME} <span style={{ color: 'var(--ink-4)' }}>· only admins see this</span>
+      <InlineIcon name="image" /> Add a banner image for {COMMUNITY_NAME} <span style={{ color: 'var(--ink-4)' }}>· only admins see this</span>
     </Link>
   )
 }

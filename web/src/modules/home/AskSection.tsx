@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { ASK_EVENT } from '@/modules/assistant/AssistantChat'
 
@@ -19,7 +20,7 @@ export default function AskSection() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32, alignItems: 'center' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent-color)', marginBottom: 10 }}>
-            💬 Ask {COMMUNITY_NAME}
+            <InlineIcon name="chat" />Ask {COMMUNITY_NAME}
           </div>
           <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 42px)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.025em', margin: '0 0 12px', color: 'var(--ink)' }}>
             Ask anything. Get answers from the community itself.

@@ -1,4 +1,5 @@
 'use client'
+import { Icon } from '@/core/components/v4'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import Link from 'next/link'
@@ -94,7 +95,7 @@ export default function AgreementFormClient({ project, userId, existing }: {
   if (submitted) {
     return (
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '80px 20px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+        <div style={{ marginBottom: 16, color: '#235C3B' }}><Icon name="check-circle" size={48} /></div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, marginBottom: 12 }}>Proposal submitted</h1>
         <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.65, marginBottom: 32 }}>
           The task lead will review your offer for <strong>{project.title}</strong> and get back to you.

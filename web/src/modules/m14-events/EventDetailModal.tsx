@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -126,7 +127,7 @@ export function EventDetailModal({
           color: active ? '#fff' : 'var(--ink-2)',
         }}
       >
-        {active ? `✓ ${label}` : label}
+        {active ? <><InlineIcon name="check" />{label}</> : label}
       </button>
     )
   }
@@ -149,7 +150,7 @@ export function EventDetailModal({
             </span>
           )}
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', background: 'var(--bg-2)', borderRadius: 20, padding: '2px 9px' }}>
-            {event.is_public ? '🌍 Public' : '🔒 Members only'}
+            {event.is_public ? <><InlineIcon name="globe" />Public</> : <><InlineIcon name="lock" />Members only</>}
           </span>
         </div>
 
@@ -181,7 +182,7 @@ export function EventDetailModal({
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span>🗓 {fmtEventWhen(event)}</span>
+              <span><InlineIcon name="calendar" />{fmtEventWhen(event)}</span>
               {canChangeTime && onSaveTimes && (
                 <button onClick={openTimeEditor} style={{ fontSize: 12.5, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--m14)', background: 'var(--surface)', color: 'var(--m14)', cursor: 'pointer' }}>🕒 Change time</button>
               )}
@@ -192,10 +193,10 @@ export function EventDetailModal({
               Time changed by {event.times_author?.first_name ?? event.times_author?.username ?? 'a member'} on {new Date(event.times_set_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
             </div>
           )}
-          {event.location && <div style={{ overflowWrap: 'anywhere' }}>📍 {event.location}</div>}
+          {event.location && <div style={{ overflowWrap: 'anywhere' }}><InlineIcon name="pin" />{event.location}</div>}
           {event.online_url && (
             <div style={{ overflowWrap: 'anywhere' }}>
-              💻 <a href={event.online_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--m14)', fontWeight: 600 }}>Join online</a>
+              <InlineIcon name="laptop" /><a href={event.online_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--m14)', fontWeight: 600 }}>Join online</a>
             </div>
           )}
         </div>
@@ -241,8 +242,8 @@ export function EventDetailModal({
           <div>
             <div style={sectionLabel}>Linked to</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-              {event.project && <Link href={`/operations/${event.project.id}`} style={{ color: 'var(--m7)', fontWeight: 600 }}>⚙️ Task · {event.project.title}</Link>}
-              {event.proposal && <Link href="/governance" style={{ color: 'var(--m9)', fontWeight: 600 }}>⚖️ Proposal · {event.proposal.title}</Link>}
+              {event.project && <Link href={`/operations/${event.project.id}`} style={{ color: 'var(--m7)', fontWeight: 600 }}><InlineIcon name="board" />Task · {event.project.title}</Link>}
+              {event.proposal && <Link href="/governance" style={{ color: 'var(--m9)', fontWeight: 600 }}><InlineIcon name="scale" />Proposal · {event.proposal.title}</Link>}
             </div>
           </div>
         )}
@@ -270,7 +271,7 @@ export function EventDetailModal({
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderTop: '1px solid var(--rule)', paddingTop: 14 }}>
           {event.feed_id ? (
-            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>🔗 From a linked calendar. Changes there show up here within the hour.</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}><InlineIcon name="link" />From a linked calendar. Changes there show up here within the hour.</div>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
               Hosted by{' '}

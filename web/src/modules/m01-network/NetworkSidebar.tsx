@@ -8,7 +8,7 @@ import { cn } from '@/core/lib/utils'
 import {
   LayoutDashboard, User, Sparkles, Search,
   Gift, HelpCircle, Pencil, LogOut, ChevronUp,
-} from 'lucide-react'
+} from '@/core/components/v4/lucide-compat'
 import { useState } from 'react'
 
 const NAV_ITEMS = [

@@ -1,4 +1,4 @@
-import { PageHeader } from '@/core/components/v4'
+import { PageHeader, Icon, type IconName } from '@/core/components/v4'
 import { DESIGN } from '@/core/lib/instance'
 import { createClient } from '@/core/lib/supabase/server'
 import Link from 'next/link'
@@ -9,7 +9,7 @@ const CATALOG = [
     key: 'profile_complete',
     title: 'Profile Pioneer',
     description: 'Completed your full member profile — all 11 sections filled in.',
-    icon: '✦',
+    icon: 'spark' as IconName,
     color: 'var(--m1)',
     hint: 'Fill in every section of your profile to earn this badge.',
   },
@@ -17,7 +17,7 @@ const CATALOG = [
     key: 'community_joiner',
     title: 'Community Joiner',
     description: 'Signed the community values and joined as a member.',
-    icon: '🏡',
+    icon: 'home' as IconName,
     color: 'var(--m5)',
     hint: 'Finish joining and get accepted to earn this badge.',
   },
@@ -25,7 +25,7 @@ const CATALOG = [
     key: 'community_member',
     title: 'Community Member',
     description: 'Made an agreement to help on a task, or suggested a task in Operations — a full contributing member of the community.',
-    icon: '⊕',
+    icon: 'plus' as IconName,
     color: 'var(--m9)',
     hint: 'Make an agreement to help on a task, or suggest a task in Operations. Once one is accepted you earn this badge.',
   },
@@ -129,7 +129,7 @@ export default async function ContributionsPage() {
                 color: unlocked ? '#fff' : 'var(--ink-4)',
                 filter: unlocked ? 'none' : 'grayscale(1)',
               }}>
-                {unlocked ? a.icon : '🔒'}
+                <Icon name={unlocked ? a.icon : 'lock'} size={22} />
               </div>
 
               <div style={{ flex: 1 }}>

@@ -5,6 +5,34 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.79.0 — 2026-11-20 — Open a suggestion's task, and deciding confirms a draft
+
+Oscar: "i should be able to click the name of the task and open the card… make the task stop showing draft".
+- In the 🧭 Project manager panel (M07), a task's name in a suggestion opens its card on the board, and so does
+  "Open task →" in Where this comes from. Saving the card confirms a draft, as before.
+- Accepting a suggestion confirms the drafts it touches: the task given to someone, the tasks moved or put in a new
+  task, and the one kept in a merge. The change is logged with `confirmed`, and **Undo** makes them drafts again.
+  No migration.
+
+## v4.78.0 — 2026-11-21 — The v4 look on every screen
+
+Sonia: "let's fix all the changes so v4 reaches all screens". Only for communities with `"design": "v4"`; others
+keep their look apart from the icons.
+- **Home is the dashboard.** In v4, `/home` and a signed-in `/` go to `/dashboard`, and the menu's logo links
+  there (the v4 menu has no Home item). `HomeClient` stays for other communities.
+- **One style layer for the older screens.** The v4 bridge in `globals.css` now covers everything inside the shell
+  (`<main class="v4-main">`, AppShell) instead of only `.v4-page` screens. It adds: the quiet eyebrow for the
+  coloured module pill, the v4 title for `h1` set in the display font, the v4 page padding for the 48px frames,
+  and the v4 veil and card for pop-ups that draw their own backdrop.
+- **One icon set.** `lucide-react` imports point at `core/components/v4/lucide-compat.tsx`, which keeps the names
+  and props and draws the marker-line icons. New icons: zoom-in, zoom-out, loader (spins), help, briefcase, at,
+  up, sun, moon, check-circle, image, bowl, key. `InlineIcon` puts an icon in a line of text.
+- **Emoji out of the screens** (sign-in, landing, calendar, event pop-up, task board, agreements, join,
+  achievements, meetings, assistant, admin): replaced with icons. "The community at a glance" tiles carry an
+  icon name instead of an emoji (`GlanceTile.icon`).
+- Not yet: the old Governance body and Blueprint editor for non-v4 communities, and circle emoji (circle seals
+  come next). No migration.
+
 ## v4.77.0 — 2026-11-20 — Where the project manager's suggestion comes from
 
 Oscar: "click something that shows me where the project manager is pulling this info from… what meeting it came

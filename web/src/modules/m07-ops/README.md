@@ -48,7 +48,8 @@ suggestions with **Accept** / **Dismiss** and the agent's changes of the last tw
 admins and that circle's leads (`lib/pm-access.ts`; routes `/api/ops/suggestions/[id]`,
 `/api/ops/agent-actions/[id]`); everyone else sees them read-only. **Where this comes from** (v4.77.0) on each
 suggestion shows each task's origin: the meeting (with its date, who said it, the line and who was there; `lib/pm-data.ts`
-`withSources`) or who added it. **On the circles** (Operations › Circles and
+`withSources`) or who added it. A task's name in a suggestion opens its card (v4.79.0). Accepting a suggestion
+confirms the drafts it touches (`needs_review` false, logged as `confirmed`); Undo makes them drafts again. **On the circles** (Operations › Circles and
 `/circles`): a **🧭 Project manager (N)** button for its leads opens `/operations?circle=<slug>#pm`.
 
 ## The unified Kanban model

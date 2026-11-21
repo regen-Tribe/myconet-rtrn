@@ -4,26 +4,28 @@
  * Each tile tries its keys in order and skips itself if none are filled in.
  */
 
+import type { IconName } from '@/core/components/v4/icons'
+
 export interface GlanceTile {
-  emoji: string
+  icon: IconName
   label: string
   text: string
   href: string
 }
 
-const TILES: { emoji: string; label: string; keys: string[]; href?: string }[] = [
-  { emoji: '🌱', label: 'What we are',       keys: ['community_type', 'mission_statement', 'vision_statement'] },
-  { emoji: '💡', label: 'Why we exist',      keys: ['purpose', 'why_world', 'dream_origin'] },
-  { emoji: '📍', label: 'Where',             keys: ['location_setting', 'sites_considered', 'project_country'] },
-  { emoji: '🏡', label: 'Land & homes',      keys: ['community_size', 'planned_homes', 'density_target'] },
-  { emoji: '🥕', label: 'Food',              keys: ['food_systems', 'c_food_note'] },
-  { emoji: '☀️', label: 'Energy & water',    keys: ['energy_source', 'c_energy_note', 'water_fresh'] },
-  { emoji: '⚖️', label: 'How we decide',     keys: ['governance_model', 'decision_method'], href: '/governance' },
-  { emoji: '🤝', label: 'How we live',       keys: ['gatherings_internal', 'rituals', 'daily_rhythms'], href: '/calendar' },
-  { emoji: '🔑', label: 'Who owns it',       keys: ['real_estate_model', 'legal_structure'] },
-  { emoji: '🧭', label: 'Our values',        keys: ['values', 'community_agreements'] },
-  { emoji: '🚧', label: 'Where we are now',  keys: ['where_now', 'build_timeline'] },
-  { emoji: '🚪', label: 'How to join',       keys: ['onboarding', 'recruitment_funnel'], href: '/join' },
+const TILES: { icon: IconName; label: string; keys: string[]; href?: string }[] = [
+  { icon: 'sprout', label: 'What we are',       keys: ['community_type', 'mission_statement', 'vision_statement'] },
+  { icon: 'spark', label: 'Why we exist',      keys: ['purpose', 'why_world', 'dream_origin'] },
+  { icon: 'pin', label: 'Where',             keys: ['location_setting', 'sites_considered', 'project_country'] },
+  { icon: 'home', label: 'Land & homes',      keys: ['community_size', 'planned_homes', 'density_target'] },
+  { icon: 'bowl', label: 'Food',              keys: ['food_systems', 'c_food_note'] },
+  { icon: 'sun', label: 'Energy & water',    keys: ['energy_source', 'c_energy_note', 'water_fresh'] },
+  { icon: 'scale', label: 'How we decide',     keys: ['governance_model', 'decision_method'], href: '/governance' },
+  { icon: 'handshake', label: 'How we live',       keys: ['gatherings_internal', 'rituals', 'daily_rhythms'], href: '/calendar' },
+  { icon: 'key', label: 'Who owns it',       keys: ['real_estate_model', 'legal_structure'] },
+  { icon: 'compass', label: 'Our values',        keys: ['values', 'community_agreements'] },
+  { icon: 'flag', label: 'Where we are now',  keys: ['where_now', 'build_timeline'] },
+  { icon: 'hand', label: 'How to join',       keys: ['onboarding', 'recruitment_funnel'], href: '/join' },
 ]
 
 /** Plain text, first sentence (or clause), trimmed to fit a tile. */
@@ -49,7 +51,7 @@ export function buildGlanceTiles(answers: Record<string, unknown> | null | undef
   const tiles: GlanceTile[] = []
   for (const t of TILES) {
     const text = t.keys.map(k => glanceText(answers[k])).find(Boolean)
-    if (text) tiles.push({ emoji: t.emoji, label: t.label, text, href: t.href ?? '/blueprint' })
+    if (text) tiles.push({ icon: t.icon, label: t.label, text, href: t.href ?? '/blueprint' })
   }
   return tiles
 }

@@ -15,7 +15,7 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 /* ─── Icon ───────────────────────────────────────────────────────── */
 
 /** One icon from the marker-line set. Decorative unless `label` is given. */
-export function Icon({ name, size = 18, label, className }: { name: IconName; size?: number; label?: string; className?: string }) {
+export function Icon({ name, size = 18, label, className }: { name: IconName; size?: number | string; label?: string; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24" width={size} height={size} className={cx('v4-icon', className)}
@@ -23,6 +23,11 @@ export function Icon({ name, size = 18, label, className }: { name: IconName; si
       dangerouslySetInnerHTML={{ __html: ICONS[name] }}
     />
   )
+}
+
+/** An icon inside a line of text (a pin before a place name): sized to the text, never an emoji. */
+export function InlineIcon({ name, label }: { name: IconName; label?: string }) {
+  return <Icon name={name} size="1.1em" label={label} className="v4-inl" />
 }
 
 /* ─── Button ─────────────────────────────────────────────────────── */

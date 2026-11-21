@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { ModalShell } from '@/core/components/ModalShell'
@@ -169,7 +170,7 @@ export function PhotoImportModal({ events, role, userId, circleNames, onClose, o
   const ticked = rows?.filter(r => r.on).length ?? 0
 
   return (
-    <ModalShell title="📷 Add events from a photo" onClose={busy ? () => {} : onClose} maxWidth={rows ? 860 : 560}>
+    <ModalShell title="Add events from a photo" onClose={busy ? () => {} : onClose} maxWidth={rows ? 860 : 560}>
       {!rows ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0, lineHeight: 1.55 }}>
@@ -219,7 +220,7 @@ export function PhotoImportModal({ events, role, userId, circleNames, onClose, o
                 <input value={r.location ?? ''} onChange={e => edit(r.key, { location: e.target.value || null })} placeholder="Where" style={inputStyle} aria-label="Where" />
                 {(r.unsure || r.already || r.host) && (
                   <div style={{ gridColumn: '3 / -1', fontSize: 11.5, color: 'var(--ink-3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {r.unsure && <span style={{ color: '#b45309', fontWeight: 600 }}>⚠ Hard to read: check it</span>}
+                    {r.unsure && <span style={{ color: '#b45309', fontWeight: 600 }}><InlineIcon name="alert" />Hard to read: check it</span>}
                     {r.already && <span>Already on the calendar: “{r.already}”</span>}
                     {r.host && <span>With {r.host}</span>}
                   </div>

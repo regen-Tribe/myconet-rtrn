@@ -1,4 +1,5 @@
 'use client'
+import { Icon } from '@/core/components/v4'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { FormField, FocusInput, FocusTextarea, inputStyle } from './AgreementFormFields'
@@ -76,13 +77,13 @@ export default function NewProjectModal({ userId, onClose }: Props) {
               Propose a new project
             </h3>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--ink-3)', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--ink-3)', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }} aria-label="Close"><Icon name="x" size={18} /></button>
         </div>
 
         <div style={{ padding: 24 }}>
           {done ? (
             <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🎉</div>
+              <div style={{ marginBottom: 12, color: 'var(--ink-3)' }}><Icon name="party" size={36} /></div>
               <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>Task suggested!</p>
               <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>
                 The admin team will review and activate your project. Once active, it'll appear here for collaboration.

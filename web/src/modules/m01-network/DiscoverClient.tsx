@@ -7,10 +7,10 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from '@/core/components/ui/select'
-import { Search, Filter, X } from 'lucide-react'
+import { Search, Filter, X } from '@/core/components/v4/lucide-compat'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
-import { Button as V4Button, Card, Chip, ChipRow, EmptyState, Icon as V4Icon, IconTile, PageHeader } from '@/core/components/v4'
+import { Button as V4Button, Card, Chip, ChipRow, EmptyState, Icon as V4Icon, IconTile, PageHeader, InlineIcon } from '@/core/components/v4'
 import { PersonCardV4 } from './PersonCardV4'
 
 const ROLE_FILTERS = [
@@ -287,7 +287,7 @@ function UserCard({ profile: p, bio, score, reasons, isLoggedIn }: {
         )}
 
         {location && (
-          <div style={{ fontSize: 11, color: 'var(--ink-4)', marginBottom: 8 }}>📍 {location}</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-4)', marginBottom: 8 }}><InlineIcon name="pin" />{location}</div>
         )}
 
         {bio && (bio.skills ?? []).length > 0 && (

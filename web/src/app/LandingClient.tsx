@@ -1,4 +1,5 @@
 'use client'
+import { Icon, InlineIcon } from '@/core/components/v4'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { VERSION } from '@/core/lib/version'
@@ -193,7 +194,7 @@ function ClubhousePreview({ name, stats }: { name: string | null; stats: Landing
       <div className="lp-clubhouse-inner">
         <div className="lp-chrome">
           <span className="lp-dot lp-dot-r" /><span className="lp-dot lp-dot-y" /><span className="lp-dot lp-dot-g" />
-          <span className="lp-url"><span className="lp-lock">🔒</span>greenhollow.myco.net/dashboard</span>
+          <span className="lp-url"><span className="lp-lock"><Icon name="lock" size={11} /></span>greenhollow.myco.net/dashboard</span>
         </div>
         <div className="lp-ch-body">
           <aside className="lp-ch-side">
@@ -333,7 +334,7 @@ function BlueprintSection() {
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>v3.2 · Living doc</span>
           </div>
           <div className="lp-phases">
-            <div className="lp-phase done"><div className="lp-pname">SPARK</div><div className="lp-ptag">✓ Passed</div></div>
+            <div className="lp-phase done"><div className="lp-pname">SPARK</div><div className="lp-ptag"><InlineIcon name="check" />Passed</div></div>
             <div className="lp-phase active"><div className="lp-pname">PROVE</div><div className="lp-ptag">In progress</div></div>
             <div className="lp-phase"><div className="lp-pname">BUILD</div><div className="lp-ptag">Locked</div></div>
             <div className="lp-phase"><div className="lp-pname">LIVE</div><div className="lp-ptag">Locked</div></div>
@@ -615,12 +616,12 @@ function ContributionsSection() {
             <div className="lp-points-info">
               <div className="lp-points-rank">3 badges earned · Builder · Welcomer · Funder</div>
               <div className="lp-badge-row">
-                <span className="lp-badge-circ">🪨</span>
-                <span className="lp-badge-circ">🤝</span>
-                <span className="lp-badge-circ">💰</span>
-                <span className="lp-badge-circ locked">🌿</span>
-                <span className="lp-badge-circ locked">⚖️</span>
-                <span className="lp-badge-circ locked">✦</span>
+                <span className="lp-badge-circ"><Icon name="flag" size={16} /></span>
+                <span className="lp-badge-circ"><Icon name="handshake" size={16} /></span>
+                <span className="lp-badge-circ"><Icon name="gift" size={16} /></span>
+                <span className="lp-badge-circ locked"><Icon name="sprout" size={16} /></span>
+                <span className="lp-badge-circ locked"><Icon name="scale" size={16} /></span>
+                <span className="lp-badge-circ locked"><Icon name="star" size={16} /></span>
               </div>
             </div>
           </div>
@@ -707,9 +708,9 @@ function GovernanceSection() {
           <div className="lp-vote-seg no"      style={{ flex: no  }}>{no} object</div>
         </div>
         <div className="lp-vote-buttons">
-          <button className={`lp-vote-btn${vote === 'yes' ? ' cast' : ''}`} onClick={() => setVote('yes')}>✓ I consent</button>
-          <button className={`lp-vote-btn${vote === 'concern' ? ' cast' : ''}`} onClick={() => setVote('concern')}>⚠ I have a concern</button>
-          <button className={`lp-vote-btn${vote === 'no' ? ' cast' : ''}`} onClick={() => setVote('no')}>✗ I object</button>
+          <button className={`lp-vote-btn${vote === 'yes' ? ' cast' : ''}`} onClick={() => setVote('yes')}><InlineIcon name="check" />I consent</button>
+          <button className={`lp-vote-btn${vote === 'concern' ? ' cast' : ''}`} onClick={() => setVote('concern')}><InlineIcon name="alert" />I have a concern</button>
+          <button className={`lp-vote-btn${vote === 'no' ? ' cast' : ''}`} onClick={() => setVote('no')}><InlineIcon name="x" />I object</button>
         </div>
         {vote === 'concern' && (
           <div className="lp-concern-note">

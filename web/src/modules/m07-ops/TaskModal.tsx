@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineIcon } from '@/core/components/v4'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
@@ -264,7 +265,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
                     <option value="">Nobody yet</option>
                     {userId && <option value={userId}>Me</option>}
                     {people.filter(p => p.id !== userId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    <option value={NAME_TAG}>✏️ Type a name…</option>
+                    <option value={NAME_TAG}>Type a name…</option>
                   </select>
                   {assignee === NAME_TAG && (
                     <input autoFocus={!assigneeName} value={assigneeName} onChange={e => setAssigneeName(e.target.value)} maxLength={80}
@@ -356,7 +357,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           )}
           {task.source_meeting_id && (
             <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 16, lineHeight: 1.5 }}>
-              <Link href={`/meetings/${task.source_meeting_id}`} style={{ color: 'var(--m18, var(--m7))', fontWeight: 600, textDecoration: 'none' }}>📝 From a meeting →</Link>
+              <Link href={`/meetings/${task.source_meeting_id}`} style={{ color: 'var(--m18, var(--m7))', fontWeight: 600, textDecoration: 'none' }}><InlineIcon name="file" />From a meeting →</Link>
               {task.source_item && task.source_item !== task.title && <> · “{task.source_item.slice(0, 200)}”</>}
             </div>
           )}

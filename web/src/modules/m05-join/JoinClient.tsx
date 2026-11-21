@@ -1,5 +1,5 @@
 'use client'
-import { Button, Icon as V4Icon, PageHeader } from '@/core/components/v4'
+import { Button, Icon as V4Icon, PageHeader, InlineIcon, type IconName } from '@/core/components/v4'
 import { DESIGN } from '@/core/lib/instance'
 import { useState } from 'react'
 import { isJoiningOrAbove } from '@/core/lib/roles'
@@ -142,25 +142,25 @@ const EXPLORER_BADGES = [
     id: 'profile',
     label: 'Profile Pioneer',
     desc: 'Fill in your profile',
-    icon: '🪪',
+    icon: 'id' as IconName,
   },
   {
     id: 'accepted',
     label: 'Community Joiner',
     desc: 'Get accepted into the community',
-    icon: '🎉',
+    icon: 'party' as IconName,
   },
   {
     id: 'contribution',
     label: 'Collaborator',
     desc: 'Contribute to a community task',
-    icon: '🤝',
+    icon: 'handshake' as IconName,
   },
   {
     id: 'ownProject',
     label: 'Task lead',
     desc: 'Suggest and lead your own task',
-    icon: '🚀',
+    icon: 'flag' as IconName,
   },
 ]
 
@@ -320,7 +320,7 @@ function Step2Buddy({ buddies, onBack, onNext }: { buddies: BuddyProfile[]; onBa
                   {b.city && <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginTop: 2 }}>{b.city}</div>}
                 </div>
                 <button onClick={() => setRequested(prev => new Set([...prev, b.id]))} disabled={done} style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, border: done ? 'none' : `1px solid ${M5}`, background: done ? `color-mix(in srgb, ${M5} 10%, transparent)` : 'transparent', color: M5, cursor: done ? 'default' : 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms' }}>
-                  {done ? '✓ Requested' : 'Request intro'}
+                  {done ? <><InlineIcon name="check" />Requested</> : 'Request intro'}
                 </button>
               </div>
             )
@@ -519,7 +519,7 @@ function RoleRoadmap({ currentRole, milestones, applicationStatus, onApply, onRe
                             color: done ? r.color : 'var(--ink-4)',
                             transition: 'all 150ms',
                           }}>
-                            <span style={{ fontSize: 14 }}>{b.icon}</span>
+                            <V4Icon name={b.icon} size={14} />
                             <span>{b.label}</span>
                             {done && (
                               <svg width="12" height="9" viewBox="0 0 12 9" fill="none" style={{ flexShrink: 0 }}>
@@ -640,7 +640,7 @@ export default function JoinClient({
     return (
       <div style={{ maxWidth: 880, margin: '0 auto', padding: '26px 32px 80px' }}>
         <div style={{ maxWidth: 560, textAlign: 'center', margin: '60px auto 0' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: `color-mix(in srgb, ${M5} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28, color: M5 }}>✓</div>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: `color-mix(in srgb, ${M5} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: M5 }}><V4Icon name="check" size={28} /></div>
           <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 12, color: 'var(--ink)' }}>Application submitted</h1>
           <p style={{ color: 'var(--ink-2)', fontSize: 15, lineHeight: 1.65, marginBottom: 32 }}>Thank you for applying. The community team will review your answers and reach out soon.</p>
           <button

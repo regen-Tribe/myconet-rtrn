@@ -632,6 +632,10 @@ a:has(.dash-stat-card--link):hover .dash-stat-card--link {
    Styles for the shared building blocks. They read the v4 tokens with
    fallbacks, so they also work where v4 is off. */
 .v4-icon { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; overflow: visible; }
+.v4-inl { vertical-align: -.18em; margin-right: .28em; }
+.v4-spin { animation: v4-spin 0.9s linear infinite; }
+@keyframes v4-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .v4-spin { animation-duration: 2.4s; } }
 .v4-btn { height: 42px; padding: 0 18px; border-radius: 999px; border: 0; font: inherit; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; cursor: pointer; text-decoration: none; transition: opacity .15s, background .15s; }
 .v4-btn--sm { height: 34px; padding: 0 14px; font-size: 12px; }
 .v4-btn--primary { background: var(--ink, #111317); color: #fff; }
@@ -1107,63 +1111,89 @@ img.v4-avatar { object-fit: cover; padding: 0; }
 [data-design="v4"] .lp .mod-num, [data-design="v4"] .lp-mod-num { display: none !important; }
 [data-design="v4"] .auth-form-panel h1, [data-design="v4"] .auth-form-panel h2 { font-weight: 400 !important; letter-spacing: -.045em !important; font-size: 36px !important; }
 
-/* ─── v4 second pass: the insides of the older pages (Agreements, Meetings, Governance, Join, Achievements,
-   Members sub-pages, Operations, pop-ups). Their markup is inline-styled; this layer restyles the shared patterns
-   only inside v4 pages and pop-ups, so other communities and the new building blocks are untouched. ─── */
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background:var(--surface)"][style*="border:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background:var(--surface)"][style*="border: 1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background: var(--surface)"][style*="border:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background: var(--surface)"][style*="border: 1px solid var(--rule)"] {
+/* ─── v4 second pass: the insides of the older pages and pop-ups. Their markup is inline-styled; this layer
+   restyles the shared patterns everywhere inside the v4 shell (<main class="v4-main">, AppShell) and the shared
+   pop-up, so every screen gets the v4 look while other communities and the new building blocks are untouched. ─── */
+/* Older pop-ups that draw their own backdrop: the v4 veil and card (as .modal-shell) */
+[data-design="v4"] .v4-main div[style*="position:fixed"][style*="inset:0"][style*="background:rgba(0,0,0"] {
+  background: rgba(17, 19, 23, .22) !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+[data-design="v4"] .v4-main div[style*="position:fixed"][style*="inset:0"][style*="background:rgba(0,0,0"] > div[style*="background:var(--surface)"] {
+  border: 0 !important; border-radius: 24px !important; box-shadow: 0 30px 80px -30px rgba(30, 35, 60, .45) !important;
+}
+/* Older page titles and eyebrows: the v4 type scale */
+[data-design="v4"] .v4-main h1[style*="font-weight:700"], [data-design="v4"] .v4-main h1[style*="font-weight:800"] {
+  font-family: var(--display) !important; font-weight: 400 !important; letter-spacing: -.045em !important;
+}
+[data-design="v4"] .v4-main h2[style*="font-weight:700"], [data-design="v4"] .v4-main h3[style*="font-weight:700"] { font-weight: 600 !important; }
+[data-design="v4"] .v4-main h1[style*="font-family:var(--display)"] {
+  font-weight: 400 !important; letter-spacing: -.045em !important; line-height: 1.04 !important; font-size: clamp(30px, 4.5vw, 40px) !important;
+}
+/* the coloured module pill above an older title → the quiet v4 eyebrow */
+[data-design="v4"] .v4-main div[style*="display:inline-block"][style*="text-transform:uppercase"][style*="border-radius:20px"] {
+  background: none !important; color: var(--ink-4) !important; font-weight: 400 !important; letter-spacing: .12em !important; padding: 0 !important;
+}
+/* older page frames (48px from the top) sit where v4 pages sit */
+[data-design="v4"] .v4-main div[style*="margin:0 auto"][style*="padding:48px 20px 80px"],
+[data-design="v4"] .v4-main div[style*="margin:0 auto"][style*="padding:56px 24px 80px"] { padding: 24px 28px 80px !important; }
+@media (max-width: 640px) {
+  [data-design="v4"] .v4-main div[style*="margin:0 auto"][style*="padding:48px 20px 80px"],
+  [data-design="v4"] .v4-main div[style*="margin:0 auto"][style*="padding:56px 24px 80px"] { padding: 16px 16px 100px !important; }
+}
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background:var(--surface)"][style*="border:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background:var(--surface)"][style*="border: 1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background: var(--surface)"][style*="border:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background: var(--surface)"][style*="border: 1px solid var(--rule)"] {
   border-color: transparent !important; border-radius: 18px !important; box-shadow: none !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background:var(--bg-2)"][style*="border:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background:var(--bg-2)"][style*="border: 1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background: var(--bg-2)"][style*="border:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="background: var(--bg-2)"][style*="border: 1px solid var(--rule)"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background:var(--bg-2)"][style*="border:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background:var(--bg-2)"][style*="border: 1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background: var(--bg-2)"][style*="border:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="background: var(--bg-2)"][style*="border: 1px solid var(--rule)"] {
   background: var(--surface) !important; border-color: transparent !important; border-radius: 18px !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="border-bottom:2px solid transparent"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="border-bottom: 2px solid transparent"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="border-bottom:2px solid transparent"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="border-bottom: 2px solid transparent"] {
   border-bottom: 0 !important; border-radius: 999px !important; padding: 7px 15px !important; margin: 0 2px 8px 0 !important; background: rgba(255,255,255,.72) !important; color: var(--ink-2) !important; font-weight: 500 !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="border-bottom:2px solid var("],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="border-bottom: 2px solid var("] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="border-bottom:2px solid var("],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="border-bottom: 2px solid var("] {
   border-bottom: 0 !important; border-radius: 999px !important; padding: 7px 15px !important; margin: 0 2px 8px 0 !important; background: var(--ink) !important; color: #fff !important; font-weight: 600 !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="display:flex"][style*="border-bottom:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="display:flex"][style*="border-bottom: 1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="display: flex"][style*="border-bottom:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="display: flex"][style*="border-bottom: 1px solid var(--rule)"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="display:flex"][style*="border-bottom:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="display:flex"][style*="border-bottom: 1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="display: flex"][style*="border-bottom:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="display: flex"][style*="border-bottom: 1px solid var(--rule)"] {
   border-bottom-color: transparent !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="background:var(--m"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="background: var(--m"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="background:var(--m"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="background: var(--m"] {
   background: var(--ink) !important; color: #fff !important; border: 0 !important; border-radius: 999px !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) a[style*="background:var(--m"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) a[style*="background: var(--m"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) a[style*="background:var(--m"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) a[style*="background: var(--m"] {
   background: var(--ink) !important; color: #fff !important; border: 0 !important; border-radius: 999px !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="border:1px solid var(--rule)"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) button[style*="border: 1px solid var(--rule)"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="border:1px solid var(--rule)"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) button[style*="border: 1px solid var(--rule)"] {
   border-color: transparent !important; box-shadow: inset 0 0 0 1px var(--rule) !important; border-radius: 999px !important; background: var(--surface) !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) *[style*="font-family:var(--mono)"][style*="text-transform:uppercase"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) *[style*="font-family:var(--mono)"][style*="text-transform: uppercase"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) *[style*="font-family: var(--mono)"][style*="text-transform:uppercase"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) *[style*="font-family: var(--mono)"][style*="text-transform: uppercase"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) *[style*="font-family:var(--mono)"][style*="text-transform:uppercase"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) *[style*="font-family:var(--mono)"][style*="text-transform: uppercase"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) *[style*="font-family: var(--mono)"][style*="text-transform:uppercase"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) *[style*="font-family: var(--mono)"][style*="text-transform: uppercase"] {
   font-family: inherit !important; font-weight: 400 !important; letter-spacing: .12em !important; color: var(--ink-4) !important; background: none !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(.v4-input),
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) select:not(.v4-select),
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) textarea:not(.v4-input) {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(.v4-input),
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) select:not(.v4-select),
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) textarea:not(.v4-input) {
   border: 0 !important; box-shadow: inset 0 0 0 1px var(--rule) !important; border-radius: 12px !important; background: var(--surface) !important;
 }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) .v4-search input { box-shadow: none !important; background: none !important; }
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="border-top:3px solid"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="border-top: 3px solid"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="border-left:3px solid"],
-[data-design="v4"] :is(.v4-page, .v4-members, .v4-gov, .modal-shell__dialog) div[style*="border-left: 3px solid"] {
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) .v4-search input { box-shadow: none !important; background: none !important; }
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="border-top:3px solid"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="border-top: 3px solid"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="border-left:3px solid"],
+[data-design="v4"] :is(.v4-main, .modal-shell__dialog) div[style*="border-left: 3px solid"] {
   border-top-width: 1px !important; border-left-width: 1px !important;
 }
 

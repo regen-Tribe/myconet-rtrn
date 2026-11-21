@@ -178,7 +178,7 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{m.title}</div>
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      {m.visibility === 'circle' && <Pill label="🔒 Circle only" color="#64748b" />}
+                      {m.visibility === 'circle' && <Pill label="Circle only" color="#64748b" />}
                       {m.status !== 'done' ? <Pill label={s.label} color={s.color} />
                         : m.needs_review && !m.processed_at && !m.agent_note ? <Pill label="Assistant reading soon" color="#64748b" />
                         : m.needs_review && !m.processed_at ? <Pill label="Needs review" color="#b45309" />

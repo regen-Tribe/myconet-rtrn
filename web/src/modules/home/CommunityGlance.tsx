@@ -1,3 +1,4 @@
+import { Icon } from '@/core/components/v4'
 import Link from 'next/link'
 import type { GlanceTile } from './lib/at-a-glance'
 
@@ -19,7 +20,7 @@ export function CommunityGlance({ name, tiles }: { name: string; tiles: GlanceTi
             background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 12, padding: '16px 16px 14px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 20, lineHeight: 1 }} aria-hidden>{t.emoji}</span>
+              <span style={{ lineHeight: 1, color: 'var(--ink-3)' }}><Icon name={t.icon} size={20} /></span>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t.label}</span>
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink)', margin: 0 }}>{t.text}</p>
