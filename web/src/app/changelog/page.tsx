@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.106.0',
+    date: '2026-11-21',
+    title: 'Project manager: tasks you can edit at a glance',
+    items: ['In the project manager panel, each suggestion now shows its tasks’ fields straight away for circle leads and admins, so you can change them before you accept or dismiss it.'],
+  },
+  {
     version: 'v4.105.0',
     date: '2026-11-21',
     title: 'Change a task right where you review it',

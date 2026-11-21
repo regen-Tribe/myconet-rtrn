@@ -213,11 +213,25 @@ export function ProjectManagerPanel({ suggestions, actions, taskTitles, circle, 
                 </div>
                 <div style={{ fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5 }}>{plain.what}</div>
                 {s.reason && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}><span style={{ fontWeight: 600 }}>Why:</span> {s.reason}</div>}
+                {/* Its tasks' fields, right here for those who decide (v4.106.0: Oscar didn't find them behind a link) */}
+                {mayDecide && editOptions && (s.sources ?? []).length > 0 && (
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(s.sources ?? []).map(x => (
+                      <div key={x.task_id} style={{ background: 'var(--bg-2, var(--surface))', border: '1px solid var(--rule)', borderRadius: 10, padding: '8px 12px 10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{x.draft ? 'Draft · edit to confirm' : 'Edit'}</span>
+                          {taskName(onOpenTask, x.task_id, x.title)}
+                        </div>
+                        <TaskQuickEdit task={{ id: x.task_id, title: x.title, status: x.status, needs_review: x.draft, ...x.edit }} {...editOptions} />
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <button onClick={() => setShowing(showing === s.id ? null : s.id)} aria-expanded={showing === s.id}
                   style={{ fontSize: 12, fontWeight: 600, color: 'var(--m7)', background: 'none', border: 'none', padding: 0, marginTop: 6, cursor: 'pointer' }}>
-                  {showing === s.id ? (mayDecide && editOptions ? 'Hide its tasks' : 'Hide where this comes from') : mayDecide && editOptions ? '✎ Edit its tasks · where they come from' : 'Where this comes from'}
+                  {showing === s.id ? 'Hide where this comes from' : 'Where this comes from'}
                 </button>
-                {showing === s.id && <Sources s={s} tag={tag} open={onOpenTask} edit={mayDecide ? editOptions : undefined} />}
+                {showing === s.id && <Sources s={s} tag={tag} open={onOpenTask} />}
                 {mayDecide && (s.kind === 'new_project' || s.kind === 'move') && (() => {
                   const v = where[s.id] ?? ''
                   const n = s.kind === 'new_project' ? (p.tasks ?? []).length : 1

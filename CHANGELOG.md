@@ -5,6 +5,13 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.106.0 — 2026-11-21 — The project manager's tasks are editable at a glance
+
+Oscar didn't find the fields from v4.105.0 in the project manager panel: they were behind the "✎ Edit its tasks ·
+where they come from" link. Now, for a circle's leads and admins, each suggestion shows its tasks' fields (circle,
+subcircle, part of, person, priority, due, status) straight away, under what it suggests, marked "Draft · edit to
+confirm" for a draft. **Where this comes from** is back to a read-only view of each task's source. No migration.
+
 ## v4.105.0 — 2026-11-21 — Change a task right where you review it
 
 Oscar: "on the project manager functionality, I want to be able to edit all the fields like circle, sub circle,
