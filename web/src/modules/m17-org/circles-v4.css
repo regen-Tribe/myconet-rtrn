@@ -111,3 +111,11 @@ img.cv4-av { object-fit: cover; padding: 0; }
 .cv4-sub__task .v4-icon { color: var(--ink-3, #6b7180); flex-shrink: 0; }
 .cv4-sub__task em { font-style: normal; color: var(--ink-3, #6b7180); }
 .cv4-sub .cv4-lead > span:last-child { font-weight: 500; }
+
+/* Overview: subcircles as small cards (v4.82+) */
+.cv4-minis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.cv4-mini { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; text-align: left; cursor: pointer; border: 0; font: inherit; color: inherit; }
+.cv4-mini small { color: var(--ink-3, #6b7280); font-size: 12.5px; }
+/* Manuals & guides: one group per topic */
+.cv4-gtitle { margin: 18px 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-3, #6b7280); }
+.cv4-gtitle:first-of-type { margin-top: 4px; }

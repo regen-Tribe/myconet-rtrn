@@ -14,7 +14,11 @@ export type CircleTask = {
 }
 export type CircleEvent = { id: string; title: string; starts_at: string; all_day: boolean; circle: string; location: string | null }
 export type CircleMeeting = { id: string; title: string | null; meeting_date: string | null; circle: string }
-export type CircleGuide = { path: string; name: string; sub: string | null }
+/** A note in the circle's folder. `group` is its topic (first subfolder, null at the top), `sub` any deeper folders */
+export type CircleGuide = { path: string; name: string; group: string | null; sub: string | null }
+
+/** "running-at-100" → "Running at 100" */
+export const readableName = (s: string) => { const t = s.replace(/\.md$/, '').replace(/[-_]+/g, ' ').trim(); return t.charAt(0).toUpperCase() + t.slice(1) }
 
 export type CircleExtras = {
   /** user id → photo URL */
@@ -67,10 +71,15 @@ export async function loadCircleExtras(supabase: SupabaseClient, opts: { signedI
     guideFolder = await circleFolderOf(supabase, opts.openCircle)
     try {
       const folder = guideFolder
-      guides = [...await listPaths()].filter(p => isGuidePath(p, folder)).sort((a, b) => a.localeCompare(b)).map(path => {
+      guides = [...await listPaths()].filter(p => isGuidePath(p, folder)).map(path => {
         const parts = path.slice(folder.length + 1).split('/')
-        return { path, name: parts.pop()!.replace(/\.md$/, ''), sub: parts.length ? parts.join(' / ') : null }
-      })
+        const file = parts.pop()!
+        const group = parts.length ? readableName(parts[0]) : null
+        const sub = parts.length > 1 ? parts.slice(1).map(readableName).join(' / ') : null
+        // A topic's README is its introduction
+        const name = /^README\.md$/i.test(file) ? `About ${group?.toLowerCase() ?? 'this circle'}` : readableName(file)
+        return { path, name, group, sub }
+      }).sort((a, b) => (a.group ?? '').localeCompare(b.group ?? '') || Number(b.name.startsWith('About ')) - Number(a.name.startsWith('About ')) || (a.sub ?? '').localeCompare(b.sub ?? '') || a.name.localeCompare(b.name))
     } catch { guides = null }
   }
 
