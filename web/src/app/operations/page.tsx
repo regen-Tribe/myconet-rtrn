@@ -1,5 +1,7 @@
 import { isTaskOverdue } from '@/core/lib/tasks'
 import { meetingCountsByCircle } from '@/modules/m18-meetings/lib/counts'
+import { loadActionItems } from '@/modules/m18-meetings/lib/action-items'
+import { moduleOn } from '@/core/lib/modules'
 import { createClient } from '@/core/lib/supabase/server'
 import OpsClient from '@/modules/m07-ops/OpsClient'
 import { isOpsAdmin, isJoiningOrAbove } from '@/core/lib/roles'
@@ -121,6 +123,11 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
   const sprintName = allProjects.find(p => p.sprint_name)?.sprint_name ?? null
   const circleDirectory = await fetchCircleDirectory(supabase)
   const pm = user ? await loadProjectManager(supabase) : { suggestions: [], actions: [] }
+  // Every meeting's drafts still waiting to be confirmed, for the project manager panel (v4.107.0): the same rows as on
+  // each meeting's page, for those who may change them
+  const meetingDrafts = user && moduleOn('meetings')
+    ? (await loadActionItems(supabase, { id: user.id, role: userRole, leadCircles }, { drafts: true })).filter(t => t.can_edit)
+    : []
 
   return (
     <OpsClient
@@ -145,6 +152,7 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
       initialCircle={circle ?? null}
       pmSuggestions={pm.suggestions}
       pmActions={pm.actions}
+      meetingDrafts={meetingDrafts}
       initialTaskId={task ?? null}
       initialView={view === 'tasks' ? 'tasks' : 'projects'}
       {...await loadCircleMembers(supabase)}

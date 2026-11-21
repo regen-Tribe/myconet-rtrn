@@ -78,8 +78,8 @@ export const CATALOG: Record<string, TableDef> = {
       due_time: { label: 'due time', type: { t: 'time' } },
       priority: { label: 'priority', type: { t: 'enum', values: ['none', 'low', 'medium', 'high'] } },
       circle: { label: 'circle', type: { t: 'circle' } },
-      project_id: { label: 'project', type: { t: 'project' } },
-      team_id: { label: 'team', type: { t: 'team' } },
+      project_id: { label: 'part of (a project, called a task on screen)', type: { t: 'project' } },
+      team_id: { label: 'subcircle', type: { t: 'team' } },
       needs_review: { label: 'draft', type: { t: 'bool' } },
       notes: { label: 'notes', type: { t: 'text', max: 5000 } },
     },
@@ -263,6 +263,8 @@ export async function executeGeneral(admin: SupabaseClient, mine: SupabaseClient
   const before = await current(admin, def, a.key)
   if (!before) return { rows: [], error: 'It’s gone.' }
   const changes = toColumns(def, before, a.set)
+  // Changing a draft task confirms it, like changing it by hand (v4.107.0); Undo makes it a draft again
+  if (def.table === 'deliverables' && before.needs_review === true && !('needs_review' in changes) && Object.keys(changes).length) changes.needs_review = false
   const prev: Before = Object.fromEntries(Object.keys(changes).map(c => [c, before[c] ?? null]))
   // RLS refuses silently (no rows back), so ask for the row
   const { data, error } = await mine.from(def.table).update(changes).eq(def.key, a.key).select(def.key)

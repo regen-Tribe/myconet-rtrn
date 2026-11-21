@@ -6,7 +6,7 @@ import { moduleOn } from '@/core/lib/modules'
 import { processMeeting } from '@/modules/m18-meetings/lib/pipeline'
 
 // A meeting's lead actions (admins, circle leads, project leads: the people who manage the board):
-//   { action: 'settings', circle?, visibility?, process? }  set the circle / Circle only; marks a direct
+//   { action: 'settings', circle?, team_id?, visibility?, process? }  set the circle / Circle only; marks a direct
 //                                                         recording reviewed; process: run the pipeline
 //   { action: 'process' }   run the pipeline now (adds tasks not on the board yet, rewrites the note)
 //   { action: 'email' }     send the notes to the circle's leads again
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: meeting } = await supabase.from('meeting_transcripts').select('id, circle, needs_review, status').eq('id', id).maybeSingle()
   if (!meeting) return NextResponse.json({ error: 'Meeting not found.' }, { status: 404 })
 
-  let body: { action?: unknown; circle?: unknown; visibility?: unknown; process?: unknown }
+  let body: { action?: unknown; circle?: unknown; team_id?: unknown; visibility?: unknown; process?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Bad JSON' }, { status: 400 }) }
   const admin = createServiceClient()
   const run = (email: 'auto' | 'again') => processMeeting(admin, id, { requestedBy: user.id, timeoutMs: 120_000, email })
@@ -41,6 +41,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         changes.circle = c.slug
         changes.circle_source = 'person'
         changes.needs_review = false
+      }
+    }
+    // A subcircle of the meeting's circle (v4.108.0); the database keeps the two in step (meeting_team_circle)
+    if (body.team_id !== undefined) {
+      if (body.team_id === null || body.team_id === '') changes.team_id = null
+      else {
+        const { data: t } = await supabase.from('org_units').select('id, circle, kind').eq('id', String(body.team_id)).maybeSingle()
+        const circle = 'circle' in changes ? changes.circle : meeting.circle
+        if (!t || t.kind !== 'team' || t.circle !== circle) return NextResponse.json({ error: 'That subcircle isn’t in the meeting’s circle.' }, { status: 400 })
+        changes.team_id = t.id
       }
     }
     if ((body.visibility === 'community' || body.visibility === 'circle') && changes.visibility === undefined) changes.visibility = body.visibility

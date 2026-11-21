@@ -131,3 +131,13 @@ img.cv4-av { object-fit: cover; padding: 0; }
 .cv4-subpick__add { justify-content: flex-start; color: var(--c, var(--ink-2, #3a3f4a)); font-weight: 600; border-top: 1px solid var(--rule, #e7e9ef); border-radius: 0 0 9px 9px; margin-top: 4px; }
 .cv4-subpick__empty { padding: 9px 10px; font-size: 13px; color: var(--ink-3, #6b7180); }
 .cv4-sub--picked { outline: 2px solid var(--c, #8a8f9c); outline-offset: 2px; }
+
+/* Breadcrumb (v4.108.0): Circles › a circle › a subcircle */
+.cv4-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 13px; margin-bottom: 12px; color: var(--ink-3, #6b7180); }
+.cv4-crumbs__item { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.cv4-crumbs a { color: var(--ink-2, #3a3f4a); font-weight: 600; text-decoration: none; }
+.cv4-crumbs a:hover { color: var(--c, var(--ink, #111317)); text-decoration: underline; }
+.cv4-crumbs b { color: var(--ink, #111317); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; }
+.cv4-crumbs__sep { color: var(--ink-4, #9aa0ac); }
+.cv4-sub__link { text-decoration: none; color: inherit; }
+.cv4-sub__link:hover b { text-decoration: underline; }

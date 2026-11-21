@@ -1,7 +1,9 @@
 'use client'
 
 import { DraftSwipe } from '@/modules/m07-ops/DraftSwipe'
-import { TaskQuickEdit } from '@/modules/m07-ops/TaskQuickEdit'
+import { ActionItemList } from './ActionItemList'
+import { ProjectManagerPanel } from '@/modules/m07-ops/ProjectManagerPanel'
+import type { AgentSuggestion } from '@/modules/m07-ops/types'
 import type { TaskPerson, TaskProjectOption, TaskTeamOption } from '@/modules/m07-ops/TaskModal'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -12,7 +14,7 @@ import NotesText from './NotesText'
 import SummaryCards from './SummaryCards'
 import type { Meeting, MeetingTask } from './types'
 import { DESIGN } from '@/core/lib/instance'
-import { Button, Icon, StatusPill, Tag, InlineIcon } from '@/core/components/v4'
+import { Button, Icon, Tag, InlineIcon } from '@/core/components/v4'
 import './meetings-v4.css'
 import { withoutDate } from './lib/title'
 
@@ -32,11 +34,15 @@ const fmtDay = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? taskDate(iso)
 const ago = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 /** The leads' bar: circle, Circle only, run the pipeline, confirm drafts, email again */
-function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn }: { m: Meeting; drafts: number; onBoard?: number; emailOn: boolean; secondBrainOn: boolean }) {
+function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn, teams = null }: { m: Meeting; drafts: number; onBoard?: number; emailOn: boolean; secondBrainOn: boolean; teams?: TaskTeamOption[] | null }) {
   const circles = useCircles()
   const router = useRouter()
   const [circle, setCircle] = useState(m.circle ?? '')
   const [circleOnly, setCircleOnly] = useState(m.visibility === 'circle')
+  // Its subcircle (v4.108.0): one of the chosen circle's, or the whole circle
+  const [team, setTeam] = useState(m.team_id ?? '')
+  const circleTeams = (teams ?? []).filter(t => t.circle === circle)
+  const pickCircle = (c: string) => { setCircle(c); if (team && !(teams ?? []).some(t => t.id === team && t.circle === c)) setTeam('') }
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const ready = m.status === 'done'
@@ -64,9 +70,10 @@ function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn }: { m: Meetin
     } finally { setBusy(null) }
   }
 
+  const teamChanged = !!teams && (team || null) !== (m.team_id ?? null)
   const saveSettings = (process: boolean) =>
-    act('settings', { circle: circle || null, visibility: circle && circleOnly ? 'circle' : 'community', process }, process ? 'settings+process' : 'settings')
-  const changed = (circle || null) !== m.circle || (circleOnly ? 'circle' : 'community') !== m.visibility
+    act('settings', { circle: circle || null, ...(teamChanged ? { team_id: team || null } : {}), visibility: circle && circleOnly ? 'circle' : 'community', process }, process ? 'settings+process' : 'settings')
+  const changed = (circle || null) !== m.circle || (circleOnly ? 'circle' : 'community') !== m.visibility || teamChanged
 
   if (V4) {
     // v4: the leads' review as numbered steps. The first step not done yet gets the one green next button.
@@ -104,10 +111,16 @@ function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn }: { m: Meetin
           {step(1, 'Circle', circleDone && !changed, (
             <>
               <div className="mt4-step__row">
-                <select className="v4-select" value={circle} onChange={e => setCircle(e.target.value)} aria-label="Circle">
+                <select className="v4-select" value={circle} onChange={e => pickCircle(e.target.value)} aria-label="Circle">
                   <option value="">No circle yet</option>
                   {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).label}</option>)}
                 </select>
+                {teams && circleTeams.length > 0 && (
+                  <select className="v4-select" value={team} onChange={e => setTeam(e.target.value)} aria-label="Subcircle">
+                    <option value="">The whole circle</option>
+                    {circleTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                )}
                 <label className="v4-check mt4-only">
                   <input type="checkbox" checked={circleOnly && !!circle} disabled={!circle} onChange={e => setCircleOnly(e.target.checked)} />
                   <span><b>Circle only</b> · only this circle’s members can read it</span>
@@ -250,21 +263,21 @@ function DocTabs({ m, brainNote }: { m: Meeting; brainNote: string | null }) {
   )
 }
 
-export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions = null, canManage, emailOn, secondBrainOn, brainNote }: {
+export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions = null, pm, teams = null, canManage, emailOn, secondBrainOn, brainNote }: {
   meeting: Meeting; tasks: MeetingTask[]; canManage: boolean; emailOn: boolean; secondBrainOn: boolean; brainNote: string | null
   /** For changing an action item right here (v4.105.0); null when the viewer may change none */
   taskOptions?: { people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[] } | null
+  /** The project manager's open suggestions about this meeting's tasks, and who decides them (v4.107.0) */
+  pm?: { suggestions: AgentSuggestion[]; role: string; leadCircles: string[] }
+  /** The circles' subcircles, for the leads' Subcircle picker (v4.108.0); null when the community hasn't the column */
+  teams?: TaskTeamOption[] | null
 }) {
   const router = useRouter()
   const circles = useCircles()
   const meta = m.circle && circles.has(m.circle) ? circles.meta(m.circle) : null
-  // Changed here (v4.105.0): shown with the new values until the page is reloaded, and no longer drafts
-  const [patch, setPatch] = useState<Record<string, Partial<MeetingTask>>>({})
-  // Drafts open their fields straight away; a confirmed one opens them with Edit
-  const [editing, setEditing] = useState<Set<string>>(() => new Set(loaded.filter(t => t.needs_review && t.can_edit).map(t => t.deliverable_id)))
-  const tasks = loaded.map(t => ({ ...t, ...patch[t.deliverable_id] }))
+  const tasks = loaded
   const drafts = tasks.filter(t => t.needs_review).length
-  const toggleEdit = (id: string) => setEditing(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const canDecide = (c: string) => pm?.role === 'admin' || (pm?.role === 'circle_lead' && pm.leadCircles.includes(c))
 
   const byPerson: Record<string, string[]> = {}
   for (const item of m.action_items ?? []) (byPerson[item.speaker || 'Action items'] ??= []).push(item.text)
@@ -302,52 +315,21 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
               <>
                 {m.summary && <div className="v4-card mt4-sumcard"><h2 className="mt4-h">Summary</h2><SummaryCards text={m.summary} accent={meta?.color} /></div>}
 
+                {pm && pm.suggestions.length > 0 && (
+                  <ProjectManagerPanel
+                    title="Project manager · about these action items" defaultOpen
+                    suggestions={pm.suggestions} actions={[]} circle={null} canDecide={canDecide}
+                    taskTitles={Object.fromEntries(tasks.map(t => [t.deliverable_id, t.title]))}
+                    projects={taskOptions?.projectOptions ?? []} teams={taskOptions?.teams ?? []}
+                    editOptions={taskOptions ?? undefined}
+                    onOpenTask={id => { const t = tasks.find(x => x.deliverable_id === id); router.push(t?.project_id ? `/operations/${t.project_id}?task=${id}` : `/operations?task=${id}`) }}
+                  />
+                )}
                 <div className="v4-sec"><h2>Action items{drafts ? ` · ${drafts} to confirm` : ''}</h2><span className="v4-hint">They become tasks on the board</span></div>
                 {tasks.length === 0 ? (
                   <p className="v4-hint">{m.processed_at ? 'No tasks came out of this meeting.' : m.needs_review ? 'Nothing on the board: this meeting is waiting for a lead.' : 'The assistant hasn’t read this meeting yet.'}</p>
                 ) : (
-                  <div className="v4-list">
-                    {tasks.map(t => {
-                      const who = t.assignee ?? (t.assignee_name ? `${t.assignee_name} (not on MyCoNet yet)` : t.person_name ? `${t.person_name} (not on MyCoNet yet)` : 'Not assigned yet')
-                      const canEdit = t.can_edit && !!taskOptions
-                      return (
-                        <div key={t.deliverable_id} className="mt4-taskwrap">
-                        <div className="v4-row mt4-task">
-                          <span className="v4-row__lead"><span className="v4-avatar">{(t.assignee ?? t.person_name ?? '?').slice(0, 1).toUpperCase()}</span></span>
-                          <Link href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} className="v4-row__main mt4-tlink">
-                            <b className={t.status === 'done' ? 'mt4-done' : undefined}>{t.title}</b>
-                            <small>{who}{t.due_date ? ` · ${fmtTaskWhen(t.due_date, t.due_time)}` : ''}{t.project_title ? ` · subtask of “${t.project_title}”` : ''}</small>
-                            {t.item_text && t.item_text !== t.title && <small className="mt4-quote">“{t.item_text.slice(0, 120)}”</small>}
-                          </Link>
-                          <span className="v4-row__trail">
-                            {t.needs_review
-                              ? <DraftSwipe taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => setPatch(prev => ({ ...prev, [t.deliverable_id]: { ...prev[t.deliverable_id], needs_review: false } }))} onDeclined={() => router.refresh()} />
-                              : <StatusPill status={t.status === 'done' ? 'done' : 'todo'} label={t.status === 'done' ? 'Done' : 'On the board'} />}
-                            {canEdit && (
-                              <button type="button" className="mt4-editbtn" aria-expanded={editing.has(t.deliverable_id)} onClick={() => toggleEdit(t.deliverable_id)}>
-                                <Icon name="pencil" size={13} />{editing.has(t.deliverable_id) ? 'Done' : 'Edit'}
-                              </button>
-                            )}
-                          </span>
-                        </div>
-                        {canEdit && editing.has(t.deliverable_id) && (
-                          <div className="mt4-taskedit">
-                            <TaskQuickEdit
-                              task={{ id: t.deliverable_id, title: t.title, status: t.status, circle: t.circle, team_id: t.team_id, project_id: t.project_id, assignee_id: t.assignee_id, assignee_name: t.assignee_name, priority: t.priority, due_date: t.due_date, due_time: t.due_time, needs_review: t.needs_review }}
-                              {...taskOptions!}
-                              onSaved={x => setPatch(prev => ({ ...prev, [t.deliverable_id]: {
-                                ...prev[t.deliverable_id], status: x.status, circle: x.circle ?? null, team_id: x.team_id ?? null, project_id: x.project_id,
-                                assignee_id: x.assignee_id, assignee_name: x.assignee_name ?? null, priority: x.priority ?? null, due_date: x.due_date, due_time: x.due_time ?? null, needs_review: false,
-                                assignee: x.assignee_id ? taskOptions!.people.find(p => p.id === x.assignee_id)?.name.split(' ')[0] ?? null : null,
-                                project_title: x.project_id ? taskOptions!.projectOptions.find(p => p.id === x.project_id)?.title ?? t.project_title : null,
-                              } }))}
-                            />
-                          </div>
-                        )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                  <ActionItemList tasks={tasks} taskOptions={taskOptions} />
                 )}
 
                 {Object.keys(byPerson).length > 0 && (
@@ -368,7 +350,7 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
           </div>
 
           <div>
-            {canManage && <LeadBar m={m} drafts={drafts} onBoard={tasks.length} emailOn={emailOn} secondBrainOn={secondBrainOn} />}
+            {canManage && <LeadBar m={m} drafts={drafts} onBoard={tasks.length} emailOn={emailOn} secondBrainOn={secondBrainOn} teams={teams} />}
             <div className="v4-sec"><h2>Files</h2></div>
             <div className="v4-list">
               <div className="v4-row"><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="file" /></span></span><span className="v4-row__main"><b>Meeting notes</b><small>{m.visibility === 'circle' ? 'This circle can read' : 'Members can read'}</small></span></div>

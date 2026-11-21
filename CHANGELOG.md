@@ -5,6 +5,53 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.108.0 — 2026-11-21 — Subcircles have their own page, and their own meetings
+
+Oscar: "sub circles should have a subpage the same abilities as a circle subpage… like a russian doll effect so it's
+familiar… and a bread crumb on top so users can see their way back", and "set subcircles for meetings also so
+subcircles get their transcripts in their section".
+- **A subcircle's page** (M17, v4 look), at `/circles?c=<circle>&t=<subcircle>`, works like its circle's page one
+  level in. Its tabs:
+  - **Overview:** lead, people, open tasks, meeting notes and purpose.
+  - **People:** leads and members. Those who may manage it add people here.
+  - **Tasks:** the tasks and projects given to it.
+  - **Meetings:** the meeting notes set to it.
+
+  **Edit** is for those who may manage it. Every link to a subcircle now opens its page: the circle's Overview and
+  Subcircles tabs, and the subcircle list on each card (v4.104.0).
+- **A breadcrumb** on a circle's page (Circles › Kitchen) and on a subcircle's (Circles › Kitchen › Bakery) replaces
+  the "← Circles" link.
+- **Meetings can belong to a subcircle.** On a meeting's page, under Review this meeting, the leads now have a
+  **Subcircle** picker next to the circle, offering the chosen circle's subcircles or the whole circle. The meeting
+  then shows on that subcircle's page.
+- Migration `20261216000000_meeting_teams.sql` adds `meeting_transcripts.team_id` (subcircles only). Like a project's
+  subcircle, it sets the meeting's circle, and moving the meeting to another circle takes it off its subcircle
+  (`private.meeting_team_circle`). It's read on its own, so a community that hasn't applied it keeps its meeting and
+  circle pages.
+
+## v4.107.0 — 2026-11-21 — A meeting's page has the project manager too
+
+Oscar: "a privileged user [should] see project manager suggestions for all the things pending and have the same
+functionality in the meetings section, there should also be the ability to type to the agent what to do with it… that
+agent should be able to understand… circle, sub circle, person assigned, priority, date, status etc and change it".
+- **A meeting's page** (M18, v4 look) shows **Project manager · about these action items**, open, above the action
+  items. These are the board's open suggestions about this meeting's tasks, with the same Accept, Dismiss, Put it in,
+  field editing and Tell the assistant. Circle leads (for their circles) and admins decide; everyone else sees them.
+- **The board's project manager panel lists meetings' drafts too.** Under its suggestions, **Drafts to confirm** groups
+  every draft still waiting by meeting, newest first, with the meeting's circle and a count. Opening a meeting shows its
+  action items as the same rows as on its page (`ActionItemList`, shared), with the same fields, assistant line and
+  draft pill, plus a link to the meeting. They're loaded by one helper, `m18-meetings/lib/action-items.ts`, for both
+  pages, and only the drafts the viewer may change are listed.
+- **✦ What should the assistant do?** sits under a task's fields wherever they can be changed: in the project manager
+  panel and in a meeting's action items. Type what to do, like "give it to Ana, high priority, due Friday". The assistant
+  makes the change right there, with no chat pop-up. The fields reload with what changed marked, and a short list says
+  what it did. **Keep** it, or **Undo** puts it all back.
+- **The assistant (Do)** already changes a task's circle, subcircle, person, priority, due date and time, status and the
+  task it's part of. Now a change to a draft confirms it there too (Undo makes it a draft again), and on its cards a
+  team reads "subcircle".
+
+No migration.
+
 ## v4.106.0 — 2026-11-21 — The project manager's tasks are editable at a glance
 
 Oscar didn't find the fields from v4.105.0 in the project manager panel: they were behind the "✎ Edit its tasks ·

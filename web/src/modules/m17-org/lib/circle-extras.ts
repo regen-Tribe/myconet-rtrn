@@ -13,7 +13,7 @@ export type CircleTask = {
   team_id: string | null
 }
 export type CircleEvent = { id: string; title: string; starts_at: string; all_day: boolean; circle: string; location: string | null }
-export type CircleMeeting = { id: string; title: string | null; meeting_date: string | null; circle: string }
+export type CircleMeeting = { id: string; title: string | null; meeting_date: string | null; circle: string; team_id?: string | null }
 /** A note in the circle's folder. `group` is its topic (first subfolder, null at the top), `sub` any deeper folders */
 export type CircleGuide = { path: string; name: string; group: string | null; sub: string | null }
 
@@ -62,6 +62,13 @@ export async function loadCircleExtras(supabase: SupabaseClient, opts: { signedI
       : Promise.resolve({ data: [] as any[] }),
   ])
 
+  // Which meetings belong to a subcircle (v4.108.0), read on its own: a community without the column keeps its pages
+  const teamOf = new Map<string, string>()
+  if (opts.signedIn) {
+    const { data, error } = await supabase.from('meeting_transcripts').select('id, team_id').not('team_id', 'is', null).limit(500)
+    if (!error) for (const r of data ?? []) teamOf.set(r.id as string, r.team_id as string)
+  }
+
   const avatars: Record<string, string> = {}
   for (const r of av.data ?? []) if (r.avatar_url) avatars[r.id] = r.avatar_url
 
@@ -93,7 +100,7 @@ export async function loadCircleExtras(supabase: SupabaseClient, opts: { signedI
       }
     }),
     upcoming: (events.data ?? []) as CircleEvent[],
-    meetings: (meetings.data ?? []) as CircleMeeting[],
+    meetings: ((meetings.data ?? []) as CircleMeeting[]).map(m => ({ ...m, team_id: teamOf.get(m.id) ?? null })),
     guides,
     guideFolder,
   }
