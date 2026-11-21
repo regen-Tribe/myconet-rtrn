@@ -121,8 +121,6 @@ export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals
 /* ─── Browse ─────────────────────────────────────────────────────── */
 
 function Browse({ vm }: { vm: BookingsV4Model }) {
-  const [view, setView] = useState<'list' | 'map'>(vm.mapUrl ? 'map' : 'list')
-  const unpinned = vm.shown.filter(i => i.map_x == null)
   return (
     <>
       <div className="v4-toolbar">
@@ -136,12 +134,8 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
           </ChipRow>
         )}
         <span className="v4-toolbar__end">
-          {vm.mapUrl && (
-            <span className="v4-seg" role="group" aria-label="Show as">
-              <button type="button" aria-pressed={view === 'map'} className={view === 'map' ? 'on' : ''} onClick={() => setView('map')}><Icon name="map" size={15} />Map</button>
-              <button type="button" aria-pressed={view === 'list'} className={view === 'list' ? 'on' : ''} onClick={() => setView('list')}><Icon name="grid" size={15} />List</button>
-            </span>
-          )}
+          {/* One map for the whole land: the Map page (v4.74.0) shows where each of these is */}
+          {vm.mapUrl && <Link href="/map" className="v4-btn v4-btn--secondary v4-btn--sm"><Icon name="map" size={15} />See the map</Link>}
           <label className="v4-search">
             <Icon name="search" size={16} />
             <input value={vm.query} onChange={e => vm.setQuery(e.target.value)} placeholder="Search" aria-label="Search the inventory" />
@@ -156,18 +150,7 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
         </div>
       )}
 
-      {view === 'map' && vm.mapUrl && vm.shown.length > 0 && (
-        <>
-          <AmenitiesMap url={vm.mapUrl} items={vm.shown} onOpen={vm.open} availability={vm.availability} showList />
-          {unpinned.length > 0 && (
-            <p className="v4-hint v4-map__rest">
-              Not on the map yet: {unpinned.map((i, k) => <span key={i.id}>{k > 0 && ', '}<button type="button" className="v4-linkbtn" onClick={() => vm.open(i.id)}>{i.name}</button></span>)}
-            </p>
-          )}
-        </>
-      )}
-
-      {view === 'map' && vm.mapUrl && vm.shown.length > 0 ? null : vm.shown.length === 0 ? (
+      {vm.shown.length === 0 ? (
         <EmptyState
           icon="box"
           title={vm.activeItems.length === 0 ? 'The inventory is empty' : 'Nothing matches that filter'}
@@ -177,16 +160,19 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
         />
       ) : (
         <div className="v4-grid">
-          {vm.shown.map(item => {
+          {vm.shown.map((item, k) => {
+            // A place's photo shows once, on its first card (20 dorm beds share one picture)
+            const photo = item.place?.photo_url && vm.shown.findIndex(o => o.place?.slug === item.place?.slug) === k ? item.place.photo_url : null
             const ci = CATEGORY_ICON[item.category]
             const avail = vm.availability(item)
             return (
-              <button key={item.id} type="button" className="v4-card v4-card--link v4-item" onClick={() => vm.open(item.id)}>
+              <button key={item.id} type="button" className={`v4-card v4-card--link v4-item${photo ? ' v4-item--photo' : ''}`} onClick={() => vm.open(item.id)}>
+                {photo && <img className="v4-item__photo" src={photo} alt="" loading="lazy" />}
                 <div className="v4-card-head">
                   <IconTile name={ci.icon} tone={ci.tone} />
                   <div>
                     <b>{item.name}</b>
-                    <small>{[CATEGORY_META[item.category].label, item.location, item.capacity ? `${item.capacity} people` : null].filter(Boolean).join(' · ')}</small>
+                    <small>{[CATEGORY_META[item.category].label, item.location ?? (item.place?.name !== item.name ? item.place?.name : null), item.capacity ? `${item.capacity} people` : null].filter(Boolean).join(' · ')}</small>
                   </div>
                 </div>
                 {(item.tags.length > 0 || item.requires_approval) && (
