@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-21 — Core v4.107.0 + v4.108.0 via PR #81 (deployed, 4a5c7435): one flow for suggested tasks; subcircle pages and meeting subcircles
+- Migration `meeting_teams` (v4.108.0) applied via MCP before the deploy (column + trigger checked).
+
 ## 2026-11-21 — Core v4.106.0 via PR #80 (deployed, a6175651): the project manager's tasks are editable at a glance
 - No migration.
 
