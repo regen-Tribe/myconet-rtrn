@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-21 — Core v4.111.0 via PR #82 (deployed, 876ee10a): migration numbers rule + check; Sonia's v4.110.0 photos
+- Migration `more_photos` applied via MCP before the deploy. The deploy check now also checks migration numbers.
+
 ## 2026-11-21 — Core v4.107.0 + v4.108.0 via PR #81 (deployed, 4a5c7435): one flow for suggested tasks; subcircle pages and meeting subcircles
 - Migration `meeting_teams` (v4.108.0) applied via MCP before the deploy (column + trigger checked).
 
