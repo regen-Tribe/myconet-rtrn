@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-22 — Core v4.115.0 via PR #84 (deployed, 1d804298): lines you can see again (v4)
+- No migration.
+
 ## 2026-11-22 — Core v4.114.0 via PR #83 (deployed, e286ffe7): one list of everything to decide; Sonia's v4.111.1–v4.113.0
 - Migration `task_later` applied via MCP before the deploy.
 
