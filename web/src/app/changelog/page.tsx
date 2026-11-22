@@ -3,6 +3,30 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.114.0',
+    date: '2026-11-21',
+    title: 'One list of everything to decide',
+    items: ['“To decide” in Operations, and the action items on a meeting’s page, are now one list. Each task shows its fields, the assistant line, the project manager’s suggestions about it, and a Draft pill: slide right to approve, left to decline.', 'Later sets a task aside on the new Ideas for later list, off the board until you bring it back. What you decide stays in the list until you reload the page.'],
+  },
+  {
+    version: 'v4.113.0',
+    date: '2026-11-21',
+    title: 'Everything shared is under Spaces',
+    items: ['Amenities & tools now also lists the places from the Map that you don’t book, such as the shared restrooms, the waterfalls and the gardens. Their cards open the place on the Map.'],
+  },
+  {
+    version: 'v4.112.1',
+    date: '2026-11-21',
+    title: 'Room buttons show just the number',
+    items: ['On a grouped card whose title already names the things, like “Private Rooms 1–9”, the buttons show only the number.'],
+  },
+  {
+    version: 'v4.112.0',
+    date: '2026-11-21',
+    title: 'Bookings calendar: scroll sideways through the dates',
+    items: ['In Admin › Bookings, the calendar of who stays where is one long strip of days: scroll sideways to see earlier and later dates, up to the last booking. The room names stay in place and a guest’s name stays in view on a long stay.', 'Earlier, Later and Today still move it a week at a time, and the first of each month shows the month’s name.', 'Weekends are now shaded on the right days in rows that have a stay.'],
+  },
+  {
     version: 'v4.111.0',
     date: '2026-11-21',
     title: 'Community and core database changes stay apart',

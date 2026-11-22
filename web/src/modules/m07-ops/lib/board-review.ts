@@ -100,7 +100,10 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   if (!circleRes.data) return { ok: false, merged: 0, moved: 0, suggested: 0, note: null, errors: ['no such circle'] }
   const circleName = circleRes.data.name as string
   const projects = (projRes.data ?? []) as Project[]
-  const tasks = (taskRes.data ?? []) as Task[]
+  // Set aside for later (v4.114.0) isn't reviewed until it's brought back. Read on its own: a community without the column keeps its reviews
+  const laterRes = await admin.from('deliverables').select('id').eq('circle', circle).not('later_at', 'is', null)
+  const later = new Set(laterRes.error ? [] : (laterRes.data ?? []).map(r => r.id as string))
+  const tasks = ((taskRes.data ?? []) as Task[]).filter(t => !later.has(t.id))
   // Shared accounts ("Protopia admin") aren't people who take on work
   const everyone = (peopleRes.data ?? []) as PersonProfile[]
   const people = everyone.filter(p => !/admin/i.test(`${p.username ?? ''} ${displayName(p)}`))

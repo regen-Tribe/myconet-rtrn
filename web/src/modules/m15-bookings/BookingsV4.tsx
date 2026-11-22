@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   Button, Card, Chip, ChipRow, EmptyState, Icon, IconTile, List, ListRow, PageHeader, SectionHead, StatusPill, Tag,
   type IconName, type Status,
 } from '@/core/components/v4'
-import type { Booking, BookingCategory, BookingItem, BookingsTab } from './types'
+import type { Booking, BookingCategory, BookingItem, BookingsTab, AroundPlace } from './types'
 import { CATEGORY_META, STATUS_META, canManageItem, fmtBookingRange, personName } from './lib/inventory'
 import AmenitiesMap from './AmenitiesMap'
+import { KIND_META, isKind } from '@/modules/m19-map/lib/places'
 import { SpaceTabs } from '@/core/components/SpaceTabs'
 
 /**
@@ -61,6 +62,8 @@ export type BookingsV4Model = {
   setStatus: (b: Booking, status: Booking['status'], okMsg: string) => void
   /** The Amenities map (v4.43.0) */
   mapUrl: string | null
+  /** Map places with nothing to book, listed under Spaces (v4.113.0) */
+  around: AroundPlace[]
   setPin: (item: BookingItem, x: number | null, y: number | null) => void
   setMapPicture: (file: File | null) => void
   isAdmin: boolean
@@ -141,7 +144,7 @@ function ItemMedia({ photo, category, badge, busy }: { photo: string | null; cat
  * Numbered things of one kind show as one card (v4.80.0): "Dorm 1 – bed 1…10" is Dorm 1 with 10 beds to pick from,
  * "Room 1…9" is Rooms 1–9. Three or more items of a category whose names differ only in the last number group up.
  */
-type GroupEntry = { kind: 'group'; key: string; title: string; unit: string; items: BookingItem[] }
+type GroupEntry = { kind: 'group'; key: string; title: string; unit: string; plain: boolean; items: BookingItem[] }
 type BrowseEntry = { kind: 'item'; item: BookingItem } | GroupEntry
 
 const GROUP_MIN = 3
@@ -171,7 +174,7 @@ function groupItems(items: BookingItem[]): BrowseEntry[] {
     const nums = sorted.map(x => numbered(x.name)![2])
     const title = split ? split[1] : `${stem}s ${nums[0]}–${nums[nums.length - 1]}`
     const unit = (split ? split[2] : stem).toLowerCase()
-    out.push({ kind: 'group', key, title, unit, items: sorted })
+    out.push({ kind: 'group', key, title, unit, plain: !split, items: sorted })
   }
   return out
 }
@@ -193,7 +196,8 @@ function GroupCard({ vm, group }: { vm: BookingsV4Model; group: GroupEntry }) {
         {group.items.map(i => (
           <button key={i.id} type="button" className={`v4-unit${isFree(i) ? '' : ' v4-unit--busy'}`} onClick={() => vm.open(i.id)}
             title={vm.availability(i)?.text ?? i.name}>
-            {group.unit === 'room' ? numbered(i.name)![2] : `${group.unit[0].toUpperCase()}${group.unit.slice(1)} ${numbered(i.name)![2]}`}
+            {/* "Bed 3" inside Dorm 1; just the number when the card's title already says what they are (Private Rooms 1–9) */}
+            {group.plain ? numbered(i.name)![2] : `${group.unit[0].toUpperCase()}${group.unit.slice(1)} ${numbered(i.name)![2]}`}
           </button>
         ))}
       </div>
@@ -203,6 +207,11 @@ function GroupCard({ vm, group }: { vm: BookingsV4Model; group: GroupEntry }) {
 }
 
 function Browse({ vm }: { vm: BookingsV4Model }) {
+  // Places with nothing to book sit under Spaces, after the bookable things
+  const q = vm.query.trim().toLowerCase()
+  const around = (vm.category === null || vm.category === 'spaces') && !vm.tag
+    ? vm.around.filter(p => !q || p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q))
+    : []
   return (
     <>
       <div className="v4-toolbar">
@@ -211,7 +220,7 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
             <Chip on={vm.category === null} onClick={() => { vm.setCategory(null); vm.setTag(null) }}>All</Chip>
             {vm.categories.map(c => (
               <Chip key={c} on={vm.category === c} onClick={() => { vm.setCategory(c); vm.setTag(null) }}
-                count={vm.activeItems.filter(i => i.category === c).length}>{CATEGORY_META[c].label}</Chip>
+                count={vm.activeItems.filter(i => i.category === c).length + (c === 'spaces' ? vm.around.length : 0)}>{CATEGORY_META[c].label}</Chip>
             ))}
           </ChipRow>
         )}
@@ -230,7 +239,7 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
         </div>
       )}
 
-      {vm.shown.length === 0 ? (
+      {vm.shown.length === 0 && around.length === 0 ? (
         <EmptyState
           icon="box"
           title={vm.activeItems.length === 0 ? 'The inventory is empty' : 'Nothing matches that filter'}
@@ -258,6 +267,23 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
                   )}
                 </span>
               </button>
+            )
+          })}
+          {around.map(p => {
+            const meta = KIND_META[isKind(p.kind) ? p.kind : 'other']
+            return (
+              <Link key={p.slug} href={`/map?place=${encodeURIComponent(p.slug)}`} className="v4-card v4-card--link v4-item">
+                <span className="v4-item__media">
+                  {p.photo_url
+                    ? <img src={p.photo_url} alt="" loading="lazy" />
+                    : <span className={`v4-item__ph v4-tile--${meta.tone}`}><Icon name={meta.icon} size={34} /></span>}
+                </span>
+                <span className="v4-item__body">
+                  <b>{p.name}</b>
+                  <small>{meta.label} · on the map</small>
+                  {p.description && <span className="v4-item__text">{p.description}</span>}
+                </span>
+              </Link>
             )
           })}
         </div>
@@ -365,18 +391,56 @@ function Inventory({ vm }: { vm: BookingsV4Model }) {
 
 /* ─── Calendar: who stays where (Admin › Bookings) ───────────────── */
 
-const DAYS = 14
 const DAY = 86400000
+/** Days before today in the strip, and the least it shows after today; it grows to reach the last booking */
+const DAYS_BACK = 14
+const DAYS_AHEAD = 56
+const DAYS_MAX = 400
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
 function BookingsCalendar({ vm }: { vm: BookingsV4Model }) {
-  const [offset, setOffset] = useState(0) // in weeks
+  // One long strip of days that scrolls sideways (v4.112.0); it opens on today
+  const scroller = useRef<HTMLDivElement>(null)
+  const [view, setView] = useState({ first: DAYS_BACK, count: 14 })
+  const measure = () => {
+    const el = scroller.current
+    const day = el?.querySelector<HTMLElement>('.v4-cal__day')
+    const name = el?.querySelector<HTMLElement>('.v4-cal__name')
+    if (!el || !day || !name) return null
+    return { el, w: day.offsetWidth, nameW: name.offsetWidth }
+  }
+  const sync = () => {
+    const m = measure()
+    if (!m || !m.w) return
+    const first = Math.round(m.el.scrollLeft / m.w)
+    const count = Math.max(1, Math.floor((m.el.clientWidth - m.nameW) / m.w))
+    setView(v => (v.first === first && v.count === count ? v : { first, count }))
+  }
+  const goTo = (idx: number, smooth = true) => {
+    const m = measure()
+    if (m) m.el.scrollTo({ left: Math.max(0, idx) * m.w, behavior: smooth ? 'smooth' : 'auto' })
+  }
+  const ready = !!vm.now
+  useLayoutEffect(() => {
+    if (!ready) return
+    goTo(DAYS_BACK, false)
+    // Fires once when it starts watching, then whenever the calendar's width changes
+    const ro = new ResizeObserver(sync)
+    if (scroller.current) ro.observe(scroller.current)
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready])
   if (!vm.now) return null
-  const from = new Date(startOfDay(vm.now).getTime() + offset * 7 * DAY)
-  const to = new Date(from.getTime() + DAYS * DAY)
-  const days = Array.from({ length: DAYS }, (_, i) => new Date(from.getTime() + i * DAY))
-  const inWindow = vm.bookings.filter(b => (b.status === 'confirmed' || b.status === 'pending') && new Date(b.starts_at) < to && new Date(b.ends_at) > from)
-  // Rooms first (who stays where), then any tool or space booked in these two weeks
+  const today = startOfDay(vm.now)
+  const live = vm.bookings.filter(b => b.status === 'confirmed' || b.status === 'pending')
+  const lastEnd = live.reduce((t, b) => Math.max(t, new Date(b.ends_at).getTime()), 0)
+  const DAYS = Math.min(DAYS_MAX, DAYS_BACK + Math.max(DAYS_AHEAD, Math.ceil((lastEnd - today.getTime()) / DAY) + 7))
+  // By calendar date, not by adding 24 hours, so a clock change can't shift a column
+  const days = Array.from({ length: DAYS }, (_, i) => new Date(today.getFullYear(), today.getMonth(), today.getDate() - DAYS_BACK + i))
+  const from = days[0]
+  const to = new Date(today.getFullYear(), today.getMonth(), today.getDate() - DAYS_BACK + DAYS)
+  const inWindow = live.filter(b => new Date(b.starts_at) < to && new Date(b.ends_at) > from)
+  // Rooms first (who stays where), then any tool or space booked in these days
   const rows = vm.scopeItems
     .filter(i => i.is_active && (i.category === 'accommodation' || inWindow.some(b => b.item_id === i.id)))
     .sort((a, b) => Number(b.category === 'accommodation') - Number(a.category === 'accommodation') || a.name.localeCompare(b.name))
@@ -387,27 +451,30 @@ function BookingsCalendar({ vm }: { vm: BookingsV4Model }) {
   }
   const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString('en-GB', o)
   const staying = inWindow.filter(b => vm.itemById.get(b.item_id)?.category === 'accommodation' && new Date(b.starts_at) <= vm.now! && new Date(b.ends_at) > vm.now!)
+  const first = Math.min(view.first, DAYS - 1)
+  const last = Math.min(first + view.count - 1, DAYS - 1)
+  const onToday = first <= DAYS_BACK && last >= DAYS_BACK
 
   return (
     <>
       <div className="v4-sec">
-        <h2>{fmt(days[0], { day: 'numeric', month: 'short' })} – {fmt(days[DAYS - 1], { day: 'numeric', month: 'short' })}{offset === 0 ? ` · ${staying.length} staying tonight` : ''}</h2>
+        <h2>{fmt(days[first], { day: 'numeric', month: 'short' })} – {fmt(days[last], { day: 'numeric', month: 'short' })} · {staying.length} staying tonight</h2>
         <span className="v4-ph__actions">
-          <Button size="sm" variant="secondary" icon="left" onClick={() => setOffset(o => o - 1)}>Earlier</Button>
-          {offset !== 0 && <Button size="sm" variant="secondary" onClick={() => setOffset(0)}>Today</Button>}
-          <Button size="sm" variant="secondary" onClick={() => setOffset(o => o + 1)}>Later →</Button>
+          <Button size="sm" variant="secondary" icon="left" disabled={first === 0} onClick={() => goTo(first - 7)}>Earlier</Button>
+          {!onToday && <Button size="sm" variant="secondary" onClick={() => goTo(DAYS_BACK)}>Today</Button>}
+          <Button size="sm" variant="secondary" disabled={last >= DAYS - 1} onClick={() => goTo(first + 7)}>Later →</Button>
         </span>
       </div>
       {rows.length === 0 ? (
         <EmptyState icon="bed" title="Nothing to show yet" text="Add rooms to the inventory and their stays show here, day by day." />
       ) : (
-        <div className="v4-cal" style={{ ['--days' as string]: DAYS }}>
+        <div className="v4-cal" ref={scroller} onScroll={sync} tabIndex={0} role="region" aria-label="Who stays where, day by day. Scroll sideways for more dates." style={{ ['--days' as string]: DAYS }}>
           <div className="v4-cal__row v4-cal__row--head">
             <span className="v4-cal__name" />
             <div className="v4-cal__days">
               {days.map(d => (
-                <span key={d.toISOString()} className={`v4-cal__day${d.getTime() === startOfDay(vm.now!).getTime() ? ' v4-cal__day--today' : ''}${[0, 6].includes(d.getDay()) ? ' v4-cal__day--we' : ''}`}>
-                  <small>{fmt(d, { weekday: 'short' })}</small><b>{d.getDate()}</b>
+                <span key={d.toISOString()} className={`v4-cal__day${d.getTime() === today.getTime() ? ' v4-cal__day--today' : ''}${[0, 6].includes(d.getDay()) ? ' v4-cal__day--we' : ''}${d.getDate() === 1 ? ' v4-cal__day--month' : ''}`}>
+                  <small>{d.getDate() === 1 ? fmt(d, { month: 'short' }) : fmt(d, { weekday: 'short' })}</small><b>{d.getDate()}</b>
                 </span>
               ))}
             </div>
@@ -420,12 +487,13 @@ function BookingsCalendar({ vm }: { vm: BookingsV4Model }) {
                   <IconTile name={ci.icon} tone={ci.tone} /><span>{item.name}</span>
                 </button>
                 <div className="v4-cal__days">
-                  {days.map(d => <span key={d.toISOString()} className={`v4-cal__cell${[0, 6].includes(d.getDay()) ? ' v4-cal__day--we' : ''}`} />)}
+                  {/* Each cell names its column: left to the grid, cells slide past the columns a stay covers and weekends shade the wrong days */}
+                  {days.map((d, i) => <span key={d.toISOString()} style={{ gridColumn: i + 1 }} className={`v4-cal__cell${[0, 6].includes(d.getDay()) ? ' v4-cal__day--we' : ''}`} />)}
                   {inWindow.filter(b => b.item_id === item.id).map(b => (
                     <span key={b.id} className={`v4-cal__bar v4-cal__bar--${b.status}`}
                       style={{ gridColumn: `${col(b.starts_at, false)} / ${col(b.ends_at, true)}` }}
                       title={`${personName(b.person)} · ${fmtBookingRange(b, item.category)} · ${STATUS_META[b.status].label}`}>
-                      {personName(b.person)}{b.status === 'pending' ? ' · waiting' : ''}
+                      <span>{personName(b.person)}{b.status === 'pending' ? ' · waiting' : ''}</span>
                     </span>
                   ))}
                 </div>

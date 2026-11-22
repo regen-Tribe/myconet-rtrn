@@ -42,3 +42,13 @@ export interface Booking {
 }
 
 export type BookingsTab = 'browse' | 'mine' | 'manage'
+
+/** A place from the Map that has no bookable thing of its own, listed under Spaces (v4.113.0): a waterfall, the
+ *  shared restrooms, the tree net. Not bookable; its card opens the place on the Map. */
+export interface AroundPlace {
+  slug: string
+  name: string
+  kind: string
+  description: string | null
+  photo_url: string | null
+}

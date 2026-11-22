@@ -1,9 +1,8 @@
 'use client'
 
 import { DraftSwipe } from '@/modules/m07-ops/DraftSwipe'
-import { ActionItemList } from './ActionItemList'
-import { ProjectManagerPanel } from '@/modules/m07-ops/ProjectManagerPanel'
-import type { AgentSuggestion } from '@/modules/m07-ops/types'
+import { DecisionList } from '@/modules/m07-ops/DecisionList'
+import type { DecisionRow } from '@/modules/m07-ops/lib/decisions'
 import type { TaskPerson, TaskProjectOption, TaskTeamOption } from '@/modules/m07-ops/TaskModal'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -12,7 +11,7 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import { fmtTaskWhen, taskDate } from '@/core/lib/tasks'
 import NotesText from './NotesText'
 import SummaryCards from './SummaryCards'
-import type { Meeting, MeetingTask } from './types'
+import type { Meeting } from './types'
 import { DESIGN } from '@/core/lib/instance'
 import { Button, Icon, Tag, InlineIcon } from '@/core/components/v4'
 import './meetings-v4.css'
@@ -263,12 +262,12 @@ function DocTabs({ m, brainNote }: { m: Meeting; brainNote: string | null }) {
   )
 }
 
-export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions = null, pm, teams = null, canManage, emailOn, secondBrainOn, brainNote }: {
-  meeting: Meeting; tasks: MeetingTask[]; canManage: boolean; emailOn: boolean; secondBrainOn: boolean; brainNote: string | null
+export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions = null, decider, teams = null, canManage, emailOn, secondBrainOn, brainNote }: {
+  meeting: Meeting; tasks: DecisionRow[]; canManage: boolean; emailOn: boolean; secondBrainOn: boolean; brainNote: string | null
   /** For changing an action item right here (v4.105.0); null when the viewer may change none */
   taskOptions?: { people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[] } | null
-  /** The project manager's open suggestions about this meeting's tasks, and who decides them (v4.107.0) */
-  pm?: { suggestions: AgentSuggestion[]; role: string; leadCircles: string[] }
+  /** Who decides the project manager's suggestions here (v4.114.0): admins and the circle's leads, as on the board */
+  decider?: { role: string; leadCircles: string[] }
   /** The circles' subcircles, for the leads' Subcircle picker (v4.108.0); null when the community hasn't the column */
   teams?: TaskTeamOption[] | null
 }) {
@@ -277,7 +276,7 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
   const meta = m.circle && circles.has(m.circle) ? circles.meta(m.circle) : null
   const tasks = loaded
   const drafts = tasks.filter(t => t.needs_review).length
-  const canDecide = (c: string) => pm?.role === 'admin' || (pm?.role === 'circle_lead' && pm.leadCircles.includes(c))
+  const canDecide = (c: string) => decider?.role === 'admin' || (decider?.role === 'circle_lead' && decider.leadCircles.includes(c))
 
   const byPerson: Record<string, string[]> = {}
   for (const item of m.action_items ?? []) (byPerson[item.speaker || 'Action items'] ??= []).push(item.text)
@@ -315,21 +314,11 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
               <>
                 {m.summary && <div className="v4-card mt4-sumcard"><h2 className="mt4-h">Summary</h2><SummaryCards text={m.summary} accent={meta?.color} /></div>}
 
-                {pm && pm.suggestions.length > 0 && (
-                  <ProjectManagerPanel
-                    title="Project manager · about these action items" defaultOpen
-                    suggestions={pm.suggestions} actions={[]} circle={null} canDecide={canDecide}
-                    taskTitles={Object.fromEntries(tasks.map(t => [t.deliverable_id, t.title]))}
-                    projects={taskOptions?.projectOptions ?? []} teams={taskOptions?.teams ?? []}
-                    editOptions={taskOptions ?? undefined}
-                    onOpenTask={id => { const t = tasks.find(x => x.deliverable_id === id); router.push(t?.project_id ? `/operations/${t.project_id}?task=${id}` : `/operations?task=${id}`) }}
-                  />
-                )}
                 <div className="v4-sec"><h2>Action items{drafts ? ` · ${drafts} to confirm` : ''}</h2><span className="v4-hint">They become tasks on the board</span></div>
                 {tasks.length === 0 ? (
                   <p className="v4-hint">{m.processed_at ? 'No tasks came out of this meeting.' : m.needs_review ? 'Nothing on the board: this meeting is waiting for a lead.' : 'The assistant hasn’t read this meeting yet.'}</p>
                 ) : (
-                  <ActionItemList tasks={tasks} taskOptions={taskOptions} />
+                  <DecisionList rows={tasks} options={taskOptions} canDecide={canDecide} />
                 )}
 
                 {Object.keys(byPerson).length > 0 && (

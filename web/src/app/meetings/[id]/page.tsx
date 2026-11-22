@@ -5,9 +5,8 @@ import { isOpsAdmin } from '@/core/lib/roles'
 import { notesEmailOn } from '@/modules/m18-meetings/lib/notes-email'
 import { readNote, secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
 import type { Meeting } from '@/modules/m18-meetings/types'
-import { loadActionItems } from '@/modules/m18-meetings/lib/action-items'
+import { loadDecisions } from '@/modules/m07-ops/lib/decisions'
 import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
-import { loadProjectManager } from '@/modules/m07-ops/lib/pm-data'
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,15 +27,12 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
 
   const role = profile?.role ?? ''
   const leadCircles: string[] = profile?.lead_circles ?? []
-  const tasks = await loadActionItems(supabase, { id: user.id, role, leadCircles }, { meetingId: id })
+  // The meeting's action items as the To decide list (v4.114.0): each task with its fields, its Draft pill and the
+  // project manager's suggestions about it, the same rows as on the board
+  const { rows: tasks } = await loadDecisions(supabase, { id: user.id, role, leadCircles }, { meetingId: id })
 
-  // The project manager's open suggestions about this meeting's tasks (v4.107.0: Oscar, "the same functionality in the
-  // meetings section"): the same ones as on the board, decided the same way
-  const ids = new Set(tasks.map(t => t.deliverable_id))
-  const touches = (pl: Record<string, unknown>) => [pl.keep, pl.drop, pl.task, ...(Array.isArray(pl.tasks) ? pl.tasks : [])].some(x => typeof x === 'string' && ids.has(x))
-  const pmSuggestions = ids.size ? (await loadProjectManager(supabase)).suggestions.filter(sg => touches(sg.payload)) : []
   // What the action items can be changed to, right here (v4.105.0), for those who may change one
-  const taskOptions = tasks.some(t => t.can_edit) || pmSuggestions.length ? await loadTaskOptions(supabase) : null
+  const taskOptions = tasks.some(t => t.can_edit) ? await loadTaskOptions(supabase) : null
 
   return (
     <MeetingDetail
@@ -44,7 +40,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       teams={hasTeams && isOpsAdmin(profile?.role ?? '') ? (taskOptions?.teams ?? (((await supabase.from('org_units').select('id, name, circle').eq('kind', 'team').order('sort_order')).data ?? []) as { id: string; name: string; circle: string }[])) : null}
       tasks={tasks}
       taskOptions={taskOptions}
-      pm={{ suggestions: pmSuggestions, role, leadCircles }}
+      decider={{ role, leadCircles }}
       canManage={isOpsAdmin(profile?.role ?? '')}
       emailOn={notesEmailOn()}
       secondBrainOn={secondBrainOn()}

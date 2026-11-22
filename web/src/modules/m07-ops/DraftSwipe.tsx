@@ -15,9 +15,13 @@ const UNDO_MS = 5000
  * seconds, with Undo). Arrow keys do the same. Everyone else sees the plain pill. The pill keeps its pointer to
  * itself, so sliding it doesn't drag the card or open the task.
  */
-export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
+export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone, keepLabel = false }: {
   taskId: string; canDecide: boolean
   onApproved?: () => void; onDeclined?: () => void
+  /** An approval undone: it's a draft again */
+  onUndone?: () => void
+  /** Show "Approved" / "Declined" once decided, instead of nothing (v4.114.0: the To decide list keeps its rows until a reload) */
+  keepLabel?: boolean
 }) {
   const [dx, setDx] = useState(0)
   const [sliding, setSliding] = useState(false)
@@ -28,7 +32,13 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
   if (!canDecide) return <DraftBadge />
-  if (state === 'approved' || state === 'gone') return null
+  const label = (text: string, color: string, bg: string, action?: { label: string; run: () => void }) => (
+    <span onClick={e => { e.stopPropagation(); e.preventDefault() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, lineHeight: 1.2, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color, background: bg, borderRadius: 6, padding: '5px 11px', marginRight: 8, verticalAlign: 'middle' }}>
+      {text}{action && <>{' · '}<button type="button" onClick={e => { e.stopPropagation(); e.preventDefault(); action.run() }} style={{ all: 'unset', cursor: 'pointer', textDecoration: 'underline' }}>{action.label}</button></>}
+    </span>
+  )
+  if (state === 'approved') return keepLabel ? label('Approved', '#15803d', '#dcfce7', { label: 'Undo', run: unapprove }) : null
+  if (state === 'gone') return keepLabel ? label('Declined', '#b91c1c', '#fee2e2') : null
 
   async function approve() {
     setState('saving'); setError('')
@@ -43,6 +53,12 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined }: {
       if (e) { setState('draft'); setError(e.message); return }
       setState('gone'); onDeclined?.()
     }, UNDO_MS)
+  }
+  async function unapprove() {
+    setState('saving'); setError('')
+    const { error: e } = await createClient().from('deliverables').update({ needs_review: true }).eq('id', taskId)
+    if (e) { setState('approved'); setError(e.message); return }
+    setState('draft'); onUndone?.()
   }
   function undo() {
     if (timer.current) clearTimeout(timer.current)

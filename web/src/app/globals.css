@@ -830,6 +830,8 @@ button.v4-tag { cursor: pointer; border: 0; font: inherit; font-size: 11px; }
 .v4-item__body > small { font-size: 12.5px; color: var(--ink-3, #6b7180); }
 .v4-item__body .v4-tags, .v4-item__body .v4-unitpick { margin-top: 4px; }
 .v4-item--group { cursor: default; }
+.v4-item__text { font-size: 13px; line-height: 1.45; color: var(--ink-2, #3a3f4a); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+a.v4-item { color: inherit; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { .v4-item, .v4-item__media img { transition: none; } .v4-item:hover { transform: none; } .v4-item:hover .v4-item__media img { transform: none; } }
 .v4-unitpick { display: flex; flex-wrap: wrap; gap: 6px; }
 .v4-unit { font: inherit; font-size: 13px; font-weight: 600; min-width: 40px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--rule, #ddd); background: var(--surface, #fff); color: var(--ink, #222); cursor: pointer; }
@@ -850,22 +852,27 @@ button.v4-tag { cursor: pointer; border: 0; font: inherit; font-size: 11px; }
 .v4-avail--busy { color: var(--yellow-ink, #7a5b00); }
 .v4-faded { opacity: .7; }
 .v4-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10000; background: var(--ink, #111317); color: #fff; font-size: 13px; font-weight: 600; padding: 11px 18px; border-radius: 999px; max-width: calc(100vw - 32px); }
-.v4-cal { background: var(--surface, #fff); border-radius: 20px; padding: 8px; overflow-x: auto; }
-.v4-cal__row { display: grid; grid-template-columns: 200px minmax(560px, 1fr); align-items: center; min-height: 48px; }
+/* One long strip of days that scrolls sideways; the names stay put (v4.112.0) */
+.v4-cal { background: var(--surface, #fff); border-radius: 20px; padding: 8px 8px 8px 0; overflow-x: auto; overscroll-behavior-x: contain; --day-w: 70px; --name-w: 200px; }
+.v4-cal:focus-visible { outline: 2px solid var(--blue-ink, #2f5fd0); outline-offset: 2px; }
+.v4-cal__row { display: grid; grid-template-columns: var(--name-w) max-content; width: max-content; min-width: 100%; align-items: center; min-height: 48px; }
 .v4-cal__row + .v4-cal__row { box-shadow: 0 -1px 0 var(--rule-soft, rgba(17,19,23,.07)); }
 .v4-cal__row--head { min-height: 40px; }
-.v4-cal__name { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 600; text-align: left; color: var(--ink, #111317); cursor: pointer; min-width: 0; position: sticky; left: 0; z-index: 1; background: var(--surface, #fff); }
+.v4-cal__name { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 600; text-align: left; color: var(--ink, #111317); cursor: pointer; min-width: 0; height: 100%; padding-left: 16px; position: sticky; left: 0; z-index: 2; background: var(--surface, #fff); }
 .v4-cal__name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v4-cal__name .v4-tile { width: 30px; height: 30px; border-radius: 9px; }
-.v4-cal__days { display: grid; grid-template-columns: repeat(var(--days, 14), minmax(40px, 1fr)); grid-auto-rows: 36px; align-items: center; position: relative; height: 100%; }
+.v4-cal__days { display: grid; grid-template-columns: repeat(var(--days, 14), var(--day-w)); grid-auto-rows: 36px; align-items: center; position: relative; height: 100%; }
 .v4-cal__day { display: grid; justify-items: center; font-size: 11px; color: var(--ink-3, #6b7180); }
 .v4-cal__day b { font-size: 13px; font-weight: 600; color: var(--ink, #111317); }
 .v4-cal__day--today b { background: var(--ink, #111317); color: #fff; border-radius: 999px; padding: 1px 7px; }
+.v4-cal__day--month small { font-weight: 700; color: var(--ink, #111317); }
 .v4-cal__cell { grid-row: 1; height: 100%; }
 .v4-cal__days > .v4-cal__day--we { background: var(--bg-2, #f6f7fa); }
-.v4-cal__bar { grid-row: 1; z-index: 1; height: 28px; margin: 0 2px; border-radius: 9px; padding: 0 9px; display: flex; align-items: center; font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--green, #d3f1dc); color: var(--green-ink, #2e7a4a); }
+.v4-cal__bar { grid-row: 1; z-index: 1; height: 28px; margin: 0 2px; border-radius: 9px; padding: 0 9px; display: flex; align-items: center; font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: clip; background: var(--green, #d3f1dc); color: var(--green-ink, #2e7a4a); }
+/* The guest's name follows the scroll, so a long stay never shows as an unnamed bar */
+.v4-cal__bar > span { position: sticky; left: calc(var(--name-w) + 11px); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .v4-cal__bar--pending { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
-@media (max-width: 760px) { .v4-cal__row { grid-template-columns: 130px minmax(560px, 1fr); } .v4-search { min-width: 0; flex: 1; } }
+@media (max-width: 760px) { .v4-cal { --name-w: 130px; --day-w: 52px; } .v4-cal__name { padding-left: 10px; } .v4-search { min-width: 0; flex: 1; } }
 
 /* ─── v4 Admin › Permissions (modules/admin/UsersAdminClient.tsx › PermissionsV4) ─── */
 .v4-people { display: grid; gap: 10px; margin-top: 12px; }

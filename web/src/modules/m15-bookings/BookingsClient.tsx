@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
-import type { Booking, BookingCategory, BookingItem, BookingsTab, PersonLite } from './types'
+import type { Booking, BookingCategory, BookingItem, BookingsTab, PersonLite, AroundPlace } from './types'
 import { scopeForCategory, type BookingScope } from './lib/inventory'
 import {
   CATEGORY_META, SCOPE_META, STATUS_META, bookingErrorMessage, canAddItems, canBook, canManageItem,
@@ -18,7 +18,7 @@ import BookingsV4 from './BookingsV4'
 import { Icon, InlineIcon } from '@/core/components/v4'
 
 export default function BookingsClient({
-  scope, initialItems, initialBookings, userId, me, role, leadCircles, initialTab, initialCategory, initialItemId, admin = false, siteMapUrl = null,
+  scope, initialItems, initialBookings, userId, me, role, leadCircles, initialTab, initialCategory, initialItemId, admin = false, siteMapUrl = null, around = [],
 }: {
   scope: BookingScope
   initialItems: BookingItem[]
@@ -34,6 +34,8 @@ export default function BookingsClient({
   admin?: boolean
   /** The picture of the land for the Amenities map (v4.43.0) */
   siteMapUrl?: string | null
+  /** Map places with nothing to book, listed under Spaces */
+  around?: AroundPlace[]
 }) {
   const supabase = createClient()
   const [items, setItems] = useState(initialItems)
@@ -273,7 +275,7 @@ export default function BookingsClient({
           setTab, setCategory, setTag, setQuery,
           open: setOpenId, add: () => setForm({ existing: null }), edit: i => setForm({ existing: i }),
           toggleActive, setStatus: (b, st, msg) => { void setStatus(b, st, msg) },
-          mapUrl, setPin: (i, x, y) => { void setPin(i, x, y) }, setMapPicture: f => { void setMapPicture(f) },
+          around, mapUrl, setPin: (i, x, y) => { void setPin(i, x, y) }, setMapPicture: f => { void setMapPicture(f) },
           isAdmin: role === 'admin', canManage: i => canManageItem(i, userId, role, leadCircles),
         }}
       />
