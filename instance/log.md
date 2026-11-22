@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-22 — Core v4.114.0 via PR #83 (deployed, e286ffe7): one list of everything to decide; Sonia's v4.111.1–v4.113.0
+- Migration `task_later` applied via MCP before the deploy.
+
 ## 2026-11-21 — Core v4.111.0 via PR #82 (deployed, 876ee10a): migration numbers rule + check; Sonia's v4.110.0 photos
 - Migration `more_photos` applied via MCP before the deploy. The deploy check now also checks migration numbers.
 
