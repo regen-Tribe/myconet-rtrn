@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.115.0',
+    date: '2026-11-22',
+    title: 'Lines you can see again',
+    items: ['Cards, lists and the lines between rows have a visible edge again, so content no longer runs together on the light page.'],
+  },
+  {
     version: 'v4.114.0',
     date: '2026-11-21',
     title: 'One list of everything to decide',
