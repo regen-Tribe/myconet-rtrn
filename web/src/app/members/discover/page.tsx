@@ -9,6 +9,7 @@ export default async function DiscoverPage() {
   let profilesQuery = supabase
     .from('user_profiles')
     .select(profileColumns(!!user, 'id, username, first_name, last_name, headline, city, country, avatar_url, user_types'))
+    .eq('approved', true)
     .order('created_at', { ascending: false })
 
   if (user) profilesQuery = profilesQuery.neq('id', user.id)

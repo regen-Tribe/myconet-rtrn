@@ -27,7 +27,7 @@ export default async function MembersV4({ supabase, userId, memberCount, profile
 }) {
   // Read separately and forgivingly: visitors may not see circles, offers or requests
   const [peopleRes, unitsRes, offersRes, requestsRes, circles] = await Promise.all([
-    supabase.from('user_profiles').select(profileColumns(!!userId, 'id, username, first_name, last_name, avatar_url, headline')).order('first_name'),
+    supabase.from('user_profiles').select(profileColumns(!!userId, 'id, username, first_name, last_name, avatar_url, headline')).eq('approved', true).order('first_name'),
     supabase.from('org_unit_members').select('user_id, org_units(kind, circle)'),
     supabase.from('user_offers').select('user_id, title').order('created_at', { ascending: false }),
     supabase.from('user_requests').select('user_id, title:request_text').order('created_at', { ascending: false }),

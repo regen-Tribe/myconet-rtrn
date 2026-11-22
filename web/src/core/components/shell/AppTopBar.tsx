@@ -11,6 +11,7 @@ import { VERSION } from '@/core/lib/version'
 import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
 import { useBranding } from '@/core/components/BrandingProvider'
 import TopBarSearch from '@/core/components/shell/TopBarSearch'
+import BellPanel from '@/core/components/shell/BellPanel'
 
 function computeCompletion(
   p: { first_name?: string | null; avatar_url?: string | null; headline?: string | null; city?: string | null; user_types?: string[] | null } | null,
@@ -34,7 +35,9 @@ function computeCompletion(
   return Math.round(checks.filter(Boolean).length / checks.length * 100)
 }
 
-export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopNavToggle, navCollapsed }: {
+export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopNavToggle, navCollapsed, role }: {
+  /** The viewer's role from layout.tsx (the bell shows what fits it) */
+  role?: string
   onMobileNavToggle?: () => void
   mobileNavOpen?: boolean
   onDesktopNavToggle?: () => void
@@ -282,19 +285,8 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
 
       {/* Right */}
       <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto', flexShrink: 0 }}>
-        {/* Bell */}
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          display: 'grid', placeItems: 'center',
-          background: 'var(--bg-2)', color: 'var(--ink-2)',
-          position: 'relative', cursor: 'pointer', flexShrink: 0,
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-            <path d="M10 21a2 2 0 0 0 4 0" />
-          </svg>
-          <div style={{ position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: '50%', background: 'var(--m9)', border: '2px solid var(--surface)' }} />
-        </div>
+        {/* Bell: what needs you and recent activity (BellPanel) */}
+        {user && role && <BellPanel userId={user.id} role={role} />}
 
         {/* User pill + dropdown */}
         {user ? (

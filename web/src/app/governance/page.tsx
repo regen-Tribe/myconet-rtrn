@@ -2,7 +2,8 @@ import { createClient } from '@/core/lib/supabase/server'
 import GovernanceClient from '@/modules/m09-governance/GovernanceClient'
 import { isFullMember as checkFullMember, isCircleLead, isAdvisorOrAdmin } from '@/core/lib/roles'
 
-export default async function GovernancePage() {
+export default async function GovernancePage({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
+  const { p: openId } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -49,7 +50,9 @@ export default async function GovernancePage() {
   }
 
   return (
+    // key: a bell link to another proposal while already on Governance opens it too
     <GovernanceClient
+      key={openId ?? 'list'}
       proposals={proposals}
       memberCount={typeof memberCountRes.data === 'number' ? memberCountRes.data : 0}
       currentUserId={user?.id ?? ''}
@@ -59,6 +62,7 @@ export default async function GovernancePage() {
       role={role}
       isCircleLead={isCircleLead(role)}
       isAdvisorOrAdmin={isAdvisorOrAdmin(role)}
+      openId={openId && proposals.some(x => x.id === openId) ? openId : null}
     />
   )
 }

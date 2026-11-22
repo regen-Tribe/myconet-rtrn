@@ -18,7 +18,7 @@ Admin-only management surfaces. Currently houses the user editor at `/admin/user
 
 | Table | Access |
 |-------|--------|
-| `user_profiles` | Read — full list of users. Write — `role` and `lead_circles` columns. |
+| `user_profiles` | Read — full list of users. Write — `role`, `lead_circles` and `approved` (false = an admin added the profile and it waits: left out of Members, search and counts until Approve; v4.118.0). |
 
 ## Role gating
 

@@ -3,6 +3,30 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.119.0',
+    date: '2026-11-22',
+    title: '“Part of” offers the right tasks',
+    items: ['When you choose the task something is part of, the list shows only tasks in its circle, or in its subcircle when one is chosen, so subtasks stay with the people who look after them.'],
+  },
+  {
+    version: 'v4.118.0',
+    date: '2026-11-22',
+    title: 'Approve people before they show in Members',
+    items: ['A profile an admin added for someone, such as a guest with a stay, can wait for approval. Until then the person is left out of Members, matches, search and the people counts. Their bookings stay in the calendar.', 'Admin › Permissions shows who is waiting, with an Approve button. Only admins approve. Nothing changes for people who signed up themselves.'],
+  },
+  {
+    version: 'v4.117.0',
+    date: '2026-11-22',
+    title: 'The bell opens',
+    items: ['The bell in the top bar opens a card. Needs you: votes you haven’t cast, your tasks that are late or due within 3 days, offers of help on projects you lead, and, for leads, join applications and booking requests. The number on the bell counts these.', 'Activity: the last week’s news for you: proposals you voted on that were approved, answers to your offers of help, meeting notes from your circles, and events you’re going to in the next 2 days. Each item opens its page.'],
+  },
+  {
+    version: 'v4.116.0',
+    date: '2026-11-22',
+    title: 'Photos first in Amenities & tools',
+    items: ['Cards with a real photo come first. A card whose picture is a drawing standing in for a photo, or that has no picture, goes to the end. Uploading a photo moves it back up.'],
+  },
+  {
     version: 'v4.115.0',
     date: '2026-11-22',
     title: 'Lines you can see again',

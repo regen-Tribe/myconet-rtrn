@@ -32,8 +32,8 @@ export default async function JoinPage() {
   const communityValues = (valuesData ?? []) as { id: string; title: string; description: string; sort_order: number }[]
 
   const buddiesQuery = user
-    ? supabase.from('user_profiles').select('id, first_name, headline, city').neq('id', user.id).limit(3)
-    : supabase.from('user_profiles').select('id, first_name, headline').limit(3)
+    ? supabase.from('user_profiles').select('id, first_name, headline, city').eq('approved', true).neq('id', user.id).limit(3)
+    : supabase.from('user_profiles').select('id, first_name, headline').eq('approved', true).limit(3)
   const { data: buddiesData } = await buddiesQuery
   const buddyProfiles = (buddiesData ?? []) as any
 

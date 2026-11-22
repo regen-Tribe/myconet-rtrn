@@ -5,6 +5,67 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.119.0 — 2026-11-22 — "Part of" offers only the task's own circle or subcircle
+
+Oscar: "tasks with subtasks should usually belong to a circle and sometimes to a sub circle. the drop down options under
+part of should only display options that are in the same circle or sub circle as are selected". Everywhere a task's
+parent is picked, the same rule (`lib/task-edit.ts` `partOfChoices`) applies: To decide and a meeting's action items
+(`TaskQuickEdit`), the Tasks list, and the task card.
+- **With a subcircle:** only that subcircle's open tasks.
+- **With a circle:** only that circle's.
+- **With neither:** every open task, and picking one sets the circle.
+
+The task's current parent always stays listed. Choosing a parent in a subcircle brings the subcircle too, and choosing
+another subcircle takes the task out of a parent that isn't that subcircle's. `loadTaskOptions` now reads projects'
+`team_id`. No migration.
+
+## v4.118.0 — 2026-11-22 — Approve people before they show in Members
+
+Sonia, after placeholder profiles were added on Protopia for guests with a stay: "leave them in calendar and the
+bookings - we should approve them before they show up on members though".
+- `user_profiles.approved` (boolean, default true; migration `20261223000000_profiles_awaiting_approval.sql`). False
+  means an admin added the profile and it is waiting. Nothing changes for a community that never sets it.
+- Left out while waiting: Members (list, newest, count), Discover, Matches, top-bar search, the people on Home, the
+  dashboard and the landing page, and the "buddies" on Join. Each of those queries adds `.eq('approved', true)`.
+- Unchanged: bookings and the bookings calendar, pickers (task assignee, circle members), and the profile page at
+  its own address. It is a listing switch, not a security boundary: the row stays readable.
+- Admin › Permissions: a "Waiting for approval" chip when anyone is waiting, "Not in Members yet" on the card, and
+  an Approve button (saved straight away). Only admins: `guard_profile_privileges` refuses the change from anyone
+  else, and visitors get read access to this one column so the public pages can filter on it.
+- There is no screen yet to set someone back to waiting or to add a waiting profile; that is done in the database.
+- **Apply the migration before deploying**: the lists filter on the new column.
+- Not checked: the guard change on a local database (the repo has no boundary harness yet), and the screens signed in.
+
+## v4.117.0 — 2026-11-22 — The bell opens
+
+Sonia: "i cannot click the notifications center". The bell in the top bar was a picture with a red dot that was always
+on; the redesign prototype's bell card (`design/redesign-prototype/app.js`, `bell()`) never reached the app.
+- The bell opens a card (`core/components/shell/BellPanel.tsx`, items from `core/lib/bell.ts`) with two sections:
+  - **Needs you** (the number on the bell): open proposals you haven't voted on, your tasks late or due within 3 days,
+    pending offers of help on projects you lead or started, join applications (leads) and booking requests (admins).
+  - **Activity** (last 7 days): proposals you voted on that were approved, your offers accepted or declined, meeting
+    notes from your circles (the newest two, then "N more"), and events you're going to in the next 2 days.
+- Nothing is stored for the bell: every item is read from the pages' own tables with the viewer's session (RLS).
+  Approval isn't stored either, so its time is the proposal's latest vote.
+- Governance's approval rule moved to `core/lib/proposal-checks.ts`, used by the Governance page and the bell.
+- `/governance?p=<id>` opens one proposal (the bell's vote links).
+- On phones the card spans the screen under the top bar.
+
+Second brain: no knowledge changes; it reads what the pages already hold. No migration.
+
+## v4.116.0 — 2026-11-22 — Photos first in Amenities & tools
+
+Sonia: "move the ones with generated images to the bottom". A community can fill a card with an illustration until
+someone takes a real photo; those cards opened the page because the list was by name.
+- New `photo_drawn` on `booking_items` and `places` (`supabase/migrations/20261222000000_photo_drawn.sql`): the cover
+  is a drawing, not a photo. A community sets it in its own migration.
+- Amenities & tools shows cards with a real photo first (things to book, then places from the Map), then the ones
+  with a drawing or no picture. An item that shows its place's picture follows that place's mark.
+- Uploading a photo in the item form clears the mark.
+- Read on its own, so a database without the column still loads (nothing sorts last).
+
+Second brain: no knowledge changes; it is an order on one screen. Migration: yes, additive.
+
 ## v4.115.0 — 2026-11-22 — Lines you can see again (v4)
 
 Oscar: "there are no lines in between content, just white". Since v4.82.0's calmer page (Sonia), the page is nearly

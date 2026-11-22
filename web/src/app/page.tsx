@@ -32,7 +32,7 @@ export default async function LandingPage() {
     .limit(10)
 
   const [members, projects, deliverables, proposals, previews] = await Promise.all([
-    supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
     supabase.from('projects').select('id', { count: 'exact', head: true }).in('status', [...ACTIVE_PROJECT_STATUSES]),
     supabase.from('deliverables').select('id', { count: 'exact', head: true }),
     supabase.from('proposals').select('id', { count: 'exact', head: true }).eq('status', 'open'),

@@ -29,10 +29,11 @@ export default async function DashboardPage() {
 
   const publicFetches = await Promise.all([
     supabase.from('blueprints').select('answers, flags, updated_at').eq('is_community', true).maybeSingle(),
-    supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
     supabase.from('projects').select('id', { count: 'exact', head: true }).in('status', [...ACTIVE_PROJECT_STATUSES]),
     supabase.from('user_profiles')
       .select('id, first_name, last_name, username, avatar_url, created_at')
+      .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(3),
     supabase.from('projects')
@@ -60,7 +61,7 @@ export default async function DashboardPage() {
       .select('id, title:request_text, created_at, user_profiles(first_name, last_name, username)')
       .order('created_at', { ascending: false })
       .limit(4),
-    supabase.from('user_profiles').select('id', { count: 'exact', head: true })
+    supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true)
       .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
     supabase.from('projects').select('id', { count: 'exact', head: true })
       .in('status', [...ACTIVE_PROJECT_STATUSES]).eq('open_for_collaborators', true),

@@ -31,9 +31,10 @@ export default async function HomePage(props: { searchParams?: Promise<{ tour?: 
     previews,
   ] = await Promise.all([
     supabase.from('blueprints').select('answers, updated_at').eq('is_community', true).maybeSingle(),
-    supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
     supabase.from('user_profiles')
       .select(profileColumns(!!user, 'id, first_name, last_name, username, headline, city, country, avatar_url, user_types'))
+      .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(4),
     supabase.from('community_values').select('id, title, description, sort_order').order('sort_order'),

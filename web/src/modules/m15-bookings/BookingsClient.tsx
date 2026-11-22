@@ -143,6 +143,8 @@ export default function BookingsClient({
     }
     const { data, error } = await supabase.from('booking_items').update({ photo_url: url }).eq('id', item.id).select('id')
     if (error || !data?.length) return new Error('The photo didn’t save.')
+    // An uploaded photo is no longer a stand-in drawing (v4.116.0); older databases have no such column, so no error check
+    await supabase.from('booking_items').update({ photo_drawn: false }).eq('id', item.id)
     if (old) await supabase.storage.from('branding').remove([old])
     return url
   }
@@ -157,7 +159,7 @@ export default function BookingsClient({
       if (photo) {
         const res = await saveItemPhoto(saved, photo)
         if (res instanceof Error) return res.message
-        saved = { ...saved, photo_url: res }
+        saved = { ...saved, photo_url: res, photo_drawn: false }
       }
       setItems(list => list.map(i => (i.id === saved.id ? saved : i)))
       setForm(null)
@@ -175,7 +177,7 @@ export default function BookingsClient({
     if (photo && photo !== 'remove') {
       const res = await saveItemPhoto(saved, photo)
       if (res instanceof Error) setToast(res.message)
-      else saved = { ...saved, photo_url: res }
+      else saved = { ...saved, photo_url: res, photo_drawn: false }
     }
     if (!CATEGORIES.includes(saved.category)) {
       // Added from the other page's category — send them where it lives

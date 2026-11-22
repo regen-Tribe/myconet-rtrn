@@ -25,6 +25,8 @@ export interface BookingItem {
   photo_url?: string | null
   /** More photos after the cover (v4.109.0) */
   photos?: string[]
+  /** The cover is a drawing standing in for a photo (v4.116.0): the card sorts last */
+  photo_drawn?: boolean
   /** The place on the Map this item sits in (v4.74.0): its photo and slug, for the card and a link to /map */
   place?: { slug: string; name: string; photo_url: string | null; photos?: string[] } | null
 }
@@ -51,4 +53,5 @@ export interface AroundPlace {
   kind: string
   description: string | null
   photo_url: string | null
+  photo_drawn?: boolean
 }
