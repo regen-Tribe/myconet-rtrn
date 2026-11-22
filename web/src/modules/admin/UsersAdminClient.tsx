@@ -14,6 +14,8 @@ export interface AdminUserRow {
   last_name: string | null
   role: string | null
   lead_circles: string[] | null
+  /** false = added by an admin and waiting: not in Members yet */
+  approved?: boolean | null
   created_at: string
 }
 
@@ -120,6 +122,16 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0, circ
     }
   }
 
+  // Approve someone an admin added: from then on they show in Members. Saved straight away.
+  async function approveUser(id: string) {
+    setSavingId(id)
+    setErrorId(null)
+    const { error } = await supabase.from('user_profiles').update({ approved: true }).eq('id', id)
+    setSavingId(null)
+    if (error) setErrorId({ id, msg: error.message })
+    else updateLocal(id, { approved: true })
+  }
+
   function toggleCircle(id: string, pillar: CircleSlug) {
     const u = users.find(x => x.id === id)
     if (!u) return
@@ -132,7 +144,7 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0, circ
 
   // The v4 look (Admin › Permissions): same data and saves, the shared building blocks
   if (DESIGN === 'v4') {
-    return <PermissionsV4 {...{ users, filtered, filter, setFilter, readOnly, openQuestions, circles, circleUnits, memberOf, toggleMember, toggleCircle, updateLocal, saveUser, savingId, savedId, errorId }} />
+    return <PermissionsV4 {...{ users, filtered, filter, setFilter, readOnly, openQuestions, circles, circleUnits, memberOf, toggleMember, toggleCircle, updateLocal, saveUser, approveUser, savingId, savedId, errorId }} />
   }
 
   return (
@@ -290,17 +302,18 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0, circ
 
 /* ─── Admin › Permissions in the v4 look ─────────────────────────── */
 
-function PermissionsV4({ users, filtered, filter, setFilter, readOnly, openQuestions, circles, circleUnits, memberOf, toggleMember, toggleCircle, updateLocal, saveUser, savingId, savedId, errorId }: {
+function PermissionsV4({ users, filtered, filter, setFilter, readOnly, openQuestions, circles, circleUnits, memberOf, toggleMember, toggleCircle, updateLocal, saveUser, approveUser, savingId, savedId, errorId }: {
   users: AdminUserRow[]; filtered: AdminUserRow[]; filter: string; setFilter: (v: string) => void; readOnly: boolean; openQuestions: number
   circles: ReturnType<typeof useCircles>; circleUnits: { id: string; circle: string }[]; memberOf: Record<string, string[]>
   toggleMember: (id: string, c: CircleSlug) => void; toggleCircle: (id: string, c: CircleSlug) => void
-  updateLocal: (id: string, patch: Partial<AdminUserRow>) => void; saveUser: (id: string) => void
+  updateLocal: (id: string, patch: Partial<AdminUserRow>) => void; saveUser: (id: string) => void; approveUser: (id: string) => void
   savingId: string | null; savedId: string | null; errorId: { id: string; msg: string } | null
 }) {
   const [roleFilter, setRoleFilter] = useState<string | null>(null)
   const [explain, setExplain] = useState(false)
   const count = (r: string) => users.filter(u => (u.role ?? 'explorer') === r).length
-  const shown = filtered.filter(u => !roleFilter || (u.role ?? 'explorer') === roleFilter)
+  const waiting = users.filter(u => u.approved === false).length
+  const shown = filtered.filter(u => roleFilter === 'waiting' ? u.approved === false : !roleFilter || (u.role ?? 'explorer') === roleFilter)
 
   return (
     <div className="v4-page">
@@ -319,6 +332,7 @@ function PermissionsV4({ users, filtered, filter, setFilter, readOnly, openQuest
           {ROLES.filter(r => count(r.value) > 0).map(r => (
             <Chip key={r.value} on={roleFilter === r.value} onClick={() => setRoleFilter(r.value)} count={count(r.value)}>{r.label}</Chip>
           ))}
+          {waiting > 0 && <Chip on={roleFilter === 'waiting'} onClick={() => setRoleFilter('waiting')} count={waiting}>Waiting for approval</Chip>}
         </ChipRow>
         <label className="v4-search">
           <Icon name="search" size={16} />
@@ -362,6 +376,12 @@ function PermissionsV4({ users, filtered, filter, setFilter, readOnly, openQuest
                   </>
                 )}
               </div>
+              {u.approved === false && (
+                <div className="v4-person__line">
+                  <small>Not in Members yet</small>
+                  {!readOnly && <Button size="sm" variant="secondary" onClick={() => approveUser(u.id)} disabled={savingId === u.id}>Approve</Button>}
+                </div>
+              )}
               {role === 'circle_lead' && (
                 <div className="v4-person__line">
                   <small>Leads</small>

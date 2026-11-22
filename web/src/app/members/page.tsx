@@ -12,14 +12,16 @@ export default async function NetworkDashboard() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const [memberCountRes, recentRes, recentJoinsRes, recentOffersRes, recentSeeksRes] = await Promise.all([
-    supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
     supabase.from('user_profiles')
       // Visitors get the public columns; the hidden ones (location, user types) are just missing
       .select(profileColumns(!!user, 'id, username, first_name, last_name, avatar_url, user_types, city, country') as 'id, username, first_name, last_name, avatar_url, user_types, city, country')
+      .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(8),
     supabase.from('user_profiles')
       .select('id, first_name, last_name, username, created_at')
+      .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(6),
     supabase.from('user_offers')
@@ -52,6 +54,7 @@ export default async function NetworkDashboard() {
       supabase.from('user_profiles').select('first_name, last_name, city, country, headline').eq('id', user.id).maybeSingle(),
       supabase.from('user_profiles')
         .select('id, username, first_name, last_name, avatar_url, city, country, user_types')
+        .eq('approved', true)
         .neq('id', user.id),
       supabase.from('user_bio').select('*'),
       supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),

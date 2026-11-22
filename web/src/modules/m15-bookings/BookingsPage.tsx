@@ -59,6 +59,13 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
   ])
   const more = new Map(((morePhotosRes.error ? [] : morePhotosRes.data) ?? []).map(p => [p.id as string, (p.photos as string[] | null) ?? []]))
   const placeMore = new Map(((placePhotosRes.error ? [] : placePhotosRes.data) ?? []).map(p => [p.slug as string, (p.photos as string[] | null) ?? []]))
+  // Covers that are a drawing, not a photo (v4.116.0), also read on their own: those cards sort last
+  const [drawnRes, placeDrawnRes] = await Promise.all([
+    supabase.from('booking_items').select('id').eq('photo_drawn', true),
+    supabase.from('places').select('slug').eq('photo_drawn', true),
+  ])
+  const drawn = new Set(((drawnRes.error ? [] : drawnRes.data) ?? []).map(p => p.id as string))
+  const placeDrawn = new Set(((placeDrawnRes.error ? [] : placeDrawnRes.data) ?? []).map(p => p.slug as string))
   const pins = new Map(((pinsRes.error ? [] : pinsRes.data) ?? []).map(p => [p.id as string, p as { map_x: number; map_y: number }]))
   const siteMapUrl = mapRes.error ? null : ((mapRes.data as { site_map_url: string | null } | null)?.site_map_url ?? null)
   // Each item belongs to the place its pin sits in (the Map page, v4.70.0): the card shows that place's photo
@@ -76,7 +83,11 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
   const items = (itemsRes.data ?? []).map(toItem).map(i => {
     const map_x = pins.get(i.id)?.map_x ?? null
     const map_y = pins.get(i.id)?.map_y ?? null
-    return { ...i, map_x, map_y, photo_url: photos.get(i.id) ?? null, photos: more.get(i.id) ?? [], place: placeAt(map_x, map_y) }
+    const place = placeAt(map_x, map_y)
+    const own = photos.get(i.id) ?? null
+    // The card shows the item's own picture, else its place's: the drawing mark follows the one shown
+    const photo_drawn = own ? drawn.has(i.id) : !!place && placeDrawn.has(place.slug)
+    return { ...i, map_x, map_y, photo_url: own, photos: more.get(i.id) ?? [], photo_drawn, place }
   })
   // Places from the Map with no bookable thing of their own (v4.113.0): shown under Spaces, so the page lists
   // everything shared, not only what you book. One source: the `places` table, never a copy in booking_items.
@@ -89,7 +100,7 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
     .filter(p => p.photo_url)
     .filter(p => !activeNames.has((p.name as string).toLowerCase()))
     .filter(p => !items.some(i => i.is_active && i.place?.slug === p.slug))
-    .map(p => ({ slug: p.slug as string, name: p.name as string, kind: p.kind as string, description: (p.description as string | null) ?? null, photo_url: (p.photo_url as string | null) ?? null }))
+    .map(p => ({ slug: p.slug as string, name: p.name as string, kind: p.kind as string, description: (p.description as string | null) ?? null, photo_url: (p.photo_url as string | null) ?? null, photo_drawn: placeDrawn.has(p.slug as string) }))
   const inScope = (id: string | undefined) => items.some(i => i.id === id && SCOPE_META[scope].categories.includes(i.category))
 
   return (

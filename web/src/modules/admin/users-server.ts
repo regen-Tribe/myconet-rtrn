@@ -5,7 +5,7 @@ import type { AdminUserRow } from './UsersAdminClient'
 export async function loadUsersAdmin(supabase: SupabaseClient) {
   const { data: users } = await supabase
     .from('user_profiles')
-    .select('id, username, first_name, last_name, role, lead_circles, created_at')
+    .select('id, username, first_name, last_name, role, lead_circles, approved, created_at')
     .order('created_at', { ascending: false })
 
   // Questions the assistant couldn't answer, for the badge on the Questions tab

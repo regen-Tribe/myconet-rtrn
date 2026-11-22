@@ -5,7 +5,7 @@ import { useCircles } from '@/core/components/CirclesProvider'
 import { createClient } from '@/core/lib/supabase/client'
 import { PRIORITIES } from './Priority'
 import type { TaskPerson, TaskProjectOption, TaskTeamOption } from './TaskModal'
-import { EDITABLE_SELECT, placeChange, type EditableTask, type TaskChange } from './lib/task-edit'
+import { EDITABLE_SELECT, partOfChoices, placeChange, type EditableTask, type TaskChange } from './lib/task-edit'
 
 const STATUSES: { value: string; label: string }[] = [
   { value: 'backlog', label: 'To do' }, { value: 'in_progress', label: 'In progress' },
@@ -112,7 +112,7 @@ export function TaskQuickEdit({ task, people, projectOptions, teams, onSaved, as
   const place = (f: 'circle' | 'team_id' | 'project_id', v: string) => change(placeChange(t, f, v, projectOptions, teams))
 
   const circleTeams = teams.filter(x => x.circle === t.circle)
-  const options = projectOptions.filter(p => !t.circle || !p.circle || p.circle === t.circle || p.id === t.project_id)
+  const options = partOfChoices(t, projectOptions)
   const person = t.assignee_id ?? (t.assignee_name ? NAME_TAG : '')
 
   return (

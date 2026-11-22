@@ -72,8 +72,8 @@ export default async function HomeV4() {
     supabase.from('proposals').select('id, title, closes_at', { count: 'exact' }).eq('status', 'open')
       .order('closes_at', { ascending: true }).limit(2),
     // The live numbers on the tiles; each one RLS lets the viewer see (a zero just isn't shown)
-    supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('user_profiles').select('id, first_name, avatar_url').not('avatar_url', 'is', null).limit(7),
+    supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
+    supabase.from('user_profiles').select('id, first_name, avatar_url').eq('approved', true).not('avatar_url', 'is', null).limit(7),
     supabase.from('org_units').select('id', { count: 'exact', head: true }).eq('kind', 'circle'),
     supabase.from('events').select('id', { count: 'exact', head: true }).gte('starts_at', now).lte('starts_at', inMonth),
     supabase.from('projects').select('id, title', { count: 'exact' }).in('status', [...ACTIVE_PROJECT_STATUSES])

@@ -69,7 +69,7 @@ export default function TopBarSearch() {
       // Commas and brackets would break the filter syntax, so search on the plain words
       const like = `%${term.replace(/[%_,()]/g, ' ').trim()}%`
       const [members, projects, proposals, events] = await Promise.all([
-        supabase.from('user_profiles').select('username, first_name, headline').or(`username.ilike.${like},first_name.ilike.${like},headline.ilike.${like}`).limit(5),
+        supabase.from('user_profiles').select('username, first_name, headline').eq('approved', true).or(`username.ilike.${like},first_name.ilike.${like},headline.ilike.${like}`).limit(5),
         supabase.from('projects').select('id, title, status').ilike('title', like).limit(5),
         supabase.from('proposals').select('id, title, status').ilike('title', like).limit(4),
         supabase.from('events').select('id, title, starts_at').ilike('title', like).order('starts_at', { ascending: false }).limit(4),

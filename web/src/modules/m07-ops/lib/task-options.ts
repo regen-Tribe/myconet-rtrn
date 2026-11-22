@@ -9,7 +9,7 @@ import type { TaskPerson, TaskProjectOption, TaskTeamOption } from '../TaskModal
 export async function loadTaskOptions(supabase: SupabaseClient): Promise<{ people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[] }> {
   const [u, p, t] = await Promise.all([
     supabase.from('user_profiles').select('id, first_name, last_name, username').order('first_name'),
-    supabase.from('projects').select('id, title, circle').in('status', ['pending', 'backlog', 'in_progress', 'review']).order('title'),
+    supabase.from('projects').select('id, title, circle, team_id').in('status', ['pending', 'backlog', 'in_progress', 'review']).order('title'),
     supabase.from('org_units').select('id, name, circle').eq('kind', 'team').order('sort_order'),
   ])
   return {

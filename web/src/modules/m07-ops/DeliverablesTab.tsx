@@ -12,7 +12,7 @@ import type { Deliverable, ProjectSummary } from './types'
 import { NameTag } from './NameTag'
 import { PriorityBadge } from './Priority'
 import { taskHref, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
-import { placeChange } from './lib/task-edit'
+import { partOfChoices, placeChange } from './lib/task-edit'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
   backlog:     { label: 'To do',       color: 'var(--ink-4)', bg: 'var(--bg-3)' },
@@ -131,7 +131,7 @@ export function DeliverablesTab({ deliverables: all, projects, draftsOnly = fals
             const edit = !!canDecide?.(d)
             const circleName = (c: string | null | undefined) => (c && circles.has(c) ? `${circles.meta(c).emoji} ${circles.meta(c).label}` : 'No circle')
             const circleTeams = teams.filter(t => t.circle === d.circle)
-            const options = projectOptions.filter(p => !d.circle || !p.circle || p.circle === d.circle || p.id === d.project_id)
+            const options = partOfChoices(d, projectOptions)
             const mono: React.CSSProperties = { ...tdStyle, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }
             return (
               <tr key={d.id} style={{ opacity: busy === d.id ? 0.6 : 1 }}>

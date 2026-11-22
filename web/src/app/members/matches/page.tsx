@@ -59,6 +59,7 @@ export default async function MatchesPage() {
     supabase
       .from('user_profiles')
       .select('id, username, first_name, last_name, city, country, avatar_url, user_types')
+      .eq('approved', true)
       .neq('id', user.id),
     supabase.from('user_bio').select('*'),
     supabase.from('user_profiles').select('city, country').eq('id', user.id).maybeSingle(),

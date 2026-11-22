@@ -9,6 +9,7 @@ core/
 ├── components/
 │   ├── shell/          App layout: top bar, side nav, shell wrapper
 │   │   ├── AppTopBar.tsx      Top navigation bar with version badge and search
+│   │   ├── BellPanel.tsx      The bell: Needs you (the number) and Activity (last 7 days)
 │   │   ├── AppSideNav.tsx     Left sidebar — module links gated by role
 │   │   └── AppShell.tsx       Root layout wrapper that receives role from server
 │   ├── ui/             shadcn/ui primitives (Button, Card, Dialog, etc.)
@@ -25,6 +26,8 @@ core/
 │   ├── format.ts         Shared display helpers — fmtDate, formatDeadline, colorForId, initialForName
 │   ├── circles.ts        The community's circles (from the `circles` table): CircleSet helpers
 │   ├── circles-server.ts loadCircles(supabase), cached per request
+│   ├── bell.ts           loadBell(): the bell's items, read from the pages' own tables (nothing stored)
+│   ├── proposal-checks.ts Governance's four checks: evalLayers() decides when a proposal is approved
 │   ├── project-status.ts M07 Kanban model — PROJECT_KANBAN_COLUMNS, PROJECT_STATUS_META, isActiveProject, isOpenForProposals
 │   └── utils.ts          Tailwind class merge helper (cn)
 └── types/

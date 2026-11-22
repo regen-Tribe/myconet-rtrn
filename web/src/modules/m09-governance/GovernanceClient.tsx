@@ -4,8 +4,7 @@ import { ModalShell } from '@/core/components/ModalShell'
 import { DESIGN } from '@/core/lib/instance'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
-
-type Vote = { vote: string; user_id: string; layer: string; voter?: { role: string } | null }
+import { layerVotes, evalLayers, RULE, PEOPLE_CHECKS, APPROVE_AT, type Vote } from '@/core/lib/proposal-checks'
 
 type Proposal = {
   id: string
@@ -39,6 +38,8 @@ interface Props {
   role?: string
   isCircleLead?: boolean
   isAdvisorOrAdmin?: boolean
+  /** ?p=<id>: open this proposal (links from the bell) */
+  openId?: string | null
 }
 
 function timeLeft(closes_at: string | null): string {
@@ -63,51 +64,6 @@ function ago(ts: string): string {
 function displayName(u: { first_name: string | null; last_name: string | null; username: string } | null): string {
   if (!u) return 'Unknown'
   return [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
-}
-
-function layerVotes(votes: Vote[], layer: string) {
-  const lv = votes.filter(v => v.layer === layer)
-  const clVotes = lv.filter(v => v.voter?.role === 'circle_lead')
-  const expertVotes = lv.filter(v => ['admin', 'advisor'].includes(v.voter?.role ?? ''))
-  return {
-    consent: lv.filter(v => v.vote === 'consent').length,
-    concern: lv.filter(v => v.vote === 'concern').length,
-    object:  lv.filter(v => v.vote === 'object').length,
-    yes:     lv.filter(v => v.vote === 'yes').length,
-    no:      lv.filter(v => v.vote === 'no').length,
-    approve: lv.filter(v => v.vote === 'approve').length,
-    reject:  lv.filter(v => v.vote === 'reject').length,
-    total:   lv.length,
-    clConsent: clVotes.filter(v => v.vote === 'consent').length,
-    clConcern: clVotes.filter(v => v.vote === 'concern').length,
-    clObject:  clVotes.filter(v => v.vote === 'object').length,
-    clTotal:   clVotes.length,
-    expertApprove: expertVotes.filter(v => v.vote === 'approve').length,
-    expertReject:  expertVotes.filter(v => v.vote === 'reject').length,
-    expertTotal:   expertVotes.length,
-  }
-}
-
-// Approved when APPROVE_AT of the PEOPLE_CHECKS people checks pass (circle leads, all members,
-// admins & advisors). The screen text below states the same rule: change both together.
-const PEOPLE_CHECKS = 3
-const APPROVE_AT = 2
-const RULE = 'Approved when 2 of the 3 people checks pass. The AI check is advice.'
-
-function evalLayers(p: Proposal) {
-  const s = layerVotes(p.votes, 'sociocracy')
-  const d = layerVotes(p.votes, 'democracy')
-  const m = layerVotes(p.votes, 'merit')
-
-  // L1 Sociocracy: circle_leads must have voted, none have objected
-  const sociocracyPassed = s.clTotal > 0 && s.clObject === 0
-  // L2 Democracy: majority of yes over no
-  const democPassed = d.total > 0 && d.yes > d.no
-  // L3 Meritocracy: at least one expert approved, none rejected
-  const meritPassed = m.expertTotal > 0 && m.expertApprove > 0 && m.expertReject === 0
-  // The AI · Blueprint check is advice only: it isn't saved and doesn't count.
-  const passed = [sociocracyPassed, democPassed, meritPassed].filter(Boolean).length
-  return { sociocracyPassed, democPassed, meritPassed, passed, isLive: passed >= APPROVE_AT }
 }
 
 function StatusPill({ isLive }: { isLive: boolean }) {
@@ -141,13 +97,13 @@ function VoteButton({ label, active, color, bg, onClick, disabled }: {
 
 export default function GovernanceClient({
   proposals: initial, memberCount, currentUserId, myVotes: init, isFullMember, isLoggedIn,
-  role = 'explorer', isCircleLead = false, isAdvisorOrAdmin = false,
+  role = 'explorer', isCircleLead = false, isAdvisorOrAdmin = false, openId = null,
 }: Props) {
   const supabase = createClient()
 
   const [proposals, setProposals] = useState<Proposal[]>(initial)
   // The v4 look starts on the proposal cards; the classic look opens the first proposal
-  const [selectedId, setSelectedId] = useState<string | null>((DESIGN as string) === 'v4' ? null : initial[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(openId ?? ((DESIGN as string) === 'v4' ? null : initial[0]?.id ?? null))
   const [myVotes, setMyVotes] = useState<MyVotes>(init)
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
   const [loadingComments, setLoadingComments] = useState(false)

@@ -212,6 +212,48 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
   const around = (vm.category === null || vm.category === 'spaces') && !vm.tag
     ? vm.around.filter(p => !q || p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q))
     : []
+  // Cards with a real photo first; a drawing standing in for one, or no picture at all, goes last (v4.116.0)
+  const entries = groupItems(vm.shown)
+  const real = (e: BrowseEntry) => e.kind === 'group'
+    ? e.items.some(i => shownPhoto(i) && !i.photo_drawn)
+    : !!shownPhoto(e.item) && !e.item.photo_drawn
+  const itemCard = (entry: BrowseEntry) => {
+    if (entry.kind === 'group') return <GroupCard key={entry.key} vm={vm} group={entry} />
+    const item = entry.item
+    const avail = vm.availability(item)
+    return (
+      <button key={item.id} type="button" className="v4-card v4-card--link v4-item" onClick={() => vm.open(item.id)}>
+        <ItemMedia photo={shownPhoto(item)} category={item.category} badge={avail?.text} busy={avail?.text.startsWith('In use')} />
+        <span className="v4-item__body">
+          <b>{item.name}</b>
+          <small>{[CATEGORY_META[item.category].label, item.location ?? (item.place?.name !== item.name ? item.place?.name : null), item.capacity ? `${item.capacity} ${item.capacity === 1 ? 'person' : 'people'}` : null].filter(Boolean).join(' · ')}</small>
+          {(item.tags.length > 0 || item.requires_approval) && (
+            <span className="v4-tags">
+              {item.requires_approval && <Tag icon="hand">Needs approval</Tag>}
+              {item.tags.slice(0, 3).map(t => <Tag key={t}>{t}</Tag>)}
+            </span>
+          )}
+        </span>
+      </button>
+    )
+  }
+  const placeCard = (p: AroundPlace) => {
+    const meta = KIND_META[isKind(p.kind) ? p.kind : 'other']
+    return (
+      <Link key={p.slug} href={`/map?place=${encodeURIComponent(p.slug)}`} className="v4-card v4-card--link v4-item">
+        <span className="v4-item__media">
+          {p.photo_url
+            ? <img src={p.photo_url} alt="" loading="lazy" />
+            : <span className={`v4-item__ph v4-tile--${meta.tone}`}><Icon name={meta.icon} size={34} /></span>}
+        </span>
+        <span className="v4-item__body">
+          <b>{p.name}</b>
+          <small>{meta.label} · on the map</small>
+          {p.description && <span className="v4-item__text">{p.description}</span>}
+        </span>
+      </Link>
+    )
+  }
   return (
     <>
       <div className="v4-toolbar">
@@ -249,43 +291,10 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
         />
       ) : (
         <div className="v4-grid v4-grid--gallery">
-          {groupItems(vm.shown).map(entry => {
-            if (entry.kind === 'group') return <GroupCard key={entry.key} vm={vm} group={entry} />
-            const item = entry.item
-            const avail = vm.availability(item)
-            return (
-              <button key={item.id} type="button" className="v4-card v4-card--link v4-item" onClick={() => vm.open(item.id)}>
-                <ItemMedia photo={shownPhoto(item)} category={item.category} badge={avail?.text} busy={avail?.text.startsWith('In use')} />
-                <span className="v4-item__body">
-                  <b>{item.name}</b>
-                  <small>{[CATEGORY_META[item.category].label, item.location ?? (item.place?.name !== item.name ? item.place?.name : null), item.capacity ? `${item.capacity} ${item.capacity === 1 ? 'person' : 'people'}` : null].filter(Boolean).join(' · ')}</small>
-                  {(item.tags.length > 0 || item.requires_approval) && (
-                    <span className="v4-tags">
-                      {item.requires_approval && <Tag icon="hand">Needs approval</Tag>}
-                      {item.tags.slice(0, 3).map(t => <Tag key={t}>{t}</Tag>)}
-                    </span>
-                  )}
-                </span>
-              </button>
-            )
-          })}
-          {around.map(p => {
-            const meta = KIND_META[isKind(p.kind) ? p.kind : 'other']
-            return (
-              <Link key={p.slug} href={`/map?place=${encodeURIComponent(p.slug)}`} className="v4-card v4-card--link v4-item">
-                <span className="v4-item__media">
-                  {p.photo_url
-                    ? <img src={p.photo_url} alt="" loading="lazy" />
-                    : <span className={`v4-item__ph v4-tile--${meta.tone}`}><Icon name={meta.icon} size={34} /></span>}
-                </span>
-                <span className="v4-item__body">
-                  <b>{p.name}</b>
-                  <small>{meta.label} · on the map</small>
-                  {p.description && <span className="v4-item__text">{p.description}</span>}
-                </span>
-              </Link>
-            )
-          })}
+          {entries.filter(real).map(itemCard)}
+          {around.filter(p => !p.photo_drawn).map(placeCard)}
+          {entries.filter(e => !real(e)).map(itemCard)}
+          {around.filter(p => p.photo_drawn).map(placeCard)}
         </div>
       )}
     </>

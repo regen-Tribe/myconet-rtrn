@@ -1,6 +1,7 @@
 'use client'
 
 import { InlineIcon } from '@/core/components/v4'
+import { partOfChoices } from './lib/task-edit'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
@@ -14,7 +15,7 @@ import type { Deliverable, SubscriberProfile } from './types'
 
 export interface TaskPerson { id: string; name: string; username: string | null }
 /** A project a task can be filed into (open ones, plus the task's own) */
-export interface TaskProjectOption { id: string; title: string; circle: string | null }
+export interface TaskProjectOption { id: string; title: string; circle: string | null; team_id?: string | null }
 /** A team within a circle (org_units, kind 'team') */
 export interface TaskTeamOption { id: string; name: string; circle: string }
 
@@ -152,6 +153,8 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
     setProjectId(id)
     const p = projects.find(x => x.id === id)
     if (p?.circle && !circle) setCircle(p.circle)
+    // A task in a subcircle brings its subcircle (v4.119.0)
+    if (p?.team_id) { setTeamId(p.team_id); if (p.circle) setCircle(p.circle) }
   }
 
   async function saveMine() {
@@ -317,7 +320,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             {canManage ? (
               <select id="task-project" value={projectId} onChange={e => pickProject(e.target.value)} style={small}>
                 <option value="">None · a task of its own</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                {partOfChoices({ circle: circle || null, team_id: teamId || null, project_id: projectId || null }, projects).map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             ) : task.project_id ? (
               <Link href={`/operations/${task.project_id}`} style={{ fontSize: 13, color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>{projectTitle ?? 'Its task'} →</Link>
