@@ -52,7 +52,7 @@ project and Cloudflare account; nothing is shared with other communities.
   releases, and `core-drift.yml` checks that only `instance/` differs from core.
 - While the core repo is private, add a `CORE_REPO_TOKEN` Actions secret: a fine-grained token with
   read access to `regen-Tribe/myconet`. Not needed once core is public.
-- After merging a core update: `supabase db push` if it has migrations, then deploy.
+- After merging a core update: `cd web && npm run migrations:check`, then `supabase db push` if it lists migrations to apply, then deploy. This community's own migrations go in `instance/migrations/` numbered with the hour 90–99 (`instance/migrations/README.md`).
 
 **7. Setup in the portal** (`INSTANCES.md` §6), as that admin
 - Blueprint: upload the community's documents (✨ Import from document), review the answers.

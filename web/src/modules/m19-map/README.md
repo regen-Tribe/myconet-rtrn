@@ -25,3 +25,5 @@ The map itself (zoom, drag, pinch, the card, the list beside it) is the shared
 
 **Second brain:** places aren't written to the second brain yet. Follow-up: a `places/` note per place
 (front matter: kind, circle, visibility `members`, a link to `/map?place=<slug>`), updated in place.
+
+Since v4.110.0 there can be more photos after the cover (`photos`, text[]): shown as a swipe strip (`core/components/PhotoStrip.tsx`). Editing them in the forms is still to do.

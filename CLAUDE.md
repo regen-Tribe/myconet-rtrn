@@ -106,6 +106,12 @@ that no log mentions looks like it never happened: the log is the handoff to who
 - **Database changes go in a migration file** (`supabase/migrations/` for core,
   `instance/migrations/` for one community), committed with the code that needs them. Never create
   tables, buckets or policies by hand in the dashboard: the next person can't see or repeat them.
+- **Migration numbers: core uses the hour 00–89, a community 90–99** (`YYYYMMDDHHMMSS`: core
+  `20261217000100_x.sql`, community `20261217900100_x.sql`). Both share one list in the database, so a
+  community migration with a core number makes `supabase db push` skip core's without a word; that hid three
+  core changes on Protopia (2026-11-21). Before applying migrations to a community, run
+  `cd web && npm run migrations:check`. It lists clashes with the database and what isn't applied yet, and every
+  deploy checks the files and stops on a clash. Details: `supabase/migrations/README.md`.
 - **New secrets** (`npx wrangler secret put …`): say which in the PR and in `instance/log.md`
   (the name only, never the value).
 - **In a community repo, only `instance/` is that community's.** Everything else is MyCoNet core.

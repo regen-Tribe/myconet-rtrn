@@ -24,7 +24,9 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const role = (profileRes.data?.role as string | undefined) ?? 'explorer'
   const leadCircles = (profileRes.data?.lead_circles as string[] | null) ?? []
   // A community that hasn't applied the places migration yet still gets the map of its bookable things
-  const places = ((placesRes.error ? [] : placesRes.data) ?? []).map(p => ({ ...p, kind: isKind(p.kind) ? p.kind : 'other' }) as Place)
+  const morePhotosRes = await supabase.from('places').select('id, photos')
+  const morePhotos = new Map(((morePhotosRes.error ? [] : morePhotosRes.data) ?? []).map(p => [p.id as string, (p.photos as string[] | null) ?? []]))
+  const places = ((placesRes.error ? [] : placesRes.data) ?? []).map(p => ({ ...p, photos: morePhotos.get(p.id as string) ?? [], kind: isKind(p.kind) ? p.kind : 'other' }) as Place)
   const bookables = ((itemsRes.error ? [] : itemsRes.data) ?? []) as MapBookable[]
   const mapUrl = mapRes.error ? null : ((mapRes.data as { site_map_url: string | null } | null)?.site_map_url ?? null)
 

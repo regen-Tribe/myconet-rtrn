@@ -69,7 +69,7 @@ Full list and what happens to each: [`CORE-EXTRACTION.md`](./CORE-EXTRACTION.md)
 ## 3. Databases: separate projects, one schema
 
 - **Each community gets its own Supabase project**, in its own account (Protopia: protopiaRegenHood@gmail.com). Member data never mixes.
-- **The schema lives once**, in core's `supabase/migrations/`. Each community repo's deploy applies them to its own database (`supabase db push`). A community that needs an extra table adds it in `instance/migrations/`, numbered after the core ones.
+- **The schema lives once**, in core's `supabase/migrations/`. Each community repo's deploy applies them to its own database (`supabase db push`). A community that needs an extra table adds it in `instance/migrations/`, numbered with the hour 90–99 (core uses 00–89), so the two never take the same number: see `supabase/migrations/README.md`.
 - **Gap to close first:** the repo only has the five November migrations (M14, M15, M14 tasks, security hardening, M17). The base schema (~25 older tables, RLS, functions, triggers, storage buckets) was created by hand and isn't in the repo. Step 2 below exports it as a baseline migration (schema only, no member data).
 - **Seed data per instance** (Blueprint starter, first admin; circles come from the setup flow in §6) goes in `instance/seed.sql`, not in migrations.
 

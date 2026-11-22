@@ -18,7 +18,8 @@
     "instance": "node scripts/instance.mjs",
     "upstream": "node scripts/upstream.mjs",
     "start-work": "node scripts/start-work.mjs",
-    "icon-check": "node scripts/icon-check.mjs"
+    "icon-check": "node scripts/icon-check.mjs",
+    "migrations:check": "node scripts/migration-check.mjs --db"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
