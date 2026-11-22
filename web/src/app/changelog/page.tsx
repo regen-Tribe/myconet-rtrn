@@ -3,6 +3,18 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.111.0',
+    date: '2026-11-21',
+    title: 'Community and core database changes stay apart',
+    items: ['Behind the scenes: a community’s own database changes now use their own numbers, so they can never hide a MyCoNet update. Every deploy checks it.'],
+  },
+  {
+    version: 'v4.110.0',
+    date: '2026-11-21',
+    title: 'Several photos for a room, a space or a place',
+    items: ['A room, tool or space, and a place on the Map, can have more photos after the main one. Open it and swipe through them, or use the arrows.'],
+  },
+  {
     version: 'v4.108.0',
     date: '2026-11-21',
     title: 'Subcircles have their own page',

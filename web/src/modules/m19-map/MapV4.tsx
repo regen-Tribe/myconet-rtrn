@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { SpaceTabs } from '@/core/components/SpaceTabs'
+import { PhotoStrip } from '@/core/components/PhotoStrip'
 import { Button, Chip, ChipRow, EmptyState, Icon, IconTile, List, ListRow, PageHeader } from '@/core/components/v4'
 import SiteMap, { type SitePin } from '@/core/components/v4/SiteMap'
 import { canEditPlace, KIND_META, KINDS, near, PLACE_SELECT, type Place, type PlaceKind } from './lib/places'
@@ -85,7 +86,7 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
     return (
       <>
         {p.photo_url
-          ? <img src={p.photo_url} alt="" className="v4-mapcard__photo" loading="lazy" />
+          ? <PhotoStrip className="v4-mapcard__photo" alt="" photos={[p.photo_url, ...(p.photos ?? [])]} />
           : <span className={`v4-mapcard__nophoto v4-tile--${KIND_META[p.kind].tone}`}><Icon name={KIND_META[p.kind].icon} size={22} /></span>}
         <b>{p.name}</b>
         <small>{[KIND_META[p.kind].label, circle ? `${circle.label} circle` : null].filter(Boolean).join(' · ')}</small>

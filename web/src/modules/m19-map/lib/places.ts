@@ -14,6 +14,8 @@ export interface Place {
   kind: PlaceKind
   description: string | null
   photo_url: string | null
+  /** More photos after the cover (v4.109.0); read on their own, so older databases still load */
+  photos?: string[]
   map_x: number | null
   map_y: number | null
   circle: string | null

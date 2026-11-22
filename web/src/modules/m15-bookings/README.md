@@ -58,3 +58,5 @@ Migration: `supabase/migrations/20261101_m15_bookings.sql` (repo root).
 - One row = one bookable thing. Five identical bikes are five items (tag them `bike`).
 - Accommodation ranges are local midnight → midnight with `[)` bounds, so back-to-back stays don't clash.
 - No notifications yet: leads see pending requests in the Manage tab and the badge count.
+
+Since v4.110.0 there can be more photos after the cover (`photos`, text[]): shown as a swipe strip (`core/components/PhotoStrip.tsx`). Editing them in the forms is still to do.

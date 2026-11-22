@@ -13,6 +13,7 @@ import {
 import { DESIGN } from '@/core/lib/instance'
 import { Button, Icon, IconTile, InlineIcon, StatusPill, Tag } from '@/core/components/v4'
 import { CATEGORY_ICON } from './BookingsV4'
+import { PhotoStrip } from '@/core/components/PhotoStrip'
 
 const sectionLabel: React.CSSProperties = {
   fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -87,7 +88,12 @@ export function ItemModal({
     return (
       <ModalShell title={<span className="v4-modal-title"><IconTile name={ci.icon} tone={ci.tone} />{item.name}</span>} onClose={onClose} maxWidth={560}>
         <div className="v4-modal">
-          {(item.photo_url ?? item.place?.photo_url) && <img className="v4-modal__photo" src={(item.photo_url ?? item.place?.photo_url)!} alt={item.name} />}
+          <PhotoStrip className="v4-modal__photo" alt={item.name} photos={
+            // Its own photos; without any, its place's
+            (item.photo_url || item.photos?.length
+              ? [item.photo_url, ...(item.photos ?? [])]
+              : [item.place?.photo_url, ...(item.place?.photos ?? [])]).filter((p): p is string => !!p)
+          } />
           <div className="v4-tags">
             <Tag>{meta.label}</Tag>
             {circles.has(item.circle) && <Tag><span className="v4-dot" style={{ background: circles.meta(item.circle).color }} />{circles.meta(item.circle).label}</Tag>}

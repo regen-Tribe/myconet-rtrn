@@ -23,8 +23,10 @@ export interface BookingItem {
   map_y?: number | null
   /** The item's own photo (v4.76.0); without one the card shows its place's photo */
   photo_url?: string | null
+  /** More photos after the cover (v4.109.0) */
+  photos?: string[]
   /** The place on the Map this item sits in (v4.74.0): its photo and slug, for the card and a link to /map */
-  place?: { slug: string; name: string; photo_url: string | null } | null
+  place?: { slug: string; name: string; photo_url: string | null; photos?: string[] } | null
 }
 
 export interface Booking {

@@ -52,6 +52,13 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
   // Items' own photos (v4.76.0), read on their own for communities without the column yet
   const photosRes = await supabase.from('booking_items').select('id, photo_url').not('photo_url', 'is', null)
   const photos = new Map(((photosRes.error ? [] : photosRes.data) ?? []).map(p => [p.id as string, p.photo_url as string]))
+  // More photos per item and per place (v4.109.0), also read on their own
+  const [morePhotosRes, placePhotosRes] = await Promise.all([
+    supabase.from('booking_items').select('id, photos'),
+    supabase.from('places').select('slug, photos'),
+  ])
+  const more = new Map(((morePhotosRes.error ? [] : morePhotosRes.data) ?? []).map(p => [p.id as string, (p.photos as string[] | null) ?? []]))
+  const placeMore = new Map(((placePhotosRes.error ? [] : placePhotosRes.data) ?? []).map(p => [p.slug as string, (p.photos as string[] | null) ?? []]))
   const pins = new Map(((pinsRes.error ? [] : pinsRes.data) ?? []).map(p => [p.id as string, p as { map_x: number; map_y: number }]))
   const siteMapUrl = mapRes.error ? null : ((mapRes.data as { site_map_url: string | null } | null)?.site_map_url ?? null)
   // Each item belongs to the place its pin sits in (the Map page, v4.70.0): the card shows that place's photo
@@ -64,12 +71,12 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
       const d = Math.hypot(p.map_x - x, p.map_y - y)
       if (d <= bestD) { best = p; bestD = d }
     }
-    return best ? { slug: best.slug, name: best.name, photo_url: best.photo_url } : null
+    return best ? { slug: best.slug, name: best.name, photo_url: best.photo_url, photos: placeMore.get(best.slug) ?? [] } : null
   }
   const items = (itemsRes.data ?? []).map(toItem).map(i => {
     const map_x = pins.get(i.id)?.map_x ?? null
     const map_y = pins.get(i.id)?.map_y ?? null
-    return { ...i, map_x, map_y, photo_url: photos.get(i.id) ?? null, place: placeAt(map_x, map_y) }
+    return { ...i, map_x, map_y, photo_url: photos.get(i.id) ?? null, photos: more.get(i.id) ?? [], place: placeAt(map_x, map_y) }
   })
   const inScope = (id: string | undefined) => items.some(i => i.id === id && SCOPE_META[scope].categories.includes(i.category))
 
