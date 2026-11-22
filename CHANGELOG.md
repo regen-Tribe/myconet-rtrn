@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.115.0 — 2026-11-22 — Lines you can see again (v4)
+
+Oscar: "there are no lines in between content, just white". Since v4.82.0's calmer page (Sonia), the page is nearly
+white, cards are white with no edge, and the line between rows was 5% grey, so content ran together. Sonia's page
+colour stays. Only the separations come back:
+- `--rule` goes from 9% to 14%, `--rule-soft` from 5% to 10%, and `--border` follows.
+- `.v4-card` and `.v4-list` get a faint outline.
+- The line between rows uses the stronger `--rule-soft`.
+
+Only communities with "design": "v4". No migration.
+
 ## v4.114.0 — 2026-11-21 — One list of everything to decide
 
 Oscar: "all the things that need to be decided should show up on one list. in that list users should be able to see
