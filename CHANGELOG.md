@@ -5,6 +5,54 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.114.0 — 2026-11-21 — One list of everything to decide
+
+Oscar: "all the things that need to be decided should show up on one list. in that list users should be able to see
+the fields, change any of them, tell the agent to do something, and a draft label that swipe right to accept or left to
+decline. and the label switches to approved or declined… idea for later list… this list should follow the style of the
+action items section".
+- **To decide** replaces the project manager panel on the board (Operations) and the two sections on a meeting's page.
+  It's one list, in the action items' style, of every task waiting on a decision: the drafts still to confirm, and the
+  tasks the project manager has open suggestions about, each once. The board groups it by meeting; a meeting's page
+  shows its own action items.
+- **Each row** is a task with:
+  - its fields, changed right there, and "✦ What should the assistant do?"
+  - the **Draft** pill: slide right to approve, left to decline. It then reads **Approved** (with Undo) or **Declined**.
+    A row with only a suggestion has no pill.
+  - **Later**: sets the task aside on **Ideas for later**, a new chip in Operations. It's off the board and out of the
+    project manager's review until someone brings it back.
+  - the project manager's **suggestions about it**, inside the row, with Accept, Dismiss and Put it in. A suggestion
+    about several tasks shows on each of them.
+- **Rows stay**, showing what was decided, until the page is reloaded. Below the list is what the assistant changed
+  itself in the last two weeks, with Undo.
+- Migration `20261218000000_task_later.sql` adds `deliverables.later_at`. It's read on its own, so a community that
+  hasn't applied it keeps its board.
+
+## v4.113.0 — 2026-11-21 — Places you don't book are listed under Spaces
+
+Sonia: "add the shared restroom… and any other shared area… and waterfalls and such to spaces too".
+- Amenities & tools (M15) Browse lists, under Spaces and All, the Map's places (`places`) that have a photo and no
+  bookable thing of their own (none pinned on them, none with the same name). One source: no copy in `booking_items`.
+  The card shows the photo, the kind and the description, and opens `/map?place=<slug>`. The Spaces count includes them.
+- Signed-out visitors don't see them: `places` is for signed-in people.
+
+## v4.112.1 — 2026-11-21 — Grouped cards: just the number when the title says what they are
+
+Amenities & tools (M15): a group named from its stem ("Private Room 1…9" → "Private Rooms 1–9") shows buttons
+1, 2, 3 instead of "Private room 1". Groups split at a dash ("Male dorm – bed 3") keep "Bed 3". It was tied to
+the word "room" before.
+
+## v4.112.0 — 2026-11-21 — The bookings calendar scrolls sideways through the dates
+
+Sonia, looking at Protopia's calendar once its stays were in: "you should be able to scroll to the side to reveal
+more dates". The calendar in Admin › Bookings (`m15-bookings/BookingsV4.tsx`, `BookingsCalendar`) was a fixed
+two-week window moved by Earlier / Later. It is now one strip of days, from two weeks back to a week past the last
+booking (at least eight weeks ahead, at most 400 days), in a sideways scroller that opens on today. The item names
+stay put (sticky), a guest's name stays in view inside a long bar, the first of a month shows the month's name, and
+the heading names the dates in view. Earlier, Later and Today scroll it by a week. Also fixes weekend shading in
+rows that have a stay: the day cells were placed by the grid, so they slid past the columns a bar covered. No
+migration. Second brain: nothing new is written (a display change; stays still aren't in the second brain).
+
 ## v4.111.0 — 2026-11-21 — Core and community migrations never take the same number
 
 Oscar: "add instructions in the places they need to be so the numbering issue doesn't happen - it's important we stay

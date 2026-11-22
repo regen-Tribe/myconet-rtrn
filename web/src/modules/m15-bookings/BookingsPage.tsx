@@ -3,7 +3,7 @@ import { createClient } from '@/core/lib/supabase/server'
 import BookingsClient from './BookingsClient'
 import { canAddItems, isCategory, SCOPE_META, type BookingScope } from './lib/inventory'
 import { BOOKING_SELECT, ITEM_SELECT, toBooking, toItem } from './lib/queries'
-import type { BookingsTab } from './types'
+import type { AroundPlace, BookingsTab } from './types'
 import { NEAR } from '@/modules/m19-map/lib/places'
 
 const TABS: BookingsTab[] = ['browse', 'mine', 'manage']
@@ -78,6 +78,18 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
     const map_y = pins.get(i.id)?.map_y ?? null
     return { ...i, map_x, map_y, photo_url: photos.get(i.id) ?? null, photos: more.get(i.id) ?? [], place: placeAt(map_x, map_y) }
   })
+  // Places from the Map with no bookable thing of their own (v4.113.0): shown under Spaces, so the page lists
+  // everything shared, not only what you book. One source: the `places` table, never a copy in booking_items.
+  const aroundRes = scope === 'amenities' && !opts.admin
+    ? await supabase.from('places').select('slug, name, kind, description, photo_url, map_x, map_y, sort_order').order('sort_order').order('name')
+    : { data: [], error: null }
+  const activeNames = new Set(items.filter(i => i.is_active).map(i => i.name.toLowerCase()))
+  const around: AroundPlace[] = ((aroundRes.error ? [] : aroundRes.data) ?? [])
+    // Only places with a picture: a card without one says little here (they are still on the Map)
+    .filter(p => p.photo_url)
+    .filter(p => !activeNames.has((p.name as string).toLowerCase()))
+    .filter(p => !items.some(i => i.is_active && i.place?.slug === p.slug))
+    .map(p => ({ slug: p.slug as string, name: p.name as string, kind: p.kind as string, description: (p.description as string | null) ?? null, photo_url: (p.photo_url as string | null) ?? null }))
   const inScope = (id: string | undefined) => items.some(i => i.id === id && SCOPE_META[scope].categories.includes(i.category))
 
   return (
@@ -94,6 +106,7 @@ export async function renderBookings(scope: BookingScope, sp: BookingsSearchPara
       initialItemId={inScope(sp.item) ? sp.item! : null}
       admin={opts.admin}
       siteMapUrl={siteMapUrl}
+      around={around}
     />
   )
 }

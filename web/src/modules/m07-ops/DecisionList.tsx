@@ -1,0 +1,278 @@
+'use client'
+
+import { useState, useSyncExternalStore } from 'react'
+import Link from 'next/link'
+import { useCircles } from '@/core/components/CirclesProvider'
+import { createClient } from '@/core/lib/supabase/client'
+import { fmtTaskWhen } from '@/core/lib/tasks'
+import { Icon, InlineIcon, StatusPill } from '@/core/components/v4'
+import { DraftSwipe } from './DraftSwipe'
+import { TaskQuickEdit } from './TaskQuickEdit'
+import { DONE, KIND, explain } from './suggestion-text'
+import type { TaskPerson, TaskProjectOption, TaskTeamOption } from './TaskModal'
+import type { AgentSuggestion, PmAction } from './types'
+import type { DecisionRow } from './lib/decisions'
+import { EDITABLE_SELECT } from './lib/task-edit'
+import '@/modules/m18-meetings/meetings-v4.css'
+
+export type DecisionOptions = { people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[] }
+
+const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
+const atPm = () => window.location.hash === '#pm'
+
+/**
+ * Everything to decide, as one list in the action items' style (v4.114.0: Oscar, "all the things that need to be
+ * decided should show up on one list"). Each row is a task:
+ *   - its fields, changed right there, and "✦ What should the assistant do?" (TaskQuickEdit)
+ *   - the Draft pill: slide right to approve, left to decline; it then reads Approved / Declined
+ *   - Later: set aside on the Ideas for later list
+ *   - the project manager's suggestions about it, with Accept / Dismiss
+ * A row with a suggestion but no draft has no pill. Rows stay, with what was decided, until the page is reloaded.
+ * The board shows it grouped by meeting (`grouped`); a meeting's page shows its own action items.
+ */
+export function DecisionList({ rows: loaded, options, canDecide, grouped = false }: {
+  rows: DecisionRow[]
+  options: DecisionOptions | null
+  canDecide: (circle: string) => boolean
+  grouped?: boolean
+}) {
+  const circles = useCircles()
+  const [patch, setPatch] = useState<Record<string, Partial<DecisionRow>>>({})
+  // A task re-read from the database (after a suggestion was accepted) remounts its fields
+  const [version, setVersion] = useState<Record<string, number>>({})
+  const [editing, setEditing] = useState<Set<string>>(() => new Set(loaded.filter(t => t.needs_review && t.can_edit).map(t => t.deliverable_id)))
+  const [decided, setDecided] = useState<Record<string, 'accepted' | 'dismissed'>>({})
+  const [where, setWhere] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ id: string; text: string } | null>(null)
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set())
+
+  const rows = loaded.map(t => ({ ...t, ...patch[t.deliverable_id] }))
+  const set = (id: string, p: Partial<DecisionRow>) => setPatch(prev => ({ ...prev, [id]: { ...prev[id], ...p } }))
+  const titleOf = (id?: string) => rows.find(r => r.deliverable_id === id)?.title
+  const projectTitle = (id?: string) => options?.projectOptions.find(p => p.id === id)?.title
+  const toggle = (setter: typeof setEditing, id: string) => setter(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+
+  async function reread(ids: string[]) {
+    const { data } = await createClient().from('deliverables').select(`id, ${EDITABLE_SELECT}`).in('id', ids)
+    for (const d of (data ?? []) as unknown as (Partial<DecisionRow> & { id: string })[]) {
+      const { id, ...rest } = d
+      set(id, { ...rest, project_title: rest.project_id ? projectTitle(rest.project_id) ?? null : null, assignee: rest.assignee_id ? options?.people.find(p => p.id === rest.assignee_id)?.name.split(' ')[0] ?? null : null })
+    }
+    setVersion(prev => ({ ...prev, ...Object.fromEntries(ids.map(id => [id, (prev[id] ?? 0) + 1])) }))
+  }
+
+  const overrides = (v: string | undefined) => {
+    if (!v) return {}
+    if (v.startsWith('c:')) return { circle: v.slice(2) }
+    if (v.startsWith('t:')) { const t = options?.teams.find(x => x.id === v.slice(2)); return t ? { circle: t.circle, team_id: t.id } : {} }
+    if (v.startsWith('p:')) return { project_id: v.slice(2) }
+    return {}
+  }
+  async function decide(s: AgentSuggestion, action: 'accept' | 'dismiss') {
+    setBusy(s.id); setMsg(null)
+    const res = await fetch(`/api/ops/suggestions/${s.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...(action === 'accept' ? overrides(where[s.id]) : {}) }) })
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    setBusy(null)
+    if (!res.ok) { setMsg({ id: s.id, text: data.error ?? 'That didn’t work.' }); return }
+    setDecided(prev => ({ ...prev, [s.id]: action === 'accept' ? 'accepted' : 'dismissed' }))
+    if (action === 'accept') {
+      const p = s.payload as { keep?: string; drop?: string; task?: string; tasks?: string[] }
+      if (p.drop) set(p.drop, { status: 'merged' })
+      await reread([p.keep, p.task, ...(p.tasks ?? [])].filter((x): x is string => !!x))
+    }
+  }
+  async function later(t: DecisionRow, on: boolean) {
+    setBusy(t.deliverable_id); setMsg(null)
+    const { data, error } = await createClient().from('deliverables').update(on ? { later_at: new Date().toISOString(), needs_review: false } : { later_at: null }).eq('id', t.deliverable_id).select('id')
+    setBusy(null)
+    if (error || !data?.length) { setMsg({ id: t.deliverable_id, text: error?.message ?? 'The database didn’t allow this change for your account.' }); return }
+    set(t.deliverable_id, on ? { later: true, needs_review: false } : { later: false })
+  }
+
+  const suggestion = (s: AgentSuggestion) => {
+    const state = decided[s.id]
+    const plain = explain(s, titleOf, projectTitle)
+    const mayDecide = canDecide(s.circle)
+    const v = where[s.id] ?? ''
+    return (
+      <div key={s.id} className={`dl4-sug${state ? ' dl4-sug--done' : ''}`}>
+        <div className="dl4-sug__head"><InlineIcon name="compass" /><b>{KIND[s.kind] ?? 'Suggested'}</b>{state && <span className={`dl4-sug__state dl4-sug__state--${state}`}>{state === 'accepted' ? '✓ Accepted' : 'Dismissed'}</span>}</div>
+        <div className="dl4-sug__what">{plain.what}</div>
+        {s.reason && <div className="dl4-sug__why"><b>Why:</b> {s.reason}</div>}
+        {mayDecide && !state && (
+          <div className="dl4-sug__acts">
+            {(s.kind === 'new_project' || s.kind === 'move') && options && (
+              <select className="dl4-select" value={v} onChange={e => setWhere(prev => ({ ...prev, [s.id]: e.target.value }))} aria-label="Put it in">
+                <option value="">{s.kind === 'new_project' ? 'Put it in: as suggested' : 'Into: the suggested task'}</option>
+                {s.kind === 'new_project' && (
+                  <optgroup label="A new task in…">
+                    {circles.slugs.map(c => [
+                      <option key={c} value={`c:${c}`}>{circles.meta(c).emoji} {circles.meta(c).label}</option>,
+                      ...options.teams.filter(t => t.circle === c).map(t => <option key={t.id} value={`t:${t.id}`}>{'    '}{circles.meta(c).label} › {t.name}</option>),
+                    ])}
+                  </optgroup>
+                )}
+                <optgroup label={s.kind === 'new_project' ? 'Or add them to a task' : 'Another task'}>
+                  {options.projectOptions.map(x => <option key={x.id} value={`p:${x.id}`}>{x.title}</option>)}
+                </optgroup>
+              </select>
+            )}
+            <button type="button" className="dl4-btn dl4-btn--primary" disabled={!!busy} onClick={() => decide(s, 'accept')}>{busy === s.id ? '…' : v.startsWith('p:') ? 'Move them in' : plain.button}</button>
+            <button type="button" className="dl4-btn" disabled={!!busy} onClick={() => decide(s, 'dismiss')}>Dismiss</button>
+          </div>
+        )}
+        {msg?.id === s.id && <div className="dl4-err">{msg.text}</div>}
+      </div>
+    )
+  }
+
+  const row = (t: DecisionRow) => {
+    const who = t.assignee ?? (t.assignee_name ? `${t.assignee_name} (not on MyCoNet yet)` : t.person_name ? `${t.person_name} (not on MyCoNet yet)` : 'Not assigned yet')
+    const canEdit = t.can_edit && !!options && t.status !== 'merged'
+    const decidable = t.can_edit
+    const open = editing.has(t.deliverable_id)
+    return (
+      <div key={t.deliverable_id} className="mt4-taskwrap">
+        <div className="v4-row mt4-task">
+          <span className="v4-row__lead"><span className="v4-avatar">{(t.assignee ?? t.person_name ?? '?').slice(0, 1).toUpperCase()}</span></span>
+          <Link href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} className="v4-row__main mt4-tlink">
+            <b className={t.status === 'done' ? 'mt4-done' : undefined}>{t.title}</b>
+            <small>{who}{t.due_date ? ` · ${fmtTaskWhen(t.due_date, t.due_time)}` : ''}{t.project_title ? ` · subtask of “${t.project_title}”` : ''}</small>
+            {t.item_text && t.item_text !== t.title && <small className="mt4-quote">“{t.item_text.slice(0, 120)}”</small>}
+          </Link>
+          <span className="v4-row__trail">
+            {t.status === 'merged' ? <span className="dl4-tag dl4-tag--grey">Merged</span>
+              : t.later ? <span className="dl4-tag dl4-tag--idea"><Icon name="clock" size={12} />Later{decidable && <> · <button type="button" className="dl4-link" onClick={() => later(t, false)}>Undo</button></>}</span>
+              : t.needs_review ? <DraftSwipe keepLabel taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => set(t.deliverable_id, { needs_review: false })} onUndone={() => set(t.deliverable_id, { needs_review: true })} />
+              : t.suggestions.length ? null
+              : <StatusPill status={t.status === 'done' ? 'done' : 'todo'} label={t.status === 'done' ? 'Done' : 'On the board'} />}
+            {decidable && !t.later && t.status !== 'merged' && (
+              <button type="button" className="mt4-editbtn" disabled={busy === t.deliverable_id} onClick={() => later(t, true)} title="Set it aside on the Ideas for later list"><Icon name="clock" size={13} />Later</button>
+            )}
+            {canEdit && !t.later && (
+              <button type="button" className="mt4-editbtn" aria-expanded={open} onClick={() => toggle(setEditing, t.deliverable_id)}>
+                <Icon name="pencil" size={13} />{open ? 'Done' : 'Edit'}
+              </button>
+            )}
+          </span>
+        </div>
+        {msg?.id === t.deliverable_id && <div className="mt4-taskedit dl4-err">{msg.text}</div>}
+        {canEdit && open && !t.later && (
+          <div className="mt4-taskedit">
+            <TaskQuickEdit
+              key={version[t.deliverable_id] ?? 0}
+              task={{ id: t.deliverable_id, title: t.title, status: t.status, circle: t.circle, team_id: t.team_id, project_id: t.project_id, assignee_id: t.assignee_id, assignee_name: t.assignee_name, priority: t.priority, due_date: t.due_date, due_time: t.due_time, needs_review: t.needs_review }}
+              {...options!}
+              onSaved={x => set(t.deliverable_id, {
+                status: x.status, circle: x.circle ?? null, team_id: x.team_id ?? null, project_id: x.project_id,
+                assignee_id: x.assignee_id, assignee_name: x.assignee_name ?? null, priority: x.priority ?? null, due_date: x.due_date, due_time: x.due_time ?? null, needs_review: false,
+                assignee: x.assignee_id ? options!.people.find(p => p.id === x.assignee_id)?.name.split(' ')[0] ?? null : null,
+                project_title: x.project_id ? projectTitle(x.project_id) ?? t.project_title : null,
+              })}
+            />
+          </div>
+        )}
+        {t.suggestions.length > 0 && <div className="mt4-taskedit dl4-sugs">{t.suggestions.map(suggestion)}</div>}
+      </div>
+    )
+  }
+
+  if (!grouped) return <div className="v4-list">{rows.map(row)}</div>
+
+  // The board: by meeting, newest first; tasks not from a meeting last. A group's rows are drawn once it's opened.
+  const groups = [...rows.reduce((m, t) => {
+    const k = t.meeting?.id ?? 'board'
+    m.set(k, [...(m.get(k) ?? []), t])
+    return m
+  }, new Map<string, DecisionRow[]>())].map(([id, list]) => ({ id, meeting: list[0].meeting, list }))
+    .sort((a, b) => (a.id === 'board' ? 1 : b.id === 'board' ? -1 : (b.meeting?.date ?? '').localeCompare(a.meeting?.date ?? '')))
+  const tag = (c: string | null | undefined) => (c && circles.has(c) ? <span className="dl4-circle" style={{ ['--c' as string]: circles.meta(c).color }}>{circles.meta(c).emoji} {circles.meta(c).label}</span> : null)
+  return (
+    <div className="pm4-drafts">
+      {groups.map(g => {
+        const isOpen = openGroups.has(g.id)
+        const drafts = g.list.filter(t => t.needs_review).length
+        const sugs = g.list.filter(t => t.suggestions.some(s => !decided[s.id])).length
+        return (
+          <div key={g.id} className="v4-card pm4-meeting">
+            <button type="button" className="pm4-meeting__head" aria-expanded={isOpen} onClick={() => toggle(setOpenGroups, g.id)}>
+              <span className="pm4-meeting__name"><b>{g.id === 'board' ? 'On the board' : g.meeting?.title ?? 'A meeting'}</b>
+                <small suppressHydrationWarning>{[g.meeting?.date ? new Date(g.meeting.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : null, drafts ? `${drafts} draft${drafts === 1 ? '' : 's'}` : null, sugs ? `${sugs} with a suggestion` : null].filter(Boolean).join(' · ') || 'Nothing left to decide'}</small>
+              </span>
+              {tag(g.meeting?.circle)}
+              <span className="pm4-meeting__chev" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
+            </button>
+            {isOpen && (
+              <>
+                <div className="v4-list">{g.list.map(row)}</div>
+                {g.meeting && <Link href={`/meetings/${g.meeting.id}`} className="pm4-meeting__open">Open the meeting →</Link>}
+              </>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * The board's To decide panel (v4.114.0), replacing the project manager panel: everything to decide, by meeting, and
+ * what the assistant changed itself in the last two weeks (Undo). Follows the board's circle filter; starts collapsed
+ * unless opened at #pm.
+ */
+export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
+  rows: DecisionRow[]; actions: PmAction[]; options: DecisionOptions | null
+  canDecide: (circle: string) => boolean
+  circle: string | string[] | null
+}) {
+  const circles = useCircles()
+  const [toggled, setToggled] = useState<boolean | null>(null)
+  const linkedHere = useSyncExternalStore(onHash, atPm, () => false)
+  const open = toggled ?? linkedHere
+  const [undone, setUndone] = useState<Set<string>>(() => new Set())
+  const [busy, setBusy] = useState<string | null>(null)
+  const inFilter = (c: string | null | undefined) => !circle || circle.length === 0 || (Array.isArray(circle) ? !!c && circle.includes(c) : c === circle)
+  const shown = rows.filter(r => inFilter(r.circle))
+  const done = actions.filter(a => inFilter(a.circle) && !undone.has(a.id))
+  if (!shown.length && !done.length) return null
+  const drafts = shown.filter(r => r.needs_review).length
+  const sugs = shown.filter(r => r.suggestions.length).length
+
+  async function undo(a: PmAction) {
+    setBusy(a.id)
+    const res = await fetch(`/api/ops/agent-actions/${a.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'undo' }) })
+    setBusy(null)
+    if (res.ok) setUndone(prev => new Set(prev).add(a.id))
+  }
+  const tag = (c: string) => (circles.has(c) ? <span className="dl4-circle" style={{ ['--c' as string]: circles.meta(c).color }}>{circles.meta(c).emoji} {circles.meta(c).label}</span> : null)
+
+  return (
+    <section id="pm" className="v4-card dl4-panel">
+      <div className="dl4-panel__head">
+        <b><InlineIcon name="compass" />To decide</b>
+        <small>{[drafts ? `${drafts} draft${drafts === 1 ? '' : 's'}` : null, sugs ? `${sugs} with a suggestion` : null, done.length ? `${done.length} change${done.length === 1 ? '' : 's'} by the assistant` : null].filter(Boolean).join(' · ')}</small>
+        <button type="button" className="dl4-btn" onClick={() => setToggled(!open)}>{open ? 'Hide' : 'Show'}</button>
+      </div>
+      {open && (
+        <>
+          {shown.length > 0 && <DecisionList rows={shown} options={options} canDecide={canDecide} grouped />}
+          {done.length > 0 && (
+            <div className="dl4-done">
+              <div className="dl4-done__title">Done by the assistant (last 2 weeks)</div>
+              {done.map(a => (
+                <div key={a.id} className="dl4-done__row">
+                  <span className="dl4-done__what">{a.action.startsWith('do_') ? 'Asked for' : DONE[a.action] ?? a.action}:</span>
+                  <span>{a.label}</span>
+                  {tag(a.circle)}
+                  {a.reason && <span className="dl4-done__why">· {a.reason}</span>}
+                  {canDecide(a.circle) && <button type="button" className="dl4-btn" disabled={busy === a.id} onClick={() => undo(a)}>{busy === a.id ? '…' : 'Undo'}</button>}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )
+}

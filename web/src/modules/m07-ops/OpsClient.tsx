@@ -23,8 +23,9 @@ import { NewTaskModal } from './NewTaskModal'
 import { fmtTaskWhen, isTaskOverdue, taskDate } from '@/core/lib/tasks'
 import { DraftSwipe } from './DraftSwipe'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
-import { ProjectManagerPanel } from './ProjectManagerPanel'
-import type { MeetingTask } from '@/modules/m18-meetings/types'
+import { ToDecidePanel } from './DecisionList'
+import { IdeasForLater } from './IdeasForLater'
+import type { DecisionRow } from './lib/decisions'
 import { NameTag } from './NameTag'
 import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
 import { PriorityBadge } from './Priority'
@@ -59,8 +60,10 @@ interface OpsClientProps {
   /** ?circle= : the board opens filtered to it (the circles' Project manager buttons) */
   initialCircle: string | null
   pmSuggestions: AgentSuggestion[]
-  /** Meetings' drafts waiting to be confirmed, for the project manager panel (v4.107.0) */
-  meetingDrafts?: MeetingTask[]
+  /** Everything to decide (v4.114.0): drafts and tasks with the project manager's suggestions */
+  decisions?: DecisionRow[]
+  /** Tasks set aside for later (v4.114.0), off the board */
+  ideas?: Deliverable[]
   pmActions: PmAction[]
   /** Open this task's pop-up on arrival (/operations?task=<id>) */
   initialTaskId?: string | null
@@ -402,7 +405,7 @@ export default function OpsClient({
   activeCount, deliverableCount, doneCount, atRiskCount,
   isAdmin, userId, userRole, leadCircles, sprintName,
   projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
-  initialCircle, pmSuggestions, pmActions, meetingDrafts = [], initialTaskId = null, people = [], projectOptions = [], teams = [],
+  initialCircle, pmSuggestions, pmActions, decisions = [], ideas = [], initialTaskId = null, people = [], projectOptions = [], teams = [],
   circleUnits = [], circleMembers = [], initialView = 'projects',
 }: OpsClientProps) {
   const circles = useCircles()
@@ -433,6 +436,8 @@ export default function OpsClient({
   }
   const [newTask, setNewTask] = useState(false)
   const [draftsOnly, setDraftsOnly] = useState(false)
+  // The Ideas for later list (v4.114.0), in the List tab
+  const [ideasOnly, setIdeasOnly] = useState(false)
   const [boardTasks, setBoardTasks] = useState<Deliverable[]>(initialDeliverables)
   const draftCount = initialDeliverables.filter(d => d.needs_review).length
   const projectsById = new Map(boardProjects.map(p => [p.id, p]))
@@ -664,11 +669,14 @@ export default function OpsClient({
           {/* One row for what the page shows: the board of tasks, the board of every subtask, the list, … */}
           <Chip on={activeTab === 'board' && view === 'projects'} onClick={() => { setActiveTab('board'); pickView('projects') }}>Tasks</Chip>
           <Chip on={activeTab === 'board' && view === 'tasks'} onClick={() => { setActiveTab('board'); pickView('tasks') }}>All subtasks</Chip>
-          <Chip on={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')}>List</Chip>
+          <Chip on={activeTab === 'tasks' && !ideasOnly} onClick={() => { setIdeasOnly(false); setActiveTab('tasks') }}>List</Chip>
           <Chip on={activeTab === 'updates'} onClick={() => setActiveTab('updates')}>Updates</Chip>
           <Chip on={activeTab === 'circles'} onClick={() => setActiveTab('circles')}>Circles</Chip>
           {draftCount > 0 && (
-            <Chip on={activeTab === 'tasks' && draftsOnly} count={draftCount} onClick={() => { setDraftsOnly(true); setActiveTab('tasks') }}>Drafts to confirm</Chip>
+            <Chip on={activeTab === 'tasks' && draftsOnly && !ideasOnly} count={draftCount} onClick={() => { setIdeasOnly(false); setDraftsOnly(true); setActiveTab('tasks') }}>Drafts to confirm</Chip>
+          )}
+          {ideas.length > 0 && (
+            <Chip on={activeTab === 'tasks' && ideasOnly} count={ideas.length} onClick={() => { setIdeasOnly(true); setActiveTab('tasks') }}>Ideas for later</Chip>
           )}
         </ChipRow>
 ) : (<>
@@ -790,14 +798,7 @@ export default function OpsClient({
           </div>
 </>)}
 
-        <ProjectManagerPanel
-          suggestions={pmSuggestions} actions={pmActions} circle={selectedCircles} canDecide={canDecide}
-          projects={projectOptions} teams={teams}
-          taskTitles={Object.fromEntries(initialDeliverables.map(d => [d.id, d.title]))}
-          editOptions={{ people, projectOptions, teams }}
-          meetingDrafts={meetingDrafts}
-          onOpenTask={id => { const t = boardTasks.find(x => x.id === id) ?? initialDeliverables.find(x => x.id === id); if (t) setOpenTask(t) }}
-        />
+        <ToDecidePanel rows={decisions} actions={pmActions} options={{ people, projectOptions, teams }} canDecide={canDecide} circle={selectedCircles} />
         <div className={DESIGN === 'v4' ? 'ops4-board' : undefined} style={DESIGN === 'v4' ? undefined : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {columns.map(col => {
             const cards = grouped[col.key] ?? []
@@ -918,7 +919,10 @@ export default function OpsClient({
         </>
       )}
 
-      {activeTab === 'tasks' && (
+      {activeTab === 'tasks' && ideasOnly && (
+        <IdeasForLater ideas={ideas} projects={boardProjects} canEdit={canEditTask} onBack={() => router.refresh()} />
+      )}
+      {activeTab === 'tasks' && !ideasOnly && (
         <DeliverablesTab
           deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly}
           canDecide={canEditTask}

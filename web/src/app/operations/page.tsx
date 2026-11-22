@@ -1,7 +1,6 @@
 import { isTaskOverdue } from '@/core/lib/tasks'
 import { meetingCountsByCircle } from '@/modules/m18-meetings/lib/counts'
-import { loadActionItems } from '@/modules/m18-meetings/lib/action-items'
-import { moduleOn } from '@/core/lib/modules'
+import { loadDecisions } from '@/modules/m07-ops/lib/decisions'
 import { createClient } from '@/core/lib/supabase/server'
 import OpsClient from '@/modules/m07-ops/OpsClient'
 import { isOpsAdmin, isJoiningOrAbove } from '@/core/lib/roles'
@@ -9,7 +8,6 @@ import { promoteToMemberIfEligible } from '@/core/lib/promotions'
 import { isActiveProject } from '@/core/lib/project-status'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import type { SubscriberProfile } from '@/modules/m07-ops/types'
-import { loadProjectManager } from '@/modules/m07-ops/lib/pm-data'
 import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
 import { MEMBER_SELECT, toMember } from '@/modules/m17-org/lib/org'
 
@@ -46,7 +44,12 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
     .select('id, project_id, title, assignee_id, assignee_name, team_id, created_by, priority, due_date, due_time, circle, needs_review, status, progress, notes, source, source_meeting_id, source_item, user_profiles(username, first_name)')
     .order('due_date', { ascending: true })
 
-  const deliverables = (deliverablesRaw ?? []).map((d: any) => ({
+  // Ideas for later (v4.114.0): set aside, off the board until brought back. Read on its own, so a community that hasn't
+  // applied 20261218000000_task_later keeps the board
+  const laterRead = await supabase.from('deliverables').select('id').not('later_at', 'is', null)
+  const laterIds = new Set(laterRead.error ? [] : (laterRead.data ?? []).map(r => r.id as string))
+
+  const everyTask = (deliverablesRaw ?? []).map((d: any) => ({
     id: d.id as string,
     project_id: (d.project_id ?? null) as string | null,
     title: d.title as string,
@@ -68,6 +71,8 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
     progress: d.progress as number | null,
     assignee_username: d.user_profiles?.username ?? null,
   }))
+  const deliverables = everyTask.filter(d => !laterIds.has(d.id))
+  const ideas = everyTask.filter(d => laterIds.has(d.id))
 
   const { data: updatesRaw } = await supabase
     .from('project_updates')
@@ -122,12 +127,8 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
 
   const sprintName = allProjects.find(p => p.sprint_name)?.sprint_name ?? null
   const circleDirectory = await fetchCircleDirectory(supabase)
-  const pm = user ? await loadProjectManager(supabase) : { suggestions: [], actions: [] }
-  // Every meeting's drafts still waiting to be confirmed, for the project manager panel (v4.107.0): the same rows as on
-  // each meeting's page, for those who may change them
-  const meetingDrafts = user && moduleOn('meetings')
-    ? (await loadActionItems(supabase, { id: user.id, role: userRole, leadCircles }, { drafts: true })).filter(t => t.can_edit)
-    : []
+  // Everything to decide, as one list (v4.114.0): drafts and the project manager's suggestions, each task once
+  const pm = user ? await loadDecisions(supabase, { id: user.id, role: userRole, leadCircles }, { all: true }) : { rows: [], suggestions: [], actions: [] }
 
   return (
     <OpsClient
@@ -152,7 +153,8 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
       initialCircle={circle ?? null}
       pmSuggestions={pm.suggestions}
       pmActions={pm.actions}
-      meetingDrafts={meetingDrafts}
+      decisions={pm.rows}
+      ideas={ideas}
       initialTaskId={task ?? null}
       initialView={view === 'tasks' ? 'tasks' : 'projects'}
       {...await loadCircleMembers(supabase)}

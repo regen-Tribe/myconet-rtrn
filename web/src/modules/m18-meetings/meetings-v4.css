@@ -91,3 +91,32 @@
 .pm4-meeting__chev { color: var(--ink-3, #6b7180); font-size: 12px; }
 .pm4-meeting .v4-list { border-top: 1px solid var(--rule, #e7e9ef); }
 .pm4-meeting__open { display: block; padding: 10px 14px 12px; font-size: 12.5px; font-weight: 600; color: var(--m7, var(--ink-2)); text-decoration: none; border-top: 1px solid var(--rule, #e7e9ef); }
+
+/* To decide (v4.114.0): suggestions inside a task's row, the Later tag, the board's panel */
+.dl4-sugs { display: flex; flex-direction: column; gap: 8px; }
+.dl4-sug { border: 1px solid color-mix(in srgb, var(--m7, #4338ca) 25%, var(--rule, #e7e9ef)); background: color-mix(in srgb, var(--m7, #4338ca) 5%, var(--surface, #fff)); border-radius: 10px; padding: 9px 12px; font-size: 13px; line-height: 1.5; color: var(--ink, #111317); }
+.dl4-sug--done { opacity: .7; }
+.dl4-sug__head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3, #6b7180); margin-bottom: 3px; }
+.dl4-sug__state { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.dl4-sug__state--accepted { color: #15803d; }
+.dl4-sug__why { font-size: 12px; color: var(--ink-3, #6b7180); margin-top: 3px; }
+.dl4-sug__acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.dl4-select { font: inherit; font-size: 12.5px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--rule, #e7e9ef); background: var(--surface, #fff); color: var(--ink-2, #3a3f4a); max-width: 100%; }
+.dl4-btn { font: inherit; font-size: 12px; font-weight: 600; border-radius: 8px; padding: 5px 11px; cursor: pointer; white-space: nowrap; color: var(--ink-2, #3a3f4a); background: var(--surface, #fff); border: 1px solid var(--rule, #e7e9ef); }
+.dl4-btn--primary { color: #fff; background: var(--m7, #4338ca); border-color: transparent; }
+.dl4-err { font-size: 12px; color: #b91c1c; margin-top: 4px; }
+.dl4-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 6px; padding: 5px 11px; margin-right: 8px; }
+.dl4-tag--idea { color: #92400e; background: #fef3c7; }
+.dl4-tag--grey { color: var(--ink-3, #6b7180); background: var(--bg-2, #f4f5f7); }
+.dl4-link { all: unset; cursor: pointer; text-decoration: underline; }
+.dl4-circle { font-size: 10.5px; font-weight: 600; color: var(--c, #6b7180); background: color-mix(in srgb, var(--c, #6b7180) 12%, transparent); padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.dl4-panel { padding: 12px 14px; margin-bottom: 16px; }
+.dl4-panel__head { display: flex; align-items: center; gap: 8px; }
+.dl4-panel__head b { font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+.dl4-panel__head small { font-size: 12px; color: var(--ink-3, #6b7180); }
+.dl4-panel__head .dl4-btn { margin-left: auto; }
+.dl4-done { border-top: 1px solid var(--rule, #e7e9ef); margin-top: 12px; padding-top: 8px; }
+.dl4-done__title { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4, #9aa0ac); margin-bottom: 6px; }
+.dl4-done__row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2, #3a3f4a); padding: 3px 0; flex-wrap: wrap; }
+.dl4-done__row .dl4-btn { margin-left: auto; padding: 2px 9px; }
+.dl4-done__what, .dl4-done__why { color: var(--ink-3, #6b7180); }

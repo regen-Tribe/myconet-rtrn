@@ -43,20 +43,17 @@ reviews the circle's whole board like a project manager:
 Its own changes are logged in `agent_actions` (`pm_merge`, `pm_move`, `pm_assign`) with what's needed to undo
 them. A review replaces the circle's open suggestions; dismissed ones (60 days) aren't suggested again.
 
-**On the board:** the **🧭 Project manager** panel (`ProjectManagerPanel.tsx`, `#pm`, follows the circle filter; starts collapsed since v4.33.1 unless opened at `#pm`):
-suggestions with **Accept** / **Dismiss** and the agent's changes of the last two weeks with **Undo**, for
-admins and that circle's leads (`lib/pm-access.ts`; routes `/api/ops/suggestions/[id]`,
-`/api/ops/agent-actions/[id]`); everyone else sees them read-only. **Where this comes from** (v4.77.0) on each
-suggestion shows each task's origin: the meeting (with its date, who said it, the line and who was there; `lib/pm-data.ts`
-`withSources`) or who added it. A task's name in a suggestion opens its card (v4.79.0). Accepting a suggestion
-confirms the drafts it touches (`needs_review` false, logged as `confirmed`); Undo makes them drafts again.
-**The Tasks list** (`DeliverablesTab.tsx`, v4.84.0): Circle, Subcircle, Part of and Status are pickers for anyone who may
-edit the task, and **✦ Tell the assistant** is on each row (`instructAgent` with `task_id`). Any change confirms a draft
-(`needs_review` false). So does a Do change to a draft task (`do-actions.ts` `upd`/`moveAll`; undo restores it).
-With "Only drafts" on, changed drafts stay listed (✓ Confirmed) until a reload.
-**`TaskQuickEdit.tsx`** (v4.105.0): the same fields, plus Person, Priority and Due, as one block of pickers, used in the project manager
-panel (✎ Edit its tasks) and in a meeting's action items. The placement rules are in `lib/task-edit.ts` (`placeChange`), shared with the Tasks list. **On the circles** (Operations › Circles and
-`/circles`): a **🧭 Project manager (N)** button for its leads opens `/operations?circle=<slug>#pm`.
+**On the board: To decide** (`DecisionList.tsx` › `ToDecidePanel`, `#pm`, follows the circle filter, starts collapsed
+unless opened at `#pm`; v4.114.0 replaced the project manager panel). One list of everything waiting on a decision
+(`lib/decisions.ts` `loadDecisions`): drafts still to confirm and the tasks the project manager has open suggestions
+about, each task once, grouped by meeting. Each row is a task in the meeting page's style, with:
+- its fields and **✦ What should the assistant do?** (`TaskQuickEdit`)
+- the **Draft** pill (`DraftSwipe keepLabel`): right approves, left declines, and it then reads Approved / Declined
+- **Later**: `deliverables.later_at`, off the board and the review, listed under **Ideas for later** (`IdeasForLater.tsx`)
+- its suggestions, with Accept / Dismiss / Put it in (`/api/ops/suggestions/[id]`; the wording is in `suggestion-text.tsx`)
+
+Rows stay until a reload. Below the list is what the assistant changed itself in the last two weeks, with **Undo**.
+Admins and the circle's leads decide; a meeting's page shows the same rows for its action items.
 
 ## The unified Kanban model
 
