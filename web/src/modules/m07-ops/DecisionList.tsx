@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { createClient } from '@/core/lib/supabase/client'
 import { fmtTaskWhen } from '@/core/lib/tasks'
@@ -227,7 +228,10 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
   circle: string | string[] | null
 }) {
   const circles = useCircles()
+  const router = useRouter()
   const [toggled, setToggled] = useState<boolean | null>(null)
+  // Review again (v4.120.0): the project manager reviews each circle now, seeing what was just decided
+  const [review, setReview] = useState<{ done: number; total: number; suggested: number; changed: number; errors: string[]; finished: boolean } | null>(null)
   const linkedHere = useSyncExternalStore(onHash, atPm, () => false)
   const open = toggled ?? linkedHere
   const [undone, setUndone] = useState<Set<string>>(() => new Set())
@@ -235,7 +239,33 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
   const inFilter = (c: string | null | undefined) => !circle || circle.length === 0 || (Array.isArray(circle) ? !!c && circle.includes(c) : c === circle)
   const shown = rows.filter(r => inFilter(r.circle))
   const done = actions.filter(a => inFilter(a.circle) && !undone.has(a.id))
-  if (!shown.length && !done.length) return null
+  const reviewable = circles.slugs.filter(c => canDecide(c) && inFilter(c))
+  if (!shown.length && !done.length && !reviewable.length) return null
+
+  async function reviewAgain() {
+    const list = [...reviewable]
+    const total = list.length
+    let doneN = 0, suggested = 0, changed = 0
+    const errors: string[] = []
+    setReview({ done: 0, total, suggested: 0, changed: 0, errors: [], finished: false })
+    // Three circles at a time: each is one AI read of that circle's whole board
+    const worker = async () => {
+      for (let c = list.shift(); c; c = list.shift()) {
+        try {
+          const res = await fetch('/api/ops/board-review/now', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ circle: c }) })
+          const r = await res.json().catch(() => ({})) as { suggested?: number; merged?: number; moved?: number; error?: string }
+          if (!res.ok) errors.push(`${circles.meta(c).label}: ${r.error ?? 'didn’t finish'}`)
+          suggested += r.suggested ?? 0; changed += (r.merged ?? 0) + (r.moved ?? 0)
+        } catch { errors.push(`${circles.meta(c).label}: didn’t finish`) }
+        doneN++
+        setReview({ done: doneN, total, suggested, changed, errors: [...errors], finished: false })
+      }
+    }
+    await Promise.all([worker(), worker(), worker()])
+    setReview({ done: doneN, total, suggested, changed, errors, finished: true })
+    setToggled(true)
+    router.refresh()
+  }
   const drafts = shown.filter(r => r.needs_review).length
   const sugs = shown.filter(r => r.suggestions.length).length
 
@@ -252,8 +282,20 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
       <div className="dl4-panel__head">
         <b><InlineIcon name="compass" />To decide</b>
         <small>{[drafts ? `${drafts} draft${drafts === 1 ? '' : 's'}` : null, sugs ? `${sugs} with a suggestion` : null, done.length ? `${done.length} change${done.length === 1 ? '' : 's'} by the assistant` : null].filter(Boolean).join(' · ')}</small>
+        {reviewable.length > 0 && (
+          <button type="button" className="dl4-btn dl4-btn--review" disabled={!!review && !review.finished} onClick={reviewAgain}
+            title="The project manager looks at everything pending again, with what you just decided">
+            <Icon name="spark" size={13} />{review && !review.finished ? `Reviewing… ${review.done} of ${review.total}` : 'Review again'}
+          </button>
+        )}
         <button type="button" className="dl4-btn" onClick={() => setToggled(!open)}>{open ? 'Hide' : 'Show'}</button>
       </div>
+      {review?.finished && (
+        <div className={`dl4-review${review.errors.length ? ' dl4-review--warn' : ''}`}>
+          Reviewed {review.total} circle{review.total === 1 ? '' : 's'}: {review.suggested} suggestion{review.suggested === 1 ? '' : 's'}{review.changed ? `, and ${review.changed} change${review.changed === 1 ? '' : 's'} it made itself (Undo below)` : ''}.
+          {review.errors.length > 0 && <> Not reviewed: {review.errors.join(' · ')}</>}
+        </div>
+      )}
       {open && (
         <>
           {shown.length > 0 && <DecisionList rows={shown} options={options} canDecide={canDecide} grouped />}
