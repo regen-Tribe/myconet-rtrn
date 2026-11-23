@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-23 — Core v4.120.0 via PR #86 (deployed, 7be2923f): Review again
+- No migration.
+
 ## 2026-11-22 — Core v4.119.0 via PR #85 (deployed, 63aaffb4): "Part of" scoped to circle/subcircle; Sonia's v4.116–v4.118
 - Migrations applied via MCP before the deploy: `photo_drawn`; `profiles_awaiting_approval` (dry-run as a non-admin first: can't approve themselves, can still edit their profile). Everyone stays approved (0 waiting).
 
