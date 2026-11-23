@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-23 — Core v4.122.0 via PR #88 (deployed, 819695dc): a task can be an Idea
+- Migration `task_ideas` applied via MCP before the deploy (constraint checked).
+
 ## 2026-11-23 — Core v4.121.0 via PR #87 (deployed, 0de69f2a): second-brain notes save when two writes meet
 - No migration. Aligned with Protopia: same core version, look, modules, assistant settings; all core migrations applied.
 - **Planned (Oz's OK):** turn on `designReview` for RTRN once Sonia's design review is in core. Meeting-notes email waits for `MEETINGS_SMTP_PASSWORD` (later).
