@@ -8,7 +8,7 @@ import type { TaskPerson, TaskProjectOption, TaskTeamOption } from './TaskModal'
 import { EDITABLE_SELECT, partOfChoices, placeChange, type EditableTask, type TaskChange } from './lib/task-edit'
 
 const STATUSES: { value: string; label: string }[] = [
-  { value: 'backlog', label: 'To do' }, { value: 'in_progress', label: 'In progress' },
+  { value: 'pending', label: 'Idea' }, { value: 'backlog', label: 'To do' }, { value: 'in_progress', label: 'In progress' },
   { value: 'review', label: 'Review' }, { value: 'done', label: 'Done' },
 ]
 const NAME_TAG = '__name__'

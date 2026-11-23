@@ -32,7 +32,7 @@ export interface Board {
 
 export interface Me { id: string; role: string; leadCircles: string[] }
 
-export const TASK_STATUSES = ['backlog', 'in_progress', 'review', 'done']
+export const TASK_STATUSES = ['pending', 'backlog', 'in_progress', 'review', 'done']
 
 export async function loadBoard(admin: SupabaseClient): Promise<Board> {
   const [p, t, u, c] = await Promise.all([
@@ -83,7 +83,7 @@ export function describe(a: DoAction, b: Board): string | null {
       const who = b.people.find(p => p.id === a.person); return who ? `Give ${q(t.title)} to ${who.name}` : null
     }
     case 'set_task_date': { const t = T(a.tasks?.[0]); return t ? (a.due_date ? `Set ${q(t.title)} due ${a.due_date}${a.due_time ? ` ${a.due_time}` : ''}` : `Clear the date of ${q(t.title)}`) : null }
-    case 'set_task_status': { const t = T(a.tasks?.[0]); return t && a.status && TASK_STATUSES.includes(a.status) ? `Mark ${q(t.title)} ${a.status.replace('_', ' ')}` : null }
+    case 'set_task_status': { const t = T(a.tasks?.[0]); return t && a.status && TASK_STATUSES.includes(a.status) ? `Mark ${q(t.title)} ${a.status === 'pending' ? 'an idea' : a.status === 'backlog' ? 'to do' : a.status.replace('_', ' ')}` : null }
     case 'confirm_drafts': return tasks.length ? `Confirm ${list(tasks)} (no longer drafts)` : null
   }
   return null

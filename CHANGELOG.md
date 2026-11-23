@@ -5,6 +5,21 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.122.0 — 2026-11-23 — A task can be an Idea
+
+Oscar: "in the status drop down of the to decide section on operations… there should be an idea option so it's put in
+their column". Until now only a task with subtasks could sit in the board's Ideas column; a task of its own could not.
+- Every status picker now starts with **Idea**: To decide and a meeting's action items (`TaskQuickEdit`), the Tasks list,
+  and the task card. A task of its own set to Idea sits in the board's **Ideas** column, and can be dragged there and
+  back.
+- The **All subtasks** board shows the Ideas column too.
+- An idea isn't counted as late.
+- The assistant knows it: "make it an idea" sets the status.
+- Migration `20261224000000_task_ideas.sql`: `deliverables.status` accepts `pending`, the same word as for projects.
+  The assignee's own update (`update_my_task`) accepts it too.
+
+Ideas are still on the board. **Later** (v4.114.0) takes a task off the board onto Ideas for later.
+
 ## v4.121.0 — 2026-11-23 — Second-brain notes save when two writes meet
 
 The project manager's review of a circle sometimes failed to save its notes to the second brain. On Protopia, Cleaning,

@@ -70,7 +70,7 @@ export const CATALOG: Record<string, TableDef> = {
     table: 'deliverables', label: 'task', key: 'id', name: 'title',
     fields: {
       title: { label: 'title', type: { t: 'text', max: 300 } },
-      status: { label: 'status', type: { t: 'enum', values: ['backlog', 'in_progress', 'review', 'done'] } },
+      status: { label: 'status (pending = Idea)', type: { t: 'enum', values: ['pending', 'backlog', 'in_progress', 'review', 'done'] } },
       assignee_id: { label: 'person', type: { t: 'person' } },
       // Someone not on MyCoNet yet: a name tag only (setting a person clears it)
       assignee_name: { label: 'name of someone not on MyCoNet yet', type: { t: 'text', max: 80 } },
