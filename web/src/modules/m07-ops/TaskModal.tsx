@@ -64,7 +64,7 @@ const inputStyle: React.CSSProperties = {
 }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }
 const small: React.CSSProperties = { ...inputStyle, padding: '8px 10px', fontSize: 13 }
-const STATUS_LABEL: Record<string, string> = { pending: 'Idea', backlog: 'To do', in_progress: 'In progress', review: 'Review', done: 'Done' }
+const STATUS_LABEL: Record<string, string> = { later: 'Later', pending: 'Idea', backlog: 'To do', in_progress: 'In progress', review: 'Review', done: 'Done' }
 
 /**
  * A task's pop-up (v4.34.0), the same on the main board and on a project's page: title, status, who has it,

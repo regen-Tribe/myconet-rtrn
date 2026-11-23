@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.123.0',
+    date: '2026-11-23',
+    title: 'Later has its own column',
+    items: ['Later is now a status with its own column on the board, just before Ideas. The Later button moves a task there, and you can pick Later in any status menu.', 'Later tasks stay visible, and the project manager still looks at them when new work comes in.'],
+  },
+  {
     version: 'v4.122.0',
     date: '2026-11-23',
     title: 'A task can be an Idea',

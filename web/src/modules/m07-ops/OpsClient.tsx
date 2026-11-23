@@ -24,7 +24,6 @@ import { fmtTaskWhen, isTaskOverdue, taskDate } from '@/core/lib/tasks'
 import { DraftSwipe } from './DraftSwipe'
 import type { Project, Deliverable, ProjectUpdate, SubscriberProfile, AgentSuggestion, PmAction } from './types'
 import { ToDecidePanel } from './DecisionList'
-import { IdeasForLater } from './IdeasForLater'
 import type { DecisionRow } from './lib/decisions'
 import { NameTag } from './NameTag'
 import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
@@ -62,8 +61,6 @@ interface OpsClientProps {
   pmSuggestions: AgentSuggestion[]
   /** Everything to decide (v4.114.0): drafts and tasks with the project manager's suggestions */
   decisions?: DecisionRow[]
-  /** Tasks set aside for later (v4.114.0), off the board */
-  ideas?: Deliverable[]
   pmActions: PmAction[]
   /** Open this task's pop-up on arrival (/operations?task=<id>) */
   initialTaskId?: string | null
@@ -405,7 +402,7 @@ export default function OpsClient({
   activeCount, deliverableCount, doneCount, atRiskCount,
   isAdmin, userId, userRole, leadCircles, sprintName,
   projectSubscribers, userProfiles, canPropose, circleDirectory, initialTab, meetingCounts,
-  initialCircle, pmSuggestions, pmActions, decisions = [], ideas = [], initialTaskId = null, people = [], projectOptions = [], teams = [],
+  initialCircle, pmSuggestions, pmActions, decisions = [], initialTaskId = null, people = [], projectOptions = [], teams = [],
   circleUnits = [], circleMembers = [], initialView = 'projects',
 }: OpsClientProps) {
   const circles = useCircles()
@@ -436,8 +433,6 @@ export default function OpsClient({
   }
   const [newTask, setNewTask] = useState(false)
   const [draftsOnly, setDraftsOnly] = useState(false)
-  // The Ideas for later list (v4.114.0), in the List tab
-  const [ideasOnly, setIdeasOnly] = useState(false)
   const [boardTasks, setBoardTasks] = useState<Deliverable[]>(initialDeliverables)
   const draftCount = initialDeliverables.filter(d => d.needs_review).length
   const projectsById = new Map(boardProjects.map(p => [p.id, p]))
@@ -458,7 +453,7 @@ export default function OpsClient({
   async function moveTask(taskId: string, newStatus: string) {
     const t = boardTasks.find(x => x.id === taskId)
     // Tasks have no Ideas column
-    // A task can be an Idea since v4.122.0; it still can't be paused
+    // A task can be an Idea (v4.122.0) or Later (v4.123.0); it still can't be paused
     if (!t || t.status === newStatus || newStatus === 'paused') return
     const p = taskRef(t)
     const block = projectEditBlock(p, userId, userRole, leadCircles, circles)
@@ -670,14 +665,11 @@ export default function OpsClient({
           {/* One row for what the page shows: the board of tasks, the board of every subtask, the list, … */}
           <Chip on={activeTab === 'board' && view === 'projects'} onClick={() => { setActiveTab('board'); pickView('projects') }}>Tasks</Chip>
           <Chip on={activeTab === 'board' && view === 'tasks'} onClick={() => { setActiveTab('board'); pickView('tasks') }}>All subtasks</Chip>
-          <Chip on={activeTab === 'tasks' && !ideasOnly} onClick={() => { setIdeasOnly(false); setActiveTab('tasks') }}>List</Chip>
+          <Chip on={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')}>List</Chip>
           <Chip on={activeTab === 'updates'} onClick={() => setActiveTab('updates')}>Updates</Chip>
           <Chip on={activeTab === 'circles'} onClick={() => setActiveTab('circles')}>Circles</Chip>
           {draftCount > 0 && (
-            <Chip on={activeTab === 'tasks' && draftsOnly && !ideasOnly} count={draftCount} onClick={() => { setIdeasOnly(false); setDraftsOnly(true); setActiveTab('tasks') }}>Drafts to confirm</Chip>
-          )}
-          {ideas.length > 0 && (
-            <Chip on={activeTab === 'tasks' && ideasOnly} count={ideas.length} onClick={() => { setIdeasOnly(true); setActiveTab('tasks') }}>Ideas for later</Chip>
+            <Chip on={activeTab === 'tasks' && draftsOnly} count={draftCount} onClick={() => { setDraftsOnly(true); setActiveTab('tasks') }}>Drafts to confirm</Chip>
           )}
         </ChipRow>
 ) : (<>
@@ -920,10 +912,7 @@ export default function OpsClient({
         </>
       )}
 
-      {activeTab === 'tasks' && ideasOnly && (
-        <IdeasForLater ideas={ideas} projects={boardProjects} canEdit={canEditTask} onBack={() => router.refresh()} />
-      )}
-      {activeTab === 'tasks' && !ideasOnly && (
+      {activeTab === 'tasks' && (
         <DeliverablesTab
           deliverables={initialDeliverables} projects={boardProjects} draftsOnly={draftsOnly} onDraftsOnly={setDraftsOnly}
           canDecide={canEditTask}

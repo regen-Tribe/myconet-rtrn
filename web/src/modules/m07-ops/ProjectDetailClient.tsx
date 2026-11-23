@@ -652,8 +652,9 @@ export default function ProjectDetailClient({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
               {PROJECT_KANBAN_COLUMNS.map(col => {
                 const isTarget = dropTarget === col.key
+                // Ideas also holds proposals waiting for a lead; subtasks can be Ideas or Later too (v4.122/v4.123)
                 const cards = col.key === 'pending'
-                  ? (canManage ? pendingProposals : [])
+                  ? [...(canManage ? pendingProposals : []), ...deliverables.filter(d => d.status === 'pending')]
                   : deliverables.filter(d => d.status === col.key)
                 const droppable = canManage
                 return (
@@ -901,6 +902,7 @@ export default function ProjectDetailClient({
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>Status</label>
                 <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }}>
+                  <option value="later">Later</option>
                   <option value="pending">Idea</option>
                   <option value="backlog">To do</option>
                   <option value="in_progress">In progress</option>

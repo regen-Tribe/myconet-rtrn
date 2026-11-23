@@ -83,12 +83,18 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
       await reread([p.keep, p.task, ...(p.tasks ?? [])].filter((x): x is string => !!x))
     }
   }
+  // Later is a status (v4.123.0): the task goes to the board's Later column; Undo puts back the status it had
+  const [before, setBefore] = useState<Record<string, { status: string; needs_review: boolean }>>({})
   async function later(t: DecisionRow, on: boolean) {
     setBusy(t.deliverable_id); setMsg(null)
-    const { data, error } = await createClient().from('deliverables').update(on ? { later_at: new Date().toISOString(), needs_review: false } : { later_at: null }).eq('id', t.deliverable_id).select('id')
+    const back = before[t.deliverable_id] ?? { status: 'pending', needs_review: false }
+    const change = on ? { status: 'later', needs_review: false } : back
+    const { data, error } = await createClient().from('deliverables').update(change).eq('id', t.deliverable_id).select('id')
     setBusy(null)
     if (error || !data?.length) { setMsg({ id: t.deliverable_id, text: error?.message ?? 'The database didn’t allow this change for your account.' }); return }
-    set(t.deliverable_id, on ? { later: true, needs_review: false } : { later: false })
+    if (on) setBefore(prev => ({ ...prev, [t.deliverable_id]: { status: t.status, needs_review: t.needs_review } }))
+    set(t.deliverable_id, change)
+    setVersion(prev => ({ ...prev, [t.deliverable_id]: (prev[t.deliverable_id] ?? 0) + 1 }))
   }
 
   const suggestion = (s: AgentSuggestion) => {
@@ -144,14 +150,14 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           </Link>
           <span className="v4-row__trail">
             {t.status === 'merged' ? <span className="dl4-tag dl4-tag--grey">Merged</span>
-              : t.later ? <span className="dl4-tag dl4-tag--idea"><Icon name="clock" size={12} />Later{decidable && <> · <button type="button" className="dl4-link" onClick={() => later(t, false)}>Undo</button></>}</span>
+              : t.status === 'later' ? <span className="dl4-tag dl4-tag--idea"><Icon name="clock" size={12} />Later{decidable && <> · <button type="button" className="dl4-link" onClick={() => later(t, false)}>Undo</button></>}</span>
               : t.needs_review ? <DraftSwipe keepLabel taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => set(t.deliverable_id, { needs_review: false })} onUndone={() => set(t.deliverable_id, { needs_review: true })} />
               : t.suggestions.length ? null
               : <StatusPill status={t.status === 'done' ? 'done' : 'todo'} label={t.status === 'done' ? 'Done' : 'On the board'} />}
-            {decidable && !t.later && t.status !== 'merged' && (
-              <button type="button" className="mt4-editbtn" disabled={busy === t.deliverable_id} onClick={() => later(t, true)} title="Set it aside on the Ideas for later list"><Icon name="clock" size={13} />Later</button>
+            {decidable && t.status !== 'later' && t.status !== 'merged' && (
+              <button type="button" className="mt4-editbtn" disabled={busy === t.deliverable_id} onClick={() => later(t, true)} title="Move it to the board's Later column"><Icon name="clock" size={13} />Later</button>
             )}
-            {canEdit && !t.later && (
+            {canEdit && (
               <button type="button" className="mt4-editbtn" aria-expanded={open} onClick={() => toggle(setEditing, t.deliverable_id)}>
                 <Icon name="pencil" size={13} />{open ? 'Done' : 'Edit'}
               </button>
@@ -159,7 +165,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           </span>
         </div>
         {msg?.id === t.deliverable_id && <div className="mt4-taskedit dl4-err">{msg.text}</div>}
-        {canEdit && open && !t.later && (
+        {canEdit && open && (
           <div className="mt4-taskedit">
             <TaskQuickEdit
               key={version[t.deliverable_id] ?? 0}

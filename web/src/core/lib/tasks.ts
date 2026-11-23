@@ -31,7 +31,7 @@ export function fmtTaskWhen(dueDate: string | null | undefined, dueTime?: string
 /** Past due: past the time if there is one, else past the whole day. */
 export function isTaskOverdue(dueDate: string | null | undefined, dueTime: string | null | undefined, status: string, now = new Date()): boolean {
   // An idea isn't late (v4.122.0)
-  if (!dueDate || status === 'done' || status === 'review' || status === 'pending') return false
+  if (!dueDate || status === 'done' || status === 'review' || status === 'pending' || status === 'later') return false
   const due = taskDate(dueDate, dueTime)
   if (!dueTime) due.setDate(due.getDate() + 1)
   return due < now

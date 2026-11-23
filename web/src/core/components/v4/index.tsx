@@ -62,16 +62,17 @@ export function Button({ variant = 'primary', size = 'md', href, icon, children,
 
 /* ─── StatusPill ─────────────────────────────────────────────────── */
 
-export type Status = 'idea' | 'todo' | 'doing' | 'review' | 'done' | 'paused' | 'no'
+export type Status = 'later' | 'idea' | 'todo' | 'doing' | 'review' | 'done' | 'paused' | 'no'
 
 /** Lexicon labels for a single item's status. Columns say "Ideas"; one card says "Idea". */
 export const STATUS_LABEL: Record<Status, string> = {
-  idea: 'Idea', todo: 'To do', doing: 'In progress', review: 'Review', done: 'Done', paused: 'Paused', no: 'Declined',
+  later: 'Later', idea: 'Idea', todo: 'To do', doing: 'In progress', review: 'Review', done: 'Done', paused: 'Paused', no: 'Declined',
 }
 
 /** Maps the database statuses (projects and tasks) to a pill. */
 export function statusFromDb(status: string): Status {
   switch (status) {
+    case 'later': return 'later'
     case 'pending': return 'idea'
     case 'backlog': return 'todo'
     case 'in_progress': return 'doing'
