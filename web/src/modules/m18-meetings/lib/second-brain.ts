@@ -193,18 +193,32 @@ export async function listPaths(): Promise<Set<string>> {
 export async function deleteFile(path: string, message: string): Promise<boolean> {
   const { repo, branch, headers } = gh()
   const api = `https://api.github.com/repos/${repo}/contents/${enc(path)}`
-  const existing = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers })
+  const existing = await fetch(`${api}?ref=${encodeURIComponent(branch)}&t=${Date.now()}`, { headers })
   if (!existing.ok) return false
-  const { sha, content } = (await existing.json()) as { sha?: string; content?: string }
+  const { sha: first, content } = (await existing.json()) as { sha?: string; content?: string }
+  let sha = first
   const text = content ? Buffer.from(content, 'base64').toString('utf8') : ''
   if (!sha || !/^source: myconet-/m.test(text.split('\n---')[0])) return false
-  const res = await fetch(api, {
-    method: 'DELETE',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, branch, sha, committer: { name: 'MyCoNet agent', email: 'myconet-agent@users.noreply.github.com' } }),
-  })
+  let res: Response
+  // As in saveNote (v4.121.0): a 409 names the file's current version; retry with it
+  for (let attempt = 1; ; attempt++) {
+    res = await fetch(api, {
+      method: 'DELETE',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, branch, sha, committer: { name: 'MyCoNet agent', email: 'myconet-agent@users.noreply.github.com' } }),
+    })
+    if (res.ok || attempt >= 3 || res.status !== 409) break
+    sha = (await res.text()).match(/is at ([0-9a-f]{40})/)?.[1] ?? sha
+    await new Promise(r => setTimeout(r, 300 * attempt))
+  }
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${(await res.text()).slice(0, 200)}`)
   return true
+}
+
+/** A file's current version on the branch, past any cache; undefined when it doesn't exist */
+async function currentSha(api: string, branch: string, headers: Record<string, string>): Promise<string | undefined> {
+  const r = await fetch(`${api}?ref=${encodeURIComponent(branch)}&t=${Date.now()}`, { headers })
+  return r.ok ? ((await r.json()) as { sha?: string }).sha : undefined
 }
 
 /** Creates or updates the note; returns its GitHub link */
@@ -218,16 +232,28 @@ export async function saveNote(path: string, content: string, message: string): 
     'User-Agent': 'myconet-agent',
   }
   const api = `https://api.github.com/repos/${repo}/contents/${enc(path)}`
-  const existing = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers })
-  const sha = existing.ok ? ((await existing.json()) as { sha?: string }).sha : undefined
-  const res = await fetch(api, {
-    method: 'PUT',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message, branch, content: b64(content), ...(sha ? { sha } : {}),
-      committer: { name: 'MyCoNet agent', email: 'myconet-agent@users.noreply.github.com' },
-    }),
-  })
+  // The file's current version. Never from a cache: GitHub can serve a version that's a few seconds old right after
+  // another write, and a save with it is refused (409)
+  const existing = await fetch(`${api}?ref=${encodeURIComponent(branch)}&t=${Date.now()}`, { headers })
+  let sha = existing.ok ? ((await existing.json()) as { sha?: string }).sha : undefined
+  let res: Response
+  // v4.121.0: when two writes meet (a circle's README and the second brain's map, two reviews at once), GitHub refuses
+  // the second with 409 "is at <sha> but expected <sha>". Retry with the version it names, a few times.
+  for (let attempt = 1; ; attempt++) {
+    res = await fetch(api, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message, branch, content: b64(content), ...(sha ? { sha } : {}),
+        committer: { name: 'MyCoNet agent', email: 'myconet-agent@users.noreply.github.com' },
+      }),
+    })
+    if (res.ok || attempt >= 3 || (res.status !== 409 && res.status !== 422)) break
+    const body = await res.text()
+    const named = body.match(/is at ([0-9a-f]{40})/)?.[1]
+    sha = named ?? (await currentSha(api, branch, headers)) ?? sha
+    await new Promise(r => setTimeout(r, 300 * attempt))
+  }
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${(await res.text()).slice(0, 200)}`)
   const data = await res.json() as { content?: { html_url?: string } }
   return { url: data.content?.html_url ?? `https://github.com/${repo}/blob/${branch}/${enc(path)}` }
