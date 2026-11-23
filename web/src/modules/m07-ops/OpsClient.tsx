@@ -458,7 +458,8 @@ export default function OpsClient({
   async function moveTask(taskId: string, newStatus: string) {
     const t = boardTasks.find(x => x.id === taskId)
     // Tasks have no Ideas column
-    if (!t || t.status === newStatus || newStatus === 'pending' || newStatus === 'paused') return
+    // A task can be an Idea since v4.122.0; it still can't be paused
+    if (!t || t.status === newStatus || newStatus === 'paused') return
     const p = taskRef(t)
     const block = projectEditBlock(p, userId, userRole, leadCircles, circles)
     if (block) { setNotice(block); return }
@@ -560,7 +561,7 @@ export default function OpsClient({
     return true
   })
   // Tasks have no Ideas or Paused column
-  const columns = view === 'tasks' ? BOARD_COLUMNS.filter(c => c.key !== 'pending' && c.key !== 'paused') : BOARD_COLUMNS
+  const columns = view === 'tasks' ? BOARD_COLUMNS.filter(c => c.key !== 'paused') : BOARD_COLUMNS
 
   const grouped = Object.fromEntries(
     BOARD_COLUMNS.map(col => [col.key, filteredProjects.filter(p => p.status === col.key)])

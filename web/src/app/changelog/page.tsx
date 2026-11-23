@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.122.0',
+    date: '2026-11-23',
+    title: 'A task can be an Idea',
+    items: ['Status now has “Idea”. A task set to Idea sits in the board’s Ideas column, and you can drag it there and back.'],
+  },
+  {
     version: 'v4.121.0',
     date: '2026-11-23',
     title: 'Circle notes in the second brain stay up to date',
