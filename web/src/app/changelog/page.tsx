@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.120.0',
+    date: '2026-11-23',
+    title: 'Review again',
+    items: ['In To decide, “Review again” asks the project manager to look at everything pending right away, with what you just decided, and suggest again.'],
+  },
+  {
     version: 'v4.119.0',
     date: '2026-11-22',
     title: '“Part of” offers the right tasks',

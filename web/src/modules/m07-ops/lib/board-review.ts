@@ -53,7 +53,7 @@ interface Project { id: string; title: string; description: string | null; is_ch
 const str = (v: unknown, max: number): string | null =>
   typeof v === 'string' && v.trim() ? v.replace(/\s+/g, ' ').trim().slice(0, max) : null
 
-function prompt(circleName: string, community: string, projects: Project[], tasks: Task[], people: string[], nameOf: (id: string | null) => string | null, dismissed: string[]) {
+function prompt(circleName: string, community: string, projects: Project[], tasks: Task[], people: string[], nameOf: (id: string | null) => string | null, dismissed: string[], accepted: string[] = []) {
   const pIdx = new Map(projects.map((p, i) => [p.id, `P${i + 1}`]))
   const projLines = projects.filter(p => !p.is_chores)
     .map(p => `${pIdx.get(p.id)} · ${p.title}${p.description ? ` — ${p.description.replace(/\s+/g, ' ').slice(0, 160)}` : ''}`).join('\n') || '(none)'
@@ -73,6 +73,7 @@ Find:
 5. "status": the circle's board in 3–6 short markdown bullets: what's moving, what's next, what's stuck or late, what needs a person. Name tasks and projects by their titles here, never by T1/P1.
 
 For each item say "sure": true only when you have no doubt. Don't repeat what was already turned down: ${dismissed.length ? dismissed.join(' · ') : '(nothing)'}.
+Recently decided by the circle's leads (done: build on these, never undo or repeat them): ${accepted.length ? accepted.join(' · ') : '(nothing)'}.
 
 Return JSON only:
 {"duplicates":[{"keep":"T1","drop":"T2","sure":true,"reason":"…"}],"moves":[{"task":"T3","project":"P1","sure":true,"reason":"…"}],"new_projects":[{"title":"…","description":"…","tasks":["T4","T5","T6"],"reason":"…"}],"assign":[{"task":"T7","person":"…","reason":"…"}],"status":"- …\\n- …"}
@@ -95,7 +96,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
     admin.from('deliverables').select('id, title, project_id, assignee_id, assignee_name, priority, due_date, status, needs_review, source, source_meeting_id, notes')
       .eq('circle', circle).neq('status', 'done').order('created_at').limit(MAX_TASKS),
     admin.from('user_profiles').select('id, first_name, last_name, username, role, lead_circles'),
-    admin.from('agent_suggestions').select('kind, payload, status, decided_note').eq('circle', circle).in('status', ['dismissed']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
+    admin.from('agent_suggestions').select('kind, payload, status, decided_note, decided_at').eq('circle', circle).in('status', ['dismissed', 'accepted']).gte('decided_at', new Date(Date.now() - 60 * 86400_000).toISOString()),
   ])
   if (!circleRes.data) return { ok: false, merged: 0, moved: 0, suggested: 0, note: null, errors: ['no such circle'] }
   const circleName = circleRes.data.name as string
@@ -141,7 +142,15 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
     }
   }
   // What leads turned down, and what they asked for instead (v4.36.0)
-  const dismissed = (sugRes.data ?? []).map(s => `${s.kind}: ${(s.payload as { title?: string; label?: string }).title ?? (s.payload as { label?: string }).label ?? ''}${s.decided_note ? ` (the lead wanted instead: "${String(s.decided_note).slice(0, 200)}")` : ''}`).slice(0, 30)
+  // What leads accepted lately, and the project manager's own changes they undid (v4.120.0: "Review again" builds on what
+  // the person just decided)
+  const since = new Date(Date.now() - 14 * 86400_000).toISOString()
+  const { data: undone } = await admin.from('agent_actions').select('action, detail').like('action', 'pm_%').gte('undone_at', since).eq('detail->>circle', circle).limit(30)
+  const label = (p: Record<string, unknown>) => String(p.title ?? p.label ?? '')
+  const accepted = (sugRes.data ?? []).filter(s => s.status === 'accepted' && (s.decided_at ?? '') >= since)
+    .map(s => `accepted ${s.kind}: ${label(s.payload as Record<string, unknown>)}`).slice(0, 30)
+  const undid = (undone ?? []).map(a => { const d = a.detail as Record<string, unknown>; return `${a.action.replace('pm_', '')}: ${String(d.title ?? d.kept ?? '')}${d.project ? ` → ${d.project}` : ''}${d.person ? ` → ${d.person}` : ''} (a lead undid this; don't do it again)` })
+  const dismissed = [...undid, ...(sugRes.data ?? []).filter(s => s.status === 'dismissed').map(s => `${s.kind}: ${(s.payload as { title?: string; label?: string }).title ?? (s.payload as { label?: string }).label ?? ''}${s.decided_note ? ` (the lead wanted instead: "${String(s.decided_note).slice(0, 200)}")` : ''}`)].slice(0, 40)
   // No open tasks (a new circle): nothing for the AI, but the circle still gets its space
   if (!tasks.length || circleRow.archived_at) {
     const note = await writeSpace(circleRow.archived_at ? '- This circle is retired.' : '- No open tasks yet.', tasks, [])
@@ -160,7 +169,7 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
     const res = await fetch('https://api.minimax.io/v1/chat/completions', {
       method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: MODEL, reasoning_effort: 'low', max_completion_tokens: 6000, messages: [{ role: 'user', content: prompt(circleName, community, projects, tasks, people.map(displayName), nameOf, dismissed) }] }),
+      body: JSON.stringify({ model: MODEL, reasoning_effort: 'low', max_completion_tokens: 6000, messages: [{ role: 'user', content: prompt(circleName, community, projects, tasks, people.map(displayName), nameOf, dismissed, accepted) }] }),
     })
     if (!res.ok) throw new Error(`AI ${res.status}`)
     const data = await res.json() as { choices?: { message?: { content?: string } }[] }

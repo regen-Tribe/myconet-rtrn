@@ -5,6 +5,23 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.120.0 — 2026-11-23 — Review again
+
+Oscar: "click a review all pending things and re suggest how to handle it… as the user accepts things, new suggestions
+might become clear for the PM agent… that function will evaluate everything pending taking into account the recent
+things the user has updated".
+- **Review again** in the board's To decide panel (M07), for circle leads and admins. It asks the project manager to
+  review now, without waiting for its 10-minute check, each circle the person may decide (following the circle
+  filter), three at a time with progress. It reads the boards as they are after what was just approved, declined,
+  edited or set aside for later, and replaces each circle's open suggestions. The page then reloads with them, and
+  says how many suggestions and changes it made.
+- **The review builds on recent decisions.** Besides what leads turned down (60 days, with what they wanted
+  instead), it now gets what they **accepted** in the last two weeks and its own changes they **undid**. It's told to
+  build on the first and never redo the second.
+- New route `POST /api/ops/board-review/now` (one circle, the circle's leads and admins), next to the sweep's.
+
+No migration.
+
 ## v4.119.0 — 2026-11-22 — "Part of" offers only the task's own circle or subcircle
 
 Oscar: "tasks with subtasks should usually belong to a circle and sometimes to a sub circle. the drop down options under
