@@ -5,6 +5,18 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.121.0 — 2026-11-23 — Second-brain notes save when two writes meet
+
+The project manager's review of a circle sometimes failed to save its notes to the second brain. On Protopia, Cleaning,
+Art, Kitchen, Space Holding and Vision showed "second brain: GitHub 409 … is at <sha> but expected <sha>". To update a
+file, GitHub needs its current version. MyCoNet read that version just before saving, but GitHub can serve a version a
+few seconds old right after another write: a circle's README and the second brain's map, or two reviews at once. The
+save was then refused, and the circle's board note and README stayed out of date. Its suggestions were unaffected.
+- `saveNote` and `deleteFile` (`m18-meetings/lib/second-brain.ts`) read the file's version past any cache. On a 409
+  they retry, up to three times, with the version GitHub's refusal names, or a fresh read of it.
+
+No migration.
+
 ## v4.120.0 — 2026-11-23 — Review again
 
 Oscar: "click a review all pending things and re suggest how to handle it… as the user accepts things, new suggestions
