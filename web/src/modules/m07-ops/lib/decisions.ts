@@ -7,7 +7,7 @@ import { loadProjectManager } from './pm-data'
 export interface Viewer { id: string; role: string; leadCircles: string[] }
 
 /** One task to decide (v4.114.0): its fields, where it came from, and the project manager's open suggestions about it */
-export type DecisionRow = MeetingTask & { suggestions: AgentSuggestion[]; later: boolean }
+export type DecisionRow = MeetingTask & { suggestions: AgentSuggestion[] }
 
 const DELIVERABLE = 'id, title, status, needs_review, due_date, due_time, project_id, circle, team_id, assignee_id, assignee_name, priority, created_by, source_meeting_id, source_item, ' +
   'projects(title, circle, created_by, lead_user_id), user_profiles!deliverables_assignee_id_fkey(first_name, username)'
@@ -27,9 +27,6 @@ export const suggestionTasks = (s: AgentSuggestion): string[] => {
  */
 export async function loadDecisions(supabase: SupabaseClient, me: Viewer, scope: { all: true } | { meetingId: string }): Promise<{ rows: DecisionRow[]; suggestions: AgentSuggestion[]; actions: PmAction[] }> {
   const pm = await loadProjectManager(supabase)
-  // Set aside for later (v4.114.0), read on its own: a community that hasn't applied 20261218000000_task_later keeps the list
-  const laterRead = await supabase.from('deliverables').select('id').not('later_at', 'is', null).limit(2000)
-  const later = new Set(laterRead.error ? [] : (laterRead.data ?? []).map(r => r.id as string))
 
   let ids: string[]
   if ('meetingId' in scope) {
@@ -37,7 +34,7 @@ export async function loadDecisions(supabase: SupabaseClient, me: Viewer, scope:
     ids = (data ?? []).map(r => r.deliverable_id as string)
   } else {
     const { data } = await supabase.from('deliverables').select('id').eq('needs_review', true).order('created_at').limit(500)
-    ids = [...new Set([...(data ?? []).map(r => r.id as string), ...pm.suggestions.flatMap(suggestionTasks)])].filter(id => !later.has(id))
+    ids = [...new Set([...(data ?? []).map(r => r.id as string), ...pm.suggestions.flatMap(suggestionTasks)])]
   }
   if (!ids.length) return { rows: [], suggestions: pm.suggestions, actions: pm.actions }
 
@@ -71,7 +68,6 @@ export async function loadDecisions(supabase: SupabaseClient, me: Viewer, scope:
       circle: d.circle ?? null, team_id: d.team_id ?? null, assignee_id: d.assignee_id ?? null, assignee_name: d.assignee_name ?? null, priority: d.priority ?? null,
       meeting: mid ? { id: mid, title: m?.title ?? null, date: m ? (m.meeting_date ?? m.created_at) : null, circle: m?.circle ?? null } : undefined,
       suggestions: pm.suggestions.filter(s => suggestionTasks(s).includes(d.id)),
-      later: later.has(d.id),
     } satisfies DecisionRow
   })
   // The board lists only what this person may decide; a meeting's page shows all its action items

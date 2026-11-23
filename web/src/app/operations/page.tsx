@@ -44,12 +44,7 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
     .select('id, project_id, title, assignee_id, assignee_name, team_id, created_by, priority, due_date, due_time, circle, needs_review, status, progress, notes, source, source_meeting_id, source_item, user_profiles(username, first_name)')
     .order('due_date', { ascending: true })
 
-  // Ideas for later (v4.114.0): set aside, off the board until brought back. Read on its own, so a community that hasn't
-  // applied 20261218000000_task_later keeps the board
-  const laterRead = await supabase.from('deliverables').select('id').not('later_at', 'is', null)
-  const laterIds = new Set(laterRead.error ? [] : (laterRead.data ?? []).map(r => r.id as string))
-
-  const everyTask = (deliverablesRaw ?? []).map((d: any) => ({
+  const deliverables = (deliverablesRaw ?? []).map((d: any) => ({
     id: d.id as string,
     project_id: (d.project_id ?? null) as string | null,
     title: d.title as string,
@@ -71,8 +66,6 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
     progress: d.progress as number | null,
     assignee_username: d.user_profiles?.username ?? null,
   }))
-  const deliverables = everyTask.filter(d => !laterIds.has(d.id))
-  const ideas = everyTask.filter(d => laterIds.has(d.id))
 
   const { data: updatesRaw } = await supabase
     .from('project_updates')
@@ -154,7 +147,6 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
       pmSuggestions={pm.suggestions}
       pmActions={pm.actions}
       decisions={pm.rows}
-      ideas={ideas}
       initialTaskId={task ?? null}
       initialView={view === 'tasks' ? 'tasks' : 'projects'}
       {...await loadCircleMembers(supabase)}

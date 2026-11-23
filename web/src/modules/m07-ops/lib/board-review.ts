@@ -72,6 +72,8 @@ Find:
 4. "assign": a task with nobody on it, when one of the people below is the obvious person (it's their area or they talked about it). Use the exact name. A task with a name "(not on MyCoNet yet)": suggest a person below only when they are clearly that same person (they've since joined).
 5. "status": the circle's board in 3–6 short markdown bullets: what's moving, what's next, what's stuck or late, what needs a person. Name tasks and projects by their titles here, never by T1/P1.
 
+Tasks with the status "later" are parked ideas the circle may come back to, and "pending" ones are ideas. Don't move or merge them into active work on your own; but when a new task clearly relates to one, suggest it (a merge, a move, or a new project with both).
+
 For each item say "sure": true only when you have no doubt. Don't repeat what was already turned down: ${dismissed.length ? dismissed.join(' · ') : '(nothing)'}.
 Recently decided by the circle's leads (done: build on these, never undo or repeat them): ${accepted.length ? accepted.join(' · ') : '(nothing)'}.
 
@@ -101,10 +103,8 @@ export async function reviewCircle(admin: SupabaseClient, circle: string, opts: 
   if (!circleRes.data) return { ok: false, merged: 0, moved: 0, suggested: 0, note: null, errors: ['no such circle'] }
   const circleName = circleRes.data.name as string
   const projects = (projRes.data ?? []) as Project[]
-  // Set aside for later (v4.114.0) isn't reviewed until it's brought back. Read on its own: a community without the column keeps its reviews
-  const laterRes = await admin.from('deliverables').select('id').eq('circle', circle).not('later_at', 'is', null)
-  const later = new Set(laterRes.error ? [] : (laterRes.data ?? []).map(r => r.id as string))
-  const tasks = ((taskRes.data ?? []) as Task[]).filter(t => !later.has(t.id))
+  // Later tasks (v4.123.0) are reviewed too: parked work new tasks may belong with
+  const tasks = (taskRes.data ?? []) as Task[]
   // Shared accounts ("Protopia admin") aren't people who take on work
   const everyone = (peopleRes.data ?? []) as PersonProfile[]
   const people = everyone.filter(p => !/admin/i.test(`${p.username ?? ''} ${displayName(p)}`))

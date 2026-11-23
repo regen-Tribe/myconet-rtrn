@@ -49,7 +49,7 @@ unless opened at `#pm`; v4.114.0 replaced the project manager panel). One list o
 about, each task once, grouped by meeting. Each row is a task in the meeting page's style, with:
 - its fields and **✦ What should the assistant do?** (`TaskQuickEdit`)
 - the **Draft** pill (`DraftSwipe keepLabel`): right approves, left declines, and it then reads Approved / Declined
-- **Later**: `deliverables.later_at`, off the board and the review, listed under **Ideas for later** (`IdeasForLater.tsx`)
+- **Later** (v4.123.0): a status. The task goes to the board's **Later** column, left of Ideas; Undo puts back the status it had. The project manager still reviews Later tasks, so new work can join them.
 - its suggestions, with Accept / Dismiss / Put it in (`/api/ops/suggestions/[id]`; the wording is in `suggestion-text.tsx`)
 
 Rows stay until a reload. Below the list is what the assistant changed itself in the last two weeks, with **Undo**.

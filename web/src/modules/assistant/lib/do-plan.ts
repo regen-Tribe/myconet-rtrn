@@ -38,7 +38,7 @@ Changes you can make:
 - rename_task {"task":"T1","title":"…"}
 - assign_task {"task":"T1","person":"a name from People, or null for nobody"}
 - set_task_date {"task":"T1","due_date":"YYYY-MM-DD or null","due_time":"HH:MM or null"}
-- set_task_status {"task":"T1","status":"pending|backlog|in_progress|review|done"} (pending = an Idea, the board's Ideas column)
+- set_task_status {"task":"T1","status":"later|pending|backlog|in_progress|review|done"} (pending = an Idea, the board's Ideas column; later = parked in the Later column)
 - confirm_drafts {"tasks":["T1",…]}
 
 ${catalogPrompt(refs)}

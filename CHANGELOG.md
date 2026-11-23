@@ -5,6 +5,28 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.123.0 — 2026-11-23 — Later is a status, with its own column
+
+Oscar: "later button moves it to the later column (create the column one position left of idea column) and you can
+set that as the status. lets not longer hide them. its just a new status - later. and the ai should still have access to
+data in there in case it relates to new things coming in".
+- **A Later column** on the board, left of Ideas: Later · Ideas · To do · In progress · Review · Done (· Paused). It's
+  for tasks and for tasks with subtasks, and a task's own page has it for its subtasks too.
+- **Later is in every status picker**: To decide and a meeting's action items, the Tasks list, the task card, and a
+  task's page. Drag a card there, or set it.
+- **The Later button** in To decide sets the status to Later. Undo puts back the status it had.
+- **Nothing is hidden any more.** v4.114.0's "Ideas for later" list and chip are gone; those tasks are simply in
+  the Later column.
+- **The project manager reviews Later and Idea tasks too.** It won't move them into active work on its own, but when a
+  new task clearly relates to one it suggests a merge, a move or a new project with both. The assistant knows "later".
+- A Later task isn't counted as late.
+- **Fixed from v4.122.0:** on a task's own page, the Ideas column now shows subtasks set to Idea, not only proposals
+  waiting for a lead.
+- Migration `20261225000000_later_status.sql`:
+  - `deliverables` and `projects` accept `later`, and `update_my_task` accepts it.
+  - Tasks set aside with `later_at` become status `later`; neither community had any.
+  - `later_at` stays in the database, unused.
+
 ## v4.122.0 — 2026-11-23 — A task can be an Idea
 
 Oscar: "in the status drop down of the to decide section on operations… there should be an idea option so it's put in

@@ -13,10 +13,12 @@
  * 'done'. 'paused' isn't a Kanban column here; the main board adds a Paused column for projects (OpsClient, v4.33.6).
  */
 
-export const PROJECT_KANBAN_STATUSES = ['pending', 'backlog', 'in_progress', 'review', 'done'] as const
+export const PROJECT_KANBAN_STATUSES = ['later', 'pending', 'backlog', 'in_progress', 'review', 'done'] as const
 export type ProjectKanbanStatus = typeof PROJECT_KANBAN_STATUSES[number]
 
 export const PROJECT_KANBAN_COLUMNS: { key: ProjectKanbanStatus; label: string; color: string }[] = [
+  // Later (v4.123.0): parked, left of Ideas. A task or project you may come back to
+  { key: 'later',       label: 'Later',       color: '#a1a1aa' },
   { key: 'pending',     label: 'Ideas',       color: 'var(--ink-4)' },
   { key: 'backlog',     label: 'To do',       color: '#94a3b8' },
   { key: 'in_progress', label: 'In progress', color: '#4338ca' },
@@ -25,6 +27,7 @@ export const PROJECT_KANBAN_COLUMNS: { key: ProjectKanbanStatus; label: string; 
 ]
 
 export const PROJECT_STATUS_META: Record<string, { label: string; color: string }> = {
+  later:       { label: 'Later',       color: '#a1a1aa' },
   pending:     { label: 'Idea',        color: 'var(--ink-4)' },
   backlog:     { label: 'To do',       color: '#94a3b8' },
   in_progress: { label: 'In progress', color: '#4338ca' },

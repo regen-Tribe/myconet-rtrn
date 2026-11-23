@@ -15,6 +15,7 @@ import { taskHref, type TaskProjectOption, type TaskTeamOption } from './TaskMod
 import { partOfChoices, placeChange } from './lib/task-edit'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
+  later:       { label: 'Later',       color: 'var(--ink-3)', bg: 'transparent' },
   pending:     { label: 'Idea',        color: 'var(--ink-3)', bg: 'var(--bg-2)' },
   backlog:     { label: 'To do',       color: 'var(--ink-4)', bg: 'var(--bg-3)' },
   in_progress: { label: 'In progress', color: 'var(--m7)',    bg: '#4338ca18' },
