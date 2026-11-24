@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-24 — Core v4.130.0 via PR #94 (deployed, 4cd9d618) + design review on
+- v4.130.0: Undo after a decline stays until reload; each draft shows its source. No migration.
+- `designReview: true` (Sonia's design review, core v4.124+), on Oz's OK, as on Protopia. Checked: `data-review` on <html>.
+
 ## 2026-11-24 — Core v4.129.0 via PR #93 (deployed, 4e1a8611): tasks remember when and by whom they last changed
 - Migration `change_tracking` applied via MCP before the deploy (columns + triggers checked).
 
