@@ -101,6 +101,36 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
     setVersion(prev => ({ ...prev, [t.deliverable_id]: (prev[t.deliverable_id] ?? 0) + 1 }))
   }
 
+  // What the suggestion is based on (v4.128.0: Oscar, "see why it's suggesting this, and click a link to meeting notes
+  // explaining why"): each of its tasks, the meeting it came from (a link to its notes), the line that was said and who
+  // said it; or who added it by hand
+  const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null)
+  const basedOn = (s: AgentSuggestion) => {
+    const list = s.sources ?? []
+    if (!list.length) return null
+    return (
+      <div className="dl4-basis">
+        <div className="dl4-basis__title">Based on</div>
+        {list.map(x => (
+          <div key={x.task_id} className="dl4-basis__row">
+            <b>{x.title}</b>
+            {x.meeting ? (
+              <span className="dl4-basis__src">
+                {x.meeting.title
+                  ? <Link href={`/meetings/${x.meeting.id}`} className="dl4-basis__link">{x.meeting.title} →</Link>
+                  : <em>a meeting you can’t open</em>}
+                {x.meeting.date && <span suppressHydrationWarning> · {day(x.meeting.date)}</span>}
+              </span>
+            ) : (
+              <span className="dl4-basis__src">Added by hand{x.added_by ? ` by ${x.added_by}` : ''}{x.added_at ? <span suppressHydrationWarning> on {day(x.added_at)}</span> : null}</span>
+            )}
+            {x.said && <span className="dl4-basis__said">“{x.said}”{x.said_by && <> · {x.said_by}</>}</span>}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const suggestion = (s: AgentSuggestion) => {
     const state = decided[s.id]
     const plain = explain(s, titleOf, projectTitle)
@@ -111,6 +141,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
         <div className="dl4-sug__head"><InlineIcon name="compass" /><b>{KIND[s.kind] ?? 'Suggested'}</b>{state && <span className={`dl4-sug__state dl4-sug__state--${state}`}>{state === 'accepted' ? '✓ Accepted' : 'Dismissed'}</span>}</div>
         <div className="dl4-sug__what">{plain.what}</div>
         {s.reason && <div className="dl4-sug__why"><b>Why:</b> {s.reason}</div>}
+        {basedOn(s)}
         {mayDecide && !state && (
           <div className="dl4-sug__acts">
             {(s.kind === 'new_project' || s.kind === 'move') && options && (

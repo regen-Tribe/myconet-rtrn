@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.128.0',
+    date: '2026-11-24',
+    title: 'See what a suggestion is based on',
+    items: ['Each project manager suggestion now shows “Based on”: the meeting each task came from, with a link to its notes, and the line that was said and by whom.'],
+  },
+  {
     version: 'v4.127.0',
     date: '2026-11-24',
     title: 'Done on the far right, a subcircle filter, new subcircles from a task',
