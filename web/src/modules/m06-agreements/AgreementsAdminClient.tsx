@@ -14,15 +14,15 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 
 const NEXT_ACTIONS: Record<string, { label: string; next: string; bg: string }[]> = {
   pending:  [
-    { label: '✓ Accept',      next: 'accepted',  bg: '#22c55e' },
-    { label: 'Decline',       next: 'rejected',  bg: '#ef4444' },
+    { label: '✓ Accept',      next: 'accepted',  bg: 'var(--rv-good, #22c55e)' },
+    { label: 'Decline',       next: 'rejected',  bg: 'var(--rv-bad, #ef4444)' },
   ],
   accepted: [
-    { label: 'Mark active',   next: 'active',    bg: '#3b82f6' },
-    { label: 'Decline',       next: 'rejected',  bg: '#ef4444' },
+    { label: 'Mark active',   next: 'active',    bg: 'var(--rv-primary, #3b82f6)' },
+    { label: 'Decline',       next: 'rejected',  bg: 'var(--rv-bad, #ef4444)' },
   ],
   active:   [
-    { label: 'Mark complete', next: 'completed', bg: '#94a3b8' },
+    { label: 'Mark complete', next: 'completed', bg: 'var(--rv-neutral-solid, #94a3b8)' },
   ],
   rejected:  [],
   completed: [],
@@ -82,7 +82,7 @@ export default function AgreementsAdminClient({ agreements: initial }: Props) {
 
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
-        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 14 }}>
+        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--rv-neutral, #1d4ed8)', background: 'var(--rv-neutral-bg, #1d4ed815)', padding: '3px 10px', borderRadius: 20, marginBottom: 14 }}>
           {modLabel('06', 'Agreements — Admin Review')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', marginBottom: 6 }}>

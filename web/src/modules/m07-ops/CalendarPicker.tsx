@@ -1,5 +1,11 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
+import { Icon } from '@/core/components/v4'
+
+// The design review: the trigger is a soft control (--ctl, no outline, #37), icons from the v4 set, no mono text.
+// Classes styled in ops-v4.css; without the review, the inline look as before.
+const RV = DESIGN_REVIEW
 
 const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const MONTH_NAMES = [
@@ -97,7 +103,8 @@ export function CalendarPicker({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(o => !o)}
-        style={{
+        className={RV ? `pj5-date${open ? ' is-open' : ''}${displayLabel ? ' has-value' : ''}` : undefined}
+        style={RV ? undefined : {
           display: 'inline-flex', alignItems: 'center', gap: 7,
           padding: '7px 12px', borderRadius: 8,
           border: '1px solid var(--rule)', background: 'var(--surface)',
@@ -108,11 +115,13 @@ export function CalendarPicker({
           outlineOffset: 1,
         }}
       >
+        {RV ? <Icon name="calendar" size={16} /> : (
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.7 }}>
           <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
           <path d="M5 1v4M11 1v4M1 7h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
-        {displayLabel ?? placeholder}
+        )}
+        <span className={RV ? 'pj5-date__label' : undefined}>{displayLabel ?? placeholder}</span>
       </button>
 
       {/* Dropdown calendar — fixed so no ancestor overflow:hidden can clip it */}
@@ -123,8 +132,8 @@ export function CalendarPicker({
           ...(dropdownPos.right !== undefined ? { right: dropdownPos.right } : { left: dropdownPos.left }),
           zIndex: 10000,
           background: 'var(--surface)',
-          border: '1px solid var(--rule)',
-          borderRadius: 12,
+          border: RV ? 0 : '1px solid var(--rule)',
+          borderRadius: RV ? 20 : 12,
           boxShadow: '0 8px 32px -8px rgba(0,0,0,0.18), 0 2px 10px rgba(0,0,0,0.07)',
           padding: '12px 12px 8px',
           minWidth: 256,
@@ -132,14 +141,14 @@ export function CalendarPicker({
         }}>
           {/* Month / year nav */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <button type="button" onClick={prevMonth} style={navBtn}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <button type="button" onClick={prevMonth} aria-label="Previous month" style={RV ? navBtnRv : navBtn}>
+              {RV ? <Icon name="left" size={16} /> : <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
             </button>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: 'var(--ink)', letterSpacing: '0.02em' }}>
+            <span style={RV ? { fontSize: 13, fontWeight: 600, color: 'var(--ink)' } : { fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: 'var(--ink)', letterSpacing: '0.02em' }}>
               {MONTH_NAMES[viewMonth]} {viewYear}
             </span>
-            <button type="button" onClick={nextMonth} style={navBtn}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <button type="button" onClick={nextMonth} aria-label="Next month" style={RV ? navBtnRv : navBtn}>
+              {RV ? <Icon name="right" size={16} /> : <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
             </button>
           </div>
 
@@ -147,8 +156,8 @@ export function CalendarPicker({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
             {DAY_LABELS.map(d => (
               <div key={d} style={{
-                textAlign: 'center', fontSize: 9.5,
-                fontFamily: 'var(--mono)', fontWeight: 700,
+                textAlign: 'center', fontSize: RV ? 11 : 9.5,
+                fontFamily: RV ? undefined : 'var(--mono)', fontWeight: RV ? 600 : 700,
                 color: 'var(--ink-4)', padding: '3px 0',
                 letterSpacing: '0.04em',
               }}>
@@ -174,13 +183,13 @@ export function CalendarPicker({
                   onClick={() => selectDay(day)}
                   style={{
                     width: '100%', aspectRatio: '1',
-                    borderRadius: 7,
+                    borderRadius: RV ? 999 : 7,
                     border: isToday && !isSelected
                       ? `1.5px solid ${accentColor}`
                       : '1.5px solid transparent',
                     background: isSelected ? accentColor : 'transparent',
                     color: isSelected ? '#fff' : isToday ? accentColor : 'var(--ink-2)',
-                    fontSize: 12,
+                    fontSize: RV ? 13 : 12,
                     fontWeight: isSelected || isToday ? 700 : 400,
                     cursor: 'pointer',
                     transition: 'background 80ms, color 80ms',
@@ -200,15 +209,15 @@ export function CalendarPicker({
           </div>
 
           {/* Footer: clear */}
-          <div style={{ borderTop: '1px solid var(--rule)', marginTop: 8, paddingTop: 7, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ borderTop: RV ? 0 : '1px solid var(--rule)', marginTop: 8, paddingTop: 7, display: 'flex', justifyContent: 'center' }}>
             <button
               type="button"
               onClick={() => { onChange(null); setOpen(false) }}
               style={{
-                fontSize: 11, color: value ? 'var(--ink-3)' : 'var(--ink-4)',
+                fontSize: RV ? 13 : 11, color: value ? 'var(--ink-3)' : 'var(--ink-4)',
                 background: 'none', border: 'none', cursor: value ? 'pointer' : 'default',
                 textDecoration: value ? 'underline' : 'none',
-                fontFamily: 'var(--mono)', letterSpacing: '0.04em',
+                fontFamily: RV ? 'inherit' : 'var(--mono)', letterSpacing: RV ? 0 : '0.04em',
               }}
             >
               {value ? 'Clear date' : 'No date set'}
@@ -220,6 +229,12 @@ export function CalendarPicker({
   )
 }
 
+const navBtnRv: React.CSSProperties = {
+  width: 32, height: 32, borderRadius: 999,
+  border: 'none', background: 'var(--ctl, #e3e8f4)',
+  color: 'var(--ink-2)', cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+}
 const navBtn: React.CSSProperties = {
   width: 26, height: 26, borderRadius: 6,
   border: 'none', background: 'var(--bg-2)',

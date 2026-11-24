@@ -1,13 +1,14 @@
 'use client'
 import { Suspense, useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN_REVIEW } from '@/core/lib/instance'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/core/components/ui/card'
 import { Button } from '@/core/components/ui/button'
 import { Input } from '@/core/components/ui/input'
 import { Label } from '@/core/components/ui/label'
 import { Loader2, Sprout, CheckCircle } from '@/core/components/v4/lucide-compat'
+import { AuthField, AuthFrame, AuthHead, AuthNotice } from '../AuthReview'
 
 function ResetPasswordForm() {
   const supabase = createClient()
@@ -62,6 +63,39 @@ function ResetPasswordForm() {
     setLoading(false)
   }
 
+  // Design review (#65–#67): the same states in the white card; only the look and a few words differ
+  if (DESIGN_REVIEW) {
+    if (done) return (
+      <AuthNotice icon="check-circle" title="Password updated">
+        <p>Taking you to Members…</p>
+      </AuthNotice>
+    )
+    return (
+      <>
+        <AuthHead title="Set a new password" />
+        {error && !ready ? (
+          <>
+            <p className="arv__error" role="alert">{error}</p>
+            <button type="button" className="arv__btn arv__btn--secondary" onClick={() => router.push('/auth/login?mode=forgot')}>Request a new link</button>
+          </>
+        ) : !ready ? (
+          <div className="arv__spin"><Loader2 className="animate-spin" size={24} /></div>
+        ) : (
+          <form onSubmit={handleSubmit} className="arv__form">
+            <AuthField id="new-password" label="New password">
+              <input id="new-password" className="arv__input" type="password" autoComplete="new-password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" />
+            </AuthField>
+            <AuthField id="confirm-password" label="Confirm password">
+              <input id="confirm-password" className="arv__input" type="password" autoComplete="new-password" required value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="The same again" />
+            </AuthField>
+            {error && <p className="arv__error" role="alert">{error}</p>}
+            <button type="submit" className="arv__btn" disabled={loading}>{loading ? 'Updating…' : 'Update password'}</button>
+          </form>
+        )}
+      </>
+    )
+  }
+
   if (done) return (
     <div className="text-center py-6 space-y-3">
       <CheckCircle className="h-12 w-12 text-primary mx-auto" />
@@ -108,6 +142,13 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  if (DESIGN_REVIEW) return (
+    <AuthFrame about={false}>
+      <Suspense fallback={<div className="arv__spin"><Loader2 className="animate-spin" size={24} /></div>}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthFrame>
+  )
   return (
     <div className="min-h-screen flex items-center justify-center p-8 bg-background">
       <Card className="w-full max-w-md border-card-border">

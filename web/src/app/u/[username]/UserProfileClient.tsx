@@ -5,7 +5,8 @@ import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase,
 import { socialLinks } from '@/core/lib/public-profile'
 import { MyCircles } from '@/modules/m17-org/MyCircles'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW, COMMUNITY_NAME } from '@/core/lib/instance'
+import ProfileReview from '@/modules/m01-network/ProfileReview'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { Button, Icon as V4Icon, Tag } from '@/core/components/v4'
 
@@ -34,6 +35,8 @@ interface Props {
   isOwn: boolean
   /** Visitors see the public card and shaded sections inviting them to join */
   signedIn: boolean
+  /** The whole profile: joining members and up, and the person themselves (decision #71). Explorers get the public card and offers */
+  fullProfile?: boolean
   /** Fears and traumas, when this person shares them with the viewer */
   growth: { fears: string | null; traumas: string | null; visibility: string } | null
   match?: { score: number; reasons: string[] } | null
@@ -87,7 +90,7 @@ function SectionCard({ stripe, children, style }: { stripe?: string; children: R
 function SectionTitle({ icon: Icon, children }: { icon?: any; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-      {Icon && <Icon style={{ width: 15, height: 15, color: 'var(--m1)', flexShrink: 0 }} />}
+      {Icon && <Icon style={{ width: 15, height: 15, color: 'var(--rv-icon, var(--m1))', flexShrink: 0 }} />}
       <span style={{ fontFamily: 'var(--display)', fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{children}</span>
     </div>
   )
@@ -142,10 +145,15 @@ function UrgencyColor(urgency: string) {
 
 const LINK_ICONS: Record<string, any> = { website: Globe, instagram: AtSign, linkedin: AtSign, twitter: AtSign }
 
-export default function UserProfileClient({ profile: p, bio, offers, requests, isOwn, signedIn, growth, match, circles: theirCircles = [] }: Props) {
+export default function UserProfileClient({ profile: p, bio, offers, requests, isOwn, signedIn, fullProfile, growth, match, circles: theirCircles = [] }: Props) {
+  const full = fullProfile ?? signedIn
   const [tab, setTab] = useState('about')
   const circleSet = useCircles()
   const V4 = (DESIGN as string) === 'v4'
+  // Design review (decisions #60–#64): one page you scroll, what matters first at the top
+  if (V4 && DESIGN_REVIEW) {
+    return <ProfileReview profile={p} bio={bio} offers={offers} requests={requests} isOwn={isOwn} signedIn={signedIn} full={full} growth={growth} match={match} circles={theirCircles} />
+  }
 
   const displayName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
   const initial = displayName[0]?.toUpperCase() ?? '?'
@@ -175,7 +183,7 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
         </div>
         <div className="pf4-acts">
           {isOwn ? <Button variant="secondary" icon="pencil" href="/profile/edit">Edit profile</Button>
-            : signedIn ? <Button variant="secondary" icon="users" href="/members/matches">Your matches</Button> : null}
+            : full ? <Button variant="secondary" icon="users" href="/members/matches">Your matches</Button> : null}
         </div>
       </div>
       {(p.headline || p.public_bio || links.length > 0) && (
@@ -314,7 +322,7 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
                       display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: 'var(--ink-2)',
                       textDecoration: 'none', border: '1px solid var(--rule)', borderRadius: 20, padding: '4px 10px', background: 'var(--bg-2)',
                     }}>
-                      <Icon style={{ width: 13, height: 13, color: 'var(--m1)' }} />{l.label}
+                      <Icon style={{ width: 13, height: 13, color: 'var(--rv-icon, var(--m1))' }} />{l.label}
                     </a>
                   )
                 })}
@@ -338,8 +346,28 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
       </>)}
 
       {(() => { const body = (<>
-      {!signedIn && growth && <div style={{ marginBottom: 14 }}><GrowthCard growth={growth} isOwn={false} /></div>}
-      {!signedIn ? (
+      {!full && growth && <div style={{ marginBottom: 14 }}><GrowthCard growth={growth} isOwn={false} /></div>}
+      {!full && DESIGN_REVIEW ? (
+        // Before joining: the public card above, what they offer, and one line saying how the rest opens (#71, #79)
+        <div className="pf4-locked">
+          {offers.length > 0 && (
+            <>
+              <div className="v4-sec"><h2>Offers</h2></div>
+              <div className="v4-list">
+                {offers.map(o => (
+                  <div key={o.id} className="v4-row">
+                    <span className="v4-row__main"><b>{o.title}</b>{o.description && <small>{o.description}</small>}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <p className="v4-hint v4-mt">
+            <V4Icon name="lock" size={14} /> More about {p.first_name || 'this person'} opens once you’ve joined {COMMUNITY_NAME}.{' '}
+            <Link href={signedIn ? '/join' : '/auth/signup'}>{signedIn ? 'Start joining' : 'Create account'}</Link>
+          </p>
+        </div>
+      ) : !full ? (
         <div style={{ position: 'relative' }}>
           <div aria-hidden style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, filter: 'blur(1.5px)', opacity: 0.45, pointerEvents: 'none', userSelect: 'none' }}>
             {[
@@ -357,12 +385,12 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
           </div>
           <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 16 }}>
             <div style={{ textAlign: 'center', background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 12, padding: '20px 22px', maxWidth: 360, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
-              <Lock style={{ width: 22, height: 22, color: 'var(--m1)', margin: '0 auto 8px' }} />
+              <Lock style={{ width: 22, height: 22, color: 'var(--rv-icon, var(--m1))', margin: '0 auto 8px' }} />
               <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>
                 See more of {p.first_name || 'this member'}’s profile
               </div>
               <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55, margin: '0 0 14px' }}>
-                Sign up to see their values, skills, personality, offers, requests and travel plans, and find people you match with.
+                {signedIn ? 'Joining members see their values, skills, personality, requests and travel plans.' : 'Sign up to see their values, skills, personality, offers, requests and travel plans, and find people you match with.'}
               </p>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <Link href="/auth/login?mode=register" style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--m1)', borderRadius: 8, padding: '8px 16px', textDecoration: 'none' }}>Sign up</Link>
@@ -616,7 +644,7 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
                     background: 'color-mix(in srgb, var(--m1) 12%, var(--surface))',
                     display: 'grid', placeItems: 'center',
                   }}>
-                    <MapPin style={{ width: 18, height: 18, color: 'var(--m1)' }} />
+                    <MapPin style={{ width: 18, height: 18, color: 'var(--rv-icon, var(--m1))' }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--display)', fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>{t.location}</div>

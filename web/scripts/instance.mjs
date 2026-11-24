@@ -86,10 +86,14 @@ function publicEnv(cfg) {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: cfg.supabase.anonKey,
     NEXT_PUBLIC_APP_URL: cfg.appUrl,
     NEXT_PUBLIC_COMMUNITY_NAME: cfg.displayName,
+    // One sentence that describes the community (core/lib/instance.ts › COMMUNITY_DESCRIPTION)
+    NEXT_PUBLIC_COMMUNITY_DESCRIPTION: cfg.description ?? '',
     // Optional modules that are on, e.g. "meetings" (core/lib/modules.ts)
     NEXT_PUBLIC_MODULES: (cfg.modules ?? []).join(','),
     // The look: "v4" = the pastel redesign (DESIGN-SYSTEM.md › v4). Empty = the current look.
     NEXT_PUBLIC_DESIGN: cfg.design ?? '',
+    // The design review on top of v4 (core/lib/instance.ts › DESIGN_REVIEW): "1" = on
+    NEXT_PUBLIC_DESIGN_REVIEW: cfg.designReview ? '1' : '',
     // Who edits the Blueprint: "admins" = admins only; empty = admins and circle leads (core/lib/roles › canEditBlueprint)
     NEXT_PUBLIC_BLUEPRINT_EDITORS: cfg.blueprintEditors ?? '',
     NEXT_PUBLIC_BRAND_MARK: cfg.brandMark ?? '',

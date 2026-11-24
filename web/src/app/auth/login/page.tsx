@@ -2,15 +2,22 @@
 import { Icon, InlineIcon, type IconName } from '@/core/components/v4'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
+import { usePathname, useRouter } from 'next/navigation'
+import { COMMUNITY_DESCRIPTION, COMMUNITY_NAME, DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import { useBranding } from '@/core/components/BrandingProvider'
+import { AuthField, AuthFrame, AuthHead, AuthNotice } from '../AuthReview'
 
 type Mode = 'login' | 'register' | 'forgot'
 
+// Design review: one description of the community, set once in instance config ("description")
+const ABOUT = DESIGN_REVIEW && COMMUNITY_DESCRIPTION ? COMMUNITY_DESCRIPTION : null
+const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
+
 export default function AuthPage() {
   const { logo_url } = useBranding()
-  const [mode, setMode] = useState<Mode>('login')
+  // Design review: /auth/signup opens Create account here (#65); without it /auth/signup still redirects to sign in
+  const pathname = usePathname()
+  const [mode, setMode] = useState<Mode>(DESIGN_REVIEW && pathname === '/auth/signup' ? 'register' : 'login')
   // ?mode=forgot (from the reset page) or ?mode=register (from a public profile)
   useEffect(() => {
     const m = new URLSearchParams(window.location.search).get('mode')
@@ -61,7 +68,8 @@ export default function AuthPage() {
     signIn.then(({ error }) => {
       window.history.replaceState(null, '', window.location.pathname)
       if (error) setLoginError(expired)
-      else { router.push(onboarding ? '/profile/edit' : '/home'); router.refresh() }
+      // Design review: a new account lands on My dashboard, whose next step is Start joining (#25, #68)
+      else { router.push(onboarding ? (DESIGN_REVIEW ? '/dashboard' : '/profile/edit') : '/home'); router.refresh() }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival
 
@@ -154,6 +162,112 @@ export default function AuthPage() {
   const lbl: React.CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }
   const linkBtn: React.CSSProperties = { fontSize: 'inherit', fontWeight: 600, color: 'var(--accent-color)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }
 
+  // Design review (#65–#68): one job per page in a white card, the community's sentence under it, no feature
+  // lists or side panel. Same state, handlers and messages as below; only the look and a few words differ.
+  if (DESIGN_REVIEW) {
+    const backToSignIn = (reset: () => void) => (
+      <button type="button" className="arv__btn arv__btn--secondary" onClick={() => { reset(); setMode('login') }}>Back to sign in</button>
+    )
+    return (
+      <AuthFrame>
+        {mode === 'login' && (
+          <>
+            <AuthHead title="Sign in" sub={`Welcome back to ${COMMUNITY_NAME}.`} />
+            <form onSubmit={handleLogin} className="arv__form">
+              <AuthField id="login-email" label="Email">
+                <input id="login-email" className="arv__input" type="email" autoComplete="email" required value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="you@example.com" />
+              </AuthField>
+              <AuthField id="login-password" label="Password"
+                aside={<button type="button" className="arv__link arv__link--quiet" onClick={() => setMode('forgot')}>Forgot password?</button>}>
+                <input id="login-password" className="arv__input" type="password" autoComplete="current-password" required value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="Your password" />
+              </AuthField>
+              {loginError && <p className="arv__error" role="alert">{loginError}</p>}
+              {loginUnconfirmed && (
+                <p className="arv__note">
+                  {resendState === 'sent'
+                    ? <>A new confirmation link is on its way to <strong>{loginEmail}</strong>. Open it in this browser, then sign in.</>
+                    : <>This account’s email isn’t confirmed yet.{' '}
+                        <button type="button" className="arv__link" onClick={() => resendConfirmation(loginEmail)} disabled={resendState === 'sending'}>
+                          {resendState === 'sending' ? 'Sending…' : 'Send the confirmation link again'}
+                        </button></>}
+                  {resendError && <span className="arv__error" style={{ display: 'block', marginTop: 4 }}>{resendError}</span>}
+                </p>
+              )}
+              <button type="submit" className="arv__btn" disabled={loginLoading}>{loginLoading ? 'Signing in…' : 'Sign in'}</button>
+            </form>
+            <p className="arv__switch">New here? <button type="button" className="arv__link" onClick={() => setMode('register')}>Create account</button></p>
+          </>
+        )}
+
+        {mode === 'register' && (regSent ? (
+          <AuthNotice icon="mail" title="Check your inbox">
+            <p>We sent a confirmation link to <strong>{regEmail}</strong>. Open it to activate your account.</p>
+            <p className="arv__meta">
+              Nothing after a few minutes? Check spam, and that the address is right.{' '}
+              {resendState === 'sent'
+                ? 'We sent it again.'
+                : <button type="button" className="arv__link" onClick={() => resendConfirmation(regEmail)} disabled={resendState === 'sending'}>
+                    {resendState === 'sending' ? 'Sending…' : 'Send it again'}
+                  </button>}
+            </p>
+            {resendError && <p className="arv__error">{resendError}</p>}
+            {backToSignIn(() => { setRegSent(false); setResendState('idle'); setResendError('') })}
+          </AuthNotice>
+        ) : (
+          <>
+            <AuthHead title="Create account" />
+            <form onSubmit={handleRegister} className="arv__form">
+              <AuthField id="reg-first" label="First name">
+                <input id="reg-first" className="arv__input" autoComplete="given-name" required value={regFirstName} onChange={e => setRegFirstName(e.target.value)} placeholder="Jane" />
+              </AuthField>
+              <AuthField id="reg-email" label="Email">
+                <input id="reg-email" className="arv__input" type="email" autoComplete="email" required value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="you@example.com" />
+              </AuthField>
+              <AuthField id="reg-password" label="Password">
+                <input id="reg-password" className="arv__input" type="password" autoComplete="new-password" required value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="At least 6 characters" />
+              </AuthField>
+              <AuthField id="reg-confirm" label="Confirm password">
+                <input id="reg-confirm" className="arv__input" type="password" autoComplete="new-password" required value={regConfirm} onChange={e => setRegConfirm(e.target.value)} placeholder="The same again" />
+              </AuthField>
+              {regError && <p className="arv__error" role="alert">{regError}</p>}
+              {regExists && (
+                <div className="arv__note">
+                  <strong>{regEmail}</strong> already has an account, so no email was sent. Sign in instead, or get a reset link if you don’t remember the password.
+                  <div className="arv__actions">
+                    <button type="button" className="arv__link" onClick={() => { setLoginEmail(regEmail); setRegExists(false); setMode('login') }}>Sign in</button>
+                    <button type="button" className="arv__link" onClick={() => { setForgotEmail(regEmail); setRegExists(false); setMode('forgot') }}>Send me a reset link</button>
+                  </div>
+                </div>
+              )}
+              <button type="submit" className="arv__btn" disabled={regLoading}>{regLoading ? 'Creating account…' : 'Create account'}</button>
+            </form>
+            <p className="arv__switch">Already have an account? <button type="button" className="arv__link" onClick={() => setMode('login')}>Sign in</button></p>
+          </>
+        ))}
+
+        {mode === 'forgot' && (forgotSent ? (
+          <AuthNotice icon="mail" title="Check your inbox">
+            <p>If <strong>{forgotEmail}</strong> has an account, a reset link is on its way.</p>
+            <p className="arv__meta">Nothing after a few minutes? Check spam, and that this is exactly the address you signed up with (for Gmail, dots count here). Open the link in this same browser.</p>
+            {backToSignIn(() => setForgotSent(false))}
+          </AuthNotice>
+        ) : (
+          <>
+            <AuthHead title="Reset your password" sub="We’ll email you a link to choose a new one." />
+            <form onSubmit={handleForgot} className="arv__form">
+              <AuthField id="forgot-email" label="Email">
+                <input id="forgot-email" className="arv__input" type="email" autoComplete="email" required value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="you@example.com" />
+              </AuthField>
+              {forgotError && <p className="arv__error" role="alert">{forgotError}</p>}
+              <button type="submit" className="arv__btn" disabled={forgotLoading}>{forgotLoading ? 'Sending…' : 'Send reset link'}</button>
+            </form>
+            <p className="arv__switch">Remembered it? <button type="button" className="arv__link" onClick={() => setMode('login')}>Sign in</button></p>
+          </>
+        ))}
+      </AuthFrame>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'grid', background: 'var(--bg)' }} className="auth-page-grid">
 
@@ -207,7 +321,9 @@ export default function AuthPage() {
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent-color)', marginBottom: 8 }}>{COMMUNITY_NAME}</div>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>New here? You're welcome.</div>
                 <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 12px', lineHeight: 1.65 }}>
-                  This is the member portal for a <strong style={{ color: 'var(--ink-2)' }}>regenerative neighborhood</strong> being formed together — meet the people involved, read the community documentation, join if you align with the values, contribute to projects, and help make decisions.
+                  {ABOUT
+                    ? <><strong style={{ color: 'var(--ink-2)' }}>{COMMUNITY_NAME}</strong> is {lower(ABOUT)}. Meet the people, read about the community, and join if you share its values.</>
+                    : <>This is the member portal for a <strong style={{ color: 'var(--ink-2)' }}>regenerative neighborhood</strong> being formed together — meet the people involved, read the community documentation, join if you align with the values, contribute to projects, and help make decisions.</>}
                 </p>
                 <button type="button" onClick={() => setMode('register')} style={{ width: '100%', padding: '10px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: 'var(--accent-color)', color: '#fff', border: 'none', cursor: 'pointer' }}>
                   Create account
@@ -241,7 +357,7 @@ export default function AuthPage() {
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent-color)', marginBottom: 10 }}>{COMMUNITY_NAME}</div>
               <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>Join the community</h1>
               <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: '0 0 10px', lineHeight: 1.65 }}>
-                This portal is for <strong style={{ color: 'var(--ink-2)' }}>{COMMUNITY_NAME}</strong> — a regenerative neighborhood being built together. Here you can:
+                This portal is for <strong style={{ color: 'var(--ink-2)' }}>{COMMUNITY_NAME}</strong>{ABOUT ? `: ${lower(ABOUT)}` : ' — a regenerative neighborhood being built together'}. Here you can:
               </p>
               {/* Mobile-only compact tagline (bullets are hidden on small screens) */}
               <p className="auth-reg-tagline" style={{ display: 'none', fontSize: 13, color: 'var(--ink-3)', margin: '0 0 18px', lineHeight: 1.6 }}>
@@ -340,11 +456,11 @@ export default function AuthPage() {
             MyCommunityNetwork
           </div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.6)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--rv-good, #4ade80)', display: 'inline-block' }} />
             {COMMUNITY_NAME}
           </div>
           <h2 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 700, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 20px', maxWidth: '16ch' }}>
-            A regenerative neighborhood, built together.
+            {ABOUT ? `${ABOUT}.` : 'A regenerative neighborhood, built together.'}
           </h2>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, margin: '0 0 40px', maxWidth: '38ch' }}>
             Meet the people, read the shared plan, join if you align with the values, contribute to projects, and help decide what happens next.

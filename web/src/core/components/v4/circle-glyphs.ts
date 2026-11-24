@@ -1,3 +1,6 @@
+import { DESIGN_REVIEW } from '@/core/lib/instance'
+import { LAND_LABEL } from './circle-land'
+
 // Circle glyphs for the circle seals (DESIGN-SYSTEM.md › v4 › Circles). They are stamps, not line icons:
 // solid cream shapes on the circle's colour, with details cut out in that colour. That keeps them apart
 // from the interface icons (icons.ts), which are thin ink lines. 24×24. A circle picks one in
@@ -48,6 +51,11 @@ export type CircleGlyph = keyof typeof CIRCLE_GLYPHS
 export const CIRCLE_GLYPH_LABEL: Record<CircleGlyph, string> = {
   spiral: 'Spiral', wheat: 'Wheat', hammer: 'Hammer', pot: 'Pot', key: 'Key', fire: 'Fire', megaphone: 'Megaphone',
   coins: 'Coins', broom: 'Broom', brush: 'Brush', ring: 'Ring of people', egg: 'Egg', bag: 'Bag',
+}
+
+/** The name shown for a glyph: with the design review on, what its "Of this land" seal draws (circle-land.ts). */
+export function glyphLabel(g: CircleGlyph): string {
+  return DESIGN_REVIEW ? LAND_LABEL[g] : CIRCLE_GLYPH_LABEL[g]
 }
 
 export function isCircleGlyph(v: unknown): v is CircleGlyph {

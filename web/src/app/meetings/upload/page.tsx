@@ -1,7 +1,9 @@
 import UploadForm from '@/modules/m18-meetings/UploadForm'
-import { requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
+import { MeetingsLocked, requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
 
 export default async function UploadMeetingPage() {
-  const { user } = await requireMeetingsAccess()
+  const access = await requireMeetingsAccess()
+  if (access.locked) return <MeetingsLocked signedIn={access.signedIn} />
+  const { user } = access
   return <UploadForm userId={user.id} />
 }

@@ -67,3 +67,8 @@ To add a new member card field, update `MemberList.tsx` and the relevant Supabas
 ## v4 look (v4.45.0)
 
 With `"design": "v4"`, `/members` renders `MembersV4.tsx` (data in the page, grid in `MembersGridV4.tsx`) and the layout shows `MembersTabsV4.tsx` instead of `NetworkSidebar`.
+
+With the design review on too (`DESIGN_REVIEW`, decision #22), `/members` renders `MembersEveryone.tsx` instead: one
+toolbar row (`MembersViews.tsx`: Everyone · Matches for you · Discover · More; search; a Filter with circles,
+offers and requests, skills), then the people, then "New this week". The layout shows no tabs; each Members page
+puts `MembersViews` under its own heading. Styles: the "Design review" block at the end of `members-v4.css`.

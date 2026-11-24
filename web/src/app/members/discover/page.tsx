@@ -1,5 +1,5 @@
 import { createClient } from '@/core/lib/supabase/server'
-import { profileColumns } from '@/core/lib/public-profile'
+import { profileColumns, withProfileDetails } from '@/core/lib/public-profile'
 import DiscoverClient from '@/modules/m01-network/DiscoverClient'
 
 export default async function DiscoverPage() {
@@ -8,7 +8,7 @@ export default async function DiscoverPage() {
 
   let profilesQuery = supabase
     .from('user_profiles')
-    .select(profileColumns(!!user, 'id, username, first_name, last_name, headline, city, country, avatar_url, user_types'))
+    .select(profileColumns(!!user, 'id, username, first_name, last_name, headline, avatar_url'))
     .eq('approved', true)
     .order('created_at', { ascending: false })
 
@@ -29,7 +29,8 @@ export default async function DiscoverPage() {
 
   return (
     <DiscoverClient
-      profiles={(profilesRes.data ?? []) as any}
+      // City, country and kinds of people: joining members and up only (decision #71)
+      profiles={(user ? await withProfileDetails(supabase, profilesRes.data as unknown as { id: string }[]) : profilesRes.data ?? []) as any}
       bioMap={bioMap}
       myBio={(myBioRes as any).data ?? null}
       isLoggedIn={!!user}

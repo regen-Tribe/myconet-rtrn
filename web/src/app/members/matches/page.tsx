@@ -3,7 +3,10 @@ import Link from 'next/link'
 import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import MatchesTabs from '@/modules/m01-network/MatchesTabs'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW, COMMUNITY_NAME } from '@/core/lib/instance'
+import MembersViews from '@/modules/m01-network/MembersViews'
+import { isJoiningOrAbove } from '@/core/lib/roles'
+import { profileDetailsOf, withProfileDetails } from '@/core/lib/public-profile'
 import { Button, Card, IconTile, NextStep, PageHeader } from '@/core/components/v4'
 import { MATCH_DIMENSIONS } from '@/modules/m01-network/lib/match-dimensions'
 import MatchesV4 from '@/modules/m01-network/MatchesV4'
@@ -19,8 +22,21 @@ export default async function MatchesPage() {
     return (
       <div className="v4-page">
         <PageHeader eyebrow="Members" title="Your matches" subtitle="We compare values, skills, personality, place and travel plans to find the people you’d work well with." />
+        {DESIGN_REVIEW && <MembersViews signedIn={false} className="mbv--page" />}
         <Card className="v4-note"><IconTile name="users" tone="red" /><span>Sign in to see your matches.</span></Card>
         <div style={{ display: 'flex', gap: 8, margin: '4px 0 18px' }}><Button href="/auth/signup">Create an account</Button><Button variant="secondary" href="/auth/login">Sign in</Button></div>
+        <HowMatchingWorks open />
+      </div>
+    )
+  }
+
+  // Matches read other people's profiles, which open at joining member (decision #71)
+  const { data: me } = user ? await supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle() : { data: null }
+  if (user && !isJoiningOrAbove(me?.role ?? 'explorer') && DESIGN === 'v4') {
+    return (
+      <div className="v4-page">
+        <PageHeader eyebrow="Members" title="Your matches" subtitle="We compare values, skills, personality, place and travel plans to find the people you’d work well with." />
+        <p className="v4-hint">Your matches open once you’ve joined {COMMUNITY_NAME}. <Link href="/join">Start joining</Link></p>
         <HowMatchingWorks open />
       </div>
     )
@@ -58,26 +74,27 @@ export default async function MatchesPage() {
   const [profilesRes, biosRes, myProfileRes, myBioRes] = await Promise.all([
     supabase
       .from('user_profiles')
-      .select('id, username, first_name, last_name, city, country, avatar_url, user_types')
+      .select('id, username, first_name, last_name, avatar_url')
       .eq('approved', true)
       .neq('id', user.id),
     supabase.from('user_bio').select('*'),
-    supabase.from('user_profiles').select('city, country').eq('id', user.id).maybeSingle(),
+    profileDetailsOf(supabase, user.id),
     supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
   ])
 
+  const people = await withProfileDetails(supabase, profilesRes.data)
   const myBio = myBioRes.data
-    ? { ...myBioRes.data, city: myProfileRes.data?.city, country: myProfileRes.data?.country }
+    ? { ...myBioRes.data, city: myProfileRes.city, country: myProfileRes.country }
     : null
   const profileLocById = new Map<string, { city?: string | null; country?: string | null }>()
-  for (const p of profilesRes.data ?? []) profileLocById.set(p.id, { city: p.city, country: p.country })
+  for (const p of people) profileLocById.set(p.id, { city: p.city, country: p.country })
   const bioMap: Record<string, any> = {}
   for (const b of biosRes.data ?? []) {
     const loc = profileLocById.get(b.user_id) ?? {}
     bioMap[b.user_id] = { ...b, city: loc.city, country: loc.country }
   }
 
-  const matches = (profilesRes.data ?? [])
+  const matches = people
     .map(p => {
       const { score, reasons } = computeMatch(myBio, bioMap[p.id] ?? null)
       return { profile: p, bio: bioMap[p.id] ?? null, score, reasons }
@@ -101,6 +118,7 @@ export default async function MatchesPage() {
       <div className="v4-page">
         <PageHeader eyebrow="Members" title="Your matches"
           subtitle={matches.length ? <><b>{topCount} top</b>, {goodCount} good and {potentialCount} potential matches, best first.</> : 'When other members fill in their profiles, they show up here, best match first.'} />
+        {DESIGN_REVIEW && <MembersViews signedIn={true} className="mbv--page" />}
         {!myBio && <div style={{ marginBottom: 16 }}><NextStep eyebrow="Unlock match scores" title="Fill in your profile" text="Your values, skills, personality and travel plans find your best matches." href="/profile/edit" /></div>}
         <MatchesV4 people={people} />
         <div style={{ marginTop: 22 }}><HowMatchingWorks /></div>

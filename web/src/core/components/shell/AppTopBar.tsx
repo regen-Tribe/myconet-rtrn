@@ -8,10 +8,15 @@ import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useProfileCompletion } from '@/core/contexts/ProfileCompletion'
 import { VERSION } from '@/core/lib/version'
-import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import { useBranding } from '@/core/components/BrandingProvider'
 import TopBarSearch from '@/core/components/shell/TopBarSearch'
 import BellPanel from '@/core/components/shell/BellPanel'
+import { profileDetailsOf } from '@/core/lib/public-profile'
+
+// Design review (#70): the pages visited in this tab, so ‹ Back goes to the last one. document.referrer can't tell:
+// it stays the page the tab first loaded from while the app moves between pages without reloading.
+const visited: string[] = []
 
 function computeCompletion(
   p: { first_name?: string | null; avatar_url?: string | null; headline?: string | null; city?: string | null; user_types?: string[] | null } | null,
@@ -45,9 +50,10 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const pageTitle = DESIGN === 'v4'
-    ? menuGroups(COMMUNITY_NAME).flatMap(g => g.items).find(i => isMenuActive(i.href, pathname))?.name ?? COMMUNITY_NAME
-    : ''
+  const menuTitle = menuGroups(COMMUNITY_NAME).flatMap(g => g.items).find(i => isMenuActive(i.href, pathname))?.name
+  // A page outside the menu (Start joining, Edit your profile…) is named by its own page heading, read below
+  const pageTitle = DESIGN === 'v4' ? menuTitle ?? (DESIGN_REVIEW ? '' : COMMUNITY_NAME) : ''
+  const titleRef = useRef<HTMLSpanElement>(null)
   const { logo_url } = useBranding()
   const [user, setUser] = useState<User | null>(null)
   const [displayName, setDisplayName] = useState('')
@@ -73,8 +79,9 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
       if (data.user) {
         Promise.all([
           supabase.from('user_profiles')
-            .select('first_name, last_name, avatar_url, headline, city, user_types, username')
+            .select('first_name, last_name, avatar_url, headline, username')
             .eq('id', data.user.id).single(),
+          profileDetailsOf(supabase, data.user.id),
           supabase.from('user_bio')
             .select('values_principles, skills, goals, places_traveling')
             .eq('user_id', data.user.id).maybeSingle(),
@@ -84,8 +91,8 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
           supabase.from('user_requests')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', data.user.id).eq('is_active', true),
-        ]).then(([profileRes, bioRes, offersRes, requestsRes]) => {
-          const p = profileRes.data
+        ]).then(([profileRes, details, bioRes, offersRes, requestsRes]) => {
+          const p = profileRes.data ? { ...profileRes.data, ...details } : null
           if (p) {
             setDisplayName([p.first_name, p.last_name].filter(Boolean).join(' ') || 'Member')
             setAvatarUrl(p.avatar_url ?? null)
@@ -119,6 +126,42 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
     return () => { ro.disconnect(); root.style.removeProperty('--topbar-h') }
   }, [])
 
+  // Design review (#41, Sonia 23 Nov): the page name lives in the top bar, with a back button, on every page.
+  // A page heading that only repeats that name is hidden (kept for screen readers); an inner page's own title
+  // (a task, a person, a meeting) stays. Pages render their heading late, so keep looking while the page is open.
+  useEffect(() => {
+    if (!DESIGN_REVIEW || typeof MutationObserver === 'undefined') return
+    const main = document.querySelector('main')
+    if (!main) return
+    const norm = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
+    const mark = () => {
+      // Outside the menu, the page's own heading (PageHeader's h1) names it in the bar
+      const own = pageTitle ? null : main.querySelector<HTMLHeadingElement>('h1.v4-ph__title')
+      const name = pageTitle || own?.textContent?.trim() || COMMUNITY_NAME
+      if (!pageTitle && titleRef.current && titleRef.current.textContent !== name) titleRef.current.textContent = name
+      main.querySelectorAll('h1').forEach(h => h.classList.toggle('v4-h1--in-bar', h === own || (!!pageTitle && norm(h.textContent) === norm(pageTitle))))
+    }
+    mark()
+    const mo = new MutationObserver(mark)
+    mo.observe(main, { childList: true, subtree: true, characterData: true })
+    return () => mo.disconnect()
+  }, [pathname, pageTitle])
+
+  // Keep the list of pages visited in this tab: a step back removes the last one
+  useEffect(() => {
+    if (visited[visited.length - 2] === pathname) visited.pop()
+    else if (visited[visited.length - 1] !== pathname) visited.push(pathname)
+  }, [pathname])
+
+  function goBack() {
+    // The last page in this tab. Opened from outside (a link in an email): one level up, so a proposal goes back
+    // to Governance and a task to Operations; a menu page goes to My dashboard.
+    if (visited.length > 1) { router.back(); return }
+    const section = menuGroups(COMMUNITY_NAME).flatMap(g => g.items).find(i => isMenuActive(i.href, pathname))
+    const inner = section && pathname !== section.href || (typeof window !== 'undefined' && window.location.search.length > 1)
+    router.push(inner && section ? section.href : '/dashboard')
+  }
+
   function toggleTheme() {
     const next = isDark ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
@@ -145,7 +188,8 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
 
   const initials = displayName.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
 
-  const showBar = user && profilePct !== null && profilePct < 100
+  // Design review: the profile bar isn't on every page; finishing your profile is the menu's next step when it matters
+  const showBar = !DESIGN_REVIEW && user && profilePct !== null && profilePct < 100
 
   // The v4 look: the menu has every page, so this is only about you. Badges stay here until
   // profiles show them; v4 is light mode only (DESIGN-SYSTEM.md › v4).
@@ -233,7 +277,13 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
           <button type="button" className="topbar-v4-menu" onClick={onMobileNavToggle} aria-label="Open the menu" aria-expanded={mobileNavOpen}>
             <Icon name="menu" size={18} />
           </button>
-          <span className="topbar-v4-title">{pageTitle}</span>
+          {/* My dashboard is home: nothing to go back to */}
+          {DESIGN_REVIEW && pathname !== '/dashboard' && (
+            <button type="button" className="topbar-v4-back" onClick={goBack} aria-label="Back to the last page">
+              <Icon name="left" size={20} />
+            </button>
+          )}
+          <span className="topbar-v4-title" ref={titleRef}>{pageTitle}</span>
         </>
       )}
 
@@ -381,7 +431,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen, onDesktopN
             )}
           </div>
         ) : (
-          <Link href="/auth/login" style={{
+          <Link href="/auth/login" className="topbar-signin" style={{
             fontSize: 13, color: 'var(--ink-2)', padding: '5px 12px',
             borderRadius: 8, border: '1px solid var(--rule)',
             fontWeight: 500, textDecoration: 'none',

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Button, Card, Icon, IconTile, Tag, type IconName } from '@/core/components/v4'
 import { loadBranding } from '@/core/lib/branding-server'
 import { roleAtLeast } from '@/core/lib/roles'
+import { COMMUNITY_DESCRIPTION, DESIGN_REVIEW } from '@/core/lib/instance'
 import { fetchCircleDirectory } from '@/core/lib/ops-permissions'
 import { loadCircleRows } from '@/core/lib/circles-server'
 import { FW_DATA } from './lib/wizard-data'
@@ -10,6 +11,7 @@ import AskAboutButton from './AskAboutButton'
 import AboutNav from './AboutNav'
 import { fact, glance, splitName } from './lib/about-text'
 import AboutFacts from './AboutFacts'
+import SignValues from './SignValues'
 import './about-v4.css'
 
 /**
@@ -154,8 +156,10 @@ function Short({ text, max = 260, lead }: { text: string | null; max?: number; l
   )
 }
 
-export default async function AboutV4({ supabase, communityName, role, canEdit }: {
+export default async function AboutV4({ supabase, communityName, role, canEdit, signedIn = true }: {
   supabase: SupabaseClient; communityName: string; role: string; canEdit: boolean
+  /** Signed out: with the design review the first action is Create account, as in the menu (design/decisions.md #27) */
+  signedIn?: boolean
 }) {
   const [{ data: bp }, branding, { data: values }, directory, circles] = await Promise.all([
     supabase.from('blueprints').select('answers').eq('is_community', true).maybeSingle(),
@@ -180,18 +184,33 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
   const factRows = FACTS.map(([k, label, ch]) => ({ k, label, ch, short: fact(s(k)), full: s(k) })).filter(f => f.short && f.full)
   // At a glance: figures with a line each (what we are is the line under the name, so it isn't a tile)
   const tiles = glance(s)
-  const heroLine = tagline ?? fact(s('community_type'))
+  // Design review: the one description set in instance config, the same on sign in
+  const heroLine = (DESIGN_REVIEW && COMMUNITY_DESCRIPTION) || (tagline ?? fact(s('community_type')))
   const FACT_ICON: Record<string, IconName> = { land_size: 'tree', community_size: 'users', planned_homes: 'bed', climate: 'drop', project_country: 'pin', community_type: 'home' }
   const factsIn = (ch: string): Topic[] => factRows.filter(f => f.ch === ch).map(f => ({ id: `fact-${f.k}`, icon: FACT_ICON[f.k] ?? 'star', title: f.label, text: f.full }))
   const whyFacts = factsIn('why'), landFacts = factsIn('land'), liveFacts = factsIn('live')
   const explorer = !roleAtLeast(role, 'joining')
+  // Joining step 1 (#80): a signed-in explorer signs the values at the end of their chapter
+  let signer: { userId: string; signed: string[] } | null = null
+  if (DESIGN_REVIEW && signedIn && explorer && values?.length) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: sig } = await supabase.from('value_signatures').select('value_id').eq('user_id', user.id)
+      signer = { userId: user.id, signed: (sig ?? []).map(r => r.value_id as string) }
+    }
+  }
+  // A visitor's first action is Create account everywhere (same link as the menu's card); signed-in explorers: Start joining
+  // with Sign in beside it, as on the sign-in pages (design/decisions.md #69)
+  const firstAct = DESIGN_REVIEW && !signedIn
+    ? <><Button variant="next" href="/auth/signup">Create account</Button><a className="ab-signin" href="/auth/login">Sign in</a></>
+    : explorer ? <Button variant="next" href="/join">Start joining</Button> : null
 
   // Chapters, each only when the Blueprint has something for it
   const [whyQuote, whyRest] = headline(s('purpose'), 320)
   const [storyTitle, storyText] = headline(s('dream_origin') ?? s('why_personal'))
   const [landTitle, landText] = headline(s('location_setting') ?? s('eco_assessment'))
   const systems = ([
-    ['sprout', 'Food', s('food_systems'), s('c_food_note')], ['globe', 'Water', s('water_fresh'), s('c_water_note')], ['spark', 'Energy', s('energy_source'), s('c_energy_note')], ['building', 'Shared spaces', s('amenities'), s('c_buildings_note')],
+    ['sprout', 'Food', s('food_systems'), s('c_food_note')], [DESIGN_REVIEW ? 'drop' : 'globe', 'Water', s('water_fresh'), s('c_water_note')], [DESIGN_REVIEW ? 'sun' : 'spark', 'Energy', s('energy_source'), s('c_energy_note')], ['building', 'Shared spaces', s('amenities'), s('c_buildings_note')],
   ] as [IconName, string, string | null, string | null][]).filter(([, , t, n]) => t || n)
   // Day to day on the land (the Blueprint's checklist notes): getting here, internet, waste
   const practical = ([
@@ -251,7 +270,7 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
           <h1>{name}</h1>
           {heroLine && <p>{heroLine}</p>}
           <div className="ab-hero-acts">
-            {explorer && <Button variant="next" href="/join">Start joining</Button>}
+            {firstAct}
             <AskAboutButton name={name} />
             {canEdit && <Button variant="secondary" href="/about?edit=1" icon="pencil">Edit Blueprint</Button>}
           </div>
@@ -293,6 +312,7 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
           {valueItems.length > 0 && <ol className="ab-vals">
             {valueItems.map(([t, d], i) => <li key={t + i} className="ab-val"><span className="n">{i + 1}</span><div><b>{t}</b>{d && <p className="v4-prose">{d}</p>}</div></li>)}
           </ol>}
+          {signer && values && <SignValues userId={signer.userId} valueIds={values.map(v => v.id as string)} initialSigned={signer.signed} />}
           <Topics tone="yellow" topics={[{ icon: 'handshake', title: 'Our community agreements', text: s('community_agreements') }]} />
         </Chapter>
       )}
@@ -303,7 +323,7 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
           side={mapUrl && photoOf('waterfall-1') ? <p className="ab-links"><Button variant="quiet" href="/map" icon="map">Open the map</Button></p> : null}>
           <Topics title="The place" tone="green" topics={[
             ...landFacts,
-            { icon: 'search', title: 'What the land is like', text: s('location_setting') ? s('eco_assessment') : null },
+            { icon: DESIGN_REVIEW ? 'map' : 'search', title: 'What the land is like', text: s('location_setting') ? s('eco_assessment') : null },
             { icon: 'sprout', title: 'How we care for it', text: s('ecological_philosophy') },
           ]} />
           <Topics title="What sustains us" tone="green" topics={systems.map(([icon, title, text, note]) => ({ icon, title, text, note }))} />
@@ -358,7 +378,7 @@ export default async function AboutV4({ supabase, communityName, role, canEdit }
 
       {(s('ideal_archetypes') || ways.length > 0 || staying.length > 0 || joinSteps.length > 0 || liveFacts.length > 0) && (
         <Chapter id="live" eyebrow="Living here" title="Who we’re looking for, and how to stay" lead={s('ideal_archetypes')} photo={photoOf('private-rooms-and-dorms', 'bamboo-house')}
-          side={explorer ? <div className="v4-mt"><Button variant="next" href="/join">Start joining</Button></div> : null}>
+          side={firstAct ? <div className="v4-mt">{firstAct}</div> : null}>
           <Topics title="Staying here" tone="green" topics={[
             ...liveFacts,
             ...ways.map(([title, text], i) => ({ icon: (['home', 'building', 'gift'] as IconName[])[i] ?? 'home', title, text })),

@@ -150,7 +150,7 @@ New members join **by invitation only** — someone already in the community sha
 - **Adapter:** `@opennextjs/cloudflare` v1.19.9 (OpenNext)
 - **Current version:** `web/src/core/lib/version.ts` (shown by `AppTopBar` and `LandingClient`)
 - **Words:** `LEXICON.md` at the repo root. One term per idea on screens, emails, agent prompts and the second brain; change it there first.
-- **Design system:** see `DESIGN-SYSTEM.md` at the repo root. Canonical reference implementation is `web/src/modules/m00-dashboard/DashboardPage.tsx`. All new module pages must match the dashboard's visual language.
+- **Design system:** `DESIGN-SYSTEM.md` at the repo root (v4; the old look is archived in `archive/DESIGN-SYSTEM-v3.md`, never a guide for new work). **Before any UI change read `design/decisions.md`**; a change that goes against an entry adds a new entry with the reason. Shared parts: `web/src/core/components/v4` (on `/design`).
 
 ---
 

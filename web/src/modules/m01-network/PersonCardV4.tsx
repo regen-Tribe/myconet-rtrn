@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Icon } from '@/core/components/v4'
 import { MATCH_DIMENSIONS } from './lib/match-dimensions'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 import './members-v4.css'
 
 export type PersonV4 = {
@@ -22,7 +23,7 @@ export function PersonCardV4({ p }: { p: PersonV4 }) {
         {p.score !== null && <span className="mb4-score">{p.score}%</span>}
       </span>
       {p.reason !== null && <span className="mb4-line mb4-line--why"><Icon name="spark" size={13} /><span>{p.reason || 'Shared interests'}</span></span>}
-      {p.tags !== null && <span className="mb4-skills">{p.tags.length ? p.tags.slice(0, 3).map(t => <i key={t}>{t}</i>) : <em>No skills listed yet</em>}</span>}
+      {p.tags !== null && (p.tags.length > 0 || !DESIGN_REVIEW) && <span className="mb4-skills">{p.tags.length ? p.tags.slice(0, 3).map(t => <i key={t}>{t}</i>) : <em>No skills listed yet</em>}</span>}
     </Link>
   )
 }

@@ -4,13 +4,15 @@ import { Geist, Geist_Mono, Inter, Inter_Tight } from 'next/font/google'
 import './globals.css'
 // The v4 look on phones; after globals.css so it can adjust it (rules only apply with data-design="v4")
 import './v4-mobile.css'
+// The design review's look (rules only apply with data-review on <html>: "designReview": true)
+import './v4-review.css'
 import AppShell from '@/core/components/shell/AppShell'
 import { createClient } from '@/core/lib/supabase/server'
 import { loadCircleRows } from '@/core/lib/circles-server'
 import { CirclesProvider } from '@/core/components/CirclesProvider'
 import { loadBranding } from '@/core/lib/branding-server'
 import { BrandingProvider } from '@/core/components/BrandingProvider'
-import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import { loadMenuState } from '@/core/lib/menu-server'
 
 // Geist is only used by the Blueprint wizard (wizard.css), so it isn't preloaded on every page
@@ -62,7 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const menu = DESIGN === 'v4' ? { ...await loadMenuState(supabase, user?.id ?? null, role), me } : null
 
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable}${DESIGN ? ` ${inter.variable} ${interTight.variable}` : ''}`} data-design={DESIGN || undefined} suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}${DESIGN ? ` ${inter.variable} ${interTight.variable}` : ''}`} data-design={DESIGN || undefined} data-review={DESIGN_REVIEW ? '' : undefined} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{
           __html: `(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;})()`

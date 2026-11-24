@@ -7,6 +7,8 @@
   "id": "my-community",
   // Shown where the portal names the community until the Blueprint has a name
   "displayName": "My Community",
+  // Optional: one sentence that describes the community (About, sign in). Empty = the Blueprint's own line.
+  "description": "",
 
   // Where the portal will live (no trailing slash)
   "appUrl": "https://myconet-my-community.<your-subdomain>.workers.dev",
@@ -31,6 +33,8 @@
 
   // The look. "v4" = the pastel redesign (DESIGN-SYSTEM.md › v4); leave empty for the current look.
   "design": "",
+  // With "design": "v4": the design review's look (one title per screen, six text sizes, pill families). Off by default.
+  "designReview": false,
 
   // Time zone for task times and dates said in meetings ("by Friday")
   "timeZone": "UTC",

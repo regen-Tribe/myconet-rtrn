@@ -5,6 +5,28 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.124.0 — 2026-11-24 — The design review (off unless a community turns it on)
+
+Sonia's UI/UX review of 22–23 Nov 2026, as one release behind a new switch: `"designReview": true` in
+`instance/config.jsonc` (default off; `instance.example` has it false). With it off nothing changes. Rules:
+`DESIGN-SYSTEM.md` › design review layer (13 rules); decisions #1–#81 in `design/decisions.md`; words in `LEXICON.md`.
+- **Shell:** the page name lives only in the top bar, with ‹ Back (the last page; from outside, one level up). Pages
+  outside the menu are named by their own heading. The profile bar is gone; the menu's next step says what's next.
+- **Look:** six text sizes; pill families (Status for tasks only, Result, Tag with circle seal, Filter/Count); no
+  outlines, one soft control fill (`--ctl`), black when chosen, dark green main buttons; yellow means waiting, red only
+  Declined; icons in ink; initials on grey; circle seals.
+- **Pages:** Operations (one view switch, phone Filter sheet, "Drafts to confirm" for leads, Later column kept),
+  Members (people first), Calendar (calm on phones, colours per event type kept), The space (one row + Filter),
+  Governance (Voting · Decided, checks in words), Meetings (one row of controls), a task's page, a person's profile
+  and Edit profile, welcome / sign in / create account, About.
+- **Newcomers:** three steps, Get to know us (sign the values at the end of About) · About you (a short form) · Apply;
+  My dashboard's checklist, waiting and welcome-in states. Before joining, each lock says how to open it (#79):
+  public profile card and offers, read-only Operations, RSVP needs an account, Governance for signed-in people,
+  Meetings and booking at joining.
+- **Not in this release:** migration `newcomer_access` (the database side of #71/#73/#74) waits for review; the screens
+  work without it.
+- My dashboard: Next event skips events that are over; open proposals follow Governance's Voting rule.
+
 ## v4.123.0 — 2026-11-23 — Later is a status, with its own column
 
 Oscar: "later button moves it to the later column (create the column one position left of idea column) and you can

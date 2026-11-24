@@ -4,7 +4,7 @@ import AdminTabs from '@/modules/admin/AdminTabs'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import { Button, Card, Chip, ChipRow, IconTile, List, ListRow, PageHeader, SectionHead, Icon, type IconName, InlineIcon } from '@/core/components/v4'
 
 export interface AdminUserRow {
@@ -44,7 +44,7 @@ const ROLE_CAN: Record<string, string> = {
 
 /** Settings only admins change (they live where they're used; this is the one place that lists them). */
 const PLATFORM_SETTINGS: { href: string; icon: IconName; title: string; text: string }[] = [
-  { href: '/about?step=branding', icon: 'camera', title: 'Look and feel', text: 'Logo and banner image' },
+  { href: '/about?step=branding', icon: DESIGN_REVIEW ? 'image' : 'camera', title: 'Look and feel', text: 'Logo and banner image' },
   { href: '/about?step=circles', icon: 'circles', title: 'Circles', text: 'Add, rename or retire circles' },
   { href: '/about?step=documents', icon: 'file', title: 'Documents', text: 'What the assistant answers from' },
   { href: '/about?step=s1.4', icon: 'heart', title: 'Community values', text: 'What people sign when they join' },
@@ -151,7 +151,7 @@ export default function UsersAdminClient({ initialUsers, openQuestions = 0, circ
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 20px 80px' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#dc2626', background: '#dc262615', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
+        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--rv-neutral, #dc2626)', background: 'var(--rv-neutral-bg, #dc262615)', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
           Admin
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>

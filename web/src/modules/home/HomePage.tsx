@@ -1,19 +1,25 @@
 import { createClient } from '@/core/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/modules/m04-blueprint/lib/blueprint-compute'
 import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import HomeClient from '@/modules/home/HomeClient'
 import { buildGlanceTiles } from '@/modules/home/lib/at-a-glance'
 import { loadModulePreviews } from '@/modules/home/lib/preview-data'
-import { communityName as getCommunityName, DESIGN } from '@/core/lib/instance'
+import { communityName as getCommunityName, DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { isFullMember as checkFullMember, isJoiningOrAbove } from '@/core/lib/roles'
-import { profileColumns } from '@/core/lib/public-profile'
+import { profileColumns, profileDetailsOf, withProfileDetails } from '@/core/lib/public-profile'
 import HomeV4 from './HomeV4'
 
 export default async function HomePage(props: { searchParams?: Promise<{ tour?: string }> }) {
   // The v4 look has a calm Home (HomeV4) for everyone (Sonia, 21 Nov); the long module-by-module tour stays at /home?tour=1
   const sp = (await props?.searchParams) ?? {}
+  // One home per role (design review): About for a visitor, My dashboard once signed in. The long tour stays.
+  if (DESIGN_REVIEW && !sp.tour) {
+    const { data: { user } } = await (await createClient()).auth.getUser()
+    redirect(user ? '/dashboard' : '/about')
+  }
   if (DESIGN === 'v4' && !sp.tour) return <HomeV4 />
 
   const supabase = await createClient()
@@ -33,7 +39,7 @@ export default async function HomePage(props: { searchParams?: Promise<{ tour?: 
     supabase.from('blueprints').select('answers, updated_at').eq('is_community', true).maybeSingle(),
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
     supabase.from('user_profiles')
-      .select(profileColumns(!!user, 'id, first_name, last_name, username, headline, city, country, avatar_url, user_types'))
+      .select(profileColumns(!!user, 'id, first_name, last_name, username, headline, avatar_url'))
       .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(4),
@@ -75,12 +81,14 @@ export default async function HomePage(props: { searchParams?: Promise<{ tour?: 
   let role = 'explorer'
   let applicationStatus: string | null = null
   let joiningRewardNew = false
+  // City, country and kinds of people: joining members and up only (decision #71)
+  const members: any[] = user ? await withProfileDetails(supabase, membersRes.data as any) : (membersRes.data ?? []) as any[]
   const matchScores: Record<string, { score: number; reasons: string[] }> = {}
 
   if (user) {
-    const memberIds = (membersRes.data ?? []).map((m: any) => m.id)
+    const memberIds = members.map((m: any) => m.id)
     const [profileRes, appRes, myBioRes, memberBiosRes] = await Promise.all([
-      supabase.from('user_profiles').select('first_name, role, city, country').eq('id', user.id).maybeSingle(),
+      supabase.from('user_profiles').select('first_name, role').eq('id', user.id).maybeSingle(),
       supabase.from('applications').select('status').eq('user_id', user.id).maybeSingle(),
       supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
       memberIds.length > 0
@@ -103,10 +111,10 @@ export default async function HomePage(props: { searchParams?: Promise<{ tour?: 
 
     // Merge city/country from user_profiles into bios so computeMatch can score location.
     const myBio = myBioRes.data
-      ? { ...myBioRes.data, city: profileRes.data?.city, country: profileRes.data?.country }
+      ? { ...myBioRes.data, ...(await profileDetailsOf(supabase, user.id)) }
       : null
     const memberLocById = new Map<string, { city?: string | null; country?: string | null }>()
-    for (const m of (membersRes.data ?? []) as any[]) memberLocById.set(m.id, { city: m.city, country: m.country })
+    for (const m of members) memberLocById.set(m.id, { city: m.city, country: m.country })
     for (const b of (memberBiosRes as any).data ?? []) {
       const loc = memberLocById.get(b.user_id) ?? {}
       matchScores[b.user_id] = computeMatch(myBio as any, { ...b, city: loc.city, country: loc.country })
@@ -126,7 +134,7 @@ export default async function HomePage(props: { searchParams?: Promise<{ tour?: 
       plannedHomes={plannedHomes}
       projectCountry={projectCountry}
       memberCount={memberCount}
-      members={(membersRes.data ?? []) as any[]}
+      members={members}
       communityValues={(valuesRes.data ?? []) as any[]}
       projects={(projectsRes.data ?? []) as any[]}
       activeProjectCount={activeProjectCount}

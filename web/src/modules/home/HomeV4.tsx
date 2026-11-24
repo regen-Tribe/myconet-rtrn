@@ -5,7 +5,7 @@ import { loadMenuState } from '@/core/lib/menu-server'
 import { menuGroups } from '@/core/lib/nav'
 import { isFullMember, isJoiningOrAbove } from '@/core/lib/roles'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN_REVIEW } from '@/core/lib/instance'
 import { Icon, IconTile, NextStep } from '@/core/components/v4'
 import { glanceText } from './lib/at-a-glance'
 import './home-v4.css'
@@ -217,7 +217,7 @@ export default async function HomeV4() {
           <ul className="hv4-how">
             <li><Icon name="search" size={16} /><span><b>Ask anything</b> in the bar at the top: a person, an event, a question</span></li>
             <li><Icon name="menu" size={16} /><span><b>Every page is in the menu</b>, grouped as Community and Working together</span></li>
-            <li><Icon name="spark" size={16} /><span><b>Look around freely</b>: nothing you open here breaks anything</span></li>
+            <li><Icon name={DESIGN_REVIEW ? 'eye' : 'spark'} size={16} /><span><b>Look around freely</b>: nothing you open here breaks anything</span></li>
           </ul>
         </div>
       </section>
