@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-24 — Core v4.129.0 via PR #93 (deployed, 4e1a8611): tasks remember when and by whom they last changed
+- Migration `change_tracking` applied via MCP before the deploy (columns + triggers checked).
+
 ## 2026-11-24 — Core v4.128.0 via PR #92 (deployed, 7b7a7cf0): each suggestion says what it's based on
 - No migration.
 
