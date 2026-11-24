@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-23 — Core v4.123.0 via PR #89 (deployed, a3486b9e): Later is a status, with its own column
+- Migration `later_status` applied via MCP before the deploy (both constraints checked).
+
 ## 2026-11-23 — Core v4.122.0 via PR #88 (deployed, 819695dc): a task can be an Idea
 - Migration `task_ideas` applied via MCP before the deploy (constraint checked).
 
