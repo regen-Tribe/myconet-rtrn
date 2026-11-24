@@ -35,6 +35,8 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone
   const [state, setState] = useState<'draft' | 'saving' | 'declining' | 'approved' | 'gone'>('draft')
   const [error, setError] = useState('')
   const start = useRef<number | null>(null)
+  // The decline's log entry, for an Undo that lasts until the page is reloaded (v4.130.0)
+  const [declineLog, setDeclineLog] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
@@ -45,7 +47,7 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone
     </span>
   )
   if (state === 'approved') return keepLabel ? label('Approved', TONE.yes[0], TONE.yes[1], { label: 'Undo', run: unapprove }) : null
-  if (state === 'gone') return keepLabel ? label('Declined', TONE.no[0], TONE.no[1]) : null
+  if (state === 'gone') return keepLabel ? label('Declined', TONE.no[0], TONE.no[1], declineLog ? { label: 'Undo', run: restore } : undefined) : null
 
   async function approve() {
     setState('saving'); setError('')
@@ -53,13 +55,30 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone
     if (e) { setState('draft'); setError(e.message); return }
     setState('approved'); onApproved?.()
   }
+  // Declining goes through /api/ops/drafts/[id], which keeps the whole task so Undo can put it back (v4.130.0). With
+  // keepLabel (the To decide list) the task goes at once and "Declined · Undo" stays until the page is reloaded; on a
+  // board card there's still a few seconds' Undo before it goes.
+  async function sendDecline() {
+    const res = await fetch(`/api/ops/drafts/${taskId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'decline' }) })
+    const r = await res.json().catch(() => ({})) as { log?: string | null; error?: string }
+    if (!res.ok) { setState('draft'); setError(r.error ?? 'That didn’t work.'); return }
+    setDeclineLog(r.log ?? null)
+    setState('gone'); onDeclined?.()
+  }
   function decline() {
-    setState('declining'); setError('')
-    timer.current = setTimeout(async () => {
-      const { error: e } = await createClient().from('deliverables').delete().eq('id', taskId)
-      if (e) { setState('draft'); setError(e.message); return }
-      setState('gone'); onDeclined?.()
-    }, UNDO_MS)
+    setError('')
+    if (keepLabel) { setState('saving'); sendDecline(); return }
+    setState('declining')
+    timer.current = setTimeout(sendDecline, UNDO_MS)
+  }
+  async function restore() {
+    if (!declineLog) return
+    setState('saving'); setError('')
+    const res = await fetch(`/api/ops/drafts/${taskId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'restore', log: declineLog }) })
+    const r = await res.json().catch(() => ({})) as { error?: string }
+    if (!res.ok) { setState('gone'); setError(r.error ?? 'Couldn’t undo that.'); return }
+    setDeclineLog(null)
+    setState('draft'); onUndone?.()
   }
   async function unapprove() {
     setState('saving'); setError('')

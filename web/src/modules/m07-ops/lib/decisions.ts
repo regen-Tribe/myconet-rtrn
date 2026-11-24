@@ -7,7 +7,8 @@ import { loadProjectManager } from './pm-data'
 export interface Viewer { id: string; role: string; leadCircles: string[] }
 
 /** One task to decide (v4.114.0): its fields, where it came from, and the project manager's open suggestions about it */
-export type DecisionRow = MeetingTask & { suggestions: AgentSuggestion[] }
+/** said_by: who said its line in the meeting (Fireflies' speaker on that action item), v4.130.0 */
+export type DecisionRow = MeetingTask & { suggestions: AgentSuggestion[]; said_by?: string | null }
 
 const DELIVERABLE = 'id, title, status, needs_review, due_date, due_time, project_id, circle, team_id, assignee_id, assignee_name, priority, created_by, source_meeting_id, source_item, ' +
   'projects(title, circle, created_by, lead_user_id), user_profiles!deliverables_assignee_id_fkey(first_name, username)'
@@ -41,11 +42,11 @@ export async function loadDecisions(supabase: SupabaseClient, me: Viewer, scope:
   const chunks = <T,>(a: T[], n: number) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n))
   const [tasks, links] = await Promise.all([
     Promise.all(chunks(ids, 150).map(c => supabase.from('deliverables').select(DELIVERABLE).in('id', c))).then(r => r.flatMap(x => (x.data ?? []) as any[])),
-    Promise.all(chunks(ids, 150).map(c => supabase.from('meeting_action_links').select('deliverable_id, meeting_id, item_text, person_name').in('deliverable_id', c))).then(r => r.flatMap(x => (x.data ?? []) as any[])),
+    Promise.all(chunks(ids, 150).map(c => supabase.from('meeting_action_links').select('deliverable_id, meeting_id, item_index, item_text, person_name').in('deliverable_id', c))).then(r => r.flatMap(x => (x.data ?? []) as any[])),
   ])
   const link = new Map(links.map(l => [l.deliverable_id as string, l]))
   const meetingIds = [...new Set(tasks.map(d => link.get(d.id)?.meeting_id ?? d.source_meeting_id).filter(Boolean))] as string[]
-  const { data: meetings } = meetingIds.length ? await supabase.from('meeting_transcripts').select('id, title, meeting_date, created_at, circle').in('id', meetingIds) : { data: [] as any[] }
+  const { data: meetings } = meetingIds.length ? await supabase.from('meeting_transcripts').select('id, title, meeting_date, created_at, circle, action_items').in('id', meetingIds) : { data: [] as any[] }
   const meeting = new Map((meetings ?? []).map((m: any) => [m.id as string, m]))
   const mayDecide = (p: { circle: string | null; created_by: string | null; lead_user_id: string | null }) =>
     me.role === 'admin'
@@ -66,6 +67,7 @@ export async function loadDecisions(supabase: SupabaseClient, me: Viewer, scope:
       person_name: l?.person_name ?? null, assignee: who?.first_name ?? who?.username ?? null, item_text: (l?.item_text ?? d.source_item ?? '') as string,
       can_decide: !!d.needs_review && may, can_edit: may,
       circle: d.circle ?? null, team_id: d.team_id ?? null, assignee_id: d.assignee_id ?? null, assignee_name: d.assignee_name ?? null, priority: d.priority ?? null,
+      said_by: (m && l?.item_index != null && Array.isArray(m.action_items) ? (m.action_items[l.item_index]?.speaker as string | undefined)?.trim() : null) || l?.person_name || null,
       meeting: mid ? { id: mid, title: m?.title ?? null, date: m ? (m.meeting_date ?? m.created_at) : null, circle: m?.circle ?? null } : undefined,
       suggestions: pm.suggestions.filter(s => suggestionTasks(s).includes(d.id)),
     } satisfies DecisionRow

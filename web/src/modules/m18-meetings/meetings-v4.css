@@ -287,3 +287,7 @@ html[data-review] .mt4-sumcard { padding: 20px; }
 .dl4-basis__link { color: var(--m7, #4338ca); font-weight: 600; text-decoration: none; }
 .dl4-basis__link:hover { text-decoration: underline; }
 .dl4-basis__said { color: var(--ink-2, #3a3f4a); font-style: normal; }
+
+/* A draft's source under its row (v4.130.0) */
+.dl4-source { font-size: 12px; color: var(--ink-3, #6b7180); padding-top: 0; margin-top: -6px; }
+.dl4-source b { font-weight: 600; color: var(--ink-2, #3a3f4a); }

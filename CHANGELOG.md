@@ -5,6 +5,22 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.130.0 — 2026-11-24 — Undo a decline until you reload; each draft shows its source
+
+Oscar: "after something is declined (slide left of draft pill) leave the undo button until the page is refreshed".
+- **Declining** a draft in Drafts to confirm / To decide, on a meeting's page and in the List's drafts goes through a
+  new route, `POST /api/ops/drafts/[id]`. It deletes the task as before, with the person's own session, but first keeps
+  the whole task in `agent_actions` (`draft_declined`), with its meeting links and followers.
+- **The pill reads "Declined · Undo" until the page is reloaded.** Undo puts the task back exactly: the row, its link to
+  the meeting's line, and its followers. Only the person who declined it can undo it.
+- **Approving** a draft there now keeps its pill too, reading "Approved · Undo". Before, the pill disappeared at once.
+- The board's cards keep their few seconds' Undo before a declined draft goes.
+- **Each draft's source** shows under its row: "From <the meeting> · date · said by <who>". The meeting links to its notes,
+  and the speaker is Fireflies' speaker on that action item (Oscar: "I don't see… the source of inspiration… on the row
+  with the draft I'm confirming"). The project manager's suggestions keep their own "Based on".
+
+No migration.
+
 ## v4.129.0 — 2026-11-24 — Tasks remember when and by whom they last changed
 
 Oscar: "add tracking". Drafts he had confirmed seemed to come back, and nothing showed which tasks had changed:

@@ -48,6 +48,9 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ id: string; text: string } | null>(null)
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set())
+  // Swiped here (v4.130.0): the pill stays, reading Approved / Declined with Undo, until the page is reloaded
+  const [swiped, setSwiped] = useState<Set<string>>(() => new Set())
+  const swipe = (id: string, on: boolean) => setSwiped(prev => { const n = new Set(prev); if (on) n.add(id); else n.delete(id); return n })
   // Subcircles made from a row's Subcircle picker (v4.127.0): every row offers them straight away
   const [madeTeams, setMadeTeams] = useState<DecisionOptions['teams']>([])
   const opts = options ? { ...options, teams: [...options.teams, ...madeTeams] } : null
@@ -186,7 +189,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           <span className="v4-row__trail">
             {t.status === 'merged' ? <span className="dl4-tag dl4-tag--grey">Merged</span>
               : t.status === 'later' ? <span className="dl4-tag dl4-tag--idea"><Icon name="clock" size={12} />Later{decidable && <> · <button type="button" className="dl4-link" onClick={() => later(t, false)}>Undo</button></>}</span>
-              : t.needs_review ? <DraftSwipe keepLabel taskId={t.deliverable_id} canDecide={!!t.can_decide} onApproved={() => set(t.deliverable_id, { needs_review: false })} onUndone={() => set(t.deliverable_id, { needs_review: true })} />
+              : t.needs_review || swiped.has(t.deliverable_id) ? <DraftSwipe keepLabel taskId={t.deliverable_id} canDecide={!!t.can_decide || swiped.has(t.deliverable_id)} onApproved={() => { swipe(t.deliverable_id, true); set(t.deliverable_id, { needs_review: false }) }} onDeclined={() => swipe(t.deliverable_id, true)} onUndone={() => { swipe(t.deliverable_id, false); set(t.deliverable_id, { needs_review: true }) }} />
               : t.suggestions.length ? null
               : <StatusPill status={t.status === 'done' ? 'done' : 'todo'} label={t.status === 'done' ? 'Done' : 'On the board'} />}
             {decidable && t.status !== 'later' && t.status !== 'merged' && (
@@ -199,6 +202,17 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
             )}
           </span>
         </div>
+        {/* Where it came from (v4.130.0: Oscar didn't see "the source of inspiration" on a draft's row): the meeting, a link
+            to its notes, its date, and who said the line */}
+        {t.meeting && (
+          <div className="mt4-taskedit dl4-source">
+            From {t.meeting.title
+              ? <Link href={`/meetings/${t.meeting.id}`} className="dl4-basis__link">{t.meeting.title} →</Link>
+              : <em>a meeting you can’t open</em>}
+            {t.meeting.date && <span suppressHydrationWarning> · {day(t.meeting.date)}</span>}
+            {t.said_by && <> · said by <b>{t.said_by}</b></>}
+          </div>
+        )}
         {msg?.id === t.deliverable_id && <div className="mt4-taskedit dl4-err">{msg.text}</div>}
         {canEdit && open && (
           <div className="mt4-taskedit">
