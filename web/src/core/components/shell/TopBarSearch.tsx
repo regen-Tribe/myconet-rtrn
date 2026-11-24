@@ -1,12 +1,12 @@
 'use client'
 
-import { InlineIcon } from '@/core/components/v4'
+import { Icon, InlineIcon } from '@/core/components/v4'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { CLUBHOUSE, MEMBER_MODULES, menuGroups } from '@/core/lib/nav'
-import { COMMUNITY_NAME, DESIGN } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import { ASK_EVENT } from '@/modules/assistant/AssistantChat'
 
 /**
@@ -102,10 +102,13 @@ export default function TopBarSearch() {
         display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999,
         border: `1px solid ${open ? 'var(--accent-color)' : 'var(--rule)'}`, background: open ? 'var(--surface)' : 'var(--bg-2)', color: 'var(--ink-3)',
       }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" style={{ flexShrink: 0 }}>
-          <circle cx="11" cy="11" r="7" />
-          <line x1="20" y1="20" x2="16.6" y2="16.6" />
-        </svg>
+        {/* Design review: the set's search icon instead of a hand-made one */}
+        {DESIGN_REVIEW ? <Icon name="search" size={16} /> : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="7" />
+            <line x1="20" y1="20" x2="16.6" y2="16.6" />
+          </svg>
+        )}
         <input ref={inputRef} value={q} placeholder="Search members, tasks, events… or ask a question"
           aria-label="Search" role="combobox" aria-expanded={open && results.length > 0}
           onChange={e => { setQ(e.target.value); setOpen(true) }} onFocus={() => setOpen(true)}

@@ -59,7 +59,7 @@ export default function AgreementFormClient({ project, userId, existing }: {
         <Link href="/agreements" style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 28 }}>
           ← Agreements
         </Link>
-        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 16 }}>
+        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--rv-neutral, #1d4ed8)', background: 'var(--rv-neutral-bg, #1d4ed815)', padding: '3px 10px', borderRadius: 20, marginBottom: 16 }}>
           {modLabel('06', 'Agreements')}
         </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, color: 'var(--ink)', marginBottom: 4 }}>
@@ -95,12 +95,12 @@ export default function AgreementFormClient({ project, userId, existing }: {
   if (submitted) {
     return (
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '80px 20px', textAlign: 'center' }}>
-        <div style={{ marginBottom: 16, color: '#235C3B' }}><Icon name="check-circle" size={48} /></div>
+        <div style={{ marginBottom: 16, color: 'var(--rv-good, #235C3B)' }}><Icon name="check-circle" size={48} /></div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, marginBottom: 12 }}>Proposal submitted</h1>
         <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.65, marginBottom: 32 }}>
           The task lead will review your offer for <strong>{project.title}</strong> and get back to you.
         </p>
-        <Link href="/agreements" style={{ display: 'inline-block', background: '#1d4ed8', color: '#fff', fontSize: 14, fontWeight: 600, padding: '10px 24px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
+        <Link href="/agreements" style={{ display: 'inline-block', background: 'var(--rv-primary, #1d4ed8)', color: '#fff', fontSize: 14, fontWeight: 600, padding: '10px 24px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
           Back to agreements
         </Link>
       </div>
@@ -114,7 +114,7 @@ export default function AgreementFormClient({ project, userId, existing }: {
         ← Agreements
       </Link>
 
-      <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 16 }}>
+      <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--rv-neutral, #1d4ed8)', background: 'var(--rv-neutral-bg, #1d4ed815)', padding: '3px 10px', borderRadius: 20, marginBottom: 16 }}>
         {modLabel('06', 'Agreements')}
       </div>
       <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, color: 'var(--ink)', marginBottom: 4 }}>
@@ -157,7 +157,7 @@ export default function AgreementFormClient({ project, userId, existing }: {
         </div>
 
         {error && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius)', padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>
+          <div style={{ background: 'var(--rv-bad-bg, #fef2f2)', border: '1px solid var(--rv-bad-line, #fecaca)', borderRadius: 'var(--radius)', padding: '10px 14px', color: 'var(--rv-bad, #dc2626)', fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -167,7 +167,7 @@ export default function AgreementFormClient({ project, userId, existing }: {
             type="submit"
             disabled={submitting || !workDesc.trim() || !reward.trim()}
             style={{
-              background: '#1d4ed8', color: '#fff', fontSize: 14, fontWeight: 600,
+              background: 'var(--rv-primary, #1d4ed8)', color: '#fff', fontSize: 14, fontWeight: 600,
               padding: '11px 28px', borderRadius: 'var(--radius)', border: 'none',
               cursor: submitting || !workDesc.trim() || !reward.trim() ? 'not-allowed' : 'pointer',
               opacity: submitting || !workDesc.trim() || !reward.trim() ? 0.65 : 1,

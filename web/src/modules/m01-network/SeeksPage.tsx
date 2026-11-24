@@ -16,7 +16,8 @@ import {
 } from '@/core/components/ui/select'
 import { Plus, HelpCircle, Pencil, Trash2, Loader2 } from '@/core/components/v4/lucide-compat'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import MembersViews from './MembersViews'
 import { Button as V4Button, Icon as V4Icon, IconTile, PageHeader, Tag } from '@/core/components/v4'
 import './members-v4.css'
 
@@ -145,6 +146,7 @@ export default function SeeksPage() {
       <PageHeader eyebrow="Members" title="My requests"
         subtitle={requests.length ? <><b>{requests.length} {requests.length === 1 ? 'request' : 'requests'}</b> on your profile: help, things and people you’re looking for.</> : 'Help, things and people you’re looking for.'}
         actions={requests.length > 0 && <V4Button icon="plus" onClick={openNew}>Add request</V4Button>} />
+      {DESIGN_REVIEW && <MembersViews signedIn={true} className="mbv--page" />}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>{form}</Dialog>
       {requests.length === 0 ? (
         <div className="v4-empty">

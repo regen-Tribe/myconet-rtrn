@@ -1,0 +1,137 @@
+/* A person's profile and Edit profile with the design review on (decisions #60–#64).
+   Everything is under html[data-review]; communities without "designReview" never see it.
+   Six text sizes only: 40 (phone 32) · 24 · 18 · 15 · 13 · 11. Breakpoints 640 / 960. No outlines; controls use --ctl. */
+
+/* ─── Profile (ProfileReview.tsx) ─────────────────────────────────────────── */
+html[data-review] .pfr { max-width: 1120px; }
+html[data-review] .pfr-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; margin: 4px 0 14px; }
+html[data-review] .pfr-av { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; flex-shrink: 0; }
+html[data-review] .pfr-av--initial { background: var(--ctl); color: var(--ink-2, #3a3f4a); font-size: 40px; font-weight: 600; }
+html[data-review] .pfr-who { min-width: 0; display: grid; gap: 4px; }
+html[data-review] .pfr .pfr-name { margin: 0; line-height: 1.05; overflow-wrap: anywhere; }
+html[data-review] .pfr-headline { margin: 0; font-size: 15px; line-height: 1.4; color: var(--ink-2, #3a3f4a); }
+html[data-review] .pfr-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-3, #6b7180); }
+html[data-review] .pfr-meta span { display: inline-flex; align-items: center; gap: 4px; }
+html[data-review] .pfr-meta:empty { display: none; }
+html[data-review] .pfr-acts { align-self: start; }
+
+html[data-review] .pfr-tags { margin: 0 0 16px; }
+html[data-review] .pfr .v4-tag { font-size: 13px; height: 30px; padding: 0 12px; color: var(--ink, #111317); text-decoration: none; }
+html[data-review] .pfr .v4-tag--seal { padding-left: 6px; gap: 6px; }
+html[data-review] a.pfr-ctag:hover { background: var(--ctl-hover); }
+html[data-review] .pfr-ctag__role { color: var(--ink-3, #6b7180); }
+html[data-review] .pfr-ctag__role::before { content: "· "; }
+html[data-review] .pfr .v4-next { margin: 0 0 4px; }
+html[data-review] .pfr .v4-next__txt span { font-size: 13px; }
+
+html[data-review] .pfr-split { display: grid; gap: 4px 28px; }
+@media (min-width: 960px) { html[data-review] .pfr-split { grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); align-items: start; } }
+html[data-review] .pfr-main { display: grid; gap: 14px; min-width: 0; }
+html[data-review] .pfr-sec .v4-sec { margin: 10px 0 8px; }
+html[data-review] .pfr .v4-sec h2 { font-size: 18px; }
+html[data-review] .pfr .v4-sec a { font-size: 13px; }
+html[data-review] .pfr-row { align-items: flex-start; }
+html[data-review] .pfr-row .v4-row__lead { padding-top: 1px; color: var(--ink-2, #3a3f4a); }
+html[data-review] .pfr-row .v4-row__main b { font-size: 15px; }
+html[data-review] .pfr-row .v4-row__main small { font-size: 13px; }
+html[data-review] .pfr-row__wrap, html[data-review] .pfr-row .v4-row__main b.pfr-row__wrap { white-space: normal; overflow: visible; font-weight: 500; line-height: 1.45; }
+html[data-review] .pfr-row__text { font-size: 13px; color: var(--ink-3, #6b7180); line-height: 1.45; margin-top: 2px; }
+html[data-review] .pfr-label { font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); margin: 6px 0 8px; }
+html[data-review] .pfr-label:first-child { margin-top: 4px; }
+
+html[data-review] .pfr-card { padding: 20px; display: grid; gap: 16px; }
+html[data-review] .pfr-text { display: grid; gap: 4px; }
+html[data-review] .pfr-card__title { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 0; }
+html[data-review] .pfr-prose { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2, #3a3f4a); white-space: pre-wrap; overflow-wrap: anywhere; }
+html[data-review] .pfr-small { margin: 0; font-size: 13px; color: var(--ink-3, #6b7180); display: inline-flex; align-items: center; gap: 6px; }
+html[data-review] .pfr-small a { color: var(--ink, #111317); font-weight: 600; }
+html[data-review] .pfr-links .v4-tag { gap: 6px; }
+
+html[data-review] .pfr-mbti { margin: 0; font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1; }
+html[data-review] .pfr-ocean { display: grid; gap: 10px; }
+html[data-review] .pfr-ocean__row { display: grid; grid-template-columns: 1fr auto; gap: 4px; font-size: 13px; color: var(--ink-2, #3a3f4a); }
+html[data-review] .pfr-ocean__n { color: var(--ink-3, #6b7180); }
+html[data-review] .pfr-ocean__bar { grid-column: 1 / -1; display: block; height: 6px; border-radius: 99px; background: var(--ctl); overflow: hidden; }
+html[data-review] .pfr-ocean__bar i { display: block; height: 100%; border-radius: inherit; background: var(--ink, #111317); }
+html[data-review] .pfr-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+html[data-review] .pfr-facts dt { font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); }
+html[data-review] .pfr-facts dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; }
+
+html[data-review] .pfr-side { display: grid; gap: 8px; }
+html[data-review] .pfr-side .v4-row__main b { font-size: 15px; }
+html[data-review] .pfr-side .v4-row__main small { font-size: 13px; }
+/* The ask-to-join chips: one control fill, no outline */
+html[data-review] .pfr-ask { margin-top: 6px; }
+html[data-review] .pfr-ask div[style] { font-size: 13px !important; }
+html[data-review] .pfr-ask button { border: 0 !important; font-size: 13px !important; }
+html[data-review] .pfr-ask button:not([style*="255, 255, 255"]) { background: var(--ctl) !important; }
+
+html[data-review] .pfr-locked { margin-top: 18px; padding: 18px 20px; border-radius: 20px; background: var(--surface, #fff); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; font-size: 15px; }
+html[data-review] .pfr-locked > span { flex: 1 1 220px; }
+html[data-review] .pfr-locked__acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Circles show once: as seal tags under the name on phones and tablets (first third), as the side list on computers */
+@media (max-width: 959px) { html[data-review] .pfr-side__circles { display: none; } }
+@media (min-width: 960px) { html[data-review] .pfr-ctag { display: none; } }
+@media (max-width: 640px) {
+  html[data-review] .pfr-head { grid-template-columns: auto minmax(0, 1fr); gap: 14px; margin-top: 0; }
+  html[data-review] .pfr-av { width: 72px; height: 72px; }
+  html[data-review] .pfr-av--initial { font-size: 32px; }
+  html[data-review] .pfr-head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  /* Edit profile becomes a round pencil beside the name (the next step below already says what to do) */
+  html[data-review] .pfr-acts .v4-btn { width: 44px; height: 44px; padding: 0; gap: 0; font-size: 0; border-radius: 50%; }
+  html[data-review] .pfr .v4-tag { height: 30px; padding: 0 10px; }
+  html[data-review] .pfr .v4-tag--seal { padding-left: 5px; }
+  /* Edit profile: Save sits beside the title */
+  html[data-review] .pe4 .v4-ph__row { display: flex; flex-flow: row nowrap; align-items: center; justify-content: space-between; gap: 12px; }
+  html[data-review] .pe4 .v4-ph__actions { margin: 0; flex-shrink: 0; }
+  html[data-review] .pe4 .v4-ph__row > div:first-child { flex: 1; min-width: 0; }
+  html[data-review] .pe4 .v4-ph__title { white-space: nowrap; }
+}
+
+/* ─── Edit profile (app/profile/edit) ─────────────────────────────────────── */
+/* The completion meter lives here now (#11, #60): how much is done and what's still to add, each a link */
+html[data-review] .pe4-meter { background: var(--surface, #fff); border-radius: 20px; padding: 16px 18px; margin: 0 0 14px; display: grid; gap: 10px; }
+html[data-review] .pe4-meter__top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 600; }
+html[data-review] .pe4-meter__top span { font-size: 13px; font-weight: 500; color: var(--ink-3, #6b7180); }
+html[data-review] .pe4-meter__bar { height: 8px; border-radius: 99px; background: var(--ctl); overflow: hidden; }
+html[data-review] .pe4-meter__bar i { display: block; height: 100%; border-radius: inherit; background: var(--action-ink, #235c3b); transition: width .2s; }
+html[data-review] .pe4-meter__todo { margin: 0; font-size: 13px; color: var(--ink-3, #6b7180); line-height: 1.7; }
+html[data-review] .pe4-meter__todo button { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--ink, #111317); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ink-4, #9aa0ad); cursor: pointer; }
+html[data-review] .pe4-meter__todo button:hover { text-decoration-color: currentColor; }
+html[data-review] .pe4-meter--done .pe4-meter__todo { color: var(--action-ink, #235c3b); font-weight: 600; }
+/* The step progress bar repeats the step chips; the meter replaces it */
+html[data-review] .pe4 .pe4-bar { display: none; }
+/* Each step's card says only its name once (the chip above already does): no icon, no second line */
+html[data-review] .pe4 .pe4-card .pe4-desc { display: none; }
+html[data-review] .pe4 .pe4-card .pe4-title { font-size: 18px; }
+html[data-review] .pe4 .pe4-card .pe4-title svg { display: none; }
+/* Fields: one soft control fill, no outline (#37) */
+/* !important: the v4 bridge in globals.css gives every old input a hairline with !important */
+html[data-review] main .pe4.v4-page :is(input:not([type="radio"]):not([type="checkbox"]):not([type="file"]), textarea, button[role="combobox"]) {
+  background: var(--ctl) !important; border: 0 !important; box-shadow: none !important; border-radius: 12px !important; font-size: 15px;
+}
+html[data-review] main .pe4.v4-page :is(input, textarea):focus-visible, html[data-review] main .pe4.v4-page button[role="combobox"]:focus-visible { background: var(--surface, #fff) !important; box-shadow: inset 0 0 0 2px var(--ink, #111317) !important; outline: none; }
+html[data-review] .pe4 .pe4-tagbox { background: var(--ctl); border: 0; border-radius: 12px; }
+html[data-review] .pe4 .pe4-tagbox input { background: none !important; box-shadow: none !important; }
+html[data-review] .pe4 label:not(.pe4-choice) { font-size: 13px; font-weight: 600; }
+html[data-review] .pe4 .text-xs { font-size: 13px; }
+/* Choice rows (who you are here, who sees your growth): fill instead of a frame; chosen = black */
+html[data-review] .pe4 .pe4-choice { border: 0 !important; background: var(--ctl); }
+html[data-review] .pe4 .pe4-choice:hover { background: var(--ctl-hover); }
+html[data-review] .pe4 .pe4-choice--on { background: var(--ink, #111317) !important; color: #fff; }
+html[data-review] .pe4 .pe4-choice--on :is(.text-primary, .text-muted-foreground) { color: #fff !important; }
+html[data-review] .pe4 .pe4-choice--on .text-muted-foreground { opacity: .75; }
+/* The photo: an initial on grey without one, a small camera badge instead of "Click photo to change" */
+html[data-review] .pe4 .pe4-photo { position: relative; }
+html[data-review] .pe4 .pe4-photo__img { background: var(--ctl) !important; color: var(--ink-2, #3a3f4a) !important; border: 0 !important; }
+html[data-review] .pe4 .pe4-photo__badge { position: absolute; right: -2px; bottom: -2px; width: 32px; height: 32px; border-radius: 50%; background: var(--ink, #111317); color: #fff; display: grid; place-items: center; }
+html[data-review] .pe4 .pe4-photo__hint { display: none; }
+/* A field you were sent to from "Still to add" */
+html[data-review] .pe4 .pe4-here { border-radius: 14px; box-shadow: 0 0 0 6px var(--action, #d4f0dd); transition: box-shadow .6s; }
+html[data-review] .pe4 .pe4-add { background: var(--ctl); border: 0; border-radius: 999px; font-size: 13px; font-weight: 600; }
+html[data-review] .pe4 .pe4-add:hover { background: var(--ctl-hover); }
+@media (max-width: 640px) {
+  html[data-review] .pe4-meter { padding: 14px 16px; }
+}
+html[data-review] .pfr-side .v4-sec:first-child { margin-top: 10px; }

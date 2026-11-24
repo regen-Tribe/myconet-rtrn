@@ -1,5 +1,6 @@
 'use client'
 
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 import { useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -286,7 +287,8 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
   return (
     <section id="pm" className="v4-card dl4-panel">
       <div className="dl4-panel__head">
-        <b><InlineIcon name="compass" />To decide</b>
+        {/* Design review (#45): one name with the drafts button, and "decide" is Governance's word (LEXICON) */}
+        <b><InlineIcon name="compass" />{DESIGN_REVIEW ? 'Drafts to confirm' : 'To decide'}</b>
         <small>{[drafts ? `${drafts} draft${drafts === 1 ? '' : 's'}` : null, sugs ? `${sugs} with a suggestion` : null, done.length ? `${done.length} change${done.length === 1 ? '' : 's'} by the assistant` : null].filter(Boolean).join(' · ')}</small>
         {reviewable.length > 0 && (
           <button type="button" className="dl4-btn dl4-btn--review" disabled={!!review && !review.finished} onClick={reviewAgain}

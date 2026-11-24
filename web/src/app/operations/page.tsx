@@ -44,7 +44,8 @@ export default async function OpsPage({ searchParams }: { searchParams: Promise<
     .select('id, project_id, title, assignee_id, assignee_name, team_id, created_by, priority, due_date, due_time, circle, needs_review, status, progress, notes, source, source_meeting_id, source_item, user_profiles(username, first_name)')
     .order('due_date', { ascending: true })
 
-  const deliverables = (deliverablesRaw ?? []).map((d: any) => ({
+  // Visitors don't see who a task is assigned to (decision #73)
+  const deliverables = (deliverablesRaw ?? []).map((d: any) => (user ? d : { ...d, assignee_id: null, assignee_name: null, user_profiles: null })).map((d: any) => ({
     id: d.id as string,
     project_id: (d.project_id ?? null) as string | null,
     title: d.title as string,

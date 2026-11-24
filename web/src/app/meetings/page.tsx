@@ -1,11 +1,13 @@
 import MeetingsList from '@/modules/m18-meetings/MeetingsList'
-import { requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
+import { MeetingsLocked, requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
 import { isOpsAdmin } from '@/core/lib/roles'
 import type { MeetingListItem } from '@/modules/m18-meetings/types'
 
 export default async function MeetingsPage({ searchParams }: { searchParams: Promise<{ circle?: string; q?: string }> }) {
   const sp = await searchParams
-  const { supabase, user } = await requireMeetingsAccess()
+  const access = await requireMeetingsAccess()
+  if (access.locked) return <MeetingsLocked signedIn={access.signedIn} />
+  const { supabase, user } = access
   // RLS: joining members and above; Circle-only meetings only for that circle, its leads and admins
   const [{ data }, { data: profile }, { data: teams }] = await Promise.all([
     supabase.from('meeting_transcripts')
@@ -39,6 +41,7 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
       taskCounts={taskCounts}
       myCircles={myCircles}
       canManage={isOpsAdmin(profile?.role ?? '')}
+      decider={{ role: profile?.role ?? '', leadCircles: profile?.lead_circles ?? [] }}
       initialCircle={sp.circle ?? null}
       initialQuery={sp.q ?? ''}
     />

@@ -91,7 +91,8 @@ export interface LinkOption {
   circle?: string | null
 }
 
-export type EventsView = 'day' | 'week' | 'month' | 'list'
+/** 'agenda': phones in the design review (Today, Tomorrow, This week) */
+export type EventsView = 'day' | 'week' | 'month' | 'list' | 'agenda'
 
 /** A comment under an event */
 export interface EventComment {

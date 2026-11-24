@@ -7,6 +7,7 @@
  */
 import Link from 'next/link'
 import { ICONS, type IconName } from './icons'
+import { iconSize } from './icon-size'
 
 export type { IconName }
 
@@ -14,11 +15,13 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 
 /* ─── Icon ───────────────────────────────────────────────────────── */
 
-/** One icon from the marker-line set. Decorative unless `label` is given. */
+/** One icon from the marker-line set. Decorative unless `label` is given. With the design review on, the
+ *  size snaps to 16, 20 or 24 (icon-size.ts). */
 export function Icon({ name, size = 18, label, className }: { name: IconName; size?: number | string; label?: string; className?: string }) {
+  const s = iconSize(size)
   return (
     <svg
-      viewBox="0 0 24 24" width={size} height={size} className={cx('v4-icon', className)}
+      viewBox="0 0 24 24" width={s} height={s} className={cx('v4-icon', className)}
       role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}
       dangerouslySetInnerHTML={{ __html: ICONS[name] }}
     />
@@ -133,9 +136,10 @@ export function ListRow({ title, meta, lead, trail, href, onClick }: {
   return <div className="v4-row">{body}</div>
 }
 
-/** A soft square holding an icon, for list rows and card heads. */
-export function IconTile({ name, tone = 'blue' }: { name: IconName; tone?: 'blue' | 'red' | 'yellow' | 'green' | 'violet' | 'grey' }) {
-  return <span className={cx('v4-tile', `v4-tile--${tone}`)}><Icon name={name} /></span>
+/** A soft square holding an icon, for list rows and card heads. With the design review on, every tone shows
+ *  neutral (colour only means status); `off` (archived, not on the map) shows as a dashed, faded tile. */
+export function IconTile({ name, tone = 'blue', off }: { name: IconName; tone?: 'blue' | 'red' | 'yellow' | 'green' | 'violet' | 'grey'; off?: boolean }) {
+  return <span className={cx('v4-tile', `v4-tile--${tone}`, off && 'v4-tile--off')}><Icon name={name} /></span>
 }
 
 /* ─── Page header, next step, section heads, empty states ───────── */
@@ -200,7 +204,29 @@ export function EmptyState({ title, text, action, icon = 'sprout' }: {
   )
 }
 
-/** A small tag (a circle, a count, a sprint). Not for status: use StatusPill. */
-export function Tag({ children, icon }: { children: React.ReactNode; icon?: IconName }) {
-  return <span className="v4-tag">{icon && <Icon name={icon} size={13} />}{children}</span>
+/**
+ * A small tag: what something is or belongs to (a circle, a kind, a sprint). Not for status (StatusPill) or
+ * outcomes (Result). Pass `seal` (a CircleSeal or Seal at 16) for a circle: the only colour a tag may carry.
+ */
+export function Tag({ children, icon, seal }: { children: React.ReactNode; icon?: IconName; seal?: React.ReactNode }) {
+  return <span className={cx('v4-tag', seal ? 'v4-tag--seal' : undefined)}>{seal}{!seal && icon && <Icon name={icon} size={13} />}{children}</span>
+}
+
+/* ─── Design review pill families (DESIGN-SYSTEM.md › design review, rule 7) ─── */
+
+export type Tone = 'good' | 'bad' | 'attention' | 'neutral'
+const TONE_ICON: Record<Tone, IconName | null> = { good: 'check', bad: 'x', attention: 'alert', neutral: null }
+
+/**
+ * The outcome of something: Approved, Not approved, 31 late, Voting · 4 days left. Square corners and an icon,
+ * so it never reads as a task status. Never violet or blue.
+ */
+export function Result({ tone, children, icon }: { tone: Tone; children: React.ReactNode; icon?: IconName | null }) {
+  const name = icon === undefined ? TONE_ICON[tone] : icon
+  return <span className={cx('v4-result', `v4-result--${tone}`)}>{name && <Icon name={name} size={12} />}{children}</span>
+}
+
+/** A count: a black number badge (on a Filter button, a tab, a menu item). */
+export function Count({ n, label }: { n: number; label?: string }) {
+  return <span className="v4-count" aria-label={label ?? String(n)}>{n}</span>
 }

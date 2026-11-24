@@ -4,9 +4,11 @@ import {
   StatusPill, Tag, type IconName, type Status,
 } from '@/core/components/v4'
 import { ICONS } from '@/core/components/v4/icons'
+import { ICON_MEANING } from '@/core/components/v4/icon-meanings'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 import { Seal } from '@/core/components/v4/CircleSeal'
 import { GlyphPickerDemo } from './GlyphPickerDemo'
-import { CIRCLE_GLYPHS, CIRCLE_GLYPH_LABEL, type CircleGlyph } from '@/core/components/v4/circle-glyphs'
+import { CIRCLE_GLYPHS, glyphLabel, type CircleGlyph } from '@/core/components/v4/circle-glyphs'
 
 export const metadata: Metadata = { title: 'Design · MyCoNet', robots: { index: false } }
 
@@ -15,7 +17,8 @@ const STATUSES: Status[] = ['idea', 'todo', 'doing', 'review', 'done', 'paused',
 /** Sample circle colours for the seals (evenly spaced, each at least 3:1 on the page). Not a community's own. */
 const SEAL_COLORS = ['#1F3FB8', '#34893C', '#88470D', '#BD4238', '#008796', '#6F4BAC', '#B44E9B', '#A1790C', '#3389BA', '#912946', '#126052', '#535F00', '#6C6158']
 const GLYPHS = Object.keys(CIRCLE_GLYPHS) as CircleGlyph[]
-const SIZES = [16, 24, 40] as const
+// With the design review on, icons come in three sizes (design/icons.md › Sizes)
+const SIZES = DESIGN_REVIEW ? [16, 20, 24] as const : [16, 24, 40] as const
 const cell: React.CSSProperties = { display: 'grid', justifyItems: 'center', gap: 8, padding: '14px 6px 10px', borderRadius: 12, background: 'var(--bg-2)', fontSize: 11, color: 'var(--ink-2)' }
 const sizesRow: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 40, color: 'var(--ink)' }
 
@@ -79,17 +82,20 @@ export default function DesignPage() {
       <SectionHead title={`Circle seals · ${GLYPHS.length}`} />
       <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>
         A circle&apos;s mark: its colour with a cream stamp. Solid shapes, so a seal never looks like an interface icon.
-        The only coloured icons in the app. Shown at 16, 24 and 40px, then at 64px.
+        The only coloured icons in the app. Shown at {SIZES.join(', ')}px, then at 64px.
+        {DESIGN_REVIEW && <>{' '}With the design review on: &ldquo;Of this land&rdquo;, plants, fire and water from Protopia (decision #33),
+          each also at 16px inside a tag, the size on member cards. Under each: what it draws, then the key a circle saves.</>}
       </p>
       <Card>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(132px, 1fr))', gap: 8 }}>
           {GLYPHS.map((g, i) => (
             <div key={g} style={cell}>
-              <Seal color={SEAL_COLORS[i % SEAL_COLORS.length]} glyph={g} size={64} name={CIRCLE_GLYPH_LABEL[g]} title />
+              <Seal color={SEAL_COLORS[i % SEAL_COLORS.length]} glyph={g} size={64} name={glyphLabel(g)} title />
               <div style={sizesRow}>
                 {SIZES.map(s => <Seal key={s} color={SEAL_COLORS[i % SEAL_COLORS.length]} glyph={g} size={s} />)}
               </div>
-              <span>{g}</span>
+              {DESIGN_REVIEW && <Tag seal={<Seal color={SEAL_COLORS[i % SEAL_COLORS.length]} glyph={g} size={16} />}>{glyphLabel(g)}</Tag>}
+              <span>{DESIGN_REVIEW ? `${glyphLabel(g)} · ${g}` : g}</span>
             </div>
           ))}
           <div style={cell}>
@@ -108,7 +114,8 @@ export default function DesignPage() {
 
       <SectionHead title={`Icons · ${Object.keys(ICONS).length}`} />
       <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>
-        Interface icons: one thin marker line in ink, never coloured, never an emoji. Shown at 16, 24 and 40px.
+        Interface icons: one thin marker line in ink, never coloured, never an emoji. Shown at {SIZES.join(', ')}px{DESIGN_REVIEW ? ' (inline, controls and list rows, tiles and headers)' : ''}.
+        {DESIGN_REVIEW && <> Under each: what it means. “Move a use” means a screen also uses it for something else; design/icons.md says what.</>}
       </p>
       <Card>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(132px, 1fr))', gap: 8 }}>
@@ -116,6 +123,7 @@ export default function DesignPage() {
             <div key={n} style={cell}>
               <div style={sizesRow}>{SIZES.map(s => <Icon key={s} name={n} size={s} />)}</div>
               <span>{n}</span>
+              {DESIGN_REVIEW && <small style={{ fontSize: 11, lineHeight: 1.3, color: 'var(--ink-3)', textAlign: 'center' }}>{ICON_MEANING[n].means}{ICON_MEANING[n].verdict !== 'keep' && <><br /><i>{ICON_MEANING[n].verdict}</i></>}</small>}
             </div>
           ))}
         </div>

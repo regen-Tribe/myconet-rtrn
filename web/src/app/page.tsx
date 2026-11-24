@@ -5,12 +5,14 @@ import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { buildGlanceTiles } from '@/modules/home/lib/at-a-glance'
 import { loadModulePreviews } from '@/modules/home/lib/preview-data'
-import { communityName as getCommunityName } from '@/core/lib/instance'
+import { communityName as getCommunityName, DESIGN_REVIEW } from '@/core/lib/instance'
 
 export default async function LandingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // One home per role (design review): a visitor's home is About, a signed-in person's is My dashboard
+  if (DESIGN_REVIEW) redirect(user ? '/dashboard' : '/about')
   if (user) redirect('/home')
 
   const { data: bp } = await supabase

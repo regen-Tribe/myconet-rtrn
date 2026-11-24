@@ -9,7 +9,8 @@ import {
 } from '@/core/components/ui/select'
 import { Search, Filter, X } from '@/core/components/v4/lucide-compat'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import MembersViews from './MembersViews'
 import { Button as V4Button, Card, Chip, ChipRow, EmptyState, Icon as V4Icon, IconTile, PageHeader, InlineIcon } from '@/core/components/v4'
 import { PersonCardV4 } from './PersonCardV4'
 
@@ -84,7 +85,11 @@ export default function DiscoverClient({ profiles, bioMap, myBio, isLoggedIn }: 
   if (DESIGN === 'v4') return (
     <div className="v4-page">
       <PageHeader eyebrow="Members" title="Discover" subtitle="Find people by name, skill, interest, place or what kind of member they are." />
-      {!isLoggedIn && <Card className="v4-note"><IconTile name="users" tone="red" /><span>Sign in to see each person’s skills and how well you match.</span></Card>}
+      {DESIGN_REVIEW && <MembersViews signedIn={isLoggedIn} className="mbv--page" />}
+      {!isLoggedIn && (DESIGN_REVIEW
+        // Design review: one quiet line, not a banner (the menu's next step says Create account once)
+        ? <p className="v4-hint"><InlineIcon name="lock" /> <Link href="/auth/login">Sign in</Link> to see each person’s skills and how well you match.</p>
+        : <Card className="v4-note"><IconTile name="users" tone="red" /><span>Sign in to see each person’s skills and how well you match.</span></Card>)}
       <div className="mb4-find">
         <label className="mb4-search">
           <V4Icon name="search" size={17} />
@@ -108,7 +113,7 @@ export default function DiscoverClient({ profiles, bioMap, myBio, isLoggedIn }: 
               tags: isLoggedIn ? [...(bio?.skills ?? []), ...(bio?.interests ?? [])] : null,
             }} />
           ))}</div>}
-      {!isLoggedIn && <div style={{ display: 'flex', gap: 8, marginTop: 18 }}><V4Button href="/auth/signup">Create an account</V4Button><V4Button variant="secondary" href="/auth/login">Sign in</V4Button></div>}
+      {!isLoggedIn && !DESIGN_REVIEW && <div style={{ display: 'flex', gap: 8, marginTop: 18 }}><V4Button href="/auth/signup">Create an account</V4Button><V4Button variant="secondary" href="/auth/login">Sign in</V4Button></div>}
     </div>
   )
 

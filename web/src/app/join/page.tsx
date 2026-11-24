@@ -1,11 +1,14 @@
 import { createClient } from '@/core/lib/supabase/server'
 import JoinClient from '@/modules/m05-join/JoinClient'
 import JoinAdminClient from '@/modules/m05-join/JoinAdminClient'
+import { profileDetailsOf, withProfileDetails } from '@/core/lib/public-profile'
 import { isAdmin, isCircleAdmin } from '@/core/lib/roles'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import JoinReview from '@/modules/m05-join/JoinReview'
+import type { JoinStepKey } from '@/core/lib/join-path'
 import { loadApplications, loadJoinQuestions } from '@/modules/m05-join/applications-server'
 
-export default async function JoinPage() {
+export default async function JoinPage(props: { searchParams?: Promise<{ step?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -32,13 +35,14 @@ export default async function JoinPage() {
   const communityValues = (valuesData ?? []) as { id: string; title: string; description: string; sort_order: number }[]
 
   const buddiesQuery = user
-    ? supabase.from('user_profiles').select('id, first_name, headline, city').eq('approved', true).neq('id', user.id).limit(3)
+    ? supabase.from('user_profiles').select('id, first_name, headline').eq('approved', true).neq('id', user.id).limit(3)
     : supabase.from('user_profiles').select('id, first_name, headline').eq('approved', true).limit(3)
   const { data: buddiesData } = await buddiesQuery
-  const buddyProfiles = (buddiesData ?? []) as any
+  // City opens at joining member (decision #71): withProfileDetails leaves it empty for explorers
+  const buddyProfiles = (user ? await withProfileDetails(supabase, buddiesData as { id: string }[]) : buddiesData ?? []) as any
 
   let existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null = null
-  let userProfile: { first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null } | null = null
+  let userProfile: { first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null; avatar_url?: string | null } | null = null
   let signedValueIds: string[] = []
   let hasContribution = false
   let hasOwnProject = false
@@ -52,7 +56,7 @@ export default async function JoinPage() {
         .maybeSingle(),
       supabase
         .from('user_profiles')
-        .select('first_name, last_name, headline, city, country')
+        .select('first_name, last_name, headline, avatar_url, public_bio')
         .eq('id', user.id)
         .maybeSingle(),
       supabase
@@ -73,10 +77,22 @@ export default async function JoinPage() {
     ])
 
     existingApplication = appRes.data as any
-    userProfile = profileRes.data as any
+    userProfile = profileRes.data ? { ...profileRes.data, ...(await profileDetailsOf(supabase, user.id)) } as any : null
     signedValueIds = (signaturesRes.data ?? []).map((s: any) => s.value_id)
     hasContribution = (contributionRes.data?.length ?? 0) > 0
     hasOwnProject = (ownProjectRes.data?.length ?? 0) > 0
+  }
+
+  // The design review's Join: three steps (Get to know us · About you · Apply, #80 #81), the same as the menu's next step
+  if (DESIGN_REVIEW) {
+    const step = (await props.searchParams)?.step
+    // Step 2 shows what the person already offers as chosen (#81)
+    const { data: offerRows } = user ? await supabase.from('user_offers').select('title').eq('user_id', user.id) : { data: null }
+    return (
+      <JoinReview userId={user?.id ?? null} role={role} values={communityValues} initialSigned={signedValueIds} questions={questions}
+        profile={userProfile} offers={(offerRows ?? []).map(o => o.title as string)} application={existingApplication}
+        initialStep={(['values', 'profile', 'application'] as const).find(k => k === step) as JoinStepKey | undefined ?? null} />
+    )
   }
 
   const isProfileComplete = !!(userProfile?.first_name && userProfile?.headline)

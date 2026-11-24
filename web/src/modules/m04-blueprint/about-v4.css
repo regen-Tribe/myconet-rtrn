@@ -9,6 +9,10 @@
 .ab-hero-in p { font-size: clamp(15px, 1.7cqi, 18px); line-height: 1.4; margin: 0; max-width: 34ch; text-wrap: balance; text-shadow: 0 1px 12px rgba(0,0,0,.35); }
 .ab-place { justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.92); color: var(--ink, #111317); font-size: 12px; font-weight: 500; }
 .ab-hero-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+/* Design review (#69): a visitor's Sign in sits beside Create account as a quiet text link, as on the sign-in pages */
+html[data-review] .ab-signin { align-self: center; flex: none; padding: 0 10px; color: inherit; font-size: 15px; font-weight: 600; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+html[data-review] .ab-hero-in .ab-signin { text-shadow: 0 1px 12px rgba(0,0,0,.35); }
+html[data-review] .ab-signin:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
 /* Phones: a taller frame (the photo stays a photo), the words across the bottom, the two buttons side by side */
 @container (max-width: 560px) {
   .ab-hero-in { max-width: none; }
@@ -178,3 +182,12 @@
 .ab-ch .ab-day li { grid-template-columns: 116px minmax(0, 1fr); align-items: baseline; padding: 11px 0; }
 .ab-ch .ab-day .t { font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .ab-ch .ab-day li { grid-template-columns: 100px minmax(0, 1fr); } .ab-ch .ab-day .t { font-size: 13px; } }
+
+/* Joining step 1 ends at the values (design/decisions.md #80): the green next-step card, "I share these values" */
+.ab-sign { margin-top: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 18px 20px; border-radius: 20px; background: var(--green, #d3f1dc); color: var(--green-ink, #2e7a4a); }
+.ab-sign__text { display: grid; gap: 2px; flex: 1 1 260px; min-width: 0; }
+.ab-sign__text small { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.ab-sign__text b { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 600; color: var(--ink, #111317); }
+.ab-sign__text span { font-size: 15px; color: var(--ink-2, #3a3f4a); }
+.ab-sign__text .ab-sign__error { color: var(--red-ink, #ae3a35); font-size: 13px; }
+.ab-sign--done .ab-sign__text b { color: var(--green-ink, #2e7a4a); }

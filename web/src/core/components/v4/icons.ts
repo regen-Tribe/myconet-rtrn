@@ -46,7 +46,7 @@ export const ICONS = {
   "trash": "<path d=\"M4 6.5h16M9.5 6.5V4h5v2.5M6 6.5l1 13.5h10l1-13.5\"/><path d=\"M10 10.5v6M14 10.5v6\"/>",
   "undo": "<path d=\"M4 12a8 8 0 1 0 2.5-5.8\"/><path d=\"M4 4v4.5h4.5\"/>",
   "upload": "<path d=\"M12 15V4M7.5 8.5 12 4l4.5 4.5\"/><path d=\"M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4\"/>",
-  "share": "<path d=\"M14 4h6v6M20 4l-9 9\"/><path d=\"M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5\"/>",
+  "external": "<path d=\"M14 4h6v6M20 4l-9 9\"/><path d=\"M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5\"/>",
   "link": "<path d=\"M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2\"/><path d=\"M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2\"/>",
   "settings": "<path d=\"M4 7h9M17 7h3M4 17h3M11 17h9\"/><circle cx=\"15\" cy=\"7\" r=\"2\"/><circle cx=\"9\" cy=\"17\" r=\"2\"/>",
   "logout": "<path d=\"M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4\"/><path d=\"M10 16.5 5.5 12 10 7.5M5.5 12H15\"/>",
@@ -83,6 +83,7 @@ export const ICONS = {
   "image": "<rect x=\"3.5\" y=\"4.5\" width=\"17\" height=\"15\" rx=\"4\"/><circle cx=\"9\" cy=\"10\" r=\"1.8\"/><path d=\"m4 17 5-4.5 4 3.5 3-2.5 4 3.5\"/>",
   "bowl": "<path d=\"M3.5 11.5h17a8.5 8.5 0 0 1-17 0z\"/><path d=\"M9.5 8c0-1.6 1-2.2 1-3.8M14 8c0-1.6 1-2.2 1-3.8\"/>",
   "info": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 11.2v5M12 7.8v.1\"/>",
+  "list": "<path d=\"M9.5 7h11M9.5 12h11M9.5 17h11\"/><path d=\"M4.5 7h.1M4.5 12h.1M4.5 17h.1\" stroke-width=\"2.6\"/>",
   "key": "<circle cx=\"8\" cy=\"15.5\" r=\"4.5\"/><path d=\"m11.2 12.3 8.3-8.3M16.5 7l2.5 2.5M14 9.5l2 2\"/>",
 } as const
 

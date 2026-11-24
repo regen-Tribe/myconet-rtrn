@@ -5,15 +5,34 @@
  */
 import type { CSSProperties, SVGProps } from 'react'
 import { ICONS, type IconName } from './icons'
+import { iconSize } from './icon-size'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'dangerouslySetInnerHTML'> & { size?: number | string; style?: CSSProperties }
 
+/** With the design review on, the size these older screens give in `style` or as Tailwind `h-N w-N` snaps to
+ *  16, 20 or 24 like <Icon> (icon-size.ts); everything else in style and className is kept. */
+function reviewSize(size: number | string, className?: string, style?: CSSProperties) {
+  if (!DESIGN_REVIEW) return { size, className, style }
+  const tw = className?.match(/(?:^|\s)h-(\d+)(?:\s|$)/)
+  const asked = typeof style?.width === 'number' ? style.width : tw ? Number(tw[1]) * 4 : size
+  const rest = style ? { ...style } : undefined
+  if (rest) { delete rest.width; delete rest.height }
+  return {
+    size: iconSize(asked),
+    className: className?.replace(/(?:^|\s)[hw]-\d+(?=\s|$)/g, '').trim() || undefined,
+    style: rest,
+  }
+}
+
 function make(name: IconName, extra?: string) {
-  function V4LucideIcon({ size = 24, className, ...rest }: Props) {
+  function V4LucideIcon({ size: askedSize = 24, className: askedClass, style: askedStyle, ...rest }: Props) {
+    const { size, className, style } = reviewSize(askedSize, askedClass, askedStyle)
     return (
       <svg
         viewBox="0 0 24 24" width={size} height={size} aria-hidden
         {...rest}
+        style={style}
         className={['v4-icon', extra, className].filter(Boolean).join(' ')}
         dangerouslySetInnerHTML={{ __html: ICONS[name] }}
       />

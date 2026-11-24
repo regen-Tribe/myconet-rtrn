@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.124.0',
+    date: '2026-11-24',
+    title: 'A calmer, clearer look (design review)',
+    items: ['Communities that turn on the design review get one page name in the top bar with a Back button, six text sizes, pills you can tell apart, no outlines, and calmer Operations, Members, Calendar, The space, Governance, Meetings, task and profile pages.', 'New people get a clear way in: get to know us, tell us about you, apply. Before joining, every locked thing says how to open it.', 'Off for every community until it sets "designReview": true.'],
+  },
+  {
     version: 'v4.123.0',
     date: '2026-11-23',
     title: 'Later has its own column',

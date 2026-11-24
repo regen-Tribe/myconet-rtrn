@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { isMenuActive, menuGroups, tabKeys } from '@/core/lib/nav'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { COMMUNITY_NAME, DESIGN_REVIEW } from '@/core/lib/instance'
 import { Icon } from '@/core/components/v4'
 
 /**
@@ -11,10 +11,11 @@ import { Icon } from '@/core/components/v4'
  * joining members get About instead of Operations (O8). Menu shows the name of the
  * page you're on when it isn't one of the four. Hidden on wider screens (globals.css).
  */
-export default function TabBarV4({ newcomer, menuOpen, onMenu }: { newcomer: boolean; menuOpen: boolean; onMenu: () => void }) {
+export default function TabBarV4({ newcomer, menuOpen, onMenu, signedIn = true }: { newcomer: boolean; menuOpen: boolean; onMenu: () => void; signedIn?: boolean }) {
   const pathname = usePathname()
   const all = menuGroups(COMMUNITY_NAME).flatMap(g => g.items)
-  const tabs = tabKeys(newcomer).map(k => all.find(i => i.key === k)!).filter(Boolean)
+  // Design review: a visitor's home is About, so their bar has no Dashboard tab (it would only send them there)
+  const tabs = tabKeys(newcomer).filter(k => !(DESIGN_REVIEW && !signedIn && k === 'dashboard')).map(k => all.find(i => i.key === k)!).filter(Boolean)
   const current = tabs.find(t => isMenuActive(t.href, pathname))
   const here = current ? null : all.find(i => isMenuActive(i.href, pathname))
   const short = (name: string) => (name.startsWith('About ') ? 'About' : name === 'My dashboard' ? 'Dashboard' : name)
@@ -38,8 +39,9 @@ export default function TabBarV4({ newcomer, menuOpen, onMenu }: { newcomer: boo
         )
       })}
       <button type="button" onClick={onMenu} aria-expanded={menuOpen} style={cell(menuOpen || !!here)}>
-        <Icon name="grid" size={22} />
-        <span style={label}>{here && !menuOpen ? short(here.name) : 'Menu'}</span>
+        <Icon name={DESIGN_REVIEW ? 'menu' : 'grid'} size={22} />
+        {/* Design review: Menu keeps its name; the bold label shows you're in one of its pages */}
+        <span style={label}>{here && !menuOpen && !DESIGN_REVIEW ? short(here.name) : 'Menu'}</span>
       </button>
     </nav>
   )

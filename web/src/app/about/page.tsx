@@ -18,7 +18,7 @@ export default async function AboutPage(props: { searchParams: Promise<{ step?: 
       ? await supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle()
       : { data: null }
     const role = profile?.role ?? 'explorer'
-    return <AboutV4 supabase={supabase} communityName={COMMUNITY_NAME} role={role} canEdit={canEditBlueprint(role)} />
+    return <AboutV4 supabase={supabase} communityName={COMMUNITY_NAME} role={role} canEdit={canEditBlueprint(role)} signedIn={!!user} />
   }
   return <BlueprintLayout>{await BlueprintPage({ searchParams: Promise.resolve({ step: sp.step }) })}</BlueprintLayout>
 }

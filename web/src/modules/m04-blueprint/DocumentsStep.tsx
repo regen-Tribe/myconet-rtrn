@@ -64,7 +64,7 @@ export default function DocumentsStep({ canEdit, onPrev, onNext }: { canEdit: bo
       </p>
 
       {error && (
-        <div style={{ fontSize: 13, color: '#b91c1c', background: '#b91c1c12', border: '1px solid #b91c1c40', borderRadius: 'var(--radius)', padding: '8px 12px', marginBottom: 16 }}>{error}</div>
+        <div style={{ fontSize: 13, color: 'var(--rv-bad, #b91c1c)', background: 'var(--rv-bad-bg, #b91c1c12)', border: '1px solid var(--rv-bad-line, #b91c1c40)', borderRadius: 'var(--radius)', padding: '8px 12px', marginBottom: 16 }}>{error}</div>
       )}
 
       <div className="section">

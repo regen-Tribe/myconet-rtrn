@@ -5,11 +5,13 @@ import { ROLE_LABELS, roleAtLeast } from '@/core/lib/roles'
 import { LinkedEventsList } from '@/modules/m14-events/LinkedEventsList'
 import BannerImage from '@/core/components/BannerImage'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { redirect } from 'next/navigation'
 import DashboardV4 from './DashboardV4'
 import { InlineIcon } from '@/core/components/v4'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/modules/m04-blueprint/lib/blueprint-compute'
 import { modLabel } from '@/core/lib/module-label'
+import { SIGNED_IN_PROFILE_COLUMNS, profileDetailsOf } from '@/core/lib/public-profile'
 
 const atLeast = roleAtLeast
 
@@ -26,6 +28,8 @@ type ModuleCard = {
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  // One home per role (design review): a visitor's home is About
+  if (DESIGN_REVIEW && !user) redirect('/about')
 
   const publicFetches = await Promise.all([
     supabase.from('blueprints').select('answers, flags, updated_at').eq('is_community', true).maybeSingle(),
@@ -76,16 +80,23 @@ export default async function DashboardPage() {
   const [blueprintRes, memberCountRes, projectsRes, recentMembersRes, recentProjectsRes, openProposalsRes, recentProposalsRes, opsUpdatesRes, opsTasksRes, recentOffersRes, recentSeeksRes, newMembersRes, needHelpRes, upcomingEventsRes] = publicFetches
   const newMembersThisWeek = newMembersRes.count ?? 0
   const projectsNeedingHelp = needHelpRes.count ?? 0
-  const upcomingEvents = (upcomingEventsRes.data ?? []).map(toEvent)
+  // The query starts a day back so today's all-day events count; drop the ones already over, or My dashboard's
+  // "Next event" showed last night's dinner (design review newcomer check, 23 Nov)
+  const now = Date.now()
+  const upcomingEvents = (upcomingEventsRes.data ?? []).map(toEvent).filter(e => {
+    const start = new Date(e.starts_at).getTime()
+    const end = e.ends_at ? new Date(e.ends_at).getTime() : start + (e.all_day ? 86400000 : 2 * 3600000)
+    return end > now
+  })
 
   let profile: any = null
   let application: any = null
   if (user) {
     const [profileRes, applicationRes] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+      supabase.from('user_profiles').select(SIGNED_IN_PROFILE_COLUMNS).eq('id', user.id).single(),
       supabase.from('applications').select('status, created_at').eq('user_id', user.id).maybeSingle(),
     ])
-    profile = profileRes.data
+    profile = profileRes.data ? { ...(profileRes.data as Record<string, any>), ...(await profileDetailsOf(supabase, user.id)) } : null
     application = applicationRes.data
   }
 

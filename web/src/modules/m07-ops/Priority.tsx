@@ -1,4 +1,6 @@
 'use client'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
+import { Icon } from '@/core/components/v4'
 
 /** A task's priority (v4.32.0): deliverables.priority */
 export type Priority = 'none' | 'low' | 'medium' | 'high'
@@ -16,6 +18,12 @@ const meta = (p: string | null | undefined) => PRIORITIES.find(x => x.value === 
 export function PriorityBadge({ priority }: { priority?: string | null }) {
   const m = meta(priority)
   if (m.value === 'none') return null
+  // Design review: priority is a result-style badge, not a sixth colour. High needs attention; Low and Med are quiet.
+  if (DESIGN_REVIEW) return (
+    <span title={`Priority: ${m.label}`} className={`v4-result ${m.value === 'high' ? 'v4-result--attention' : 'v4-result--neutral'} ops5-prio`}>
+      {m.value === 'high' && <Icon name="up" size={12} />}{m.value === 'medium' ? 'Medium' : m.label}
+    </span>
+  )
   return (
     <span title={`Priority: ${m.label}`} style={{ fontSize: 9, fontWeight: 700, color: m.color, background: `color-mix(in srgb, ${m.color} 12%, transparent)`, padding: '1px 6px', borderRadius: 20, whiteSpace: 'nowrap' }}>
       {m.value === 'high' ? '▲ ' : ''}{m.label}

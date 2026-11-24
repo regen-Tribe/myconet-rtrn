@@ -19,7 +19,9 @@ import { EventFormModal, type EventDraft, type EventPayload } from './EventFormM
 import { CalendarFeedsModal } from './CalendarFeedsModal'
 import { PhotoImportModal } from './PhotoImportModal'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW, COMMUNITY_NAME } from '@/core/lib/instance'
+import { AgendaView, FilterButton, ReviewToolbar, usePhone } from './CalendarReview'
+import './calendar-review.css'
 import { Button, Card, Icon, PageHeader, InlineIcon } from '@/core/components/v4'
 
 const VIEWS: { id: EventsView; label: string }[] = [
@@ -74,8 +76,18 @@ export default function EventsClient({
     initialDraft ? { existing: null, draft: initialDraft } : null,
   )
   const [toast, setToast] = useState<string | null>(null)
+  // A visitor tapped Add event: say how to get an account (decision #72)
+  const [askAccount, setAskAccount] = useState(false)
   const [showFeeds, setShowFeeds] = useState(false)
   const [showPhoto, setShowPhoto] = useState(false)
+  // The design review: phones get Agenda · Month, computers Week · Month · List; "See all" is the phone's list
+  const phone = usePhone()
+  const [seeAll, setSeeAll] = useState(false)
+  useEffect(() => {
+    if (!DESIGN_REVIEW) return
+    if (phone && (view === 'week' || view === 'list')) { setSeeAll(view === 'list'); setView('agenda') }
+    if (!phone && view === 'agenda') setView(seeAll ? 'list' : 'week')
+  }, [phone, view, seeAll])
 
   // Dates depend on the viewer's time zone, so the calendar renders after mount
   const [now, setNow] = useState<Date | null>(null)
@@ -122,11 +134,15 @@ export default function EventsClient({
   const visible = shown.filter(e => kinds.includes(e.kind) && (!circlePicks.length || (!!e.circle && circlePicks.includes(e.circle))) && !(e.category && hiddenCategories.includes(e.category)))
   const openEvent = openId ? events.find(e => e.id === openId) ?? null : null
   const canPostCommunity = canCreateKind('community', role)
+  // How many filters differ from how the calendar opens (every kind but Tasks, every category, every circle)
+  const defaultKinds: EventKind[] = EVENT_KINDS.filter(k => k !== 'task')
+  const filterCount = EVENT_KINDS.filter(k => kinds.includes(k) !== defaultKinds.includes(k)).length
+    + hiddenCategories.filter(c => categories.includes(c)).length + circlePicks.length
 
   function step(dir: -1 | 1) {
     if (!anchor) return
     if (view === 'month') setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1))
-    else setAnchor(addDays(anchor, (view === 'day' ? 1 : 7) * dir))
+    else setAnchor(addDays(anchor, (view === 'day' || view === 'agenda' ? 1 : 7) * dir))
   }
 
   function openNew(draft: EventDraft = {}) {
@@ -244,7 +260,38 @@ export default function EventsClient({
 
   return (
     <div className={DESIGN === 'v4' ? 'ev-page v4-page v4-page--wide' : 'ev-page'} style={DESIGN === 'v4' ? undefined : { padding: '26px 32px 60px' }}>
-      {DESIGN === 'v4' ? (
+      {DESIGN_REVIEW ? (
+        <>
+          <div className="evr-head">
+            <PageHeader
+              eyebrow="Community"
+              title="Calendar"
+              subtitle="What’s on, and what you can join"
+              actions={(initialFeeds || (canAddFromPhoto && userId) || userId) ? <>
+                {initialFeeds && <Button variant="secondary" icon="link" className="evr-tool" aria-label="Linked calendars" onClick={() => setShowFeeds(true)}>Linked calendars{initialFeeds.length > 0 ? ` · ${initialFeeds.length}` : ''}</Button>}
+                {canAddFromPhoto && userId && <Button variant="secondary" icon="camera" className="evr-tool" aria-label="Add from a photo" onClick={() => setShowPhoto(true)}>Add from a photo</Button>}
+                {canPostCommunity ? <Button variant="primary" icon="plus" className="evr-add" onClick={() => openNew()}>Add event</Button>
+                  : userId ? <Button variant="quiet" href="/join">Joining members can post events →</Button> : null}
+              </> : undefined}
+            />
+          </div>
+          <ReviewToolbar
+            phone={phone} view={view} anchor={anchor} now={now} seeAll={seeAll} showPast={showPast}
+            onView={v => { setSeeAll(false); setView(v) }} onStep={step} onToday={() => now && setAnchor(startOfDay(now))} onShowPast={setShowPast}
+            filter={
+              <FilterButton
+                phone={phone} count={filterCount} signedIn={!!userId}
+                kinds={kinds} kindCounts={counts} onKind={k => setKinds(list => toggle(list, k))}
+                categories={categories} hiddenCategories={hiddenCategories} onCategory={c => setHiddenCategories(list => toggle(list, c))}
+                circlePicks={circlePicks} onCircles={setCirclePicks} mine={leadCircles}
+                circleCounts={Object.fromEntries(circles.slugs.map(c => [c, now ? shown.filter(e => e.circle === c && !isPast(e, now)).length : 0]))}
+                onClear={() => { setKinds(defaultKinds); setHiddenCategories([]); setCirclePicks([]) }}
+              />
+            }
+          />
+          {kinds.length === 0 && <p className="v4-hint">Pick at least one kind of event in Filter to see the calendar.</p>}
+        </>
+      ) : DESIGN === 'v4' ? (
         <>
           <PageHeader
             eyebrow="Community"
@@ -254,11 +301,16 @@ export default function EventsClient({
               {initialFeeds && <Button variant="secondary" icon="link" onClick={() => setShowFeeds(true)}>Linked calendars{initialFeeds.length > 0 ? ` · ${initialFeeds.length}` : ''}</Button>}
               {canAddFromPhoto && userId && <Button variant="secondary" icon="camera" onClick={() => setShowPhoto(true)}>Add from a photo</Button>}
               {canPostCommunity ? <Button variant="next" className="ev4-add" onClick={() => openNew()}>+ Add event</Button>
+                : DESIGN_REVIEW && userId ? <Button variant="quiet" href="/join">Add events once you’ve joined · Start joining</Button>
+                : DESIGN_REVIEW ? <Button variant="next" className="ev4-add" onClick={() => setAskAccount(true)}>+ Add event</Button>
                 : userId ? <Button variant="quiet" href="/join">Joining members can post events →</Button>
                 : <Button variant="secondary" href="/auth/login">Sign in for member events</Button>}
             </>}
           />
-          {!userId && (
+          {DESIGN_REVIEW && !userId && askAccount && (
+            <p className="v4-hint" role="status"><Link href="/auth/signup">Create account</Link> to add events and RSVP · <Link href="/auth/login">Sign in</Link>. Adding events opens once you’ve joined {COMMUNITY_NAME}.</p>
+          )}
+          {!DESIGN_REVIEW && !userId && (
             <Card className="v4-note"><Icon name="lock" /><span>You’re seeing public events. <Link href="/auth/login">Sign in</Link> to see member events and RSVP.</span></Card>
           )}
 
@@ -444,6 +496,11 @@ export default function EventsClient({
       {/* ── Calendar ──────────────────────────────────────────────────── */}
       {!now || !anchor ? (
         <div style={{ height: 420, borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--rule)' }} />
+      ) : view === 'agenda' && !seeAll ? (
+        <AgendaView
+          anchor={anchor} events={visible} rsvps={rsvps} userId={userId} now={now} onOpen={open}
+          onSeeAll={() => setSeeAll(true)} onPickDay={setAnchor}
+        />
       ) : view === 'day' ? (
         <DayView
           anchor={anchor} events={visible} rsvps={rsvps} userId={userId} now={now} onOpen={open}
@@ -460,8 +517,8 @@ export default function EventsClient({
         <ListView events={visible} rsvps={rsvps} userId={userId} now={now} showPast={showPast} onOpen={open} />
       )}
 
-      {/* Legend */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 14, fontSize: 11.5, color: 'var(--ink-3)' }}>
+      {/* Legend (the review drops it: events have no kind colours there) */}
+      {!DESIGN_REVIEW && <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 14, fontSize: 11.5, color: 'var(--ink-3)' }}>
         {EVENT_KINDS.map(k => (
           <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 8, height: 8, borderRadius: 2, background: KIND_META[k].color }} />{KIND_META[k].label}
@@ -472,7 +529,7 @@ export default function EventsClient({
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: categoryColor(c) }} />{c}
           </span>
         ))}
-      </div>
+      </div>}
 
       {openEvent && !form && (
         <EventDetailModal

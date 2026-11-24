@@ -1,0 +1,18 @@
+/* The menu's design-review parts (instance/design/ux-review-2026-11-22.html › Onboarding & orientation).
+   Only under html[data-review] ("designReview": true). Breakpoints: 640 / 960 / 1280 only. */
+
+/* The join path on the next step: three marks, each with its name; done ones filled */
+html[data-review] .mv4-path { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 7px 0 3px; }
+html[data-review] .mv4-path > span { display: grid; gap: 4px; font-size: 11px; line-height: 1.2; opacity: .75; }
+html[data-review] .mv4-path > span.on { opacity: 1; font-weight: 600; }
+html[data-review] .mv4-path i { display: block; height: 4px; border-radius: 4px; background: color-mix(in srgb, currentColor 22%, transparent); }
+html[data-review] .mv4-path > span.on i { background: currentColor; }
+
+/* A locked item: a button that opens a one-line note with the way to Join (hover shows the same words as a title,
+   so the menu doesn't jump while the pointer passes over it) */
+html[data-review] .mv4-lock { display: grid; }
+html[data-review] .mv4-lock > .mv4-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+html[data-review] .mv4-lock > .mv4-item:hover, html[data-review] .mv4-lock.open > .mv4-item { background: var(--bg-2, #f6f7fa); }
+html[data-review] .mv4-lockwhy { display: none; margin: 0 10px 6px 40px; font-size: 11px; line-height: 1.4; color: var(--ink-3, #6b7180); }
+html[data-review] .mv4-lockwhy a { color: var(--ink, #111317); font-weight: 600; white-space: nowrap; }
+html[data-review] .mv4-lock.open .mv4-lockwhy { display: block; }

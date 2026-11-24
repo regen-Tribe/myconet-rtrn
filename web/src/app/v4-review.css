@@ -1,0 +1,261 @@
+/* The 22 Nov 2026 design review, on top of v4 (instance/design/ux-review-2026-11-22.html).
+   Every rule is scoped under html[data-review], which only communities with "designReview": true get
+   (core/lib/instance.ts › DESIGN_REVIEW). Breakpoints: 640 (phone), 960 (tablet), 1280 (wide); no others. */
+
+/* ─── 1. The page name lives in the top bar, with a back button (decision #41, replaces #10) ───────────
+   Every page: ‹ Back and the page name in the top bar, phones and computers. The page heading that only repeats
+   that name is hidden but kept for screen readers (AppTopBar adds .v4-h1--in-bar); so is the group eyebrow above it.
+   On phones the back button takes the menu button's place: the Menu tab opens the menu. */
+html[data-review] .shell-v4 .topbar-v4-menu { display: none !important; }
+html[data-review] .shell-v4 .topbar-v4-back { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ctl, #e3e8f4); color: var(--ink, #111317); cursor: pointer; flex-shrink: 0; }
+html[data-review] .shell-v4 .topbar-v4-back:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .shell-v4 .topbar-v4-title { display: block; font-family: var(--display); font-size: 24px; font-weight: 500; letter-spacing: -.02em; color: var(--ink, #111317); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; margin-right: 12px; }
+@media (max-width: 768px) { html[data-review] .shell-v4 .topbar-v4-title { font-size: 18px; font-weight: 600; flex: 1; } }
+html[data-review] main .v4-h1--in-bar { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+html[data-review] main .v4-ph:has(.v4-h1--in-bar) .v4-eyebrow,
+html[data-review] main .v4-eyebrow:has(+ .v4-h1--in-bar),
+html[data-review] main div:has(+ .v4-h1--in-bar)[style*="text-transform"] { display: none !important; }
+html[data-review] main .v4-ph:has(.v4-h1--in-bar) .v4-ph__sub { margin-top: 0; }
+html[data-review] main .v4-ph:has(.v4-h1--in-bar) { margin-top: 0; }
+
+/* ─── 2. Six text sizes, five roles ────────────────────────────────────────
+   Title 40 (phone 32) · Heading 24 · Card title 18 · Body 15 · Meta 13 · Label 11 capitals.
+   Older screens set sizes inline (32 different values); these snap each one to its role. Small round
+   avatars keep their own initials size. New code uses the roles, not these snaps. */
+html[data-review] main.v4-main [style*="font-size:8px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 8px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:8.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 8.5px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:9px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 9px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:9.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 9.5px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:10px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 10px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:10.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 10.5px"]:not([style*="border-radius: 50%"]) { font-size: 11px !important; }
+html[data-review] main.v4-main [style*="font-size:11.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 11.5px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:12px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 12px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:12.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 12.5px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:13.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 13.5px"]:not([style*="border-radius: 50%"]) { font-size: 13px !important; }
+html[data-review] main.v4-main [style*="font-size:14px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 14px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:14.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 14.5px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:15.5px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 15.5px"]:not([style*="border-radius: 50%"]) { font-size: 15px !important; }
+html[data-review] main.v4-main [style*="font-size:16px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 16px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:17px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 17px"]:not([style*="border-radius: 50%"]) { font-size: 18px !important; }
+html[data-review] main.v4-main [style*="font-size:20px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 20px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:22px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 22px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:26px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 26px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:28px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 28px"]:not([style*="border-radius: 50%"]) { font-size: 24px !important; }
+html[data-review] main.v4-main [style*="font-size:32px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 32px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:34px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 34px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:36px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 36px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:42px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 42px"]:not([style*="border-radius: 50%"]),
+html[data-review] main.v4-main [style*="font-size:48px"]:not([style*="border-radius:50%"]),
+html[data-review] main.v4-main [style*="font-size: 48px"]:not([style*="border-radius: 50%"]) { font-size: 40px !important; }
+
+/* Labels: every capitals label is the same light sans label (v4 rule 4), whatever it was written as */
+html[data-review] main.v4-main [style*="text-transform:uppercase"],
+html[data-review] main.v4-main [style*="text-transform: uppercase"],
+html[data-review] .v4-eyebrow {
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif !important;
+  font-size: 11px !important; font-weight: 500 !important; letter-spacing: .1em !important;
+}
+/* One italic is a voice, twenty are noise: no italics in the interface */
+html[data-review] main.v4-main [style*="font-style:italic"],
+html[data-review] main.v4-main [style*="font-style: italic"] { font-style: normal !important; }
+html[data-review] .v4-ph__title { font-size: 40px; }
+@media (max-width: 640px) { html[data-review] .v4-ph__title, html[data-review] main.v4-main h1 { font-size: 32px !important; } }
+
+/* ─── 3. Pill families (core/components/v4: StatusPill, Result, Tag, Count) ──
+   Status: round with a dot, tasks only. Result: square corners and an icon. Tag: white outline chip;
+   a circle carries its seal. Count: a black number badge. */
+html[data-review] .v4-st { font-size: 11px; font-weight: 600; }
+html[data-review] .v4-st::before { opacity: 1; }
+.v4-result { height: 22px; padding: 0 8px 0 6px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0; }
+.v4-result--good { background: var(--green, #d3f1dc); color: var(--green-ink, #2e7a4a); }
+.v4-result--bad { background: var(--red, #ffd9d6); color: var(--red-ink, #ae3a35); }
+.v4-result--attention { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
+.v4-result--neutral { background: transparent; color: var(--ink-2, #3a3f4a); box-shadow: inset 0 0 0 1px var(--rule, rgba(17,19,23,.14)); padding-left: 8px; }
+.v4-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--ink, #111317); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.v4-tag--seal { padding-left: 4px; }
+
+/* ─── 4. Phone tab bar: Menu keeps its name; the page you're on shows by the bold label ── */
+
+/* ─── 5. Two-column pages never grow wider than a phone ──────────────────────
+   Below the split, .v4-split had an auto column that grew to its widest card (My dashboard was 413px on a
+   375px phone). One shrinkable column instead. */
+@media (max-width: 899px) { html[data-review] .v4-split { grid-template-columns: minmax(0, 1fr); } }
+
+/* ─── 6. Status colours each mean one thing (decision #34) ────────────────────
+   Yellow = waiting on someone's answer (Review, pending, awaiting approval). Red = only "no" (Declined).
+   Paused is an outline pill, so yellow no longer means two things. */
+html[data-review] { --st-review: var(--yellow, #fff0b3); --st-review-ink: var(--yellow-ink, #7a5b00); }
+html[data-review] .v4-st--review { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
+html[data-review] .v4-st--paused { background: transparent; color: var(--ink-2, #3a3f4a); box-shadow: inset 0 0 0 1px var(--rule, rgba(17,19,23,.14)); }
+html[data-review] .v4-st--no { background: var(--red, #ffd9d6); color: var(--red-ink, #ae3a35); }
+
+/* ─── 7. No border frames (decision #37) ──────────────────────────────────────
+   Cards and lists are white on the pale page, with no outline and no lines between rows. Every control a
+   person filters or switches with (chips, segments, selects, search, inputs, secondary buttons) has one soft
+   fill, --ctl, and no border; the chosen one is filled black (#31). Tags and neutral results share the fill. */
+html[data-review] { --ctl: #E3E8F4; --ctl-hover: #D8DEEE; }
+html[data-review] :is(.v4-card, .v4-list) { box-shadow: none; }
+html[data-review] .v4-row + .v4-row { box-shadow: none; }
+html[data-review] :is(.v4-chip, .v4-seg, .v4-select, .v4-search, .v4-input, button.v4-tag, .v4-btn--secondary, .ops5-need) {
+  background: var(--ctl); box-shadow: none; border: 0;
+}
+html[data-review] :is(.v4-chip, button.v4-tag, .v4-btn--secondary, .ops5-need):hover { background: var(--ctl-hover); }
+html[data-review] .v4-input:focus { background: var(--surface, #fff); box-shadow: inset 0 0 0 2px var(--ink, #111317); }
+html[data-review] :is(.v4-chip--on, .v4-chip--on:hover, .v4-seg button.on, .ops5-need.on) { background: var(--ink, #111317); color: #fff; box-shadow: none; }
+html[data-review] .v4-seg button:not(.on) { background: none; }
+html[data-review] .v4-tag { background: var(--ctl); box-shadow: none; }
+html[data-review] .v4-result--neutral { background: var(--ctl); box-shadow: none; }
+/* The circle picker is a control too; "late" keeps its waiting yellow over the control fill */
+html[data-review] .v4-cf__btn { background: var(--ctl); box-shadow: none; }
+html[data-review] .v4-cf__btn:hover { background: var(--ctl-hover); }
+html[data-review] .v4-cf__btn--on { background: var(--ink, #111317); color: #fff; }
+/* Its list (#31, #37; decision #50): ticked rows are a soft fill with a black tick, not To do's blue; the find
+   field is one soft pill, not a box inside a box; the phone sheet keeps the interface font */
+html[data-review] .v4-cf__panel { box-shadow: 0 14px 44px rgba(17,19,23,.18); font-family: inherit; }
+html[data-review] .v4-cf__row--on { background: var(--ctl); }
+html[data-review] .v4-cf__row input { accent-color: var(--ink, #111317); }
+html[data-review] .v4-cf__find { background: var(--ctl); }
+html[data-review] .v4-cf__find:focus-within { background: var(--surface, #fff); box-shadow: inset 0 0 0 2px var(--ink, #111317); }
+html[data-review] .v4-cf__find input.v4-input, html[data-review] .v4-cf__find input.v4-input:focus { background: none; box-shadow: none; }
+html[data-review] .v4-cf__panel--sheet .v4-cf__title { font-size: 18px; font-weight: 600; }
+html[data-review] .v4-cf__sep, html[data-review] .v4-cf__foot { background: none; border-top: 0; }
+html[data-review] .v4-cf__btn:focus-visible, html[data-review] .v4-cf__pill button:focus-visible, html[data-review] .v4-cf__clear:focus-visible { outline-color: var(--ink, #111317); }
+html[data-review] .v4-chip.ops4-latechip { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
+html[data-review] .v4-chip.ops4-latechip.v4-chip--on { background: var(--yellow-ink, #7a5b00); color: #fff; }
+
+/* ─── 8. The same fill on every page's own toolbar (#37) ───────────────────────
+   Members (mbv/mbr), Calendar (evr) and The space (spr) built their toolbars in their own PRs; they get the one
+   control fill here, no outline, and black when chosen. `body` raises the weight above each module's file. */
+html[data-review] body :is(.mbv, .mbv__morebtn, .mbr-search, .mbr-iconbtn, .mbr-filterbtn, .mbr-chip, .evr-seg, .evr-filterbtn, .spr-seg, .spr-search, .spr-iconbtn, .spr-filterbtn, .v4-unit) {
+  background: var(--ctl); box-shadow: none; border: 0;
+}
+html[data-review] body :is(.mbr-iconbtn, .mbr-filterbtn, .mbr-chip, .evr-filterbtn, .spr-iconbtn, .spr-filterbtn, .v4-unit):hover { background: var(--ctl-hover); }
+html[data-review] body :is(.mbr-filterbtn.on, .mbr-iconbtn.on, .mbr-chip.on, .evr-filterbtn--on, .spr-filterbtn--on) { background: var(--ink, #111317); color: #fff; box-shadow: none; }
+html[data-review] body :is(.mbv__tab:not(.on), .evr-seg button:not(.on), .spr-seg button:not(.on)) { background: none; }
+html[data-review] body .evr-card, html[data-review] body .evr-card:hover { box-shadow: none; border: 0; }
+html[data-review] body .evr-tag { background: var(--ctl); box-shadow: none; border: 0; }
+
+/* ─── 9. Waiting things are yellow (#34): Operations' drafts and the panel of drafts waiting on a lead ─── */
+html[data-review] body .ops5-need--wait { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); }
+html[data-review] body .ops5-need--wait.on { background: var(--yellow-ink, #7a5b00); color: #fff; }
+html[data-review] body .dl4-panel { background: var(--yellow, #fff0b3); box-shadow: none; }
+html[data-review] body .dl4-panel .dl4-panel__head :is(b, small) { color: var(--yellow-ink, #7a5b00); }
+
+/* ─── 10. Clean-up from the 23 Nov check (#37, #7, icons: "initial on grey") ─────────────────────────────
+   The last outlines: Members' badges and your own card's frame, avatars, Circles' divider and stat buttons, the
+   drafts panel's Show button, the footer. Avatars without a photo are an initial on grey, never violet
+   (violet is In progress). Meetings' circle tags carry the seal. */
+html[data-review] body :is(.mb4-score, .mb4-you, .cv4-stat--btn, .dl4-btn) { background: var(--ctl); box-shadow: none; border: 0; }
+html[data-review] body .mb4-you { background: var(--ink, #111317); color: #fff; }
+html[data-review] body .mb4-card--you { box-shadow: none; }
+html[data-review] body .v4-avatar { box-shadow: none; }
+html[data-review] body .cv4-stats { border: 0; box-shadow: none; }
+html[data-review] body .ops4-av { background: var(--ctl); color: var(--ink-2, #3a3f4a); }
+html[data-review] body footer { border-top: 0 !important; }
+html[data-review] body footer a { box-shadow: none !important; border: 0 !important; background: var(--ctl); }
+html[data-review] body .mt4-ctag { background: var(--ctl); box-shadow: none; border: 0; color: var(--ink-2, #3a3f4a); }
+html[data-review] body .mt4-ctag--seal { display: inline-flex; align-items: center; gap: 6px; padding-left: 4px; }
+/* Avatars without a photo: initial on grey everywhere, never a pastel (those are status colours) */
+html[data-review] body .v4-avatar:not(:has(img)) { background: var(--ctl) !important; color: var(--ink-2, #3a3f4a) !important; }
+
+/* ═══ Icons and decorative colour (review-icons, 22 Nov 2026 · design/icons.md) ═════════════════════════════
+   Colour means something or it goes. The five status pastels mean task status only; a result (approved, an
+   error, a warning) uses the tones below; a circle carries its seal; everything else is ink on white.
+   Icon sizes (16 / 20 / 24) are set in core/components/v4/icon-size.ts, not here.
+   Screens write `var(--rv-…, #old)`, so communities without the review keep their old colour. */
+html[data-review] {
+  --rv-good: var(--green-ink, #2e7a4a);
+  --rv-good-bg: color-mix(in srgb, var(--green-ink, #2e7a4a) 9%, var(--surface, #fff));
+  --rv-good-line: color-mix(in srgb, var(--green-ink, #2e7a4a) 30%, transparent);
+  --rv-bad: var(--red-ink, #ae3a35);
+  --rv-bad-bg: color-mix(in srgb, var(--red-ink, #ae3a35) 8%, var(--surface, #fff));
+  --rv-bad-line: color-mix(in srgb, var(--red-ink, #ae3a35) 30%, transparent);
+  --rv-attn: var(--yellow-ink, #7a5b00);
+  --rv-attn-bg: color-mix(in srgb, var(--yellow-ink, #7a5b00) 9%, var(--surface, #fff));
+  --rv-attn-line: color-mix(in srgb, var(--yellow-ink, #7a5b00) 30%, transparent);
+  --rv-neutral: var(--ink-3, #6b7180);
+  --rv-neutral-bg: var(--bg-2, #f2f3f7);
+  --rv-neutral-solid: var(--ink-4, #9aa0ad);
+  --rv-neutral-line: var(--rule, rgba(17,19,23,.14));
+  --rv-count: var(--ink, #111317);      /* a count is a black number badge */
+  --rv-primary: #2f6b48;                /* the main button: dark green, as .v4-btn--primary (decision #30) */
+  --rv-icon: var(--ink-3, #6b7180);     /* icons are ink, never coloured */
+}
+
+/* Icon tiles: neutral whatever tone a screen asks for. A result tile (a governance check passed or objected)
+   keeps its tone; an "off" tile (archived, not on the map) is dashed and faded. Photo placeholders too. */
+html[data-review] :is(.v4-tile, [class*="v4-tile--"]):not(.v4-tile--result) { background: var(--bg-2, #f2f3f7); color: var(--ink-2, #3a3f4a); }
+html[data-review] .v4-tile.v4-tile--off { background: transparent; color: var(--ink-4, #9aa0ad); outline: 1.5px dashed var(--ink-4, #9aa0ad); outline-offset: -1.5px; }
+
+/* Map pins: a kind of place is a tag, not a status. White pins with the kind's icon in ink. */
+html[data-review] .v4-pin:not(.v4-pin--on) { background: var(--surface, #fff); color: var(--ink, #111317); }
+html[data-review] .v4-pin--on { background: var(--ink, #111317); color: #fff; }
+
+/* About: the "At a glance" tiles, the numbered values, the three ways and the steps were six pastels that
+   meant nothing. Ink numbers on white; the chapter you're reading is a selected filter (filled black). */
+html[data-review] .ab-fact[class*="ab-fact--"] { background: var(--surface, #fff); --tone-ink: var(--ink-3, #6b7180); }
+html[data-review] .ab-val[class] { background: var(--surface, #fff); }
+html[data-review] .ab-val[class] .n { color: var(--ink, #111317); }
+html[data-review] .ab-ways .v4-card[class] { box-shadow: none; }
+html[data-review] .ab-steps li[class] span, html[data-review] .ab-steps li span { background: var(--ink, #111317); }
+html[data-review] .ab-nav .v4-chip[aria-current] { background: var(--ink, #111317); color: #fff; }
+html[data-review] .ab-day .t { color: var(--ink, #111317); }
+
+/* Member cards: offers and requests are told apart by their icon (gift, hand), not by green and yellow;
+   the match % and "you" are counts and labels, not status. */
+html[data-review] :is(.mb4-line--offer, .mb4-line--need) { background: var(--bg-2, #f2f3f7); color: var(--ink-2, #3a3f4a); }
+html[data-review] :is(.mb4-score, .mb4-you) { background: var(--surface, #fff); color: var(--ink-2, #3a3f4a); box-shadow: inset 0 0 0 1px var(--rule, rgba(17,19,23,.14)); }
+html[data-review] .mb4-card--you { box-shadow: inset 0 0 0 2px var(--ink, #111317); }
+html[data-review] .mb4-circles .v4-seal { flex-shrink: 0; }
+html[data-review] .pe4-bar i { background: var(--ink, #111317); }
+
+/* The circle filter's "My circles" star is ink like every icon */
+html[data-review] .v4-cf__row .v4-icon { color: var(--ink-2, #3a3f4a); }
+
+/* Meetings: the second-brain link and what the assistant said were violet for decoration */
+html[data-review] :is(.mt4-brain, .mt4-said) { background: var(--bg-2, #f2f3f7); color: var(--ink-2, #3a3f4a); }
+html[data-review] :is(.mt4-said svg, .mt4-path) { color: var(--ink-2, #3a3f4a); }
+
+/* Selected means filled black, on every page (design review § Pills, family D). globals.css made the chosen
+   chip and segment soft blue on 20 Nov, which is also the To do colour. Calendar (#176) and Governance (#179)
+   had their own copies of this rule; this one covers them. The green next-step button is not changed. */
+html[data-review] :is(.v4-chip--on, .v4-chip--on:hover, .v4-seg button.on, .v4-seg--links a.on) { background: var(--ink, #111317); color: #fff; }
+html[data-review] .v4-chip--on .v4-chip__count { color: #fff; opacity: .7; }
+
+/* A person without a photo: their initial on grey. Violet is the In progress colour. */
+html[data-review] .v4-avatar:not(img) { background: var(--bg-2, #f2f3f7); color: var(--ink-2, #3a3f4a); box-shadow: inset 0 0 0 1px var(--rule, rgba(17,19,23,.1)); }
+
+/* ─── 11. Parts shown only with the switch on, in files where importing DESIGN_REVIEW would clash ─────────
+   .rv-only shows only with designReview; .rv-hide hides with it. My dashboard's cards get a small label (#47). */
+.rv-only { display: none !important; }
+html[data-review] .rv-only { display: revert !important; }
+html[data-review] .rv-hide { display: none !important; }
+html[data-review] .rv-cardlabel { display: block !important; margin: 18px 4px 8px; }
+html[data-review] .v4-next + .rv-cardlabel { margin-top: 4px; }
+
+/* ─── 12. The top bar's Sign in: a control like the others, no outline (#37); Create account stays the one next step ── */
+html[data-review] .topbar-signin { border: 0 !important; background: var(--ctl); border-radius: 999px !important; padding: 8px 14px !important; }
+html[data-review] .topbar-signin:hover { background: var(--ctl-hover); }
