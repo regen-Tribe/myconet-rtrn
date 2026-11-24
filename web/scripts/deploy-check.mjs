@@ -33,7 +33,7 @@ if (live && !live.unreachable && live.version) {
 if (problems.length) {
   console.error(`\n✖ Deploy stopped:\n${problems.map(p => `  • ${p}`).join('\n')}\n`)
   if (process.env.MYCONET_DEPLOY_FORCE === '1') {
-    console.error('MYCONET_DEPLOY_FORCE=1: deploying anyway. Note why in instance/log.md.\n')
+    console.error('MYCONET_DEPLOY_FORCE=1: deploying anyway. Note why in a new instance/log/ entry.\n')
   } else {
     process.exit(1)
   }

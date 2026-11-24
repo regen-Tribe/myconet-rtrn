@@ -159,13 +159,21 @@ There is no Vercel deployment. The Cloudflare Worker uses bindings for assets, i
 2. Make your changes inside the relevant `src/modules/mXX-*/` folder
 3. Run `npx tsc --noEmit` to check for TypeScript errors
 4. Run `npm run dev` and test the relevant route manually
-5. Open a PR tagged with the module number (e.g., `[M07] Add deliverable tags`)
+5. Add a note for the release: `changes/<slug>.md` with `bump`, `title`, `public` and the CHANGELOG text
+   (`changes/README.md`). Don't edit `src/core/lib/version.ts`, `CHANGELOG.md` or the `ENTRIES` list in
+   `src/app/changelog/page.tsx`: the release gives your change its version when it ships
+6. Open a PR tagged with the module number (e.g., `[M07] Add deliverable tags`). From a community repo:
+   `npm run upstream`. A maintainer ships it with `npm run ship -- <PR number>`
 
 ## Code style
 
 - **No comments** unless the *why* is non-obvious (a hidden constraint, a DB quirk, a workaround)
 - No error handling for impossible scenarios — trust the DB schema and Next.js guarantees
-- **Inline styles** for component-specific layout; `globals.css` for responsive overrides only
+- **Inline styles** for component-specific layout. **A module's CSS lives in the module's folder**, in a file the
+  module imports itself (`src/modules/m07-ops/ops-v4.css`, `import './ops-v4.css'`), with class names prefixed by
+  the module. `src/app/globals.css` is only for design tokens and the shared v4 blocks, so people working on
+  different modules never edit the same file (see `DESIGN-SYSTEM.md` › Where styles live). Rules already in
+  `globals.css` move when their module is next worked on, not before
 - **Server Components** for all data fetching; Client Components (`'use client'`) only when you need state or browser events
 - **Optimistic updates** for interactive actions (status changes, toggles) — update local state immediately, then fire the DB write
 

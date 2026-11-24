@@ -578,7 +578,8 @@ All Genesis requests require human approval — no autonomous DB writes from cha
 | `EXECUTIVE-SUMMARY.md` | What the platform is, who it's for, what's live, the vision |
 | `EXECUTION-PLAN.md` | Sprint-by-sprint build plan with module specs |
 | `ARCHITECTURE.md` (this doc) | Actual DB schema, routes, tech stack, deployment |
-| `instance/log.md` | Running changelog of all decisions and changes |
+| `instance/log/` | The community's log, one file per entry (`instance/log.md` holds the older entries) |
+| `changes/` | One note per change waiting for the next core release (`changes/README.md`) |
 
 ---
 

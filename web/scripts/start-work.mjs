@@ -2,11 +2,14 @@
 //   cd web && npm run start-work
 // 1. Brings this checkout up to date with GitHub (fast-forward only, never over your own changes).
 // 2. Shows what others changed recently and what they're working on now (open PRs, fresh branches),
-//    and warns when their files overlap with yours.
+//    and warns when their files overlap with yours. Lists the community's newest log entries
+//    (instance/log/, one file per entry).
 // 3. Checks the live portal: is it running code that's on GitHub, and is it newer than yours?
 // It never fails: it only reports. Deploys are guarded separately (scripts/deploy-check.mjs).
 import { execSync } from 'node:child_process'
-import { compareVersions, git, inHistory, liveState, localVersion, repoState } from './git-state.mjs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { ROOT, compareVersions, git, inHistory, liveState, localVersion, repoState } from './git-state.mjs'
 
 const lines = []
 const say = (s = '') => lines.push(s)
@@ -40,6 +43,19 @@ if (state.hasUpstream && state.newestCoreTag && version && compareVersions(state
 say()
 say('Recent changes on GitHub (last 3 days):')
 say(git(`log origin/${state.branch} --since="3 days ago" --format="  %h %an, %ar: %s" -15`, { allowFail: true }) || '  (none)')
+
+// The community's own log: one file per entry in instance/log/ (instance/log.md is the older archive)
+const logDir = resolve(ROOT, 'instance/log')
+if (existsSync(logDir)) {
+  const entries = readdirSync(logDir).filter(f => /^\d{4}-\d{2}-\d{2}.*\.md$/.test(f)).sort().reverse().slice(0, 5)
+  say()
+  say(`This community's newest log entries (instance/log/; older ones in instance/log.md):`)
+  for (const f of entries) {
+    const first = readFileSync(resolve(logDir, f), 'utf8').split('\n').find(l => l.trim()) ?? ''
+    say(`  ${first.replace(/^#+\s*/, '') || f}`)
+  }
+  if (!entries.length) say('  (none yet)')
+}
 
 const myFiles = new Set(state.dirty.map(l => l.slice(3).trim()))
 const others = []

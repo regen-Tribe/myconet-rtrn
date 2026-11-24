@@ -4,6 +4,9 @@
 #
 # Needs: Settings › Actions › General › "Allow GitHub Actions to create and approve
 # pull requests". While core is private, also a CORE_REPO_TOKEN secret that can read it.
+# The update branch is pushed with CORE_REPO_TOKEN when it can, else with the default token. A core
+# release that changes .github/workflows/ needs CORE_REPO_TOKEN with write access to this repo too
+# (fine-grained: Contents and Workflows, read and write): GitHub refuses workflow files from the default token.
 name: Core update
 
 on:
@@ -48,6 +51,8 @@ jobs:
           LATEST: ${{ steps.tags.outputs.latest }}
           CURRENT: ${{ steps.tags.outputs.current }}
           BASE: ${{ github.event.repository.default_branch }}
+          CORE_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+          DEFAULT_TOKEN: ${{ github.token }}
         run: |
           branch="core-update/${LATEST}"
           # --repo: with the upstream remote added above, gh would otherwise pick core as the repo
@@ -58,15 +63,51 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
           if ! git merge --no-ff --no-commit "$LATEST"; then
-            echo "::error::Core $LATEST doesn't merge cleanly: a core file was changed in this repo. Merge it by hand."
+            echo "::error::Core $LATEST doesn't merge cleanly: a core file was changed in this repo ($(git diff --name-only --diff-filter=U | tr '\n' ' ')). Merge it by hand."
             exit 1
           fi
           # Core never ships an instance/: keep ours
           git checkout HEAD -- instance 2>/dev/null || true
           git commit -m "Update MyCoNet core to ${LATEST}"
-          # --force: a branch left by an earlier run that couldn't open its PR
-          git push --force origin "$branch"
-          notes=$(git show "${LATEST}:CHANGELOG.md" | awk -v cur="## ${CURRENT} " 'index($0, cur) == 1 {exit} {print}' | tail -n +2)
+          # --force: a branch left by an earlier run that couldn't open its PR.
+          # GitHub refuses workflow files (.github/workflows/) from a token without the workflow scope, and the
+          # default token never has it: push with CORE_REPO_TOKEN when it's set, then with the default token.
+          # -c drops the header actions/checkout stored, so the token in the URL is the one used.
+          push() {
+            git -c http.https://github.com/.extraheader= push --force \
+              "https://x-access-token:${1}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${branch}" 2>&1
+          }
+          pushed=""; errors=""
+          if [ -n "$CORE_TOKEN" ]; then
+            if out=$(push "$CORE_TOKEN"); then pushed="CORE_REPO_TOKEN"; else errors="With CORE_REPO_TOKEN: ${out}"$'\n'; fi
+          fi
+          if [ -z "$pushed" ]; then
+            if out=$(push "$DEFAULT_TOKEN"); then pushed="the default token"; else errors="${errors}With the default token: ${out}"; fi
+          fi
+          if [ -z "$pushed" ]; then
+            echo "$errors"
+            hint="Check the token's access to this repo."
+            if echo "$errors" | grep -qi 'workflow'; then
+              hint="Core ${LATEST} changes .github/workflows/, which needs a token with the workflow scope: give CORE_REPO_TOKEN write access to this repo with Contents and Workflows (read and write), or merge ${LATEST} by hand."
+            fi
+            echo "::error::Core ${LATEST} merged cleanly, but GitHub refused the push of ${branch}: $(echo "$errors" | grep -iE 'error|refus|denied|reject|remote:' | head -4 | tr '\n' ' ') ${hint}"
+            exit 1
+          fi
+          echo "Pushed ${branch} with ${pushed}"
+          # The release notes since our version. A PR body holds 65,536 characters at most: when a community
+          # skips many releases, cut the notes at a line before 60,000 so the PR still opens (ship finds it
+          # by its branch).
+          git show "${LATEST}:CHANGELOG.md" | awk -v cur="## ${CURRENT} " 'index($0, cur) == 1 {exit} {print}' | tail -n +2 > "$RUNNER_TEMP/notes.md"
+          {
+            printf 'MyCoNet core %s → %s. Your `instance/` folder is unchanged.\n\n' "$CURRENT" "$LATEST"
+            printf 'After merging: run any new database migrations (`cd web && npm run migrations:check`, then `supabase db push`) and deploy.\n\n### Release notes\n'
+            if [ "$(wc -m < "$RUNNER_TEMP/notes.md")" -gt 60000 ]; then
+              awk '{ n += length($0) + 1; if (n > 60000) exit; print }' "$RUNNER_TEMP/notes.md"
+              printf '\n…\n\n**Release notes cut to fit a pull request.** All of them: `CHANGELOG.md` at %s.\n' "$LATEST"
+            else
+              cat "$RUNNER_TEMP/notes.md"
+            fi
+          } > "$RUNNER_TEMP/body.md"
           gh pr create --repo "$GITHUB_REPOSITORY" --base "$BASE" --head "$branch" \
             --title "Update MyCoNet core to ${LATEST}" \
-            --body "$(printf 'MyCoNet core %s → %s. Your `instance/` folder is unchanged.\n\nAfter merging: run any new database migrations (`supabase db push`) and deploy.\n\n### Release notes\n%s' "$CURRENT" "$LATEST" "$notes")"
+            --body-file "$RUNNER_TEMP/body.md"

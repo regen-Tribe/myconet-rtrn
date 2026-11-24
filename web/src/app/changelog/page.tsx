@@ -1,7 +1,14 @@
 import Link from 'next/link'
 
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
+// ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
+  {
+    version: 'v4.130.1',
+    date: '2026-11-24',
+    title: 'Working at the same time without clashing',
+    items: ['Behind the scenes: a release now gets its version number when it ships, so several people can work on MyCoNet at once without their changes colliding.'],
+  },
   {
     version: 'v4.130.0',
     date: '2026-11-24',

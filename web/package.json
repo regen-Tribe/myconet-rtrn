@@ -17,6 +17,8 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "instance": "node scripts/instance.mjs",
     "upstream": "node scripts/upstream.mjs",
+    "release": "node scripts/release.mjs",
+    "ship": "node scripts/ship.mjs",
     "start-work": "node scripts/start-work.mjs",
     "icon-check": "node scripts/icon-check.mjs",
     "migrations:check": "node scripts/migration-check.mjs --db"

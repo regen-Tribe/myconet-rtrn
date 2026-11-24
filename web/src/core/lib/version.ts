@@ -1,4 +1,4 @@
+// VERSION is written by the release (web/scripts/release.mjs) from the notes in changes/: never edit it in a change.
 // Single source of truth for the version badge shown under the logo
 // in both AppTopBar (logged-in shell) and the public landing TopBar.
-// Bump on each deploy; add a matching entry to web/src/app/changelog/page.tsx.
-export const VERSION = 'v4.130.0'
+export const VERSION = 'v4.130.1'

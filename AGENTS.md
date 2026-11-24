@@ -52,9 +52,10 @@ of the platform toward the same, and toward agents reaching it through MyCoNet w
 **Any change, PR, push, release or deploy ends with the work logs updated, the same day.** A merge or deploy
 that no log mentions looks like it never happened: the log is the handoff to whoever works next.
 
-- **In this repo:** a core release goes in `CHANGELOG.md` (and `web/src/app/changelog/page.tsx`); a community's
-  change, deploy, migration or new secret (names only) in its `instance/log.md`, and a community-only code change
-  also in `instance/LOCAL-CHANGES.md`.
+- **In this repo:** a core change describes itself in one note, `changes/<slug>.md`; the release writes
+  `CHANGELOG.md`, the version and `/changelog` from it (see "Working at the same time"). A community's change,
+  deploy, migration or new secret (names only) is one new file in `instance/log/` (`<date>-<slug>.md`; the older
+  `instance/log.md` is the archive), and a community-only code change also goes in `instance/LOCAL-CHANGES.md`.
 - **The team's work log**, if your team keeps one outside the repo (Oscar's team: the agnetO vault,
   `projects/active/myconet/WORKLOG.md` for the detail and the root `WORKLOG.md` as the index): after each working
   session, what changed with its PR number, tag, commit or deploy id; the gotchas; and the open items, each with
@@ -63,6 +64,32 @@ that no log mentions looks like it never happened: the log is the handoff to who
   this file.
 - Never write that something is done unless a log or a live check says so; a half-finished change is logged as
   half-finished, with the blocker named.
+
+---
+
+## Working at the same time
+
+Several people and agent sessions work on MyCoNet at once. These rules keep their changes from landing on
+the same lines:
+
+- **One session per module.** A session works in one `web/src/modules/mXX-…/` folder (and its route files). A
+  second change to the same module waits for the first, or goes to the session that has it.
+- **Shared areas: open a draft PR first.** Before touching the shell or menu (`web/src/core/components/shell/`,
+  the v4 menu), `web/src/core/lib/roles.ts`, `LEXICON.md` or a migration (`supabase/migrations/`,
+  `instance/migrations/`), open a **draft PR** that says what you're about to change, so `npm run start-work`
+  shows it to everyone else. If someone's draft already covers that area, talk to them instead of starting.
+- **A change never picks its version.** Add one note, `changes/<slug>.md` (`bump`, `title`, `public`, and the
+  CHANGELOG text: `changes/README.md`). Don't edit `web/src/core/lib/version.ts`, `CHANGELOG.md` or the `ENTRIES`
+  list in `web/src/app/changelog/page.tsx`: the release writes them (`web/scripts/release.mjs`) with the next
+  free version. `npm run upstream` and the Change notes check refuse a change that does both.
+- **Releases queue.** A maintainer ships a core PR with `cd web && npm run ship -- <core PR>`
+  (`web/scripts/ship.mjs`): it waits for the lock, merges the newest core `main` into the PR, gives it its
+  version, runs lint and the type check, merges, tags, updates the community, deploys and writes the log
+  entry. When core added migrations since the community's last update, it stops before deploying: apply them,
+  then `npm run ship -- --community <version> --migrations-applied`. Never merge, tag or deploy a release by hand next to it. `--dry-run` shows what it would do.
+- **Logs are one file per entry**: `instance/log/<date>-<slug>.md`. Don't append to `instance/log.md`.
+- **Styles stay with their module**: a module's CSS is a file in its folder, imported by the module.
+  `web/src/app/globals.css` is only for tokens and shared v4 blocks (`DESIGN-SYSTEM.md`).
 
 ---
 
@@ -77,16 +104,18 @@ that no log mentions looks like it never happened: the log is the handoff to who
   working right now (open PRs, fresh branches) and warns when their files overlap with yours, and
   checks that the live portal runs code that's on GitHub. Tell the person about every ⚠️ line before
   you change anything. If it says you're behind and couldn't pull, commit or stash, then
-  `git pull --rebase`. In a community repo also look at the top of `instance/log.md` and
-  `instance/LOCAL-CHANGES.md`, and mention anything surprising (core files changed in a community
+  `git pull --rebase`. In a community repo also look at the newest entries in `instance/log/` (start-work
+  lists them) and the top of `instance/LOCAL-CHANGES.md`, and mention anything surprising (core files changed in a community
   repo, an unexpected migration, a change nobody logged).
 - **Someone else is working at the same time?** If start-work shows an open PR or a fresh branch
   touching the files you need, say so and agree who goes first. Keep your own work small and pushed
   often (a branch or PR per change) so others see it. Before you push, `git pull --rebase` again.
+  The rules that keep parallel work apart are in "Working at the same time".
 - **Ask where each change belongs before writing code:** *"Should this go to MyCoNet core too
   (every community), or only <this community>?"*
   - **Core too:** change the core files on a branch and send them with `cd web && npm run upstream`
-    (opens a PR on `regen-Tribe/myconet`). It reaches each community with the next core release.
+    (opens a PR on `regen-Tribe/myconet`), with a note in `changes/` and no version of its own. It
+    reaches each community with the next core release.
   - **Only this community:** put it in `instance/` (config, theme, seed, `instance/migrations/`,
     docs) and log it in `instance/LOCAL-CHANGES.md`: date, who, what, why, files. If it can only
     be done by editing core files, say so before doing it. Prefer adding it to core behind a
@@ -104,7 +133,7 @@ that no log mentions looks like it never happened: the log is the handoff to who
   deploy uncommitted or unpushed code, a checkout that's behind GitHub, or anything older than
   what's live, so one person's deploy can't wipe out another's. Never deploy from a branch or an old
   clone. `MYCONET_DEPLOY_FORCE=1` skips the check: only with the person's OK, and log why in
-  `instance/log.md`. After deploying, add a line to `instance/log.md`.
+  `instance/log/`. After deploying, add an entry to `instance/log/` (`npm run ship` writes it for a release).
 - **Database changes go in a migration file** (`supabase/migrations/` for core,
   `instance/migrations/` for one community), committed with the code that needs them. Never create
   tables, buckets or policies by hand in the dashboard: the next person can't see or repeat them.
@@ -114,7 +143,7 @@ that no log mentions looks like it never happened: the log is the handoff to who
   core changes on Protopia (2026-11-21). Before applying migrations to a community, run
   `cd web && npm run migrations:check`. It lists clashes with the database and what isn't applied yet, and every
   deploy checks the files and stops on a clash. Details: `supabase/migrations/README.md`.
-- **New secrets** (`npx wrangler secret put …`): say which in the PR and in `instance/log.md`
+- **New secrets** (`npx wrangler secret put …`): say which in the PR and in an `instance/log/` entry
   (the name only, never the value).
 - **In a community repo, only `instance/` is that community's.** Everything else is MyCoNet core.
   Read `instance/CONTRIBUTING.md` if it exists.

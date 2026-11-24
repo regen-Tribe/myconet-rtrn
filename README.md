@@ -22,7 +22,7 @@ and [`CORE-EXTRACTION.md`](./CORE-EXTRACTION.md). **Starting a new community:**
 ## Working on the code (people and AI coding agents)
 
 **Before you start:** pull, and read what changed since you last worked here (`git log --stat`,
-core's latest releases, the community's `instance/log.md` and `instance/LOCAL-CHANGES.md`).
+core's latest releases, the community's newest `instance/log/` entries and `instance/LOCAL-CHANGES.md`).
 
 **For every change, decide first: core too, or only this community?**
 
@@ -50,7 +50,7 @@ contributors are in its `instance/CONTRIBUTING.md`. Never commit keys, tokens, p
 | [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) | Visual language: tokens, components, composition rules. |
 | `CLAUDE.md`, `AGENTS.md` | Agent / new-engineer context: what's built, how to deploy, what not to do. |
 | `INSTANCES.md`, `CORE-EXTRACTION.md` | Running several communities from one core. |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Core release notes, from v4.0.0. A community's own history is its `instance/log.md`. |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Core release notes, from v4.0.0. Written by the release from the notes in `changes/`. A community's own history is its `instance/log/` (older entries in `instance/log.md`). |
 | `instance/README.md` | This community: live URL, accounts, people. (Not in the core repo.) |
 | [`web/CONTRIBUTING.md`](./web/CONTRIBUTING.md) | Contributing to a single module. |
 
