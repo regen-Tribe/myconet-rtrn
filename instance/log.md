@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-24 — Core v4.127.0 via PR #91 (deployed, a6abd181): Done on the far right, a subcircle filter, new subcircles from a task; Sonia's v4.124/v4.126 (design review, off here)
+- No migration. `designReview` is still off for RTRN (Oz OK'd turning it on later).
+
 ## 2026-11-23 — Core v4.123.0 via PR #89 (deployed, a3486b9e): Later is a status, with its own column
 - Migration `later_status` applied via MCP before the deploy (both constraints checked).
 
