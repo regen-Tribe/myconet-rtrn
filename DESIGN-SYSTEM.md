@@ -55,6 +55,19 @@ Each release replaces that module's hard-coded colours and sizes with tokens and
   (`glyphFor`).
 - **Status:** the pastel pills (`StatusPill`). Never a dot in a circle's colour.
 
+### Where styles live
+
+- **A module's styles go in the module's folder**, in a CSS file the module imports itself:
+  `web/src/modules/m07-ops/ops-v4.css`, imported by `OpsClient.tsx` (`import './ops-v4.css'`). Prefix the class
+  names with the module (`.ops-…`, `.meet-…`) so two modules never style each other.
+- **`web/src/app/globals.css` is only for what every screen shares**: the design tokens (colours, type, radii),
+  the shared v4 blocks (`.v4-page`, `.v4-eyebrow`, `.v4-title`, the bridge for older screens) and the shell.
+  If a rule names one module's screen, it doesn't belong there.
+- **Why:** everyone working at once used to add to the same file, and their changes collided. A file per module
+  means two people on two modules never touch the same lines.
+- Module rules that are already in `globals.css` stay until that module is next worked on; move them then, in
+  that module's own PR. New rules go in the module from now on.
+
 Older screens without v4 components still get the look: the bridge in `globals.css` restyles their common inline
 patterns everywhere inside the shell (`main.v4-main`). New screens use the components, not the bridge.
 

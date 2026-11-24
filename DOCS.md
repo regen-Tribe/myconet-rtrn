@@ -19,7 +19,8 @@ Every explainer / README file in this repo, with what it's for and who should re
 | [`CLAUDE.md`](./CLAUDE.md) | Coding-agent context — current architecture, what NOT to do, common commands. | AI coding agents + new engineers. |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Core release notes (v4.0.0 on). |
 | [`LEXICON.md`](./LEXICON.md) | The words MyCoNet uses: one term per idea, module names and addresses, button wording. |
-| [`instance/log.md`](./instance/log.md) | This community's change log — major decisions, module changes, version history. | Anyone wanting recent history. |
+| [`changes/`](./changes/README.md) | The notes of changes waiting for the next core release; how a change describes itself without picking a version. | Anyone changing core. |
+| `instance/log/` | This community's log, one file per entry (deploys, core updates, migrations, decisions). Older entries: [`instance/log.md`](./instance/log.md). | Anyone wanting recent history. |
 | [`DOCS.md`](./DOCS.md) | **This file.** | Everyone. |
 
 ---
