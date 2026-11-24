@@ -10,7 +10,7 @@ export default function AdminTabs({ active, openQuestions }: { active: 'users' |
       display: 'inline-flex', alignItems: 'center', gap: 6,
     }}>
       {label}
-      {!!badge && <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: '#dc2626', borderRadius: 999, padding: '0 7px' }}>{badge}</span>}
+      {!!badge && <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'var(--rv-count, #dc2626)', borderRadius: 999, padding: '0 7px' }}>{badge}</span>}
     </Link>
   )
   return (

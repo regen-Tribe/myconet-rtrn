@@ -1,0 +1,70 @@
+/* Governance on the design review layer (instance/design/ux-review-2026-11-22.html › Screens › Governance).
+   Only under html[data-review] (core/lib/instance.ts › DESIGN_REVIEW). Colours here mean a result only:
+   green = passed / approved, red = objected / not approved, yellow = still voting (decision #40), hollow dot = a check waiting. No violet, blue or task-status
+   pastels. Text sizes are the review's six: 18 card title · 15 body · 13 meta · 11 label. */
+
+/* Voting · Decided: the chosen tab is black and borderless (v4-review.css, #31 / #37); its count turns white so
+   it still reads. Nothing here adds an outline to a card, tab or chip. */
+html[data-review] .gv4r .v4-chip { display: inline-flex; align-items: center; gap: 6px; }
+html[data-review] .gv4r .v4-chip--on .v4-count { background: #fff; color: var(--ink, #111317); }
+
+/* The state line on a card and on a proposal: Result, the 4-dot mark, "You voted" */
+html[data-review] .gv4r-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+html[data-review] .gv4r-dots { display: inline-flex; align-items: center; gap: 4px; }
+html[data-review] .gv4r-dot { display: block; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid var(--ink-4, #9aa0ad); }
+html[data-review] .gv4r-dot--good { background: var(--green-ink, #2e7a4a); border-color: var(--green-ink, #2e7a4a); }
+html[data-review] .gv4r-dot--bad { background: var(--red-ink, #ae3a35); border-color: var(--red-ink, #ae3a35); }
+/* The AI check is advice: set apart, dashed when it hasn't said anything */
+html[data-review] .gv4r-dot--ai { margin-left: 4px; }
+html[data-review] .gv4r-dot--ai.gv4r-dot--neutral { border-style: dashed; }
+html[data-review] .gv4r-mark { display: inline-flex; align-items: center; gap: 8px; }
+html[data-review] .gv4r-mark small { font-size: 13px; color: var(--ink-3, #6b7180); }
+
+/* The dots and "N of 3 people checks passed · approved at 2" say what the old progress track said */
+html[data-review] .gv4r .gv4-progress { display: none; }
+html[data-review] .gv4r .gv4-h1 { margin-bottom: 14px; }
+
+/* Check Results on a card wrap as one row of square pills */
+html[data-review] .gv4r .gv4-checks { gap: 6px; }
+
+/* A check's who · how name is never cut off */
+html[data-review] .gv4r .gv4-check .v4-row__main b,
+html[data-review] .gv4r .gv4-check .v4-row__main small { white-space: normal; }
+
+/* Text sizes: the review's roles */
+html[data-review] .gv4r .gv4-title { font-size: 18px; }
+html[data-review] .gv4r .gv4-body,
+html[data-review] .gv4r .gv4-prose,
+html[data-review] .gv4r .gv4-cmtext { font-size: 15px; }
+html[data-review] .gv4r .gv4-by,
+html[data-review] .gv4r .gv4-ago,
+html[data-review] .gv4r .gv4-progress small { font-size: 13px; }
+
+/* Signed out or not yet a member: one line where the vote buttons would be */
+html[data-review] .gv4r-gate .v4-hint { margin: 0; }
+
+/* A proposal's page (decisions #37, #41): the chosen answer is black like every chosen control; the 4 checks
+   have no row lines between them. */
+html[data-review] .gv4r .v4-btn.gv4r-chosen,
+html[data-review] .gv4r .v4-btn.gv4r-chosen:hover { background: var(--ink, #111317); color: #fff; box-shadow: none; }
+html[data-review] .gv4r .gv4-check + .gv4-check { box-shadow: none; }
+html[data-review] .gv4r-a--checks > .v4-sec:first-child { margin-top: 0; }
+
+/* On a phone the vote and the 4 checks come before the long description; the discussion stays last.
+   On a computer the two columns stay as they are. */
+@media (max-width: 959px) {
+  html[data-review] .gv4r .gv4-split { gap: 18px; }
+  html[data-review] .gv4r .gv4-split > div { display: contents; }
+  html[data-review] .gv4r-a > .v4-sec:first-child { margin-top: 0; }
+  html[data-review] .gv4r-a--head { order: 1; }
+  html[data-review] .gv4r-a--live { order: 2; }
+  html[data-review] .gv4r-a--vote { order: 3; }
+  html[data-review] .gv4r-a--checks { order: 4; }
+  html[data-review] .gv4r-a--desc { order: 5; }
+  html[data-review] .gv4r-a--talk { order: 6; }
+  html[data-review] .gv4r-a :is(.gv4-live, .gv4-access, .gv4-yourvote) { margin: 0; }
+  html[data-review] .gv4r-a--head .gv4-prose:last-child,
+  html[data-review] .gv4r-a--desc .gv4-prose { margin-bottom: 0; }
+}
+/* "The proposal" names the description only where it moves below the checks (phones) */
+@media (min-width: 960px) { html[data-review] .gv4r-deshead { display: none; } }

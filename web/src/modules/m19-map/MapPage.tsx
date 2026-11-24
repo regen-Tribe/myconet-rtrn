@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/server'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import Link from 'next/link'
+import { COMMUNITY_NAME, DESIGN_REVIEW } from '@/core/lib/instance'
+import { PageHeader } from '@/core/components/v4'
 import MapV4, { type MapBookable } from './MapV4'
 import { canEditPlace, isKind, PLACE_SELECT, type Place } from './lib/places'
 
@@ -13,6 +15,15 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const sp = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  // The map is for signed-in people; a visitor reads why instead of landing on Sign in (decision #76)
+  if (!user && DESIGN_REVIEW) {
+    return (
+      <div className="v4-page">
+        <PageHeader eyebrow="Community" title="Map" />
+        <p className="v4-hint"><Link href={`/auth/login?next=${encodeURIComponent('/map')}`}>Sign in</Link> to see the map · <Link href="/auth/signup">Create account</Link></p>
+      </div>
+    )
+  }
   if (!user) redirect(`/auth/login?next=${encodeURIComponent('/map')}`)
 
   const [profileRes, placesRes, itemsRes, mapRes] = await Promise.all([

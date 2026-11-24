@@ -19,7 +19,7 @@ export type CircleOption = { slug: string; label: string; color: string; count?:
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
 
-export function CircleFilter({ options, value, onChange, mine = [], label = 'Circles', className }: {
+export function CircleFilter({ options, value, onChange, mine = [], label = 'Circles', className, compact = false }: {
   options: CircleOption[]
   /** The chosen circles' slugs; [] = all circles */
   value: string[]
@@ -28,6 +28,11 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
   mine?: string[]
   label?: string
   className?: string
+  /**
+   * One toolbar row (design review, Meetings): the button says what is shown (My circles, All circles, one
+   * circle with its seal, or "3 circles") and nothing sits beside it; the list starts with "All circles".
+   */
+  compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
@@ -54,6 +59,11 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
   const mineOn = myOwn.length > 0 && myOwn.length === chosen.length && myOwn.every(s => chosen.includes(s))
   const needle = q.trim().toLowerCase()
   const shown = needle ? options.filter(o => o.label.toLowerCase().includes(needle)) : options
+  const one = chosen.length === 1 ? byslug.get(chosen[0]) : undefined
+  const compactLabel = mineOn ? 'My circles'
+    : chosen.length === 0 ? `All ${label.toLowerCase()}`
+    : one ? <><CircleSeal slug={one.slug} size={16} />{one.label}</>
+    : `${chosen.length} ${label.toLowerCase()}`
   const toggle = (slug: string) => onChange(chosen.includes(slug) ? chosen.filter(s => s !== slug) : [...chosen, slug])
 
   const list = (
@@ -67,6 +77,12 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
         </label>
       )}
       <div className="v4-cf__list">
+        {compact && !needle && (
+          <label className={cx('v4-cf__row', chosen.length === 0 && 'v4-cf__row--on')}>
+            <input type="checkbox" checked={chosen.length === 0} onChange={() => onChange([])} />
+            <Icon name="circles" size={14} className="v4-cf__all" /><span className="v4-cf__name">All {label.toLowerCase()}</span>
+          </label>
+        )}
         {!needle && myOwn.length > 0 && <>
           <label className={cx('v4-cf__row', mineOn && 'v4-cf__row--on')}>
             <input type="checkbox" checked={mineOn} onChange={() => onChange(mineOn ? [] : myOwn)} />
@@ -99,10 +115,10 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
     <div ref={box} className={cx('v4-cf', className)}>
       <button ref={btn} type="button" className={cx('v4-cf__btn', chosen.length > 0 && 'v4-cf__btn--on')}
         aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? listId : undefined} onClick={() => { setQ(''); setSheet(window.matchMedia('(max-width: 640px)').matches); setOpen(o => !o) }}>
-        {mineOn ? 'My circles' : label}{chosen.length > 0 && !mineOn && <span className="v4-cf__n">{chosen.length}</span>}
+        {compact ? compactLabel : <>{mineOn ? 'My circles' : label}{chosen.length > 0 && !mineOn && <span className="v4-cf__n">{chosen.length}</span>}</>}
         <Icon name="down" size={14} />
       </button>
-      {!mineOn && chosen.map(s => {
+      {!compact && !mineOn && chosen.map(s => {
         const o = byslug.get(s)!
         return (
           <span key={s} className="v4-cf__pill">
@@ -111,7 +127,7 @@ export function CircleFilter({ options, value, onChange, mine = [], label = 'Cir
           </span>
         )
       })}
-      {chosen.length > 0 && <button type="button" className="v4-cf__clear no-min-height" onClick={() => onChange([])}>{mineOn ? 'All circles' : 'Clear'}</button>}
+      {!compact && chosen.length > 0 && <button type="button" className="v4-cf__clear no-min-height" onClick={() => onChange([])}>{mineOn ? 'All circles' : 'Clear'}</button>}
 
       {open && (sheet ? createPortal(<><div className="v4-cf__scrim" onClick={() => setOpen(false)} aria-hidden />{list}</>, document.body) : list)}
     </div>

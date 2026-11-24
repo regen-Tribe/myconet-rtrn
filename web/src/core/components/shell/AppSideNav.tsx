@@ -249,7 +249,7 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
               background: isActive('/admin/users') ? 'color-mix(in srgb, #dc2626 10%, var(--surface))' : 'transparent',
               border: isActive('/admin/users') ? '1px solid color-mix(in srgb, #dc2626 25%, var(--rule))' : '1px solid transparent',
             }}>
-              <span style={{ width: 2, height: 16, borderRadius: 2, background: '#dc2626', flexShrink: 0, opacity: isActive('/admin/users') ? 1 : 0.5 }} />
+              <span style={{ width: 2, height: 16, borderRadius: 2, background: 'var(--rv-neutral-solid, #dc2626)', flexShrink: 0, opacity: isActive('/admin/users') ? 1 : 0.5 }} />
               <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, width: 22, color: isActive('/admin/users') ? '#dc2626' : 'var(--ink-4)' }}>★</span>
               <span>Users</span>
             </div>
@@ -269,7 +269,7 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
               background: isActive('/admin/questions') ? 'color-mix(in srgb, #dc2626 10%, var(--surface))' : 'transparent',
               border: isActive('/admin/questions') ? '1px solid color-mix(in srgb, #dc2626 25%, var(--rule))' : '1px solid transparent',
             }}>
-              <span style={{ width: 2, height: 16, borderRadius: 2, background: '#dc2626', flexShrink: 0, opacity: isActive('/admin/questions') ? 1 : 0.5 }} />
+              <span style={{ width: 2, height: 16, borderRadius: 2, background: 'var(--rv-neutral-solid, #dc2626)', flexShrink: 0, opacity: isActive('/admin/questions') ? 1 : 0.5 }} />
               <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, width: 22, color: isActive('/admin/questions') ? '#dc2626' : 'var(--ink-4)' }}>?</span>
               <span>Questions</span>
             </div>

@@ -2,6 +2,15 @@
 
 The community onboarding flow. Guides an `explorer` through three steps — sign community values, get matched with a buddy, submit application — then waits for admin review. Full members see a role roadmap instead of the form. Guests see a journey explanation. Admins see a separate review panel.
 
+## With the design review (`"designReview": true`)
+
+`page.tsx` renders **`JoinReview.tsx`** instead of `JoinClient`: heading "Start joining", three steps
+**Get to know us · About you · Apply** (decisions #80, #81; step 1 is signed at the end of About's values, step 2 is a short form here) shown as a track (`JoinPathView.tsx`), the open step under it, then "What
+joining opens" (explorer, joining member, member). The steps come from `core/lib/join-path.ts`, which the menu's
+next step (`core/lib/menu-server.ts`) and My dashboard read too, so all three say the same thing. `?step=values |
+profile | application` opens a step. The buddy step is gone (it saved nothing). Styles: `join-review.css`, all under
+`html[data-review]`. Who answers applications is `JOIN_REVIEWER` ("a steward") in `join-path.ts` (LEXICON.md › Joining).
+
 ## Routes
 
 | Route | File |

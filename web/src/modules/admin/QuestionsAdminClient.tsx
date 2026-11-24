@@ -66,7 +66,7 @@ export default function QuestionsAdminClient({ initial }: { initial: QuestionRow
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 20px 80px' }}>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#dc2626', background: '#dc262615', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>Admin</div>
+        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--rv-neutral, #dc2626)', background: 'var(--rv-neutral-bg, #dc262615)', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>Admin</div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 30, margin: '0 0 6px' }}>Questions</h1>
         <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: 0, maxWidth: '70ch', lineHeight: 1.55 }}>
           Everything people asked the <strong>Ask {COMMUNITY_NAME}</strong> assistant ({counts.week} this week). Questions it couldn&rsquo;t answer from the community&rsquo;s material are flagged: add the answer to the <Link href="/blueprint" style={{ color: 'var(--accent-color)' }}>Blueprint</Link> or a <Link href="/blueprint?step=documents" style={{ color: 'var(--accent-color)' }}>document</Link>, then mark the question resolved.
@@ -84,7 +84,7 @@ export default function QuestionsAdminClient({ initial }: { initial: QuestionRow
           style={{ marginLeft: 'auto', padding: '7px 12px', borderRadius: 999, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 13, minWidth: 200 }} />
       </div>
 
-      {error && <div style={{ fontSize: 13, color: '#b91c1c', background: '#b91c1c12', border: '1px solid #b91c1c40', borderRadius: 8, padding: '8px 12px', marginBottom: 12 }}>{error}</div>}
+      {error && <div style={{ fontSize: 13, color: 'var(--rv-bad, #b91c1c)', background: 'var(--rv-bad-bg, #b91c1c12)', border: '1px solid var(--rv-bad-line, #b91c1c40)', borderRadius: 8, padding: '8px 12px', marginBottom: 12 }}>{error}</div>}
 
       {shown.length === 0 && (
         <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14, border: '1px dashed var(--rule)', borderRadius: 12 }}>
@@ -106,7 +106,7 @@ export default function QuestionsAdminClient({ initial }: { initial: QuestionRow
                   </div>
                 </div>
                 <span style={{ flexShrink: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {!r.answered && <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', background: '#f59e0b1f', border: '1px solid #f59e0b66', borderRadius: 999, padding: '1px 8px' }}>No answer</span>}
+                  {!r.answered && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--rv-attn, #b45309)', background: 'var(--rv-attn-bg, #f59e0b1f)', border: '1px solid var(--rv-attn-line, #f59e0b66)', borderRadius: 999, padding: '1px 8px' }}>No answer</span>}
                   {r.status !== 'open' && <span style={{ fontSize: 11, fontWeight: 700, color: r.status === 'resolved' ? '#15803d' : 'var(--ink-3)', border: '1px solid var(--rule)', borderRadius: 999, padding: '1px 8px' }}>{r.status === 'resolved' ? 'Resolved' : 'Dismissed'}</span>}
                   <span style={{ color: 'var(--ink-4)', transform: expanded ? 'rotate(180deg)' : 'none' }}>▾</span>
                 </span>

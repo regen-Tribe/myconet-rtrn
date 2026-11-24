@@ -13,7 +13,7 @@ export default function SummaryCards({ text, accent = 'var(--m18)' }: { text: st
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: 10 }}>
       {topics.map(([, topic, body], i) => (
-        <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderTop: `3px solid ${accent}`, borderRadius: 10, padding: '12px 14px' }}>
+        <div key={i} className="mt4-topic" style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderTop: `3px solid ${accent}`, borderRadius: 10, padding: '12px 14px' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 4, lineHeight: 1.35 }}>{topic.replace(/:$/, '')}</div>
           <div style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)' }}>{inline(body)}</div>
         </div>

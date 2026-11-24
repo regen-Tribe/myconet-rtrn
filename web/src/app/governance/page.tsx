@@ -1,11 +1,26 @@
 import { createClient } from '@/core/lib/supabase/server'
 import GovernanceClient from '@/modules/m09-governance/GovernanceClient'
+import Link from 'next/link'
+import { PageHeader } from '@/core/components/v4'
+import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { RULE } from '@/core/lib/proposal-checks'
 import { isFullMember as checkFullMember, isCircleLead, isAdvisorOrAdmin } from '@/core/lib/roles'
 
 export default async function GovernancePage({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
   const { p: openId } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Governance is for signed-in people (decision #74): a visitor sees what it's for and how to get in
+  if (!user) {
+    return (
+      <div className="v4-page">
+        <PageHeader eyebrow="Working together" title="Governance"
+          subtitle={<>How {COMMUNITY_NAME} decides together. Members propose, everyone discusses, and every proposal gets <b>4 checks</b> at once. {RULE}</>} />
+        <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to read proposals · <Link href="/auth/signup">Create account</Link></p>
+      </div>
+    )
+  }
 
   const [proposalsRes, memberCountRes, voterRolesRes] = await Promise.all([
     supabase

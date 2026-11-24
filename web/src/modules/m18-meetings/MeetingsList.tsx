@@ -1,6 +1,7 @@
 'use client'
-import { Button, Icon, PageHeader, StatusPill } from '@/core/components/v4'
-import { DESIGN } from '@/core/lib/instance'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
+import { Button, Icon, PageHeader, Result, StatusPill } from '@/core/components/v4'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -11,6 +12,7 @@ import { modLabel } from '@/core/lib/module-label'
 import { CircleFilter, parseCircleParam } from '@/core/components/v4/CircleFilter'
 import './meetings-v4.css'
 import { withoutDate } from './lib/title'
+import { MeetingsBar } from './MeetingsReview'
 
 const STATUS: Record<MeetingStatus, { label: string; color: string }> = {
   processing: { label: 'Transcribing', color: '#b45309' },
@@ -32,11 +34,13 @@ const fmtDay = (iso: string) =>
   (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? taskDate(iso) : new Date(iso)).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 
 /** All meetings, newest first, with circle filters (My circles, All, one circle), search and "Needs review" */
-export default function MeetingsList({ meetings, taskCounts, myCircles, canManage, initialCircle, initialQuery }: {
+export default function MeetingsList({ meetings, taskCounts, myCircles, canManage, decider, initialCircle, initialQuery }: {
   meetings: MeetingListItem[]
   taskCounts: Record<string, { total: number; drafts: number }>
   myCircles: string[]
   canManage: boolean
+  /** Who confirms drafts (decision #45): admins for every circle, circle leads for the circles they lead */
+  decider?: { role: string; leadCircles: string[] }
   /** From ?circle=: a circle slug, "mine" or "all" */
   initialCircle: string | null
   initialQuery: string
@@ -69,7 +73,9 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
     for (const m of meetings) if (m.circle) out[m.circle] = (out[m.circle] ?? 0) + 1
     return out
   }, [meetings, myCircles])
-  const needsLead = (m: MeetingListItem) => (m.needs_review && !m.processed_at) || (taskCounts[m.id]?.drafts ?? 0) > 0
+  const canConfirm = (m: MeetingListItem) => decider?.role === 'admin' || (decider?.role === 'circle_lead' && !!m.circle && decider.leadCircles.includes(m.circle))
+  // Design review (#45): a lead's drafts are only the ones they can confirm, so "Needs review" counts those
+  const needsLead = (m: MeetingListItem) => (m.needs_review && !m.processed_at) || ((taskCounts[m.id]?.drafts ?? 0) > 0 && (!DESIGN_REVIEW || canConfirm(m)))
   const reviewCount = meetings.filter(needsLead).length
 
   // A community-wide meeting (the agent found no single circle, e.g. a morning sync) concerns everyone,
@@ -104,9 +110,9 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
   return (
     <div className={DESIGN === 'v4' ? 'v4-page' : undefined} style={DESIGN === 'v4' ? { maxWidth: 940 } : { maxWidth: 860, margin: '0 auto', padding: '48px 20px 80px' }}>
 {DESIGN === 'v4' ? (
-        <PageHeader eyebrow="Working together" title="Meetings"
-          subtitle="Every meeting the community has recorded. The assistant reads each one, chooses its circle, and puts its tasks on the board as drafts for the leads to confirm."
-          actions={<Button href="/meetings/upload" icon="upload">Upload recording</Button>} />
+        <div className={DESIGN_REVIEW ? 'mtr-head' : undefined}><PageHeader eyebrow="Working together" title="Meetings"
+          subtitle={DESIGN_REVIEW ? 'Every recorded meeting, by circle. Its tasks become drafts for the leads to confirm.' : 'Every meeting the community has recorded. The assistant reads each one, chooses its circle, and puts its tasks on the board as drafts for the leads to confirm.'}
+          actions={<Button href="/meetings/upload" icon="upload">{DESIGN_REVIEW ? <><span className="mtr-wide">Upload recording</span><span className="mtr-phone">Upload</span></> : 'Upload recording'}</Button>} /></div>
       ) : (<>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22, flexWrap: 'wrap' }}>
         <div>
@@ -124,6 +130,23 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
       </div>
       </>)}
 
+      {V4 && DESIGN_REVIEW ? (
+        // Design review (#4, #38, #50): one row. The picker says what's shown; "Needs review" sits inside Filter
+        <MeetingsBar
+          picker={<CircleFilter compact
+            options={usedCircles.map(c => ({ slug: c, label: cap(circles.meta(c).label), color: circles.meta(c).color, count: counts[c] ?? 0 }))}
+            value={picked} onChange={setPicked} mine={myCircles} />}
+          search={{ value: q, onChange: setQ, placeholder: 'Search titles, summaries, people', label: 'Search meetings' }}
+          filter={canManage ? {
+            label: 'Filter meetings',
+            onClear: () => setNeedsReview(false),
+            groups: [{
+              legend: 'Show', value: needsReview ? 'review' : null, onPick: v => setNeedsReview(v === 'review'),
+              options: [{ value: null, label: 'All meetings' }, { value: 'review', label: 'Needs review', count: reviewCount }],
+            }],
+          } : undefined}
+        />
+      ) : <>
       {V4 ? (
         <div style={{ marginBottom: 12 }}>
           <CircleFilter
@@ -156,6 +179,7 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
           </label>
         )}
       </div>
+      </>}
 
       {meetings.length === 0 ? (
         <div style={{ border: '1px solid var(--rule)', borderRadius: 12, padding: '40px 24px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14, background: 'var(--surface)' }}>
@@ -166,7 +190,7 @@ export default function MeetingsList({ meetings, taskCounts, myCircles, canManag
           No meetings match. <button onClick={() => { setFilter('all'); setQ(''); setNeedsReview(false) }} style={{ background: 'none', border: 'none', color: 'var(--m18)', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>Show all</button>
         </div>
       ) : V4 ? (
-        <V4Rows shown={shown} taskCounts={taskCounts} />
+        <V4Rows shown={shown} taskCounts={taskCounts} canConfirm={canConfirm} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {shown.map(m => {
@@ -235,7 +259,7 @@ function groupLabel(d: Date, now = new Date()) {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** v4 rows: a date box, the circle by name (not only its colour), the title without its date, one line of summary */
-function V4Rows({ shown, taskCounts }: { shown: MeetingListItem[]; taskCounts: Record<string, { total: number; drafts: number }> }) {
+function V4Rows({ shown, taskCounts, canConfirm }: { shown: MeetingListItem[]; taskCounts: Record<string, { total: number; drafts: number }>; canConfirm: (m: MeetingListItem) => boolean }) {
   const circles = useCircles()
   const groups: { label: string; items: MeetingListItem[] }[] = []
   for (const m of shown) {
@@ -255,7 +279,15 @@ function V4Rows({ shown, taskCounts }: { shown: MeetingListItem[]; taskCounts: R
               const t = taskCounts[m.id]
               const s = STATUS[m.status] ?? STATUS.processing
               const d = dayOf(m)
-              const pill = m.status !== 'done' ? <StatusPill status={m.status === 'error' ? 'no' : 'doing'} label={s.label} />
+              // Design review (#14, #34, #45): results, not task statuses. Waiting is yellow; drafts only for those who confirm them
+              const pill = DESIGN_REVIEW ? (
+                m.status === 'error' ? <Result tone="neutral" icon="alert">Failed</Result>
+                : m.status !== 'done' ? <Result tone="neutral" icon="clock">Transcribing</Result>
+                : m.needs_review && !m.processed_at && !m.agent_note ? <Result tone="neutral" icon="clock">Assistant reading soon</Result>
+                : m.needs_review && !m.processed_at ? <Result tone="attention">Needs review</Result>
+                : t?.drafts && canConfirm(m) ? <Result tone="attention">{t.drafts} draft{t.drafts === 1 ? '' : 's'}</Result>
+                : null
+              ) : m.status !== 'done' ? <StatusPill status={m.status === 'error' ? 'no' : 'doing'} label={s.label} />
                 : m.needs_review && !m.processed_at && !m.agent_note ? <StatusPill status="idea" label="Assistant reading soon" />
                 : m.needs_review && !m.processed_at ? <StatusPill status="review" label="Needs review" />
                 : t?.drafts ? <StatusPill status="review" label={`${t.drafts} to confirm`} />
@@ -279,7 +311,10 @@ function V4Rows({ shown, taskCounts }: { shown: MeetingListItem[]; taskCounts: R
                   <span className="v4-row__main">
                     <span className="mt4-circle">
                       {meta
-                        ? <span className="mt4-ctag"><i className="mt4-dot" aria-hidden />{cap(meta.label)}</span>
+                        ? (DESIGN_REVIEW
+                          // Design review (#7): a circle is its seal, never a coloured dot
+                          ? <span className="mt4-ctag mt4-ctag--seal"><CircleSeal slug={m.circle} size={16} />{cap(meta.label)}</span>
+                          : <span className="mt4-ctag"><i className="mt4-dot" aria-hidden />{cap(meta.label)}</span>)
                         : <span className="mt4-ctag mt4-ctag--none">{m.processed_at ? 'Community-wide' : 'No circle yet'}</span>}
                       {m.visibility === 'circle' && <span className="mt4-lock"><Icon name="lock" size={12} />Circle only</span>}
                       {pill && <span className="mt4-pill-phone">{pill}</span>}

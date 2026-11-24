@@ -14,13 +14,19 @@ import { Slider } from '@/core/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
 import { AvatarCropper } from '@/core/components/AvatarCropper'
 import { uploadAvatarBlob } from '@/core/lib/avatar'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { PROFILE_CHECKS, profileMissing, type ProfileCheck, type ProfileFacts } from '@/modules/m01-network/lib/profile-missing'
+import '@/modules/m01-network/profile-review.css'
 import { Button as V4Button, Icon as V4Icon, PageHeader } from '@/core/components/v4'
 import '@/modules/m01-network/members-v4.css'
 import {
   ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
   Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
 } from '@/core/components/v4/lucide-compat'
+import { SIGNED_IN_PROFILE_COLUMNS, profileDetailsOf } from '@/core/lib/public-profile'
+
+/** The design review layer (decisions #60–#64) */
+const RV = DESIGN === 'v4' && DESIGN_REVIEW
 
 const STEPS = [
   { id: 1, title: 'Basic Info',        icon: User,       description: 'Your public identity' },
@@ -180,7 +186,7 @@ function TagInput({ value, onChange, placeholder, suggestions = [] }: {
   const remove = (tag: string) => onChange(value.filter(t => t !== tag))
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px] bg-background">
+      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px] bg-background pe4-tagbox">
         {value.map(tag => (
           <Badge key={tag} variant="secondary" className="gap-1">
             {tag}
@@ -231,22 +237,29 @@ function OceanSlider({ label, value, onChange, low, high }: {
   )
 }
 
-function computeWizardPct(form: FormData, avatarUrl: string | null): number {
-  const checks = [
-    !!avatarUrl,
-    !!form.first_name.trim(),
-    !!form.headline.trim(),
-    !!form.city.trim(),
-    form.user_types.length > 0,
-    !!form.values_principles.trim(),
-    form.skills.length > 0,
-    !!form.goals.trim(),
-    form.offers.some(o => o.title.trim()),
-    form.requests.some(r => r.request_text.trim()),
-    form.placesTraveling.some(t => t.location.trim()),
-  ]
-  return Math.round(checks.filter(Boolean).length / checks.length * 100)
+/** The same eleven checks as the profile page and the old top bar (modules/m01-network/lib/profile-missing.ts) */
+function wizardFacts(form: FormData, avatarUrl: string | null): ProfileFacts {
+  return {
+    avatar: !!avatarUrl,
+    firstName: !!form.first_name.trim(),
+    headline: !!form.headline.trim(),
+    city: !!form.city.trim(),
+    types: form.user_types.length > 0,
+    values: !!form.values_principles.trim(),
+    skills: form.skills.length > 0,
+    goals: !!form.goals.trim(),
+    offers: form.offers.some(o => o.title.trim()),
+    requests: form.requests.some(r => r.request_text.trim()),
+    travel: form.placesTraveling.some(t => t.location.trim()),
+  }
 }
+
+function computeWizardPct(form: FormData, avatarUrl: string | null): number {
+  return profileMissing(wizardFacts(form, avatarUrl)).pct
+}
+
+/** Design review: where "Still to add" and ?add= send you (the eleven checks, plus who sees your growth) */
+const JUMPS: Pick<ProfileCheck, 'key' | 'step' | 'field'>[] = [...PROFILE_CHECKS, { key: 'growth' as ProfileCheck['key'], step: 5, field: 'pe-growth' }]
 
 export default function ProfileWizard() {
   const supabase = createClient()
@@ -280,14 +293,15 @@ export default function ProfileWizard() {
       setUserId(user.id)
 
       const [profileRes, bioRes, offersRes, requestsRes, growthRes] = await Promise.all([
-        supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+        supabase.from('user_profiles').select(SIGNED_IN_PROFILE_COLUMNS).eq('id', user.id).single(),
         supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('user_offers').select('*').eq('user_id', user.id).order('created_at'),
         supabase.from('user_requests').select('*').eq('user_id', user.id).order('created_at'),
         supabase.from('user_growth').select('fears, traumas, visibility').eq('user_id', user.id).maybeSingle(),
       ])
 
-      const p = profileRes.data
+      // City, country and kinds of people come from profile_details() (decision #71)
+      const p = profileRes.data ? { ...(profileRes.data as Record<string, any>), ...(await profileDetailsOf(supabase, user.id)) } as any : null
       if (p?.avatar_url) setAvatarUrl(p.avatar_url)
       const b = bioRes.data
       const pd = b?.personality_details as any
@@ -340,12 +354,45 @@ export default function ProfileWizard() {
         })),
       })
       setLoading(false)
+      // Design review: /profile/edit?add=headline opens the step with that field (the profile's next step links here)
+      const add = RV ? new URLSearchParams(window.location.search).get('add') : null
+      if (add) jump(add)
     }
     load()
   }, [])
 
   const update = <K extends keyof FormData>(key: K, val: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: val }))
+
+  // Design review: go to a missing field's step, add a first offer / request / travel plan if there's none,
+  // and put the cursor in it (the "Still to add" links, and /profile/edit?add=<key> from the profile's next step)
+  const [jumpTo, setJumpTo] = useState<string | null>(null)
+  function jump(key: string) {
+    const j = JUMPS.find(x => x.key === key)
+    if (!j) return
+    setStep(j.step)
+    setForm(prev => {
+      if (key === 'offer' && !prev.offers.length) return { ...prev, offers: [{ title: '', description: '', category: '', compensation_model: 'Other', price: '' }] }
+      if (key === 'request' && !prev.requests.length) return { ...prev, requests: [{ request_text: '', category: '', urgency: 'normal' }] }
+      if (key === 'travel' && !prev.placesTraveling.length) return { ...prev, placesTraveling: [{ location: '', startDate: '', endDate: '', notes: '' }] }
+      return prev
+    })
+    setJumpTo(j.field)
+  }
+  useEffect(() => {
+    if (!jumpTo) return
+    const t = setTimeout(() => {
+      const el = document.getElementById(jumpTo)
+      if (!el) return
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      const target = el.matches('input, textarea') ? el : el.querySelector<HTMLElement>('input:not([type="file"]):not([type="radio"]), textarea')
+      if (target && jumpTo !== 'pe-photo') target.focus({ preventScroll: true })
+      el.classList.add('pe4-here')
+      setTimeout(() => el.classList.remove('pe4-here'), 1800)
+      setJumpTo(null)
+    }, 80)
+    return () => clearTimeout(t)
+  }, [jumpTo, step])
 
   const toggleUserType = (id: string) => {
     if (form.user_types.includes(id)) {
@@ -481,6 +528,7 @@ export default function ProfileWizard() {
   const progress = (step / STEPS.length) * 100
 
   const V4 = DESIGN === 'v4'
+  const done = profileMissing(wizardFacts(form, avatarUrl))
   return (
     <div className={V4 ? 'v4-page pe4' : 'p-3 sm:p-6 max-w-4xl mx-auto'}>
 
@@ -525,11 +573,29 @@ export default function ProfileWizard() {
       )}
 
       {/* Header (v4: page header, steps as chips with a tick when passed) */}
+      {V4 && RV && (
+        <>
+          <PageHeader title="Edit profile"
+            actions={<V4Button variant="secondary" icon="check" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</V4Button>} />
+          {/* The completion meter lives here now, not in the top bar (decisions #11, #60) */}
+          <section className={`pe4-meter${done.missing.length ? '' : ' pe4-meter--done'}`} aria-label="How complete your profile is">
+            <div className="pe4-meter__top">Your profile<span>{done.pct}%</span></div>
+            <div className="pe4-meter__bar" role="progressbar" aria-valuenow={done.pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${done.pct}%` }} /></div>
+            <p className="pe4-meter__todo">
+              {done.missing.length
+                ? <>Still to add: {done.missing.map((c, i) => (
+                    <span key={c.key}>{i > 0 && (i === done.missing.length - 1 ? ' and ' : ', ')}<button type="button" onClick={() => jump(c.key)}>{c.label}</button></span>
+                  ))}</>
+                : 'Your profile is complete'}
+            </p>
+          </section>
+        </>
+      )}
       {V4 && (
         <>
-          <PageHeader eyebrow="Your profile" title="Edit your profile"
+          {!RV && <PageHeader eyebrow="Your profile" title="Edit your profile"
             subtitle={<>Step <b>{step} of {STEPS.length}</b>: {stepData.title}. Saved when you go to the next step.</>}
-            actions={<V4Button variant="secondary" icon="check" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save draft'}</V4Button>} />
+            actions={<V4Button variant="secondary" icon="check" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save draft'}</V4Button>} />}
           <div className="pe4-bar" aria-hidden><i style={{ width: `${progress}%` }} /></div>
           <nav className="v4-chiprow pe4-steps" aria-label="Profile steps">
             {STEPS.map(s => (
@@ -569,11 +635,11 @@ export default function ProfileWizard() {
 
       <Card className={V4 ? 'border-card-border pe4-card' : 'border-card-border'}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 pe4-title">
             <StepIcon className="h-5 w-5 text-primary" />
             {stepData.title}
           </CardTitle>
-          <CardDescription>{stepData.description}</CardDescription>
+          <CardDescription className="pe4-desc">{stepData.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
 
@@ -582,8 +648,8 @@ export default function ProfileWizard() {
             <>
               {/* Avatar upload */}
               <div className="flex flex-col items-center gap-2 pb-2">
-                <label htmlFor="avatar-upload" className="cursor-pointer group relative">
-                  <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', background: 'var(--accent-soft)', border: '2px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'var(--accent)', position: 'relative' }}>
+                <label htmlFor="avatar-upload" id="pe-photo" className="cursor-pointer group relative pe4-photo">
+                  <div className="pe4-photo__img" style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', background: 'var(--accent-soft)', border: '2px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'var(--accent)', position: 'relative' }}>
                     {avatarUrl
                       ? <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <span>{(form.first_name?.[0] ?? '?').toUpperCase()}</span>
@@ -596,15 +662,16 @@ export default function ProfileWizard() {
                       }
                     </div>
                   </div>
+                  {RV && <span className="pe4-photo__badge" aria-hidden><V4Icon name="camera" size={16} /></span>}
                 </label>
-                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
-                <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Click photo to change</span>
+                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} aria-label={avatarUrl ? 'Change photo' : 'Add a photo'} />
+                <span className="pe4-photo__hint" style={{ fontSize: 12, color: 'var(--ink-4)' }}>Click photo to change</span>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>First Name</Label>
-                  <Input value={form.first_name} onChange={e => update('first_name', e.target.value)} placeholder="e.g., Alex" />
+                  <Input id="pe-name" value={form.first_name} onChange={e => update('first_name', e.target.value)} placeholder="e.g., Alex" />
                 </div>
                 <div className="space-y-2">
                   <Label>Last Name</Label>
@@ -613,7 +680,7 @@ export default function ProfileWizard() {
               </div>
               <div className="space-y-2">
                 <Label>Headline</Label>
-                <Input value={form.headline} onChange={e => update('headline', e.target.value)}
+                <Input id="pe-headline" value={form.headline} onChange={e => update('headline', e.target.value)}
                   placeholder="e.g., Permaculture Designer & Community Builder" />
                 <p className="text-xs text-muted-foreground">A short description that appears under your name</p>
               </div>
@@ -648,10 +715,10 @@ export default function ProfileWizard() {
                 </div>
                 <div className="space-y-2">
                   <Label>City</Label>
-                  <Input value={form.city} onChange={e => update('city', e.target.value)} placeholder="e.g., San José" />
+                  <Input id="pe-city" value={form.city} onChange={e => update('city', e.target.value)} placeholder="e.g., San José" />
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3" id="pe-types">
                 <Label>Who are you in this network?</Label>
                 <p className="text-xs text-muted-foreground">Select all that apply</p>
                 <div className="flex flex-col gap-2">
@@ -660,7 +727,7 @@ export default function ProfileWizard() {
                     return (
                       <div key={t.id}>
                         <button type="button" onClick={() => toggleUserType(t.id)}
-                          className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${
+                          className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors pe4-choice${isSelected ? ' pe4-choice--on' : ''} ${
                             isSelected ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'
                           }`}>
                           <div className={`mt-0.5 h-4 w-4 rounded flex-shrink-0 border flex items-center justify-center ${
@@ -680,7 +747,7 @@ export default function ProfileWizard() {
                               const subSelected = form.user_types.includes(sub.id)
                               return (
                                 <button key={sub.id} type="button" onClick={() => toggleUserType(sub.id)}
-                                  className={`flex flex-col gap-1 p-3 rounded-lg border text-left transition-colors ${
+                                  className={`flex flex-col gap-1 p-3 rounded-lg border text-left transition-colors pe4-choice${subSelected ? ' pe4-choice--on' : ''} ${
                                     subSelected ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted'
                                   }`}>
                                   <span className="text-sm font-medium">{sub.label}</span>
@@ -695,7 +762,7 @@ export default function ProfileWizard() {
                   })}
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2" id="pe-skills">
                 <Label>Skills</Label>
                 <TagInput value={form.skills} onChange={v => update('skills', v)}
                   placeholder="Add your skills..."
@@ -715,7 +782,7 @@ export default function ProfileWizard() {
             <>
               <div className="space-y-2">
                 <Label>Core Values & Principles</Label>
-                <Textarea value={form.values_principles} onChange={e => update('values_principles', e.target.value)}
+                <Textarea id="pe-values" value={form.values_principles} onChange={e => update('values_principles', e.target.value)}
                   placeholder="What principles guide your life and work? What do you stand for?"
                   className="min-h-[150px]" />
                 <p className="text-xs text-muted-foreground">Share what matters most to you and what you believe in</p>
@@ -825,7 +892,7 @@ export default function ProfileWizard() {
             <>
               <div className="space-y-2">
                 <Label>Goals & Aspirations</Label>
-                <Textarea value={form.goals} onChange={e => update('goals', e.target.value)}
+                <Textarea id="pe-goals" value={form.goals} onChange={e => update('goals', e.target.value)}
                   placeholder="What are you working towards? What do you want to achieve or create in the next few years?"
                   className="min-h-[120px]" />
               </div>
@@ -843,13 +910,13 @@ export default function ProfileWizard() {
                   className="min-h-[100px]" />
                 <p className="text-xs text-muted-foreground">Optional – share only what feels comfortable</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2" id="pe-growth">
                 <Label>Who can see your fears and healing journey?</Label>
                 <div className="flex flex-col gap-2" role="radiogroup" aria-label="Who can see your fears and healing journey">
                   {GROWTH_VISIBILITY.map(o => {
                     const on = form.growthVisibility === o.id
                     return (
-                      <label key={o.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${on ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'}`}>
+                      <label key={o.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors pe4-choice${on ? ' pe4-choice--on' : ''} ${on ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'}`}>
                         <input type="radio" name="growth-visibility" checked={on} onChange={() => update('growthVisibility', o.id)} className="mt-1" />
                         <span>
                           <span className={`block text-sm font-medium ${on ? 'text-primary' : ''}`}>{o.label}</span>
@@ -867,7 +934,7 @@ export default function ProfileWizard() {
           {step === 6 && (
             <>
               <p className="text-muted-foreground text-sm">What services, skills, or resources can you offer to the community?</p>
-              <div className="space-y-4">
+              <div className="space-y-4" id="pe-offer">
                 {form.offers.map((offer, i) => (
                   <Card key={i} className="border-card-border">
                     <CardContent className="pt-4 space-y-4">
@@ -922,7 +989,7 @@ export default function ProfileWizard() {
                   </Card>
                 ))}
               </div>
-              <Button variant="outline" className="w-full"
+              <Button variant="outline" className={RV ? 'w-full pe4-add' : 'w-full'}
                 onClick={() => update('offers', [...form.offers, { title: '', description: '', category: '', compensation_model: 'Other', price: '' }])}>
                 <Plus className="mr-2 h-4 w-4" />Add offer
               </Button>
@@ -933,7 +1000,7 @@ export default function ProfileWizard() {
           {step === 7 && (
             <>
               <p className="text-muted-foreground text-sm">What help, resources, or connections are you looking for?</p>
-              <div className="space-y-4">
+              <div className="space-y-4" id="pe-request">
                 {form.requests.map((req, i) => (
                   <Card key={i} className="border-card-border">
                     <CardContent className="pt-4 space-y-4">
@@ -979,9 +1046,9 @@ export default function ProfileWizard() {
                   </Card>
                 ))}
               </div>
-              <Button variant="outline" className="w-full"
+              <Button variant="outline" className={RV ? 'w-full pe4-add' : 'w-full'}
                 onClick={() => update('requests', [...form.requests, { request_text: '', category: '', urgency: 'normal' }])}>
-                <Plus className="mr-2 h-4 w-4" />Add Request
+                <Plus className="mr-2 h-4 w-4" />{RV ? 'Add request' : 'Add Request'}
               </Button>
             </>
           )}
@@ -990,7 +1057,7 @@ export default function ProfileWizard() {
           {step === 8 && (
             <>
               <p className="text-muted-foreground text-sm">Where are you planning to travel? This helps connect you with communities along your path.</p>
-              <div className="space-y-4">
+              <div className="space-y-4" id="pe-travel">
                 {form.placesTraveling.map((plan, i) => (
                   <Card key={i} className="border-card-border">
                     <CardContent className="pt-4 space-y-4">
@@ -1031,9 +1098,9 @@ export default function ProfileWizard() {
                   </Card>
                 ))}
               </div>
-              <Button variant="outline" className="w-full"
+              <Button variant="outline" className={RV ? 'w-full pe4-add' : 'w-full'}
                 onClick={() => update('placesTraveling', [...form.placesTraveling, { location: '', startDate: '', endDate: '', notes: '' }])}>
-                <Plus className="mr-2 h-4 w-4" />Add Travel Plan
+                <Plus className="mr-2 h-4 w-4" />{RV ? 'Add travel plan' : 'Add Travel Plan'}
               </Button>
             </>
           )}
@@ -1045,7 +1112,7 @@ export default function ProfileWizard() {
         <div className="pe4-nav">
           <V4Button variant="secondary" icon="left" onClick={() => setStep(s => s - 1)} disabled={step === 1}>Previous</V4Button>
           <V4Button onClick={handleNext} disabled={saving} icon={step === STEPS.length ? 'check' : undefined}>
-            {saving ? 'Saving…' : step === STEPS.length ? 'Save and finish' : <>Next: {STEPS[step]?.title} <V4Icon name="right" size={15} /></>}
+            {saving ? 'Saving…' : step === STEPS.length ? (RV ? 'Save' : 'Save and finish') : RV ? <>Save & continue <V4Icon name="right" size={16} /></> : <>Next: {STEPS[step]?.title} <V4Icon name="right" size={15} /></>}
           </V4Button>
         </div>
       ) : (

@@ -1,10 +1,11 @@
 import { createClient } from '@/core/lib/supabase/server'
-import { profileColumns } from '@/core/lib/public-profile'
+import { profileColumns, profileDetailsOf, withProfileDetails } from '@/core/lib/public-profile'
 import Link from 'next/link'
 import MemberList from '@/modules/m01-network/MemberList'
 import { computeMatch, type Bio, type MatchResult } from '@/modules/m01-network/lib/match-score'
 import { modLabel } from '@/core/lib/module-label'
 import { DESIGN } from '@/core/lib/instance'
+import { isJoiningOrAbove } from '@/core/lib/roles'
 import MembersV4 from '@/modules/m01-network/MembersV4'
 
 export default async function NetworkDashboard() {
@@ -15,7 +16,7 @@ export default async function NetworkDashboard() {
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
     supabase.from('user_profiles')
       // Visitors get the public columns; the hidden ones (location, user types) are just missing
-      .select(profileColumns(!!user, 'id, username, first_name, last_name, avatar_url, user_types, city, country') as 'id, username, first_name, last_name, avatar_url, user_types, city, country')
+      .select(profileColumns(!!user, 'id, username, first_name, last_name, avatar_url') as 'id, username, first_name, last_name, avatar_url')
       .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(8),
@@ -35,25 +36,28 @@ export default async function NetworkDashboard() {
   ])
 
   const memberCount = memberCountRes.count ?? 0
-  const recentUsers = (recentRes.data ?? []).filter(u => u.id !== user?.id)
+  // City, country and kinds of people come separately: joining members and up only (decision #71)
+  const recentUsers = (user ? await withProfileDetails(supabase, recentRes.data) : (recentRes.data ?? []).map(u => ({ ...u, city: null, country: null, user_types: null })))
+    .filter(u => u.id !== user?.id)
 
   let offersCount = 0
   let seeksCount = 0
   let displayName: string | null = null
   let myBio: Bio = null
-  let topMatches: { profile: NonNullable<typeof recentRes.data>[number]; score: number; reasons: string[] }[] = []
+  let topMatches: { profile: (typeof recentUsers)[number]; score: number; reasons: string[] }[] = []
   const recentMatchScores: Record<string, MatchResult> = {}
   const matchScores: Record<string, number> = {}
   let profileSteps: { label: string; complete: boolean }[] | null = null
   let profileCompleteness = 0
+  let joined = false
 
   if (user) {
     const [offersRes, seeksRes, profileRes, allProfilesRes, allBiosRes, myBioRes] = await Promise.all([
       supabase.from('user_offers').select('id').eq('user_id', user.id),
       supabase.from('user_requests').select('id').eq('user_id', user.id),
-      supabase.from('user_profiles').select('first_name, last_name, city, country, headline').eq('id', user.id).maybeSingle(),
+      supabase.from('user_profiles').select('first_name, last_name, headline, role').eq('id', user.id).maybeSingle(),
       supabase.from('user_profiles')
-        .select('id, username, first_name, last_name, avatar_url, city, country, user_types')
+        .select('id, username, first_name, last_name, avatar_url')
         .eq('approved', true)
         .neq('id', user.id),
       supabase.from('user_bio').select('*'),
@@ -62,7 +66,9 @@ export default async function NetworkDashboard() {
 
     offersCount = offersRes.data?.length ?? 0
     seeksCount = seeksRes.data?.length ?? 0
-    const profile = profileRes.data
+    joined = isJoiningOrAbove((profileRes.data as { role?: string } | null)?.role ?? 'explorer')
+    const allProfiles = await withProfileDetails(supabase, allProfilesRes.data)
+    const profile = profileRes.data ? { ...profileRes.data, ...(await profileDetailsOf(supabase, user.id)) } : null
     displayName = profile
       ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Explorer'
       : null
@@ -83,21 +89,22 @@ export default async function NetworkDashboard() {
       profileCompleteness = Math.round(profileSteps.filter(s => s.complete).length / profileSteps.length * 100)
     }
     const profileLocById = new Map<string, { city?: string | null; country?: string | null }>()
-    for (const p of allProfilesRes.data ?? []) profileLocById.set(p.id, { city: p.city, country: p.country })
+    for (const p of allProfiles) profileLocById.set(p.id, { city: p.city, country: p.country })
     const bioMap: Record<string, Bio> = {}
     for (const b of allBiosRes.data ?? []) {
       const loc = profileLocById.get(b.user_id) ?? {}
       bioMap[b.user_id] = { ...b, city: loc.city, country: loc.country } as Bio
     }
 
-    const scored = (allProfilesRes.data ?? [])
+    const scored = allProfiles
       .map(p => {
         const { score, reasons } = computeMatch(myBio, bioMap[p.id] ?? null)
         return { profile: p, score, reasons }
       })
       .sort((a, b) => b.score - a.score)
     // Everyone's score with you, for the v4 member cards (only when you've told us about yourself)
-    if (myBio) for (const m of scored) matchScores[m.profile.id] = m.score
+    // Matches open at joining (#71): before that the cards show no score
+    if (myBio && joined) for (const m of scored) matchScores[m.profile.id] = m.score
     topMatches = scored.slice(0, 4)
 
     if (myBio) {
@@ -134,7 +141,7 @@ export default async function NetworkDashboard() {
   // The v4 look: the same data, laid out as Sonia's prototype (MembersV4)
   if (DESIGN === 'v4') {
     return (
-      <MembersV4 supabase={supabase} userId={user?.id ?? null} memberCount={memberCount} profileSteps={profileSteps}
+      <MembersV4 supabase={supabase} userId={user?.id ?? null} joined={joined} memberCount={memberCount} profileSteps={profileSteps}
         profileCompleteness={profileCompleteness} topMatches={topMatches as any} activity={memberActivity} hasBio={!!myBio} matchScores={matchScores} />
     )
   }

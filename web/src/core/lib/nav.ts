@@ -1,4 +1,5 @@
 import { moduleOn } from './modules'
+import { DESIGN_REVIEW } from './instance'
 
 /**
  * Sidebar module order — the single source for the app sidebar and the
@@ -56,7 +57,8 @@ export interface MenuGroup {
 export function menuGroups(communityName: string): MenuGroup[] {
   return [
     { label: 'You', items: [
-      { key: 'dashboard', name: 'My dashboard', href: '/dashboard', icon: 'home' },
+      // Design review (decision #83): "Dashboard", without "My"
+      { key: 'dashboard', name: DESIGN_REVIEW ? 'Dashboard' : 'My dashboard', href: '/dashboard', icon: 'home' },
     ] },
     { label: 'Community', line: 'Who we are and what’s here', items: [
       { key: 'about', name: `About ${communityName}`, href: '/about', icon: 'book' },
@@ -69,7 +71,8 @@ export function menuGroups(communityName: string): MenuGroup[] {
     ] },
     { label: 'Working together', line: 'How we plan, agree and decide', items: [
       { key: 'operations', name: 'Operations', href: '/operations', icon: 'board' },
-      { key: 'agreements', name: 'Agreements', href: '/agreements', icon: 'handshake', joiningUp: true },
+      // Parked in the design review (Sonia, 2026-11-22): no agreements yet; /agreements still works
+      ...(DESIGN_REVIEW ? [] : [{ key: 'agreements', name: 'Agreements', href: '/agreements', icon: 'handshake' as const, joiningUp: true }]),
       ...(moduleOn('meetings') ? [{ key: 'meetings', name: 'Meetings', href: '/meetings', icon: 'chat' as const, joiningUp: true }] : []),
       { key: 'governance', name: 'Governance', href: '/governance', icon: 'scale' },
     ] },

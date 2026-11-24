@@ -41,10 +41,10 @@ Where its names differ from the table above, these win, and each has its own add
 
 | Say | Address | Instead of |
 |---|---|---|
-| **My dashboard** | `/dashboard` | Dashboard (in the menu; "Dashboard" on the phone tab) |
+| **Dashboard** (with the design review; "My dashboard" without it) | `/dashboard` | My dashboard |
 | **About {community}** | `/about` | Blueprint as the page's name. "The Blueprint" is the document it's built from ("Edit Blueprint") |
 | **Amenities & tools** | `/amenities` | Accommodation and Resources (one page now), Our place |
-| **The space** | menu item (`/amenities`, `/map`) | the one menu item for Amenities & tools and the Map (v4.102.0); each page keeps its own name |
+| **The space** | menu item (`/amenities`, `/map`) | the one menu item for Amenities & tools and the Map (v4.102.0); each page keeps its own name. Under the design review both pages are headed **The space**, with the views **Places · Map · My bookings** (decision #23). There is no Manage view (decision #43): whoever can manage a thing has an **Edit** button on its photo, and the requests and the inventory are in Admin › **Bookings** |
 | **Applications** | `/admin/applications` | join applications in the menu, Join › admin review |
 | **Bookings** | `/admin/bookings` | Manage (the booking requests and the inventory) |
 | **Permissions** | `/admin/permissions` | Users (admin) |
@@ -64,6 +64,8 @@ profiles). My tasks isn't a menu item: your open tasks are counted beside My das
 | Columns | **Ideas → To do → In progress → Review → Done**, plus **Paused** on the main board for tasks with subtasks (status `backlog` shows as "To do") | Backlog |
 | **lead** / **assigned to** | A task has a lead; a subtask is assigned to someone | owner |
 | **sprint** | Only where a task has a sprint name set | |
+| **draft** | A task the assistant suggested from a meeting, waiting for a circle lead or admin to confirm or decline it. The list is **Drafts to confirm** | to decide, pending task |
+| **watch** | Follow a task or subtask: its changes reach you. Button **Watch** / **Watching**; "3 watching" | subscribe, subscriber, follow |
 
 **How it maps to the data (for code and agents):** the `projects` table holds tasks (the ones that can have
 subtasks); `deliverables` holds their subtasks, and a deliverable with no project is a task of its own on the
@@ -99,6 +101,18 @@ never "L1–L4", "CL", "live" or "threshold". "Sociocracy / Democracy / Meritocr
 | **subcircle**: a smaller, lasting group inside a circle, with its own members and lead | team, unit, pod, guild, working group |
 | **Community stewards**: the one circle that looks after every circle | |
 
+## Joining
+
+The way in, the same words on Join, the menu's next step and My dashboard (design review, 2026-11-22).
+
+| Say | Means | Not |
+|---|---|---|
+| **visitor** | Someone looking around who isn't signed in | guest |
+| **Start joining** | The button, and the Join page's heading | Join application, M05 |
+| **Get to know us · About you · Apply** | The three join steps (decisions #80, #81): read About and sign its values at the end of the values chapter; a short form in Start joining (a photo, a line about you, what you'd like to offer, what brings you); send your application. As titles: "Get to know us", "Tell us about you", "Send your application" | Values · Profile · Application (until 23 Nov), buddy matching (dropped) |
+| **steward** | An admin who welcomes new people and reviews join applications (Sonia, 2026-11-22). Same family as **Community stewards**. Lowercase on screens: "A steward reads your application". Which admins are stewards is the community's, never named in core | the community team, the team, reviewer |
+| **Send application** / **Your application is in** | Sending it, and the state while it's read | Submit application, Under review |
+
 ## Members module
 
 **Offers** (what I can give) and **Requests** (what I'm looking for): "+ Add offer", "+ Add request".
@@ -119,6 +133,12 @@ Not "Seeks", not "Needs". A booking that needs approval is a **booking request**
 manage view; **space** only for a physical space you book. **place** for anything with a pin on the Map
 (a house, a garden, the spring); its kinds on screen: Accommodation, Shared spaces, Amenities, Food & gardens,
 Water, Forest & trails, Gathering spots.
+
+On screen a bookable thing's kind is **Accommodation**, **Tools** or **Spaces**. Its tags are stored as slugs and
+always shown in plain words (`web/src/modules/m15-bookings/lib/tag-labels.ts`, the only place that maps them):
+`dorm-1` → **Dorm 1**, `dorm-2` → **Dorm 2**, `dorm-bed` → **Dorm bed**, `main-space` → **Main space**,
+`private-room` → **Private room**, `female` → **Women only**, `male` → **Men only**; any other tag is sentence-cased
+(`outdoor` → **Outdoor**). Never show the slug.
 
 ## Knowledge and the assistant
 
@@ -151,4 +171,5 @@ Words parked until the community needs the extra layer (Sonia, 2026-11-20: "for 
 | Word | Why it's parked | Until then |
 |---|---|---|
 | **project** | A bundle of tasks with its own page, lead and team was more structure than the community uses | a **task** with **subtasks** |
+| **Agreements** (the module) | No agreements yet; parked from the menu in the design review (Sonia, 2026-11-22). The word **agreement** keeps its meaning | /agreements still works by its address |
 

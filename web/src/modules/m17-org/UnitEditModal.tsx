@@ -162,7 +162,7 @@ export function UnitEditModal({
               confirmDelete ? (
                 <span style={{ display: 'inline-flex', gap: 6 }}>
                   <button type="button" onClick={() => setConfirmDelete(false)} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>Keep it</button>
-                  <button type="button" onClick={remove} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer' }}>Delete subcircle</button>
+                  <button type="button" onClick={remove} disabled={busy} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: 'none', background: 'var(--rv-bad, #dc2626)', color: '#fff', cursor: 'pointer' }}>Delete subcircle</button>
                 </span>
               ) : (
                 <button type="button" onClick={() => setConfirmDelete(true)} style={{ fontSize: 12, fontWeight: 600, padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: '#dc2626', cursor: 'pointer' }}>Delete subcircle</button>

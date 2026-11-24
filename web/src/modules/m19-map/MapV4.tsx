@@ -9,6 +9,8 @@ import { Button, Chip, ChipRow, EmptyState, Icon, IconTile, List, ListRow, PageH
 import SiteMap, { type SitePin } from '@/core/components/v4/SiteMap'
 import { canEditPlace, KIND_META, KINDS, near, PLACE_SELECT, type Place, type PlaceKind } from './lib/places'
 import PlaceFormModal, { type PlacePayload } from './PlaceFormModal'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
+import { SPACE_PURPOSE, SPACE_TITLE, SpaceBar, type SpaceView } from '@/modules/m15-bookings/SpaceReview'
 
 /** A bookable thing with a pin on the Amenities map (booking_items) */
 export interface MapBookable { id: string; name: string; category: 'accommodation' | 'tools' | 'spaces'; map_x: number; map_y: number }
@@ -37,6 +39,10 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
   const [places, setPlaces] = useState(initialPlaces)
   const [taskTitles, setTaskTitles] = useState(() => new Map(tasks.map(t => [t.id, t.title])))
   const [kind, setKind] = useState<PlaceKind | null>(initialKind)
+  // The design review's search (decision #23): narrows the pins and the list by name
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const matches = (name: string) => !q || name.toLowerCase().includes(q)
   const [editing, setEditing] = useState(false)
   const [placingId, setPlacingId] = useState<string | null>(null)
   const [form, setForm] = useState<Place | 'new' | null>(null)
@@ -55,11 +61,11 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
   const count = (k: PlaceKind) => pinned.filter(p => p.kind === k).length + looseBookables.filter(b => KIND_OF_CATEGORY[b.category] === k).length
 
   const pins: SitePin[] = [
-    ...pinned.filter(p => !kind || p.kind === kind).map(p => ({
+    ...pinned.filter(p => !kind || p.kind === kind).filter(p => matches(p.name) || bookablesAt(p).some(b => matches(b.name))).map(p => ({
       id: p.id, name: p.name, x: p.map_x!, y: p.map_y!, icon: KIND_META[p.kind].icon, tone: KIND_META[p.kind].tone,
       sub: [KIND_META[p.kind].label, bookablesAt(p).length ? 'to book' : null].filter(Boolean).join(' · '),
     })),
-    ...looseBookables.filter(b => !kind || KIND_OF_CATEGORY[b.category] === kind).map(b => {
+    ...looseBookables.filter(b => !kind || KIND_OF_CATEGORY[b.category] === kind).filter(b => matches(b.name)).map(b => {
       const m = KIND_META[KIND_OF_CATEGORY[b.category]]
       return { id: B + b.id, name: b.name, x: b.map_x, y: b.map_y, icon: m.icon, tone: m.tone, sub: CATEGORY_LABEL[b.category] }
     }),
@@ -170,19 +176,48 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
   const mine = places.filter(canEdit).sort((a, b) => Number(a.map_x != null) - Number(b.map_x != null) || a.sort_order - b.sort_order || a.name.localeCompare(b.name))
   const unplaced = places.filter(p => p.map_x == null)
 
+  const headerActions = canAdd && (
+    editing
+      ? <><Button variant="secondary" onClick={() => setForm('new')} icon="plus">Add a place</Button><Button onClick={() => { setEditing(false); setPlacingId(null) }}>Done</Button></>
+      : <Button variant="secondary" onClick={() => setEditing(true)} icon="pencil">Edit places</Button>
+  )
+  // Requests and the inventory live in Admin › Bookings; a place's Edit button is on its photo (decision #43)
+  const views: SpaceView[] = ['places', 'map', 'mine']
+
   return (
-    <div className="v4-page v4-page--wide">
-      <PageHeader
-        eyebrow="Community"
-        title={`Map of ${communityName}`}
-        subtitle="Where everything is on the land. Tap a pin to see what it is, who looks after it and what you can book there."
-        actions={canAdd && (
-          editing
-            ? <><Button variant="secondary" onClick={() => setForm('new')} icon="plus">Add a place</Button><Button onClick={() => { setEditing(false); setPlacingId(null) }}>Done</Button></>
-            : <Button variant="secondary" onClick={() => setEditing(true)} icon="pencil">Edit places</Button>
-        )}
-      />
-      <SpaceTabs on="map" />
+    <div className={`v4-page v4-page--wide${DESIGN_REVIEW ? ' spr-map' : ''}`}>
+      {DESIGN_REVIEW ? (
+        // The design review (decision #23): the same heading and toolbar row as Places
+        <>
+          <div className={`spr-head${editing ? ' spr-head--wrap' : ''}`}>
+            <PageHeader eyebrow="Community" title={SPACE_TITLE}
+              subtitle={<>{SPACE_PURPOSE}{pins.length > 0 && <span className="spr-counts">{pinned.length + looseBookables.length} on the map of {communityName}</span>}</>}
+              actions={headerActions} />
+          </div>
+          <SpaceBar on="map" views={views}
+            search={mapUrl && !editing ? { value: query, onChange: setQuery, placeholder: 'Find a place', label: 'Find a place on the map' } : undefined}
+            filter={mapUrl && !editing && kindsHere.length > 1 ? {
+              label: 'Filter the map',
+              groups: [{
+                legend: 'Kind',
+                options: [{ value: null, label: 'All', count: pinned.length + looseBookables.length }, ...kindsHere.map(k => ({ value: k, label: KIND_META[k].label, count: count(k) }))],
+                value: kind,
+                onPick: v => setKind(v as PlaceKind | null),
+              }],
+              onClear: () => setKind(null),
+            } : undefined} />
+        </>
+      ) : (
+        <>
+          <PageHeader
+            eyebrow="Community"
+            title={`Map of ${communityName}`}
+            subtitle="Where everything is on the land. Tap a pin to see what it is, who looks after it and what you can book there."
+            actions={headerActions}
+          />
+          <SpaceTabs on="map" />
+        </>
+      )}
 
       {!mapUrl ? (
         <EmptyState icon="map" title="No map yet"
@@ -190,7 +225,7 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
           action={role === 'admin' ? { href: '/admin/bookings', label: 'Open Bookings' } : undefined} />
       ) : (
         <>
-          {!editing && kindsHere.length > 1 && (
+          {!DESIGN_REVIEW && !editing && kindsHere.length > 1 && (
             <div className="v4-toolbar v4-mapfilter">
               <ChipRow>
                 <Chip on={kind === null} onClick={() => setKind(null)}>All</Chip>
@@ -214,7 +249,7 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
                     const on = p.map_x != null
                     return (
                       <ListRow key={p.id}
-                        lead={<IconTile name={KIND_META[p.kind].icon} tone={on ? KIND_META[p.kind].tone : 'grey'} />}
+                        lead={<IconTile name={KIND_META[p.kind].icon} tone={on ? KIND_META[p.kind].tone : 'grey'} off={!on} />}
                         title={p.name}
                         meta={[KIND_META[p.kind].label, on ? null : 'not on the map', p.photo_url ? null : 'no photo'].filter(Boolean).join(' · ')}
                         trail={<>
@@ -227,6 +262,8 @@ export default function MapV4({ communityName, mapUrl, initialPlaces, bookables,
                 </List>
               </div>
             </>
+          ) : pins.length === 0 && q ? (
+            <EmptyState icon="search" title="No place by that name" text="Try another word, or clear the search." />
           ) : pins.length === 0 ? (
             <EmptyState icon="map" title="Nothing on the map yet"
               text={canAdd ? 'Add the houses, gardens, spaces and meeting spots with “Edit places”.' : 'Admins and circle leads put the places on the map.'} />

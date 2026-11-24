@@ -88,7 +88,7 @@ export default function AppShell({ children, role, isLoggedIn = false, menu = nu
 
       <AssistantChat isLoggedIn={isLoggedIn} />
 
-      {menu && <TabBarV4 newcomer={menu.journey !== 2} menuOpen={mobileNavOpen} onMenu={() => setMobileNavOpen(o => !o)} />}
+      {menu && <TabBarV4 newcomer={menu.journey !== 2} signedIn={isLoggedIn} menuOpen={mobileNavOpen} onMenu={() => setMobileNavOpen(o => !o)} />}
 
       {mobileNavOpen && (
         <div

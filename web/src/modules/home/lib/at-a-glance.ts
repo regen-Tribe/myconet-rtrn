@@ -5,6 +5,7 @@
  */
 
 import type { IconName } from '@/core/components/v4/icons'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 
 export interface GlanceTile {
   icon: IconName
@@ -15,7 +16,7 @@ export interface GlanceTile {
 
 const TILES: { icon: IconName; label: string; keys: string[]; href?: string }[] = [
   { icon: 'sprout', label: 'What we are',       keys: ['community_type', 'mission_statement', 'vision_statement'] },
-  { icon: 'spark', label: 'Why we exist',      keys: ['purpose', 'why_world', 'dream_origin'] },
+  { icon: DESIGN_REVIEW ? 'heart' : 'spark', label: 'Why we exist',      keys: ['purpose', 'why_world', 'dream_origin'] },
   { icon: 'pin', label: 'Where',             keys: ['location_setting', 'sites_considered', 'project_country'] },
   { icon: 'home', label: 'Land & homes',      keys: ['community_size', 'planned_homes', 'density_target'] },
   { icon: 'bowl', label: 'Food',              keys: ['food_systems', 'c_food_note'] },
