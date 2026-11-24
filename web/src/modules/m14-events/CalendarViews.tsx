@@ -9,26 +9,15 @@ import {
   DAY_LABELS, WEEK_LABELS, addDays, dayKey, fmtDayLong, fmtEventWhen, fmtTime, groupByDay, isPast,
   monthGrid, sameDay, startOfDay, weekDays,
 } from './lib/calendar'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { EventCard } from './CalendarReview'
 import { Icon, StatusPill, InlineIcon } from '@/core/components/v4'
 
 const V4 = DESIGN === 'v4'
 
-/** An event takes its calendar's colour (Daily, Core, Community, Tasks); categories show as a dot */
-export function eventColor(e: CalendarEvent): string {
-  return KIND_META[e.kind]?.color ?? 'var(--m14)'
-}
-
-/** A steady colour per category name ("Food" is always the same colour); none clash with the calendars' */
-const CATEGORY_COLORS = ['#d97706', '#0284c7', '#7c3aed', '#ca8a04', '#0d9488', '#9333ea']
-export function categoryColor(category: string): string {
-  const known: Record<string, string> = { food: '#d97706', movement: '#0284c7', 'focus hours': '#7c3aed', focus: '#7c3aed' }
-  const key = category.trim().toLowerCase()
-  if (known[key]) return known[key]
-  let h = 0
-  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0
-  return CATEGORY_COLORS[h % CATEGORY_COLORS.length]
-}
+// Moved to lib/colors.ts so the design-review cards can share them; re-exported for the existing imports
+export { eventColor, categoryColor } from './lib/colors'
+import { eventColor, categoryColor } from './lib/colors'
 
 function EventChip({ event, onOpen, showTime = true }: { event: CalendarEvent; onOpen: (id: string) => void; showTime?: boolean }) {
   const color = eventColor(event)
@@ -36,7 +25,7 @@ function EventChip({ event, onOpen, showTime = true }: { event: CalendarEvent; o
     <button
       onClick={ev => { ev.stopPropagation(); onOpen(event.id) }}
       title={`${event.title} · ${fmtEventWhen(event)}`}
-      className="ev-chip"
+      className={`ev-chip ev-chip--${event.kind}`}
       style={{
         display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
         fontSize: 11, lineHeight: 1.3, fontWeight: 600, color,
@@ -45,7 +34,8 @@ function EventChip({ event, onOpen, showTime = true }: { event: CalendarEvent; o
         padding: '2px 5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}
     >
-      {event.category && <span aria-hidden style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: categoryColor(event.category), marginRight: 4, verticalAlign: 1 }} />}
+      {event.category && <span aria-hidden className="ev-catdot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: categoryColor(event.category), marginRight: 4, verticalAlign: 1 }} />}
+      {DESIGN_REVIEW && event.circle && <CircleSeal slug={event.circle} size={12} className="ev-seal" />}
       {showTime && !event.all_day && <span style={{ fontWeight: 500, opacity: 0.8 }}>{fmtTime(event.starts_at)} </span>}
       {event.title}
     </button>
@@ -108,7 +98,7 @@ export function MonthView({ anchor, events, now, onOpen, onPickDay }: {
               {list.length > 0 && (
                 <div className="ev-dots" style={{ gap: 3, flexWrap: 'wrap' }}>
                   {list.slice(0, 4).map(e => (
-                    <span key={e.id} style={{ width: 6, height: 6, borderRadius: '50%', background: eventColor(e), opacity: isPast(e, now) ? 0.5 : 1 }} />
+                    <span key={e.id} className="ev-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: eventColor(e), opacity: isPast(e, now) ? 0.5 : 1 }} />
                   ))}
                 </div>
               )}
@@ -264,6 +254,7 @@ function WeekGrid({ anchor, events, now, onOpen }: {
                       key={e.id}
                       onClick={() => onOpen(e.id)}
                       title={`${e.title} · ${fmtEventWhen(e)}`}
+                      className={`ev-block ev-block--${e.kind}`}
                       style={{
                         position: 'absolute', top, height, left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)`,
                         textAlign: 'left', cursor: 'pointer', overflow: 'hidden', zIndex: 1,
@@ -273,10 +264,11 @@ function WeekGrid({ anchor, events, now, onOpen }: {
                       }}
                     >
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2, overflowWrap: 'anywhere' }}>
-                        {e.category && <span aria-hidden style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: categoryColor(e.category), marginRight: 3, verticalAlign: 1 }} />}
+                        {e.category && <span aria-hidden className="ev-catdot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: categoryColor(e.category), marginRight: 3, verticalAlign: 1 }} />}
+                        {DESIGN_REVIEW && e.circle && cols <= 2 && <CircleSeal slug={e.circle} size={12} className="ev-seal" />}
                         {e.title}
                       </div>
-                      {height >= 30 && <div style={{ fontSize: 10, color, fontWeight: 600, lineHeight: 1.2 }}>{fmtTime(e.starts_at)}{e.ends_at ? ` – ${fmtTime(e.ends_at)}` : ''}</div>}
+                      {height >= 30 && <div className="ev-block__time" style={{ fontSize: 10, color, fontWeight: 600, lineHeight: 1.2 }}>{fmtTime(e.starts_at)}{e.ends_at ? ` – ${fmtTime(e.ends_at)}` : ''}</div>}
                       {height >= 52 && e.location && <div style={{ fontSize: 10, color: 'var(--ink-3)', lineHeight: 1.2 }}><InlineIcon name="pin" />{e.location}</div>}
                     </button>
                   )
@@ -327,13 +319,14 @@ function WeekCards({ anchor, events, now, onOpen }: {
                   <button
                     key={e.id}
                     onClick={() => onOpen(e.id)}
+                    className={`ev-wcard ev-wcard--${e.kind}`}
                     style={{
                       textAlign: 'left', cursor: 'pointer', border: 'none', borderLeft: `3px solid ${color}`,
                       background: `color-mix(in srgb, ${color} 9%, var(--surface))`, borderRadius: 6, padding: '6px 8px',
                       opacity: isPast(e, now) ? 0.6 : 1,
                     }}
                   >
-                    <div style={{ fontSize: 10.5, fontWeight: 600, color }}>
+                    <div className="ev-wcard__time" style={{ fontSize: 10.5, fontWeight: 600, color }}>
                       {e.all_day ? 'All day' : fmtTime(e.starts_at)}
                     </div>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{e.title}</div>
@@ -359,6 +352,8 @@ function EventRow({ event: e, rsvps, userId, onOpen, dim = false }: {
   const color = eventColor(e)
   const going = rsvps.filter(r => r.event_id === e.id && r.status === 'going').length
   const mine = userId ? rsvps.find(r => r.event_id === e.id && r.user_id === userId) : null
+  // The design review: a neutral card (CalendarReview.tsx)
+  if (DESIGN_REVIEW) return <EventCard event={e} rsvps={rsvps} userId={userId} onOpen={onOpen} dim={dim} />
   // The v4 look: the same facts as a soft row (time, title, where, circle, who's going, your answer)
   if (V4) {
     return (

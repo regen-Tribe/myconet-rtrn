@@ -1,5 +1,6 @@
 'use client'
 
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
 import { DraftSwipe } from '@/modules/m07-ops/DraftSwipe'
 import { DecisionList } from '@/modules/m07-ops/DecisionList'
 import type { DecisionRow } from '@/modules/m07-ops/lib/decisions'
@@ -12,8 +13,8 @@ import { fmtTaskWhen, taskDate } from '@/core/lib/tasks'
 import NotesText from './NotesText'
 import SummaryCards from './SummaryCards'
 import type { Meeting } from './types'
-import { DESIGN } from '@/core/lib/instance'
-import { Button, Icon, Tag, InlineIcon } from '@/core/components/v4'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { Button, Icon, Tag, InlineIcon, Result } from '@/core/components/v4'
 import './meetings-v4.css'
 import { withoutDate } from './lib/title'
 
@@ -30,6 +31,7 @@ const btn = (primary = false): React.CSSProperties => ({
 })
 // A date-only meeting_date is a local day: "2026-11-18" read as UTC showed Nov 17 west of Greenwich
 const fmtDay = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? taskDate(iso) : new Date(iso)).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const ago = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 /** The leads' bar: circle, Circle only, run the pipeline, confirm drafts, email again */
@@ -98,7 +100,7 @@ function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn, teams = null 
       </li>
     )
     const tasksStatus = m.processed_at
-      ? `${onBoard} on the board${drafts ? ` · ${drafts} to confirm` : ''}`
+      ? `${onBoard} on the board${drafts ? ` · ${drafts} ${DESIGN_REVIEW ? `draft${drafts === 1 ? '' : 's'} to confirm` : 'to confirm'}` : ''}`
       : m.needs_review ? 'Nothing on the board yet' : 'The assistant hasn’t read it yet'
     return (
       <section className="v4-card mt4-lead" aria-label="For leads">
@@ -112,7 +114,7 @@ function LeadBar({ m, drafts, onBoard = 0, emailOn, secondBrainOn, teams = null 
               <div className="mt4-step__row">
                 <select className="v4-select" value={circle} onChange={e => pickCircle(e.target.value)} aria-label="Circle">
                   <option value="">No circle yet</option>
-                  {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).label}</option>)}
+                  {circles.slugs.map(c => <option key={c} value={c}>{DESIGN_REVIEW ? cap(circles.meta(c).label) : circles.meta(c).label}</option>)}
                 </select>
                 {teams && circleTeams.length > 0 && (
                   <select className="v4-select" value={team} onChange={e => setTeam(e.target.value)} aria-label="Subcircle">
@@ -225,14 +227,14 @@ function DocTabs({ m, brainNote }: { m: Meeting; brainNote: string | null }) {
   if (f.outline) tabs.push({ key: 'outline', label: 'Outline', body: <NotesText text={f.outline} /> })
   if (f.bullet_gist || f.shorthand_bullet) tabs.push({
     key: 'bullets', label: 'Bullet points',
-    body: <>{f.bullet_gist && <NotesText text={f.bullet_gist} />}{f.bullet_gist && f.shorthand_bullet && <hr style={{ border: 0, borderTop: '1px solid var(--rule)', margin: '14px 0' }} />}{f.shorthand_bullet && <NotesText text={f.shorthand_bullet} />}</>,
+    body: <>{f.bullet_gist && <NotesText text={f.bullet_gist} />}{f.bullet_gist && f.shorthand_bullet && <hr style={DESIGN_REVIEW ? { border: 0, margin: '10px 0' } : { border: 0, borderTop: '1px solid var(--rule)', margin: '14px 0' }} />}{f.shorthand_bullet && <NotesText text={f.shorthand_bullet} />}</>,
   })
   if (f.topics?.length || f.keywords?.length) tabs.push({
     key: 'topics', label: 'Topics & keywords',
     body: <>{[['Topics discussed', f.topics], ['Keywords', f.keywords]].filter(([, v]) => (v as string[] | undefined)?.length).map(([label, v]) => (
       <div key={label as string} style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>{label as string}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(v as string[]).map(x => <span key={x} style={chip}>{x}</span>)}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(v as string[]).map(x => DESIGN_REVIEW ? <span key={x} className="v4-tag">{x}</span> : <span key={x} style={chip}>{x}</span>)}</div>
       </div>
     ))}</>,
   })
@@ -248,6 +250,20 @@ function DocTabs({ m, brainNote }: { m: Meeting; brainNote: string | null }) {
   const [open, setOpen] = useState<string | null>(tabs[0] && tabs[0].key !== 'transcript' ? tabs[0].key : null)
   if (!tabs.length) return null
   const current = tabs.find(t => t.key === open)
+  // Design review (#13, #31, #37): a section heading like the others, tabs with the one soft fill (chosen = black),
+  // the open document a white card on the page, and topics as tags
+  if (DESIGN_REVIEW) return (
+    <div className="mt4-o-docs">
+      <div className="v4-sec"><h2>Meeting documents</h2></div>
+      <div role="tablist" className="mt4-doctabs">
+        {tabs.map(t => (
+          <button key={t.key} type="button" role="tab" aria-selected={open === t.key} className={`v4-chip${open === t.key ? ' v4-chip--on' : ''}`}
+            onClick={() => setOpen(o => (o === t.key ? null : t.key))}>{t.label}</button>
+        ))}
+      </div>
+      {current && <div role="tabpanel" className="v4-card mt4-doc">{current.body}</div>}
+    </div>
+  )
   return (
     <>
       <div style={sectionStyle}>Meeting documents</div>
@@ -276,6 +292,8 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
   const meta = m.circle && circles.has(m.circle) ? circles.meta(m.circle) : null
   const tasks = loaded
   const drafts = tasks.filter(t => t.needs_review).length
+  // The drafts this person can confirm (decision #45: leads for their circles, admins for all)
+  const myDrafts = tasks.filter(t => t.needs_review && t.can_decide).length
   const canDecide = (c: string) => decider?.role === 'admin' || (decider?.role === 'circle_lead' && decider.leadCircles.includes(c))
 
   const byPerson: Record<string, string[]> = {}
@@ -283,21 +301,32 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
 
   if (V4) {
     const notice = !canManage && m.needs_review ? (
-      <div className="v4-card v4-note"><Icon name="clock" /><span>The assistant wasn’t sure this is a community meeting, so a lead is checking it before anything goes on the board.</span></div>
+      <div className={`v4-card v4-note${DESIGN_REVIEW ? ' mt4-wait' : ''}`}><Icon name="clock" /><span>The assistant wasn’t sure this is a community meeting, so a lead is checking it before anything goes on the board.</span></div>
     ) : null
     return (
       <div className="v4-page v4-page--wide mt4">
-        <div className="mt4-back">
-          <Link href="/meetings" className="v4-back"><Icon name="left" size={14} />Meetings</Link>
-          {meta && <Link href={`/meetings?circle=${m.circle}`} className="v4-back">{meta.label} meetings</Link>}
-        </div>
+        {/* Design review (#41): the top bar has ‹ Meetings; the circle's meetings are one tap on its tag */}
+        {!DESIGN_REVIEW && (
+          <div className="mt4-back">
+            <Link href="/meetings" className="v4-back"><Icon name="left" size={14} />Meetings</Link>
+            {meta && <Link href={`/meetings?circle=${m.circle}`} className="v4-back">{meta.label} meetings</Link>}
+          </div>
+        )}
         <header className="v4-ph">
           <div className="v4-tags mt4-tags">
-            {meta ? <span className="mt4-ctag" style={{ ['--c' as string]: meta.color }}><i className="mt4-dot" aria-hidden />{meta.label.charAt(0).toUpperCase() + meta.label.slice(1)}{m.circle_source === 'agent' ? <span className="mt4-by"> · chosen by the assistant</span> : null}</span>
+            {meta && DESIGN_REVIEW ? (
+              <Link href={`/meetings?circle=${m.circle}`} className="mt4-ctag mt4-ctag--seal mt4-ctag--link no-min-height" title={`All ${cap(meta.label)} meetings`}>
+                <CircleSeal slug={m.circle} size={16} />{cap(meta.label)}{m.circle_source === 'agent' ? <span className="mt4-by"> · chosen by the assistant</span> : null}
+              </Link>
+            ) : meta ? <span className={`mt4-ctag${DESIGN_REVIEW ? ' mt4-ctag--seal' : ''}`} style={{ ['--c' as string]: meta.color }}>{DESIGN_REVIEW ? <CircleSeal slug={m.circle} size={16} /> : <i className="mt4-dot" aria-hidden />}{meta.label.charAt(0).toUpperCase() + meta.label.slice(1)}{m.circle_source === 'agent' ? <span className="mt4-by"> · chosen by the assistant</span> : null}</span>
               : m.processed_at ? <Tag>Community-wide</Tag> : null}
             <Tag icon="calendar">{fmtDay(m.meeting_date ?? m.created_at)}</Tag>
             {m.attendees.length > 0 && <span className="v4-tag" title={m.attendees.join(', ')}><Icon name="users" size={13} />{m.attendees.length} {m.attendees.length === 1 ? 'person' : 'people'}</span>}
             {m.visibility === 'circle' && <Tag icon="lock">Circle only</Tag>}
+            {DESIGN_REVIEW && myDrafts > 0 && (
+              // Waiting on you (#34, #45): yellow, and one tap to the drafts
+              <a href="#mt4-tasks" className="v4-result v4-result--attention mt4-draftlink no-min-height"><Icon name="alert" size={12} />{myDrafts} draft{myDrafts === 1 ? '' : 's'} to confirm</a>
+            )}
           </div>
           <h1 className="v4-ph__title">{withoutDate(m.title)}</h1>
           {m.original_title && withoutDate(m.original_title) !== withoutDate(m.title) && <p className="v4-ph__sub">Recorded as “{m.original_title}”</p>}
@@ -308,21 +337,28 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
         {m.status === 'error' && <div className="v4-card v4-note"><Icon name="alert" /><span>This recording couldn’t be transcribed.{m.error ? ` (${m.error})` : ''}</span></div>}
 
         <div className="mt4-split">
-          <div>
+          <div className="mt4-main">
             {notice}
             {m.status === 'done' && (
               <>
-                {m.summary && <div className="v4-card mt4-sumcard"><h2 className="mt4-h">Summary</h2><SummaryCards text={m.summary} accent={meta?.color} /></div>}
+                {m.summary && <div className="v4-card mt4-sumcard"><h2 className="mt4-h">Summary</h2><SummaryCards text={m.summary} accent={DESIGN_REVIEW ? undefined : meta?.color} /></div>}
 
-                <div className="v4-sec"><h2>Action items{drafts ? ` · ${drafts} to confirm` : ''}</h2><span className="v4-hint">They become tasks on the board</span></div>
+                <div className="mt4-o-tasks">
+                {DESIGN_REVIEW ? (
+                  // Design review (#45, LEXICON): these are tasks; the ones waiting are drafts, counted for those who confirm them
+                  <div className="v4-sec" id="mt4-tasks"><h2>Tasks</h2>{myDrafts > 0 ? <Result tone="attention">{myDrafts} draft{myDrafts === 1 ? '' : 's'} to confirm</Result> : tasks.length > 0 ? <span className="v4-hint">On the board</span> : null}</div>
+                ) : (
+                  <div className="v4-sec"><h2>Action items{drafts ? ` · ${drafts} to confirm` : ''}</h2><span className="v4-hint">They become tasks on the board</span></div>
+                )}
                 {tasks.length === 0 ? (
                   <p className="v4-hint">{m.processed_at ? 'No tasks came out of this meeting.' : m.needs_review ? 'Nothing on the board: this meeting is waiting for a lead.' : 'The assistant hasn’t read this meeting yet.'}</p>
                 ) : (
                   <DecisionList rows={tasks} options={taskOptions} canDecide={canDecide} />
                 )}
+                </div>
 
                 {Object.keys(byPerson).length > 0 && (
-                  <details className="v4-card mt4-ff">
+                  <details className="v4-card mt4-ff mt4-o-ff">
                     <summary>Action items as Fireflies wrote them</summary>
                     {Object.entries(byPerson).map(([person, items]) => (
                       <div key={person} className="mt4-ffp">
@@ -338,12 +374,15 @@ export default function MeetingDetail({ meeting: m, tasks: loaded, taskOptions =
             )}
           </div>
 
-          <div>
-            {canManage && <LeadBar m={m} drafts={drafts} onBoard={tasks.length} emailOn={emailOn} secondBrainOn={secondBrainOn} teams={teams} />}
+          <div className="mt4-side">
+            {/* Design review (#45): the drafts this person can confirm, so a lead of another circle gets no Confirm all */}
+            {canManage && <LeadBar m={m} drafts={DESIGN_REVIEW ? myDrafts : drafts} onBoard={tasks.length} emailOn={emailOn} secondBrainOn={secondBrainOn} teams={teams} />}
+            <div className="mt4-o-files">
             <div className="v4-sec"><h2>Files</h2></div>
             <div className="v4-list">
               <div className="v4-row"><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name="file" /></span></span><span className="v4-row__main"><b>Meeting notes</b><small>{m.visibility === 'circle' ? 'This circle can read' : 'Members can read'}</small></span></div>
               <div className={`v4-row${m.transcript ? '' : ' mt4-off'}`}><span className="v4-row__lead"><span className="v4-tile v4-tile--grey"><Icon name={m.transcript ? 'mic' : 'lock'} /></span></span><span className="v4-row__main"><b>Transcript</b><small>{m.transcript ? 'You can read it (in the documents)' : 'Only circle leads and admins'}</small></span></div>
+            </div>
             </div>
             {m.notes_url && !canManage && (
               <a href={m.notes_url} target="_blank" rel="noreferrer" className="mt4-brain"><Icon name="brain" size={15} /><span>Saved in the second brain</span><Icon name="right" size={14} /></a>

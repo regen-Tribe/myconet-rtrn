@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon, type IconName } from './index'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 
 /**
  * A picture of the land with pins on it (v4.70.0; the Amenities map's engine since v4.44.0, now shared by
@@ -205,9 +206,9 @@ export default function SiteMap({ url, alt = 'Map of the land', pins, renderCard
         )}
 
         <div className="v4-map__zoom" role="group" aria-label="Zoom the map">
-          <button type="button" onClick={() => zoomAt(1.5)} disabled={view.s >= MAX} aria-label="Zoom in"><Icon name="plus" size={16} /></button>
-          <button type="button" onClick={() => zoomAt(1 / 1.5)} disabled={view.s <= MIN} aria-label="Zoom out"><span aria-hidden>−</span></button>
-          {view.s > 1 && <button type="button" onClick={() => { setView({ s: 1, x: 0, y: 0 }); setPicked(null) }} aria-label="Show the whole map"><Icon name="undo" size={15} /></button>}
+          <button type="button" onClick={() => zoomAt(1.5)} disabled={view.s >= MAX} aria-label="Zoom in"><Icon name={DESIGN_REVIEW ? 'zoom-in' : 'plus'} size={16} /></button>
+          <button type="button" onClick={() => zoomAt(1 / 1.5)} disabled={view.s <= MIN} aria-label="Zoom out">{DESIGN_REVIEW ? <Icon name="zoom-out" size={16} /> : <span aria-hidden>−</span>}</button>
+          {view.s > 1 && <button type="button" onClick={() => { setView({ s: 1, x: 0, y: 0 }); setPicked(null) }} aria-label="Show the whole map"><Icon name={DESIGN_REVIEW ? 'map' : 'undo'} size={15} /></button>}
         </div>
         {placing && <div className="v4-map__hint">Click where {placing.name} is</div>}
       </div>

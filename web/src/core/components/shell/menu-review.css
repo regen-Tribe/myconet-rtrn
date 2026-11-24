@@ -1,0 +1,73 @@
+/* The menu's design-review parts (instance/design/ux-review-2026-11-22.html › Onboarding & orientation).
+   Only under html[data-review] ("designReview": true). Breakpoints: 640 / 960 / 1280 only. */
+
+/* The join path on the next step: three marks, each with its name; done ones filled */
+html[data-review] .mv4-path { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 7px 0 3px; }
+html[data-review] .mv4-path > span { display: grid; gap: 4px; font-size: 11px; line-height: 1.2; opacity: .75; }
+html[data-review] .mv4-path > span.on { opacity: 1; font-weight: 600; }
+html[data-review] .mv4-path i { display: block; height: 4px; border-radius: 4px; background: color-mix(in srgb, currentColor 22%, transparent); }
+html[data-review] .mv4-path > span.on i { background: currentColor; }
+
+/* A locked item: a button that opens a one-line note with the way to Join (hover shows the same words as a title,
+   so the menu doesn't jump while the pointer passes over it) */
+html[data-review] .mv4-lock { display: grid; }
+html[data-review] .mv4-lock > .mv4-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+html[data-review] .mv4-lock > .mv4-item:hover, html[data-review] .mv4-lock.open > .mv4-item { background: var(--bg-2, #f6f7fa); }
+html[data-review] .mv4-lockwhy { display: none; margin: 0 10px 6px 40px; font-size: 11px; line-height: 1.4; color: var(--ink-3, #6b7180); }
+html[data-review] .mv4-lockwhy a { color: var(--ink, #111317); font-weight: 600; white-space: nowrap; }
+html[data-review] .mv4-lock.open .mv4-lockwhy { display: block; }
+
+/* ─── Phones: the menu is a sheet that rises from the Menu tab (decision #84) ─────────────────────────
+   It opens above the tab bar, where your thumb already is, and lists only what isn't a tab. Close it with
+   the Menu tab again, by pulling it down from the top, by tapping above it, or with Escape. Computers keep the
+   side menu. (768 is the shell's own phone width: the drawer and tab bar switch there.) */
+.mv4-handle { display: none; }
+@media (max-width: 768px) {
+  html[data-review] .app-shell-sidenav.menu-v4 {
+    top: auto !important; left: 0 !important; right: 0 !important; bottom: var(--tabbar-h) !important;
+    width: auto !important; height: auto !important; max-height: calc(100dvh - var(--tabbar-h) - 64px) !important;
+    border-right: 0; border-radius: 22px 22px 0 0; padding: 4px 12px 12px; outline: none;
+    transform: translateY(calc(100% + var(--tabbar-h)));
+    transition: transform 260ms cubic-bezier(.2, .8, .2, 1);
+    box-shadow: 0 -14px 36px -16px rgba(17, 19, 23, .32) !important;
+  }
+  html[data-review] .app-shell-sidenav.menu-v4.mobile-open { transform: none; }
+  html[data-review] .menu-v4 .mv4-handle { display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--ctl, #e3e8f4); margin: 6px auto 8px; }
+  /* In the sheet the top row scrolls with it, and the Menu tab closes it, so no × */
+  html[data-review] .menu-v4 .mv4-top { position: static; margin-top: 0; padding-top: 0; }
+  html[data-review] .shell-v4 .menu-v4 .mv4-close { display: none; }
+  /* What the tab bar already shows isn't listed again; a group left empty goes too */
+  html[data-review] .menu-v4 .mv4-in-tabs { display: none !important; }
+  html[data-review] .menu-v4 .mv4-group:not(:has(.mv4-item:not(.mv4-in-tabs))) { display: none; }
+  /* The shade covers the page and its top bar, not the tab bar (the Menu tab stays tappable) */
+  /* The assistant's round button would sit on top of the sheet */
+  html[data-review] body:has(.menu-v4.mobile-open) .assistant-dot { display: none !important; }
+  html[data-review] .mobile-nav-backdrop { display: block; top: 0 !important; bottom: var(--tabbar-h) !important; background: rgba(17, 19, 23, .32) !important; backdrop-filter: none !important; }
+}
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  html[data-review] .app-shell-sidenav.menu-v4 { transition: none; }
+}
+
+/* ─── Phones: a calmer tab bar (decision #85) ───────────────────────────────────────────────────────────
+   No rule line or bold labels: a soft shadow, grey icons and names, and the page you're on in ink with a soft
+   pill behind its icon. Each tab is at least 48px tall. */
+@media (max-width: 768px) {
+  html[data-review][data-design="v4"] { --tabbar-h: 62px; }
+  html[data-review] .v4-tabbar {
+    border-top: 0; gap: 2px; padding: 6px 8px calc(4px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--surface, #fff) 94%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px);
+    box-shadow: 0 -1px 0 var(--rule-soft, rgba(17, 19, 23, .07)), 0 -10px 24px -20px rgba(17, 19, 23, .35);
+  }
+  html[data-review] .v4-tab {
+    flex: 1; min-width: 0; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 2px 0; border: 0; background: none; cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent;
+    font-family: inherit; font-size: 11px; font-weight: 500; line-height: 1.2; color: var(--ink-3, #6b7180);
+  }
+  html[data-review] .v4-tab > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  html[data-review] .v4-tab__ic { display: grid; place-items: center; width: 54px; height: 30px; border-radius: 999px; transition: background-color .15s; }
+  html[data-review] .v4-tab--on { color: var(--ink, #111317); font-weight: 600; }
+  html[data-review] .v4-tab--on .v4-tab__ic { background: var(--ctl, #e3e8f4); }
+  html[data-review] .v4-tab:focus-visible { outline: 0; }
+  html[data-review] .v4-tab:focus-visible .v4-tab__ic { box-shadow: 0 0 0 2px var(--ink, #111317); }
+}

@@ -130,7 +130,8 @@ export default async function ProjectDetailPage({ params, searchParams }: {
       project={project}
       updates={(updatesRes.data ?? []) as unknown as ProjectUpdate[]}
       pendingProposals={(pendingProposalsRes.data ?? []) as unknown as CollaborationAgreement[]}
-      deliverables={(deliverablesRes.data ?? []) as unknown as import('@/modules/m07-ops/types').Deliverable[]}
+      // Visitors don't see who a task is assigned to (decision #73)
+      deliverables={((deliverablesRes.data ?? []) as any[]).map(d => (user ? d : { ...d, assignee_id: null, assignee_name: null, user_profiles: null })) as unknown as import('@/modules/m07-ops/types').Deliverable[]}
       myProposal={myProposal}
       userId={userId}
       userRole={userRole}

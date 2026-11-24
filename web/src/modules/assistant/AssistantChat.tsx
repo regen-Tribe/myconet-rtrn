@@ -312,7 +312,7 @@ export default function AssistantChat({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
         ))}
         {error && (
-          <div style={{ fontSize: 12.5, color: '#b91c1c', background: '#b91c1c12', border: '1px solid #b91c1c40', borderRadius: 10, padding: '8px 10px' }}>
+          <div style={{ fontSize: 12.5, color: 'var(--rv-bad, #b91c1c)', background: 'var(--rv-bad-bg, #b91c1c12)', border: '1px solid var(--rv-bad-line, #b91c1c40)', borderRadius: 10, padding: '8px 10px' }}>
             {error}
             {needLogin && <div style={{ marginTop: 8 }}><Link href="/auth/login" style={{ fontWeight: 700, color: 'var(--accent-color)' }}>Sign in or create an account →</Link></div>}
           </div>

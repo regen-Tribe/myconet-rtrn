@@ -26,14 +26,21 @@ const pick: React.CSSProperties = {
  * and in a meeting's action items. Circle, Subcircle, Part of, Person, Priority, Due and Status, each saved as it
  * changes. Saving confirms a draft. The database checks who may (RLS), so ask only those who may edit the task.
  */
-export function TaskQuickEdit({ task, people, projectOptions, teams, onSaved, ask = true }: {
+export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, onSaved, onTeamAdded, ask = true }: {
   task: EditableTask
   people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[]
   onSaved?: (t: EditableTask) => void
+  /** A subcircle made from the Subcircle picker (v4.127.0), so the other rows can offer it too */
+  onTeamAdded?: (t: TaskTeamOption) => void
   /** "What should the assistant do?" under the fields (v4.107.0) */
   ask?: boolean
 }) {
   const circles = useCircles()
+  // "+ New subcircle…" (v4.127.0: Oscar, "add a new subcircle from the drop downs in drafts to confirm")
+  const [added, setAdded] = useState<TaskTeamOption[]>([])
+  const teams = [...teamsIn, ...added.filter(a => !teamsIn.some(x => x.id === a.id))]
+  const [naming, setNaming] = useState(false)
+  const [subName, setSubName] = useState('')
   const [t, setT] = useState<EditableTask>(task)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -109,7 +116,27 @@ export function TaskQuickEdit({ task, people, projectOptions, teams, onSaved, as
     const next = { ...t, ...(data[0] as Partial<EditableTask>) }
     setT(next); onSaved?.(next)
   }
-  const place = (f: 'circle' | 'team_id' | 'project_id', v: string) => change(placeChange(t, f, v, projectOptions, teams))
+  const place = (f: 'circle' | 'team_id' | 'project_id', v: string, extra: TaskTeamOption[] = []) => change(placeChange(t, f, v, projectOptions, [...teams, ...extra]))
+
+  // A new subcircle of the task's circle, then the task goes in it. Admins and that circle's leads may (the database
+  // checks: "circle leads add teams"), as on the circle's page.
+  async function addSubcircle() {
+    const name = subName.trim()
+    if (!name || !t.circle) return
+    setBusy(true); setError('')
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const order = teams.filter(x => x.circle === t.circle).length + 1
+    const { data, error: e } = await supabase.from('org_units')
+      .insert({ kind: 'team', circle: t.circle, name: name.slice(0, 80), sort_order: order, created_by: user?.id })
+      .select('id, name, circle').single()
+    setBusy(false)
+    if (e || !data) { setError(e?.code === '42501' ? 'Only admins and this circle’s leads can add subcircles.' : e?.message ?? 'The subcircle wasn’t made.'); return }
+    const made = data as TaskTeamOption
+    setAdded(prev => [...prev, made]); onTeamAdded?.(made)
+    setNaming(false); setSubName('')
+    await place('team_id', made.id, [made])
+  }
 
   const circleTeams = teams.filter(x => x.circle === t.circle)
   const options = partOfChoices(t, projectOptions)
@@ -125,9 +152,10 @@ export function TaskQuickEdit({ task, people, projectOptions, teams, onSaved, as
           </select>
         </label>
         <label style={field}><span style={label}>Subcircle</span>
-          <select value={t.team_id ?? ''} onChange={e => place('team_id', e.target.value)} disabled={asking || busy || (!circleTeams.length && !t.team_id)} style={{ ...pick, ...mark('team_id') }}>
-            <option value="">{circleTeams.length ? 'The whole circle' : 'No subcircles'}</option>
+          <select value={naming ? '__new__' : t.team_id ?? ''} onChange={e => { if (e.target.value === '__new__') { setNaming(true); setError('') } else { setNaming(false); place('team_id', e.target.value) } }} disabled={asking || busy || !t.circle} style={{ ...pick, ...mark('team_id') }}>
+            <option value="">{circleTeams.length ? 'The whole circle' : t.circle ? 'The whole circle (no subcircles yet)' : 'Pick a circle first'}</option>
             {circleTeams.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+            {t.circle && <option value="__new__">+ New subcircle…</option>}
           </select>
         </label>
         <label style={field}><span style={label}>Part of</span>
@@ -158,6 +186,15 @@ export function TaskQuickEdit({ task, people, projectOptions, teams, onSaved, as
           </select>
         </label>
       </div>
+      {naming && t.circle && (
+        <form onSubmit={e => { e.preventDefault(); addSubcircle() }} style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>New subcircle of {circles.has(t.circle) ? circles.meta(t.circle).label : t.circle}:</span>
+          <input autoFocus value={subName} onChange={e => setSubName(e.target.value)} maxLength={80} placeholder="Its name, e.g. Bakery"
+            aria-label="New subcircle's name" style={{ ...pick, flex: 1, minWidth: 160, width: 'auto', fontSize: 13 }} />
+          <button type="submit" disabled={busy || !subName.trim()} style={{ fontSize: 12.5, fontWeight: 600, borderRadius: 8, padding: '6px 12px', border: 'none', color: '#fff', background: 'var(--m7)', cursor: 'pointer', opacity: subName.trim() ? 1 : 0.5 }}>{busy ? '…' : 'Add'}</button>
+          <button type="button" onClick={() => { setNaming(false); setSubName('') }} style={{ fontSize: 12.5, fontWeight: 600, borderRadius: 8, padding: '6px 12px', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' }}>Cancel</button>
+        </form>
+      )}
       {ask && (
         <form onSubmit={e => { e.preventDefault(); askAssistant() }} style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           <input value={said} onChange={e => setSaid(e.target.value)} maxLength={2000} disabled={asking}

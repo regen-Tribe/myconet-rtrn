@@ -148,3 +148,106 @@
   .mb4-card__head .mb4-score, .mb4-card__head .mb4-you { margin-left: auto; }
   .mb4-line { height: 26px; font-size: 11.5px; padding: 0 8px; }
 }
+
+/* ═══ Design review: Members shows people first (decision #22, 22 Nov 2026) ═══════════════════════════════
+   Only under html[data-review] (designReview). Title, then one toolbar row (views · search · Filter), then the
+   people; "New this week" under them. Breakpoints 640 / 960 only. Text sizes 11 / 13 / 15 / 18. */
+
+/* The views: a segmented control (selected = black), up to three, the rest in More */
+html[data-review] .mbv { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: var(--ctl, #E3E8F4); flex-shrink: 0; max-width: 100%; }
+html[data-review] .mbv__tab { height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3, #6b7180); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; text-decoration: none; cursor: pointer; }
+html[data-review] .mbv__tab:hover { color: var(--ink, #111317); }
+html[data-review] .mbv__tab.on, html[data-review] .mbv__more--on .mbv__morebtn { background: var(--ink, #111317); color: #fff; }
+html[data-review] .mbv__tab:focus-visible { outline: 2px solid var(--ink, #111317); outline-offset: 2px; }
+html[data-review] .mbv__short, html[data-review] .mbv__item--phone { display: none; }
+html[data-review] .mbv__more { position: relative; }
+html[data-review] .mbv__more--wide-on .mbv__morebtn { background: none; color: var(--ink-3, #6b7180); }
+html[data-review] .mbv__menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 200px; padding: 6px; border-radius: 16px; background: var(--surface, #fff); box-shadow: 0 14px 44px rgba(17,19,23,.18); display: grid; }
+html[data-review] .mbv__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 15px; color: var(--ink, #111317); text-decoration: none; }
+html[data-review] .mbv__item:hover { background: var(--bg-2, #f5f7fd); }
+html[data-review] .mbv__item.on { font-weight: 600; }
+/* On the other Members pages the views sit under the heading, on their own */
+html[data-review] .mbv--page { margin: -6px 0 18px; }
+
+/* One toolbar row */
+html[data-review] .mbr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin: -6px 0 14px; min-width: 0; }
+html[data-review] .mbr-search { flex: 1; min-width: 0; height: 42px; padding: 0 6px 0 14px; border-radius: 999px; }
+html[data-review] .mbr-search input { font-size: 15px; }
+html[data-review] .mbr-iconbtn, html[data-review] .mbr-filterbtn { height: 42px; border: 0; border-radius: 999px; background: var(--ctl, #E3E8F4); color: var(--ink, #111317); font: inherit; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; flex-shrink: 0; }
+html[data-review] .mbr-iconbtn { width: 42px; }
+html[data-review] .mbr-filterbtn { padding: 0 14px 0 12px; }
+html[data-review] .mbr-filterbtn.on, html[data-review] .mbr-iconbtn.on { background: var(--ink, #111317); color: #fff; }
+/* The count on a filled-black Filter button turns white, as on Operations' needs */
+html[data-review] .mbr-filterbtn.on .v4-count { background: #fff; color: var(--ink, #111317); }
+html[data-review] .mbr-searchbtn { display: none; }
+html[data-review] .mbr-clear { border: 0; background: none; padding: 0; font: inherit; color: var(--ink, #111317); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html[data-review] .mbr .mb4-count { font-size: 13px; margin: -4px 0 10px; }
+
+/* Filter: a pop-over under the button; a bottom sheet on phones */
+html[data-review] .mbr-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; width: 340px; max-width: calc(100vw - 32px); max-height: min(560px, 72vh); display: flex; flex-direction: column; border-radius: 20px; background: var(--surface, #fff); box-shadow: 0 14px 44px rgba(17,19,23,.18); }
+html[data-review] .mbr-panel__body { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px; display: grid; gap: 4px; }
+html[data-review] .mbr-panel__foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; flex-shrink: 0; }
+html[data-review] .mbr-panel__foot .v4-btn--quiet:disabled { opacity: .4; cursor: default; }
+html[data-review] .mbr-sec { border: 0; margin: 0; padding: 6px 0; min-width: 0; }
+html[data-review] .mbr-sec + .mbr-sec { margin-top: 8px; }
+html[data-review] .mbr-sec legend { padding: 6px 4px; font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); }
+html[data-review] .mbr-opt { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 2px 8px; border-radius: 10px; font-size: 15px; color: var(--ink, #111317); cursor: pointer; }
+html[data-review] .mbr-opt:hover { background: var(--bg-2, #f5f7fd); }
+html[data-review] .mbr-opt input { width: 18px; height: 18px; margin: 0; accent-color: var(--ink, #111317); flex-shrink: 0; cursor: pointer; }
+html[data-review] .mbr-opt .v4-icon { color: var(--ink-2, #3a3f4a); }
+html[data-review] .mbr-opt__name { flex: 1; min-width: 0; line-height: 1.3; }
+html[data-review] .mbr-opt__n { font-size: 13px; color: var(--ink-4, #9aa0ad); font-variant-numeric: tabular-nums; }
+html[data-review] .mbr-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 4px 6px; }
+html[data-review] .mbr-chip { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--ctl, #E3E8F4); font: inherit; font-size: 13px; color: var(--ink, #111317); cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-review] .mbr-chip.on { background: var(--ink, #111317); color: #fff; }
+html[data-review] .mbr-chip--more { background: none; text-decoration: underline; text-underline-offset: 3px; }
+html[data-review] .mbr-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(17,19,23,.32); }
+html[data-review] .mbr-panel--sheet { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 1001; width: auto; max-width: none; max-height: 82vh; border-radius: 22px 22px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+html[data-review] .mbr-panel__grab { width: 40px; height: 4px; border-radius: 4px; background: var(--rule, #d5d9e2); margin: 8px auto 2px; flex-shrink: 0; }
+html[data-review] .mbr-panel--sheet .mbr-opt { min-height: 44px; }
+html[data-review] .mbr-panel--sheet .mbr-panel__foot .v4-btn--primary { height: 44px; padding: 0 22px; font-size: 15px; }
+
+/* Person cards: photo, name, one line, circle seals. Empty values are left out. */
+html[data-review] .mbr-card { gap: 6px; }
+html[data-review] .mbr-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+html[data-review] .mbr-card .mb4-card__av { width: 44px; height: 44px; font-size: 15px; }
+html[data-review] .mbr-card .mb4-score, html[data-review] .mbr-card .mb4-you { font-size: 11px; }
+html[data-review] .mbr-card__name { font-size: 15px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-review] .mbr-card__line { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--ink-3, #6b7180); }
+html[data-review] .mbr-card__line span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-review] .mbr-card__line em { font-style: normal; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+html[data-review] .mbr-card__line .v4-icon { color: var(--ink-2, #3a3f4a); flex-shrink: 0; }
+html[data-review] .mbr-card__seals { display: flex; align-items: center; gap: 4px; min-width: 0; margin-top: 2px; }
+html[data-review] .mbr-card__seals small { font-size: 11px; color: var(--ink-3, #6b7180); }
+
+/* New this week: a small list under the people */
+html[data-review] .mbr-new { margin-top: 28px; max-width: 560px; }
+html[data-review] .mbr-new h2 { margin: 0 0 8px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+html[data-review] .mbr-new .mb4-lately { gap: 2px; }
+html[data-review] .mbr-new .mb4-lately a { font-size: 13px; padding: 6px 0; }
+html[data-review] .mbr-new .mb4-lately__all summary { font-size: 13px; padding: 6px 0; }
+
+@media (max-width: 960px) {
+  html[data-review] .mbv__long { display: none; }
+  html[data-review] .mbv__short { display: inline; }
+}
+@media (max-width: 640px) {
+  /* Three views (Everyone · Matches · More, Discover inside More), a search button and Filter fit one row */
+  html[data-review] .mbv__tab { padding: 0 12px; }
+  html[data-review] .mbv__tab--wide { display: none; }
+  html[data-review] .mbv__item--phone { display: flex; }
+  html[data-review] .mbv__more--wide-on .mbv__morebtn { background: var(--ink, #111317); color: #fff; }
+  html[data-review] .mbv__more--wide-on .mbv__long { display: none; }
+  html[data-review] .mbv__more--wide-on .mbv__short { display: inline; }
+  html[data-review] .mbr-bar .mbv { margin-right: auto; }
+  html[data-review] .mbr-search { display: none; }
+  html[data-review] .mbr-searchbtn { display: inline-flex; }
+  html[data-review] .mbr-filterbtn { width: auto; padding: 0 10px; }
+  html[data-review] .mbr-filterbtn__txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  /* Searching: the field takes the row */
+  html[data-review] .mbr-bar--searching .mbv, html[data-review] .mbr-bar--searching .mbr-searchbtn { display: none; }
+  html[data-review] .mbr-bar--searching .mbr-search { display: flex; }
+  html[data-review] .mbr-card { padding: 12px; }
+  html[data-review] .mbr-card .mb4-card__av { width: 40px; height: 40px; }
+  html[data-review] .mbr-new { margin-top: 24px; }
+}

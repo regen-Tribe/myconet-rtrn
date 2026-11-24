@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { EmptyState, Icon } from '@/core/components/v4'
 import { CircleFilter, parseCircleParam, setCircleParam } from '@/core/components/v4/CircleFilter'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 import './members-v4.css'
 
 export type MemberCard = {
@@ -12,6 +14,8 @@ export type MemberCard = {
   circles: { slug: string; name: string; color: string }[]; offers: string[]; requests: string[]; you: boolean
   /** Your match % with them (signed in, with your bio filled in); null otherwise */
   score: number | null
+  /** Design review's Filter: the categories of their offers, and their skills (signed in only; [] otherwise) */
+  offerKinds: string[]; skills: string[]
 }
 
 /** Members in the v4 look (Sonia's prototype): everyone as cards, filtered by circle or searched. */
@@ -62,8 +66,9 @@ export default function MembersGridV4({ people, circles, signedIn }: { people: M
                 {p.you ? <span className="mb4-you">you</span> : p.score != null && <span className="mb4-score" title="Your match with them">{p.score}%</span>}
               </div>
               <div className="mb4-circles" title={p.circles.map(c => c.name).join(', ')}>
-                {p.circles.length === 0 ? <span className="mb4-none">No circle yet</span> : <>
-                  {p.circles.slice(0, 2).map(c => <span key={c.slug}><i style={{ background: c.color }} />{c.name}</span>)}
+                {/* Design review: a circle shows as its seal (never a dot in its colour), and an empty value is left out */}
+                {p.circles.length === 0 ? (DESIGN_REVIEW ? null : <span className="mb4-none">No circle yet</span>) : <>
+                  {p.circles.slice(0, 2).map(c => <span key={c.slug}>{DESIGN_REVIEW ? <CircleSeal slug={c.slug} size={16} /> : <i style={{ background: c.color }} />}{c.name}</span>)}
                   {p.circles.length > 2 && <span className="mb4-more">+{p.circles.length - 2}</span>}
                 </>}
               </div>
@@ -82,7 +87,8 @@ export default function MembersGridV4({ people, circles, signedIn }: { people: M
 
 /** One line on a card: the first offer (or request), and how many more. Always there, so cards line up. */
 function Line({ icon, tone, items, empty }: { icon: 'gift' | 'hand'; tone: 'offer' | 'need'; items: string[]; empty: string }) {
-  if (items.length === 0) return <div className="mb4-line mb4-line--empty"><Icon name={icon} size={13} /><span>{empty}</span></div>
+  // Design review: an empty value is left out; the faded icon alone keeps the cards lined up
+  if (items.length === 0) return <div className="mb4-line mb4-line--empty" aria-label={DESIGN_REVIEW ? empty : undefined}><Icon name={icon} size={13} />{!DESIGN_REVIEW && <span>{empty}</span>}</div>
   return (
     <div className={`mb4-line mb4-line--${tone}`} title={items.join(' · ')}>
       <Icon name={icon} size={13} /><span>{items[0]}</span>{items.length > 1 && <em>+{items.length - 1}</em>}

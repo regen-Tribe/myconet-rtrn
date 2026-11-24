@@ -1,7 +1,9 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 import {
   Button, Card, Chip, ChipRow, EmptyState, Icon, IconTile, List, ListRow, PageHeader, SectionHead, StatusPill, Tag,
   type IconName, type Status,
@@ -11,6 +13,8 @@ import { CATEGORY_META, STATUS_META, canManageItem, fmtBookingRange, personName 
 import AmenitiesMap from './AmenitiesMap'
 import { KIND_META, isKind } from '@/modules/m19-map/lib/places'
 import { SpaceTabs } from '@/core/components/SpaceTabs'
+import { tagLabel } from './lib/tag-labels'
+import { PhotoEdit, SPACE_PURPOSE, SPACE_TITLE, SpaceBar, SpaceNote, type FilterGroup, type SpaceView } from './SpaceReview'
 
 /**
  * Amenities & tools and Admin › Bookings in the v4 look (Sonia's prototype, 19 Nov). Same data, rules and
@@ -73,6 +77,8 @@ export type BookingsV4Model = {
 export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals: React.ReactNode }) {
   const [adminView, setAdminView] = useState<'calendar' | 'requests' | 'inventory' | 'map'>(vm.pending.length ? 'requests' : 'calendar')
   const counts = vm.categories.map(c => `${vm.activeItems.filter(i => i.category === c).length} ${CATEGORY_META[c].label.toLowerCase()}`).join(' · ')
+  // The design review (decision #23): heading "The space", one toolbar row, kinds and tags inside Filter
+  if (DESIGN_REVIEW && !vm.admin) return <SpaceReviewPage vm={vm} modals={modals} />
 
   return (
     <div className="v4-page">
@@ -106,9 +112,10 @@ export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals
         </>
       ) : (
         <>
-          {vm.userId && <ChipRow>
+          {/* My bookings opens with booking, at joining member (decision #76) */}
+          {vm.userId && (!DESIGN_REVIEW || vm.canBookHere || vm.isManager) && <ChipRow>
             <Chip on={vm.tab === 'browse'} onClick={() => vm.setTab('browse')}>Browse</Chip>
-            {vm.userId && <Chip on={vm.tab === 'mine'} onClick={() => vm.setTab('mine')} count={vm.myUpcoming.length || undefined}>My bookings</Chip>}
+            {vm.userId && (!DESIGN_REVIEW || vm.canBookHere) && <Chip on={vm.tab === 'mine'} onClick={() => vm.setTab('mine')} count={vm.myUpcoming.length || undefined}>My bookings</Chip>}
             {vm.isManager && <Chip on={vm.tab === 'manage'} onClick={() => vm.setTab('manage')} count={vm.pending.length || undefined}>Manage</Chip>}
           </ChipRow>}
           {vm.tab === 'browse' && <Browse vm={vm} />}
@@ -116,6 +123,87 @@ export default function BookingsV4({ vm, modals }: { vm: BookingsV4Model; modals
           {vm.tab === 'manage' && vm.isManager && <><Requests vm={vm} /><Inventory vm={vm} /></>}
         </>
       )}
+
+      {modals}
+      {vm.toast && <div role="status" className="v4-toast">{vm.toast}</div>}
+    </div>
+  )
+}
+
+/* ─── The space under the design review (decision #23) ───────────── */
+
+/**
+ * Heading "The space" and its purpose line; one row: Places · Map · My bookings, search and Filter; kinds and tags
+ * inside Filter in plain words. Same data, cards and booking flow as the v4 page. No Manage tab (decision #43): whoever
+ * can manage a thing edits it from the Edit button on its photo; requests and the inventory are in Admin › Bookings.
+ */
+function SpaceReviewPage({ vm, modals }: { vm: BookingsV4Model; modals: React.ReactNode }) {
+  const router = useRouter()
+  // An old link to /amenities?tab=manage opens Admin › Bookings, where requests and the inventory now live
+  useEffect(() => { if (vm.tab === 'manage') router.replace('/admin/bookings') }, [vm.tab, router])
+  const kindCount = (c: BookingCategory) => vm.activeItems.filter(i => i.category === c).length + (c === 'spaces' ? vm.around.length : 0)
+  const inKind = (c: BookingCategory | null) => vm.activeItems.filter(i => !c || i.category === c)
+  const on: SpaceView = vm.tab === 'mine' ? 'mine' : 'places'
+  const views: SpaceView[] = vm.userId ? ['places', 'map', 'mine'] : ['places', 'map']
+  const tagCount = (t: string) => inKind(vm.category).filter(i => i.tags.includes(t)).length
+
+  const groups: FilterGroup[] = []
+  if (vm.categories.length > 1) {
+    groups.push({
+      legend: 'Kind',
+      options: [
+        { value: null, label: 'All', count: vm.categories.reduce((n, c) => n + kindCount(c), 0) },
+        ...vm.categories.map(c => ({ value: c, label: CATEGORY_META[c].label, count: kindCount(c) })),
+      ],
+      value: vm.category,
+      onPick: v => {
+        const c = v as BookingCategory | null
+        vm.setCategory(c)
+        // Keep the tag when the new kind still has it
+        if (vm.tag && !inKind(c).some(i => i.tags.includes(vm.tag!))) vm.setTag(null)
+      },
+    })
+  }
+  if (vm.tagsHere.length > 0) {
+    groups.push({
+      legend: 'Tag',
+      options: [
+        { value: null, label: 'Any' },
+        ...[...vm.tagsHere].sort((a, b) => tagLabel(a).localeCompare(tagLabel(b))).map(t => ({ value: t, label: tagLabel(t), count: tagCount(t) })),
+      ],
+      value: vm.tag,
+      onPick: v => vm.setTag(v),
+    })
+  }
+
+  return (
+    <div className="v4-page">
+      <div className="spr-head">
+        <PageHeader
+          eyebrow="Community"
+          title={SPACE_TITLE}
+          subtitle={<>{SPACE_PURPOSE}<span className="spr-counts">{vm.categories.map(c => `${CATEGORY_META[c].label} ${kindCount(c)}`).join(' · ')}</span></>}
+          actions={vm.isManager ? <Button icon="plus" onClick={vm.add}>Add item</Button> : undefined}
+        />
+      </div>
+
+      <SpaceBar
+        on={on}
+        views={views}
+        onPick={{ places: () => vm.setTab('browse'), mine: () => vm.setTab('mine') }}
+        counts={{ mine: vm.myUpcoming.length }}
+        search={vm.tab === 'browse' ? { value: vm.query, onChange: vm.setQuery, placeholder: 'Search places and tools', label: 'Search places and tools' } : undefined}
+        filter={vm.tab === 'browse' && groups.length ? {
+          groups, label: 'Filter places and tools',
+          onClear: () => { vm.setCategory(null); vm.setTag(null) },
+        } : undefined}
+      />
+
+      {vm.tab === 'browse' && !vm.userId && <SpaceNote><Link href="/auth/login">Sign in</Link>&nbsp;to book</SpaceNote>}
+      {vm.tab === 'browse' && vm.userId && !vm.canBookHere && <SpaceNote>Booking opens when you join ·&nbsp;<Link href="/join">Start joining</Link></SpaceNote>}
+
+      {vm.tab === 'browse' && <Browse vm={vm} review />}
+      {vm.tab === 'mine' && vm.userId && <Mine vm={vm} />}
 
       {modals}
       {vm.toast && <div role="status" className="v4-toast">{vm.toast}</div>}
@@ -206,7 +294,7 @@ function GroupCard({ vm, group }: { vm: BookingsV4Model; group: GroupEntry }) {
   )
 }
 
-function Browse({ vm }: { vm: BookingsV4Model }) {
+function Browse({ vm, review = false }: { vm: BookingsV4Model; review?: boolean }) {
   // Places with nothing to book sit under Spaces, after the bookable things
   const q = vm.query.trim().toLowerCase()
   const around = (vm.category === null || vm.category === 'spaces') && !vm.tag
@@ -217,11 +305,16 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
   const real = (e: BrowseEntry) => e.kind === 'group'
     ? e.items.some(i => shownPhoto(i) && !i.photo_drawn)
     : !!shownPhoto(e.item) && !e.item.photo_drawn
+  // Under the review, whoever can manage a thing has an Edit button on its photo (decision #43)
+  const withEdit = (key: string, card: React.ReactNode, items: BookingItem[], label: string) => {
+    const mine = review ? items.filter(vm.canManage) : []
+    return mine.length ? <div key={key} className="spr-cardwrap">{card}<PhotoEdit items={mine} label={label} onEdit={vm.edit} /></div> : card
+  }
   const itemCard = (entry: BrowseEntry) => {
-    if (entry.kind === 'group') return <GroupCard key={entry.key} vm={vm} group={entry} />
+    if (entry.kind === 'group') return withEdit(entry.key, <GroupCard key={entry.key} vm={vm} group={entry} />, entry.items, entry.title)
     const item = entry.item
     const avail = vm.availability(item)
-    return (
+    return withEdit(item.id, (
       <button key={item.id} type="button" className="v4-card v4-card--link v4-item" onClick={() => vm.open(item.id)}>
         <ItemMedia photo={shownPhoto(item)} category={item.category} badge={avail?.text} busy={avail?.text.startsWith('In use')} />
         <span className="v4-item__body">
@@ -230,12 +323,12 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
           {(item.tags.length > 0 || item.requires_approval) && (
             <span className="v4-tags">
               {item.requires_approval && <Tag icon="hand">Needs approval</Tag>}
-              {item.tags.slice(0, 3).map(t => <Tag key={t}>{t}</Tag>)}
+              {item.tags.slice(0, 3).map(t => <Tag key={t}>{DESIGN_REVIEW ? tagLabel(t) : t}</Tag>)}
             </span>
           )}
         </span>
       </button>
-    )
+    ), [item], item.name)
   }
   const placeCard = (p: AroundPlace) => {
     const meta = KIND_META[isKind(p.kind) ? p.kind : 'other']
@@ -256,7 +349,7 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
   }
   return (
     <>
-      <div className="v4-toolbar">
+      {!review && <div className="v4-toolbar">
         {vm.categories.length > 1 && (
           <ChipRow>
             <Chip on={vm.category === null} onClick={() => { vm.setCategory(null); vm.setTag(null) }}>All</Chip>
@@ -272,8 +365,8 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
             <input value={vm.query} onChange={e => vm.setQuery(e.target.value)} placeholder="Search" aria-label="Search the inventory" />
           </label>
         </span>
-      </div>
-      {vm.tagsHere.length > 0 && (
+      </div>}
+      {!review && vm.tagsHere.length > 0 && (
         <div className="v4-tags v4-tags--filter">
           {vm.tagsHere.map(t => (
             <button key={t} type="button" className={`v4-tag${vm.tag === t ? ' v4-tag--on' : ''}`} aria-pressed={vm.tag === t} onClick={() => vm.setTag(vm.tag === t ? null : t)}>{t}</button>
@@ -287,7 +380,7 @@ function Browse({ vm }: { vm: BookingsV4Model }) {
           title={vm.activeItems.length === 0 ? 'The inventory is empty' : 'Nothing matches that filter'}
           text={vm.activeItems.length === 0
             ? vm.isManager ? 'Add the first room, tool or space with “Add item”.' : 'Admins and circle leads add rooms, tools and spaces here.'
-            : 'Try another category or clear the search.'}
+            : DESIGN_REVIEW ? 'Try another kind or tag in Filter, or clear the search.' : 'Try another category or clear the search.'}
         />
       ) : (
         <div className="v4-grid v4-grid--gallery">
@@ -324,7 +417,7 @@ function Mine({ vm }: { vm: BookingsV4Model }) {
     <>
       <SectionHead title="Upcoming" />
       {vm.myUpcoming.length === 0 ? (
-        <EmptyState icon="calendar" title="No upcoming bookings" text="Book a room, a tool or a space from Browse." />
+        <EmptyState icon="calendar" title="No upcoming bookings" text={`Book a room, a tool or a space from ${DESIGN_REVIEW ? 'Places' : 'Browse'}.`} />
       ) : (
         <List>
           {vm.myUpcoming.map(b => (
@@ -381,9 +474,9 @@ function Inventory({ vm }: { vm: BookingsV4Model }) {
             const ci = CATEGORY_ICON[i.category]
             return (
               <ListRow key={i.id}
-                lead={<IconTile name={ci.icon} tone={i.is_active ? ci.tone : 'grey'} />}
+                lead={<IconTile name={ci.icon} tone={i.is_active ? ci.tone : 'grey'} off={!i.is_active} />}
                 title={i.name}
-                meta={[CATEGORY_META[i.category].label, i.is_active ? null : 'Archived', ...i.tags].filter(Boolean).join(' · ')}
+                meta={[CATEGORY_META[i.category].label, i.is_active ? null : 'Archived', ...(DESIGN_REVIEW ? i.tags.map(tagLabel) : i.tags)].filter(Boolean).join(' · ')}
                 trail={<>
                   <Button size="sm" variant="quiet" onClick={() => vm.open(i.id)}>Open</Button>
                   <Button size="sm" variant="secondary" onClick={() => vm.edit(i)}>Edit</Button>
@@ -559,7 +652,7 @@ function MapEditor({ vm }: { vm: BookingsV4Model }) {
             const on = i.map_x != null
             return (
               <ListRow key={i.id}
-                lead={<IconTile name={ci.icon} tone={on ? ci.tone : 'grey'} />}
+                lead={<IconTile name={ci.icon} tone={on ? ci.tone : 'grey'} off={!on} />}
                 title={i.name}
                 meta={on ? 'On the map' : 'Not on the map'}
                 trail={<>

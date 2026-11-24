@@ -10,6 +10,9 @@ import { KIND_META } from './lib/permissions'
 import { categoryColor, eventColor } from './CalendarViews'
 import { ModalShell } from '@/core/components/ModalShell'
 import { EventComments } from './EventComments'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
+import { kindTagStyle } from './CalendarReview'
 
 const sectionLabel: React.CSSProperties = {
   fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -72,7 +75,11 @@ export function EventDetailModal({
   const mine = userId ? rsvps.find(r => r.user_id === userId)?.status ?? null : null
   const creatorName = event.creator?.first_name ?? event.creator?.username ?? 'A member'
 
+  // Without an account, tapping RSVP says how to get one (decision #72)
+  const [askAccount, setAskAccount] = useState(false)
+
   async function rsvp(status: RsvpStatus) {
+    if (!userId) { setAskAccount(true); return }
     setBusy(true)
     await onRsvp(mine === status ? null : status)
     setBusy(false)
@@ -135,6 +142,15 @@ export function EventDetailModal({
   return (
     <ModalShell title={event.title} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {DESIGN_REVIEW ? (
+          // The design review: soft tags; the event type and category keep their colours (#44), a circle shows its seal
+          <div className="evr-tags">
+            {circles.has(event.circle) && <span className="evr-tag"><CircleSeal slug={event.circle} size={16} />{circles.meta(event.circle).label}</span>}
+            <span className="evr-tag evr-tag--kind" style={kindTagStyle(color)} title={kindMeta.blurb}>{kindMeta.label}</span>
+            {event.category && <span className="evr-tag evr-tag--kind" style={kindTagStyle(categoryColor(event.category))}>{event.category}</span>}
+            <span className="evr-tag">{event.is_public ? <><InlineIcon name="globe" />Public</> : <><InlineIcon name="lock" />Members only</>}</span>
+          </div>
+        ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: color, borderRadius: 20, padding: '2px 9px' }}>
             {KIND_META[event.kind].short}
@@ -153,6 +169,7 @@ export function EventDetailModal({
             {event.is_public ? <><InlineIcon name="globe" />Public</> : <><InlineIcon name="lock" />Members only</>}
           </span>
         </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, color: 'var(--ink-2)' }}>
           {timeDraft ? (
@@ -259,6 +276,18 @@ export function EventDetailModal({
               {going.length === 0 && maybe.length === 0 && <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{kindMeta.noneYet}</div>}
               {going.length > 0 && <div style={{ marginBottom: 8 }}><div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>{going.length} {kindMeta.goingCount}</div><PeopleChips people={going} /></div>}
               {maybe.length > 0 && <div><div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>{maybe.length} maybe</div><PeopleChips people={maybe} /></div>}
+            </>
+          ) : DESIGN_REVIEW ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                {rsvpBtn('going', kindMeta.goingLabel)}
+                {rsvpBtn('maybe', 'Maybe')}
+              </div>
+              {askAccount && (
+                <p className="v4-hint" role="status">
+                  <Link href="/auth/signup">Create account</Link> to RSVP · <Link href="/auth/login">Sign in</Link>
+                </p>
+              )}
             </>
           ) : (
             <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>

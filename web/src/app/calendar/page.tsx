@@ -11,7 +11,7 @@ import { BOARD_TASK_SELECT, toBoardTask } from '@/modules/m14-events/lib/board-t
 import type { EventDraft } from '@/modules/m14-events/EventFormModal'
 import type { CalendarFeed, EventsView, LinkOption } from '@/modules/m14-events/types'
 
-const VIEWS: EventsView[] = ['day', 'week', 'month', 'list']
+const VIEWS: EventsView[] = ['day', 'week', 'month', 'list', 'agenda']
 
 export default async function EventsPage({ searchParams }: {
   searchParams: Promise<{ show?: string; tab?: string; view?: string; event?: string; new?: string; project?: string; proposal?: string; circle?: string }>

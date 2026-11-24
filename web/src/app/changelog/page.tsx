@@ -3,6 +3,24 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.127.0',
+    date: '2026-11-24',
+    title: 'Done on the far right, a subcircle filter, new subcircles from a task',
+    items: ['On Operations every column sits on one row, with Done last on the far right.', 'Next to Circles, filter the board by subcircle.', 'A task’s Subcircle menu ends with “+ New subcircle…”: type a name and the task goes in the new subcircle. Circle leads and admins can do this.'],
+  },
+  {
+    version: 'v4.126.0',
+    date: '2026-11-24',
+    title: 'The phone menu opens where your thumb is (design review)',
+    items: ['On phones, Menu opens a sheet above the tab bar with only what the tabs don’t show; tap Menu again or pull it down to close it.', 'A calmer tab bar: grey icons, and a soft pill behind the page you’re on.', 'On computers the community’s name stays at the top of the menu when it scrolls. "My dashboard" is now "Dashboard".', 'Only for communities with the design review on.'],
+  },
+  {
+    version: 'v4.124.0',
+    date: '2026-11-24',
+    title: 'A calmer, clearer look (design review)',
+    items: ['Communities that turn on the design review get one page name in the top bar with a Back button, six text sizes, pills you can tell apart, no outlines, and calmer Operations, Members, Calendar, The space, Governance, Meetings, task and profile pages.', 'New people get a clear way in: get to know us, tell us about you, apply. Before joining, every locked thing says how to open it.', 'Off for every community until it sets "designReview": true.'],
+  },
+  {
     version: 'v4.123.0',
     date: '2026-11-23',
     title: 'Later has its own column',

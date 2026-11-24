@@ -13,7 +13,8 @@ import { BOOKING_SELECT, ITEM_SELECT, toBooking, toItem } from './lib/queries'
 import { ItemModal } from './ItemModal'
 import { ItemFormModal, type ItemPayload } from './ItemFormModal'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { tagLabel } from './lib/tag-labels'
 import BookingsV4 from './BookingsV4'
 import { Icon, InlineIcon } from '@/core/components/v4'
 
@@ -84,7 +85,8 @@ export default function BookingsClient({
   const q = query.trim().toLowerCase()
   const shown = inCategory
     .filter(i => !tag || i.tags.includes(tag))
-    .filter(i => !q || [i.name, i.description ?? '', i.location ?? '', ...i.tags].some(s => s.toLowerCase().includes(q)))
+    // Under the design review the tags' plain words match too ("women" finds `female`)
+    .filter(i => !q || [i.name, i.description ?? '', i.location ?? '', ...i.tags, ...(DESIGN_REVIEW ? i.tags.map(tagLabel) : [])].some(s => s.toLowerCase().includes(q)))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   const myBookings = userId ? bookings.filter(b => b.user_id === userId && inScope(b)) : []
@@ -364,7 +366,7 @@ export default function BookingsClient({
         )}
         {isManager && (
           <button onClick={() => setTab('manage')} style={tabStyle(tab === 'manage')}>
-            Manage{pending.length > 0 && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: '#fff', background: '#d97706', borderRadius: 20, padding: '1px 7px' }}>{pending.length}</span>}
+            Manage{pending.length > 0 && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: '#fff', background: 'var(--rv-count, #d97706)', borderRadius: 20, padding: '1px 7px' }}>{pending.length}</span>}
           </button>
         )}
       </div>}

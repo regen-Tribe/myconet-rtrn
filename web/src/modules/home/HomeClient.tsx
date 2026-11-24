@@ -454,7 +454,7 @@ export default function HomeClient({
             borderRadius: 14, padding: '18px 24px',
             display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
           }}>
-            <div style={{ flexShrink: 0, color: '#d97706', display: 'grid' }}><Icon name="party" size={34} /></div>
+            <div style={{ flexShrink: 0, color: 'var(--rv-icon, #d97706)', display: 'grid' }}><Icon name="party" size={34} /></div>
             <div className="joining-banner-text" style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>
                 Welcome to {communityName}, {firstName || 'Member'}! You're now a <span style={{ color: '#d97706' }}>{roleLabel}</span>.
@@ -1275,7 +1275,7 @@ export default function HomeClient({
               </div>
               {proposalLive ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, #22c55e 10%, var(--surface))', border: '1px solid color-mix(in srgb, #22c55e 35%, var(--rule))', borderRadius: 20, padding: '5px 14px', flexShrink: 0 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', flexShrink: 0, animation: 'ping 1.6s ease-out infinite' }} />
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--rv-good, #22c55e)', flexShrink: 0, animation: 'ping 1.6s ease-out infinite' }} />
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a' }}>APPROVED</span>
                 </div>
               ) : (
@@ -1302,7 +1302,7 @@ export default function HomeClient({
                   background: proposalLive ? '#22c55e' : 'var(--m9)',
                   width: `${(layersPassed / 3) * 100}%`,
                 }} />
-                <div style={{ position: 'absolute', top: -3, left: 'calc(66.667% - 1px)', width: 2, height: 14, background: '#22c55e', borderRadius: 1, opacity: 0.7 }} />
+                <div style={{ position: 'absolute', top: -3, left: 'calc(66.667% - 1px)', width: 2, height: 14, background: 'var(--rv-good, #22c55e)', borderRadius: 1, opacity: 0.7 }} />
                 <div style={{ position: 'absolute', top: 14, left: 'calc(66.667% - 18px)', fontFamily: 'var(--mono)', fontSize: 9, color: '#16a34a', whiteSpace: 'nowrap' }}>Approved ↑</div>
               </div>
             </div>
@@ -1360,13 +1360,13 @@ export default function HomeClient({
                   </div>
                   {democPassed
                     ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Passed</span>
-                    : <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', background: 'color-mix(in srgb, #f59e0b 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Voting</span>
+                    : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--rv-attn, #f59e0b)', background: 'var(--rv-attn-bg, color-mix(in srgb, #f59e0b 12%, transparent))', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Voting</span>
                   }
                 </div>
                 <div style={{ display: 'flex', height: 18, borderRadius: 4, overflow: 'hidden', gap: 1, marginBottom: 8 }}>
-                  <div style={{ flex: democYes, background: '#22c55e', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democYes}</div>
-                  <div style={{ flex: democConcern, background: '#f59e0b', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democConcern}</div>
-                  <div style={{ flex: democNo, background: '#ef4444', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democNo}</div>
+                  <div style={{ flex: democYes, background: 'var(--rv-good, #22c55e)', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democYes}</div>
+                  <div style={{ flex: democConcern, background: 'var(--rv-attn, #f59e0b)', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democConcern}</div>
+                  <div style={{ flex: democNo, background: 'var(--rv-bad, #ef4444)', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democNo}</div>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.4, marginBottom: 8 }}>
                   {democYes} yes · {democConcern} concern · {democNo} no<br />
@@ -1435,7 +1435,7 @@ export default function HomeClient({
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'ping 1.6s ease-out infinite' }} />
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--rv-good, #22c55e)', display: 'block', animation: 'ping 1.6s ease-out infinite' }} />
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>
                     Proposal approved — work can begin. Agreement auto-created in M06.
                   </span>

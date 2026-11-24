@@ -1,0 +1,120 @@
+/* The space, the 22 Nov 2026 design review (decision #23; SpaceReview.tsx, BookingsV4.tsx, m19-map/MapV4.tsx).
+   Every rule is scoped under html[data-review] (core/lib/instance.ts › DESIGN_REVIEW).
+   Text sizes 11/13/15/18/24/40; breakpoints 640 (phone), 960, 1280. Selected = black; count = black badge.
+   Controls have the one soft fill (--ctl) and no outline (decision #37; v4-review.css § 8 says the same). */
+
+/* ─── Header: one title, the purpose line, a short counts line, one action ─── */
+html[data-review] .spr-head .v4-ph { margin-bottom: 14px; }
+html[data-review] .spr-head .v4-ph__sub { font-size: 15px; margin-top: 6px; }
+html[data-review] .spr-counts { display: block; font-size: 13px; color: var(--ink-3, #6b7180); margin: 4px 0 0; }
+@media (max-width: 640px) {
+  html[data-review] .spr-head .v4-ph { margin: 0 0 12px; }
+  /* The action sits beside the title, not on a row of its own */
+  html[data-review] .spr-head .v4-ph__row { flex-wrap: nowrap; align-items: flex-end; }
+  html[data-review] .spr-head .v4-ph__row > div:first-child { min-width: 0; }
+  html[data-review] .spr-head .v4-ph__sub { font-size: 13px; margin-top: 4px; color: var(--ink-3, #6b7180); }
+  html[data-review] .spr-head .v4-ph__actions { width: auto; flex-wrap: nowrap; flex-shrink: 0; gap: 6px; }
+  html[data-review] .spr-head .v4-ph__actions .v4-btn { height: 36px; padding: 0 14px; font-size: 13px; }
+  /* Editing the map has two actions: they may wrap under the title */
+  html[data-review] .spr-head--wrap .v4-ph__row { flex-wrap: wrap; }
+  html[data-review] .spr-counts { display: none; }
+}
+
+/* ─── The toolbar: one row ─────────────────────────────────────────────── */
+html[data-review] .spr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin: 0 0 16px; min-width: 0; }
+html[data-review] .spr-bar__views { min-width: 0; flex: 0 1 auto; overflow-x: auto; scrollbar-width: none; margin-right: auto; border-radius: 999px; }
+html[data-review] .spr-bar__views::-webkit-scrollbar { display: none; }
+html[data-review] .spr-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--ctl, #e3e8f4); white-space: nowrap; }
+html[data-review] .spr-seg > a, html[data-review] .spr-seg > button {
+  height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--ink-2, #3a3f4a); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-decoration: none; flex-shrink: 0;
+}
+html[data-review] .spr-seg > a:hover, html[data-review] .spr-seg > button:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .spr-seg > .on, html[data-review] .spr-seg > .on:hover { background: var(--ink, #111317); color: #fff; }
+html[data-review] .spr-seg > a:focus-visible, html[data-review] .spr-seg > button:focus-visible { outline: 2px solid var(--ink, #111317); outline-offset: 1px; }
+/* A count on the chosen (black) view turns white so it still reads */
+html[data-review] .spr-seg > .on .v4-count { background: #fff; color: var(--ink, #111317); }
+
+html[data-review] .spr-search { display: flex; align-items: center; gap: 8px; width: 240px; height: 40px; padding: 0 8px 0 12px; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink-3, #6b7180); flex-shrink: 0; }
+html[data-review] .spr-search:focus-within { background: var(--surface, #fff); box-shadow: inset 0 0 0 2px var(--ink, #111317); }
+html[data-review] .spr-search input { flex: 1; min-width: 0; height: 100%; padding: 0; font: inherit; font-size: 15px; color: var(--ink, #111317); outline: none; -webkit-appearance: none; appearance: none;
+}
+/* globals.css (v4) gives every field a box of its own with !important; this one is the pill around it,
+   so the selector is as specific as that rule plus one */
+html[data-review] .spr-bar .spr-search input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) { border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0 !important; }
+html[data-review] .spr-search input::-webkit-search-cancel-button { display: none; }
+html[data-review] .spr-search__close { display: none; width: 28px; height: 28px; border: 0; border-radius: 999px; background: none; color: var(--ink-3, #6b7180); place-items: center; cursor: pointer; padding: 0; flex-shrink: 0; }
+html[data-review] .spr-search:has(input:not(:placeholder-shown)) .spr-search__close { display: inline-grid; }
+html[data-review] .spr-iconbtn { width: 40px; height: 40px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink, #111317); display: inline-grid; place-items: center; cursor: pointer; padding: 0; flex-shrink: 0; }
+html[data-review] .spr-search__open { display: none; }
+
+@media (max-width: 640px) {
+  html[data-review] .spr-bar { gap: 4px; margin-bottom: 12px; }
+  html[data-review] .spr-seg { padding: 2px; gap: 0; }
+  html[data-review] .spr-seg > a, html[data-review] .spr-seg > button { padding: 0 8px; gap: 4px; }
+  /* Search is an icon until you use it; then it covers the row, with a close button */
+  html[data-review] .spr-search__open { display: inline-grid; width: 38px; height: 38px; }
+  html[data-review] .spr-search { display: none; width: auto; }
+  html[data-review] .spr-bar--search .spr-search { display: flex; position: absolute; inset: 0; z-index: 2; height: auto; }
+  html[data-review] .spr-bar--search .spr-search__close { display: inline-grid; }
+  html[data-review] .spr-bar--search .spr-search__open { visibility: hidden; }
+}
+
+/* ─── Filter button and its pop-over / sheet (same look as the Calendar's) ─── */
+html[data-review] .spr-filterbox { position: relative; flex-shrink: 0; }
+html[data-review] .spr-filterbtn { height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink, #111317); font: inherit; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+html[data-review] :is(.spr-filterbtn, .spr-iconbtn):hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .spr-filterbtn:focus-visible { outline: 2px solid var(--ink, #111317); outline-offset: 2px; }
+/* On: filled black, and its count turns white so it still reads */
+html[data-review] .spr-filterbtn--on, html[data-review] .spr-filterbtn--on:hover { background: var(--ink, #111317); color: #fff; }
+html[data-review] .spr-filterbtn--on .v4-count { background: #fff; color: var(--ink, #111317); }
+@media (max-width: 640px) {
+  html[data-review] .spr-filterbtn { position: relative; width: 38px; height: 38px; padding: 0; justify-content: center; }
+  html[data-review] .spr-filterbtn__label { display: none; }
+  /* The count sits on the button's corner, so the button never grows and the row still fits */
+  html[data-review] .spr-filterbtn .v4-count { position: absolute; top: -5px; right: -5px; box-shadow: 0 0 0 2px var(--bg, #f3f5fa); }
+}
+
+html[data-review] .spr-filter { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 320px; max-width: calc(100vw - 32px); max-height: min(560px, 75vh); display: flex; flex-direction: column; background: var(--surface, #fff); border-radius: 20px; box-shadow: 0 14px 44px rgba(17,19,23,.18); padding: 14px 14px 10px; text-align: left; }
+html[data-review] .spr-filter--sheet { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 1001; width: auto; max-width: none; max-height: 82vh; border-radius: 22px 22px 0 0; padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); }
+html[data-review] .spr-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(17,19,23,.32); }
+html[data-review] .spr-filter__grab { width: 40px; height: 4px; border-radius: 4px; background: var(--rule, #d5d9e2); margin: 2px auto 10px; flex-shrink: 0; }
+html[data-review] .spr-filter__head { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 8px; font-size: 18px; color: var(--ink, #111317); flex-shrink: 0; }
+html[data-review] .spr-filter__head b { font-weight: 600; }
+html[data-review] .spr-link { border: 0; background: none; padding: 4px 0; font: inherit; font-size: 13px; color: var(--ink-3, #6b7180); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html[data-review] .spr-filter__scroll { overflow-y: auto; overscroll-behavior: contain; margin: 0 -6px; padding: 0 6px; }
+html[data-review] .spr-filter__group { border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+html[data-review] .spr-filter__group legend { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); padding: 0 4px; margin-bottom: 4px; }
+html[data-review] .spr-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 8px; border-radius: 12px; font-size: 13px; color: var(--ink, #111317); cursor: pointer; }
+html[data-review] .spr-row:hover { background: var(--bg-2, #f6f7fa); }
+html[data-review] .spr-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--ink, #111317); flex-shrink: 0; cursor: pointer; }
+html[data-review] .spr-row__name { flex: 1; min-width: 0; line-height: 1.3; }
+html[data-review] .spr-row--on .spr-row__name { font-weight: 600; }
+html[data-review] .spr-row__count { font-size: 11px; color: var(--ink-4, #9aa0ad); font-variant-numeric: tabular-nums; }
+html[data-review] .spr-filter__foot { display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid var(--rule-soft, rgba(17,19,23,.07)); flex-shrink: 0; }
+html[data-review] .spr-filter--sheet .spr-row { min-height: 46px; font-size: 15px; }
+html[data-review] .spr-filter--sheet .spr-filter__foot .v4-btn { height: 42px; padding: 0 24px; font-size: 15px; }
+
+/* ─── One quiet line instead of a banner ───────────────────────────────── */
+html[data-review] .spr-note { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3, #6b7180); margin: -4px 0 14px; }
+html[data-review] .spr-note .v4-icon { flex-shrink: 0; }
+html[data-review] .spr-note a { color: var(--ink, #111317); font-weight: 600; }
+
+/* ─── Map page: the map follows the row directly ───────────────────────── */
+html[data-review] .spr-map .v4-mapfilter { display: none; }
+
+/* ─── Edit on the photo, for whoever can manage the thing (decision #43, no Manage tab) ─── */
+html[data-review] .spr-cardwrap { position: relative; display: flex; min-width: 0; }
+html[data-review] .spr-cardwrap > .v4-item { flex: 1; min-width: 0; }
+html[data-review] .spr-edit { position: absolute; top: 10px; right: 10px; z-index: 2; transition: transform .2s; }
+html[data-review] .spr-cardwrap:hover .spr-edit { transform: translateY(-2px); }
+html[data-review] .spr-edit__btn { width: 36px; height: 36px; border: 0; border-radius: 999px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  background: rgba(255,255,255,.92); color: var(--ink, #111317); backdrop-filter: blur(6px); box-shadow: 0 1px 4px rgba(0,0,0,.14); }
+html[data-review] .spr-edit__btn:hover { background: #fff; }
+html[data-review] .spr-edit__btn:focus-visible { outline: 2px solid var(--ink, #111317); outline-offset: 2px; }
+html[data-review] .spr-edit__btn[aria-expanded="true"] { background: var(--ink, #111317); color: #fff; }
+html[data-review] .spr-edit__menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px; max-height: 280px; overflow-y: auto; overscroll-behavior: contain;
+  display: grid; padding: 6px; border-radius: 14px; background: var(--surface, #fff); box-shadow: 0 14px 44px rgba(17,19,23,.18); }
+html[data-review] .spr-edit__menu button { min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; font: inherit; font-size: 13px; color: var(--ink, #111317); text-align: left; cursor: pointer; white-space: nowrap; }
+html[data-review] .spr-edit__menu button:hover, html[data-review] .spr-edit__menu button:focus-visible { background: var(--ctl, #e3e8f4); outline: none; }
+@media (prefers-reduced-motion: reduce) { html[data-review] .spr-edit { transition: none; } html[data-review] .spr-cardwrap:hover .spr-edit { transform: none; } }

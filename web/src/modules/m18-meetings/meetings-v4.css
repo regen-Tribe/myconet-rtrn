@@ -124,3 +124,156 @@
 .dl4-panel__head .dl4-btn--review + .dl4-btn { margin-left: 0; }
 .dl4-review { margin-top: 10px; font-size: 12.5px; color: #15803d; background: #dcfce7; border-radius: 8px; padding: 7px 10px; }
 .dl4-review--warn { color: #92400e; background: #fef3c7; }
+
+/* ═══ Design review (22–23 Nov 2026): Meetings ════════════════════════════════════════════════════════════════
+   Everything below is under html[data-review] (core/lib/instance.ts › DESIGN_REVIEW). Decisions #4, #7, #14, #30,
+   #31, #34, #37, #38, #41, #45, #46 and #50–#53 (design/decisions.md). Text sizes 11/13/15/18/24/40; breakpoints
+   640, 960, 1280. Controls have the one soft fill (--ctl) and no outline; the chosen one is black. */
+
+/* ─── List: the header's action sits beside the purpose line on a phone ─── */
+.mtr-phone { display: none; }
+html[data-review] .mtr-head .v4-ph { margin-bottom: 14px; }
+@media (max-width: 640px) {
+  html[data-review] .mtr-wide { display: none; }
+  html[data-review] .mtr-phone { display: inline; }
+  html[data-review] .mtr-head .v4-ph { margin: 0 0 12px; }
+  html[data-review] .mtr-head .v4-ph__row { flex-wrap: nowrap; align-items: center; gap: 12px; }
+  html[data-review] .mtr-head .v4-ph__row > div:first-child { min-width: 0; }
+  html[data-review] .mtr-head .v4-ph__sub { font-size: 13px; margin-top: 0; color: var(--ink-3, #6b7180); }
+  html[data-review] .mtr-head .v4-ph__actions { width: auto; flex-wrap: nowrap; flex-shrink: 0; }
+  html[data-review] .mtr-head .v4-ph__actions .v4-btn { height: 36px; padding: 0 14px; font-size: 13px; }
+}
+
+/* ─── List: the one toolbar row (picker · search · Filter) ─── */
+html[data-review] .mtr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin: 0 0 16px; min-width: 0; }
+html[data-review] .mtr-bar__picker { min-width: 0; flex: 0 1 auto; margin-right: auto; }
+html[data-review] .mtr-bar .v4-cf { flex-wrap: nowrap; }
+html[data-review] .mtr-bar .v4-cf__btn { height: 40px; max-width: 100%; min-width: 0; }
+html[data-review] .mtr-bar .v4-cf__btn .v4-seal { margin-right: 0; flex-shrink: 0; }
+html[data-review] .mtr-bar .v4-cf__btn:focus-visible { outline: 2px solid var(--ink, #111317); }
+html[data-review] .v4-cf__row .v4-cf__all { color: var(--ink-3, #6b7180); }
+
+html[data-review] .mtr-search { display: flex; align-items: center; gap: 8px; width: 280px; height: 40px; padding: 0 8px 0 12px; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink-3, #6b7180); flex-shrink: 0; }
+html[data-review] .mtr-search:focus-within { background: var(--surface, #fff); box-shadow: inset 0 0 0 2px var(--ink, #111317); }
+html[data-review] .mtr-search input { flex: 1; min-width: 0; height: 100%; padding: 0; font: inherit; font-size: 15px; color: var(--ink, #111317); outline: none; -webkit-appearance: none; appearance: none; }
+/* globals.css (v4) gives every field its own box with !important; this one is the pill around it */
+html[data-review] .mtr-bar .mtr-search input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) { border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0 !important; min-height: 0 !important; }
+html[data-review] .mtr-search input::-webkit-search-cancel-button { display: none; }
+html[data-review] .mtr-search__close { display: none; width: 28px; height: 28px; border: 0; border-radius: 999px; background: none; color: var(--ink-3, #6b7180); place-items: center; cursor: pointer; padding: 0; flex-shrink: 0; }
+html[data-review] .mtr-search:has(input:not(:placeholder-shown)) .mtr-search__close { display: inline-grid; }
+html[data-review] .mtr-iconbtn { width: 40px; height: 40px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink, #111317); display: inline-grid; place-items: center; cursor: pointer; padding: 0; flex-shrink: 0; }
+html[data-review] .mtr-search__open { display: none; }
+
+html[data-review] .mtr-filterbox { position: relative; flex-shrink: 0; }
+html[data-review] .mtr-filterbtn { height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink, #111317); font: inherit; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+html[data-review] :is(.mtr-filterbtn, .mtr-iconbtn):hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] :is(.mtr-filterbtn, .mtr-iconbtn):focus-visible { outline: 2px solid var(--ink, #111317); outline-offset: 2px; }
+html[data-review] .mtr-filterbtn--on, html[data-review] .mtr-filterbtn--on:hover { background: var(--ink, #111317); color: #fff; }
+html[data-review] .mtr-filterbtn--on .v4-count { background: #fff; color: var(--ink, #111317); }
+
+@media (max-width: 640px) {
+  html[data-review] .mtr-bar { gap: 6px; margin-bottom: 12px; }
+  html[data-review] .mtr-bar .v4-cf__btn { height: 38px; }
+  /* Search is an icon until you use it; then it covers the row, with a close button */
+  html[data-review] .mtr-search__open { display: inline-grid; width: 38px; height: 38px; }
+  html[data-review] .mtr-search { display: none; width: auto; }
+  html[data-review] .mtr-bar--search .mtr-search { display: flex; position: absolute; inset: 0; z-index: 2; height: auto; }
+  html[data-review] .mtr-bar--search .mtr-search__close { display: inline-grid; }
+  html[data-review] .mtr-bar--search .mtr-search__open { visibility: hidden; }
+  html[data-review] .mtr-filterbtn { position: relative; width: 38px; height: 38px; padding: 0; justify-content: center; }
+  html[data-review] .mtr-filterbtn__label { display: none; }
+  /* The count sits on the button's corner, so the button never grows and the row still fits */
+  html[data-review] .mtr-filterbtn .v4-count { position: absolute; top: -5px; right: -5px; box-shadow: 0 0 0 2px var(--bg, #f3f5fa); }
+}
+
+html[data-review] .mtr-filter { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 320px; max-width: calc(100vw - 32px); max-height: min(560px, 75vh); display: flex; flex-direction: column; background: var(--surface, #fff); border-radius: 20px; box-shadow: 0 14px 44px rgba(17,19,23,.18); padding: 14px 14px 10px; text-align: left; }
+html[data-review] .mtr-filter--sheet { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 1001; width: auto; max-width: none; max-height: 82vh; border-radius: 22px 22px 0 0; padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); }
+html[data-review] .mtr-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(17,19,23,.32); }
+html[data-review] .mtr-filter__grab { width: 40px; height: 4px; border-radius: 4px; background: var(--rule, #d5d9e2); margin: 2px auto 10px; flex-shrink: 0; }
+html[data-review] .mtr-filter__head { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 8px; font-size: 18px; color: var(--ink, #111317); flex-shrink: 0; }
+html[data-review] .mtr-filter__head b { font-weight: 600; }
+html[data-review] .mtr-link { border: 0; background: none; padding: 4px 0; font: inherit; font-size: 13px; color: var(--ink-3, #6b7180); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html[data-review] .mtr-filter__scroll { overflow-y: auto; overscroll-behavior: contain; margin: 0 -6px; padding: 0 6px; }
+html[data-review] .mtr-filter__group { border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+html[data-review] .mtr-filter__group legend { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); padding: 0 4px; margin-bottom: 4px; }
+html[data-review] .mtr-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 8px; border-radius: 12px; font-size: 13px; color: var(--ink, #111317); cursor: pointer; }
+html[data-review] .mtr-row:hover { background: var(--bg-2, #f6f7fa); }
+html[data-review] .mtr-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--ink, #111317); flex-shrink: 0; cursor: pointer; }
+html[data-review] .mtr-row__name { flex: 1; min-width: 0; line-height: 1.3; }
+html[data-review] .mtr-row--on .mtr-row__name { font-weight: 600; }
+html[data-review] .mtr-row__count { font-size: 11px; color: var(--ink-4, #9aa0ad); font-variant-numeric: tabular-nums; }
+html[data-review] .mtr-filter__foot { display: flex; justify-content: flex-end; padding-top: 10px; flex-shrink: 0; }
+html[data-review] .mtr-filter--sheet .mtr-row { min-height: 46px; font-size: 15px; }
+html[data-review] .mtr-filter--sheet .mtr-filter__foot .v4-btn { height: 42px; padding: 0 24px; font-size: 15px; }
+
+/* ─── List rows: the six text sizes ─── */
+html[data-review] .mt4-list .mt4-title { font-size: 15px; }
+html[data-review] .mt4-list .mt4-sum, html[data-review] .mt4-list .v4-row__main > small { font-size: 13px; }
+html[data-review] .mt4-ctag { font-size: 11px; }
+html[data-review] .mt4-date small { font-size: 11px; }
+html[data-review] .mt4-lock { font-size: 11px; }
+
+/* ─── A meeting (/meetings/[id]) ─── */
+/* The circle tag is a link to that circle's meetings (it replaces the second back link, #41) */
+html[data-review] .mt4-ctag--link { text-decoration: none; cursor: pointer; }
+html[data-review] .mt4-ctag--link:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .mt4-ctag--link:focus-visible { outline: 2px solid var(--ink, #111317); outline-offset: 2px; }
+html[data-review] .mt4-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+html[data-review] .mt4-tags .mt4-ctag { height: 26px; font-size: 13px; }
+html[data-review] .mt4-tags .v4-tag { font-size: 13px; }
+html[data-review] .mt4-draftlink { height: 26px; font-size: 13px; text-decoration: none; }
+html[data-review] .mt4-draftlink:hover { text-decoration: underline; text-underline-offset: 3px; }
+html[data-review] .mt4 .v4-ph { margin-top: 0; }
+@media (max-width: 640px) {
+  html[data-review] .mt4-tags { margin-bottom: 8px; }
+  /* Who chose the circle: the leads' review says it; on a phone the tag stays short */
+  html[data-review] .mt4-tags .mt4-by { display: none; }
+}
+#mt4-tasks { scroll-margin-top: 80px; }
+
+/* Waiting on a lead (#34): yellow, for members who see the "a lead is checking it" note */
+html[data-review] .v4-note.mt4-wait { background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); box-shadow: none; }
+
+/* Six text sizes (#13): card titles 18, body 15, meta 13 */
+html[data-review] .mt4-h { font-size: 18px; }
+html[data-review] .mt4-ff summary { font-size: 15px; }
+html[data-review] .mt4-ffp b { font-size: 13px; }
+html[data-review] .mt4-ffp ul { font-size: 15px; }
+
+/* The documents: tabs with the one soft fill, the open one a white card */
+html[data-review] .mt4-doctabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+html[data-review] .mt4-doc { padding: 18px; }
+
+/* The leads' review: no violet (it means In progress), no lines between steps (#37), the six sizes */
+html[data-review] .mt4-said { background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); }
+html[data-review] .mt4-said svg { color: var(--ink-3, #6b7180); }
+html[data-review] .mt4-step, html[data-review] .mt4-step:first-child { border-top: 0; }
+html[data-review] .mt4-steps { gap: 2px; }
+html[data-review] .mt4-step__body > b { font-size: 15px; }
+html[data-review] .mt4-step__body > small, html[data-review] .mt4-only, html[data-review] .mt4-path, html[data-review] .mt4-warn { font-size: 13px; }
+html[data-review] .mt4-step__n { font-size: 11px; }
+html[data-review] .mt4-path { color: var(--ink-2, #3a3f4a); }
+html[data-review] .mt4-path:is(a):hover code { text-decoration: underline; }
+/* An error is not a "no" (#34, #36): ink, not red */
+html[data-review] .mt4-warn { color: var(--ink-2, #3a3f4a); }
+html[data-review] .mt4-brain { background: var(--ctl, #e3e8f4); color: var(--ink, #111317); }
+html[data-review] .mt4-brain:hover { background: var(--ctl-hover, #d8deee); }
+
+/* One column (below 960): the leads' review comes right after the tasks, before the long documents, so a lead
+   reaches it without scrolling past the transcript. Order only; nothing moves on a computer. */
+@media (max-width: 959px) {
+  html[data-review] .mt4-split { display: flex; flex-direction: column; gap: 0; }
+  html[data-review] :is(.mt4-main, .mt4-side) { display: contents; }
+  html[data-review] .mt4-split > * , html[data-review] :is(.mt4-main, .mt4-side) > * { order: 9; }
+  html[data-review] .mt4-main > .v4-note { order: 0; }
+  html[data-review] .mt4-sumcard { order: 1; }
+  html[data-review] .mt4-o-tasks { order: 2; }
+  html[data-review] .mt4-lead { order: 3; margin-top: 22px; }
+  html[data-review] .mt4-o-ff { order: 4; }
+  html[data-review] .mt4-o-docs { order: 5; }
+  html[data-review] .mt4-o-files { order: 6; }
+  html[data-review] .mt4-brain { order: 7; }
+}
+/* The summary's topics sit in the Summary card: no frame of their own, so they line up with its heading */
+html[data-review] .mt4-sumcard .mt4-topic { padding: 6px 0 !important; border: 0 !important; background: none !important; }
+html[data-review] .mt4-sumcard { padding: 20px; }

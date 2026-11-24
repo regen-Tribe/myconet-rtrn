@@ -1,13 +1,15 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { isCircleAdmin, isJoiningOrAbove, ROLE_LABELS } from '@/core/lib/roles'
-import { isMenuActive, menuGroups, type MenuItem } from '@/core/lib/nav'
-import { COMMUNITY_NAME } from '@/core/lib/instance'
+import { isMenuActive, menuGroups, tabKeys, type MenuItem } from '@/core/lib/nav'
+import { COMMUNITY_NAME, DESIGN_REVIEW } from '@/core/lib/instance'
 import { VERSION } from '@/core/lib/version'
 import type { MenuState } from '@/core/lib/menu-server'
 import { Icon } from '@/core/components/v4'
+// Design review: the join path's marks and the locked items' note (rules under html[data-review])
+import './menu-review.css'
 
 /**
  * The v4 menu (Sonia, 19–20 Nov; design/redesign-prototype/app.js › navHTML), used when the community
@@ -35,7 +37,9 @@ function NextStepCard({ state, onClose, collapsed }: { state: MenuState; onClose
       </Link>
     )
   }
-  const showJourney = state.journey === 0 || state.journey === 1
+  // Design review: an explorer sees the three join steps; nobody sees the role journey (it read as a second "3 steps")
+  const progress = DESIGN_REVIEW ? state.progress : undefined
+  const showJourney = !DESIGN_REVIEW && (state.journey === 0 || state.journey === 1)
   return (
     <div className="mv4-nextwrap">
       <Link href={n.href} onClick={onClose} className="mv4-next">
@@ -49,6 +53,11 @@ function NextStepCard({ state, onClose, collapsed }: { state: MenuState; onClose
               <em aria-hidden="true">Step {state.journey! + 1} of 3 · {JOURNEY[state.journey!]}</em>
             </span>
           )}
+          {progress && (
+            <span className="mv4-path" aria-label={`${progress.filter(p => p.done).length} of ${progress.length} done`}>
+              {progress.map(p => <span key={p.label} className={p.done ? 'on' : undefined}><i aria-hidden="true" />{p.label}</span>)}
+            </span>
+          )}
           <span className="mv4-next__line">{n.line}</span>
         </span>
         <span className="mv4-next__go"><Icon name="right" size={15} /></span>
@@ -58,10 +67,44 @@ function NextStepCard({ state, onClose, collapsed }: { state: MenuState; onClose
   )
 }
 
-function Item({ item, active, locked, count, onClose, collapsed }: {
-  item: MenuItem; active: boolean; locked: boolean; count?: number; onClose?: () => void; collapsed: boolean
+const LOCK_WHY = 'Opens when you’re a joining member'
+
+/**
+ * Design review: a locked item says what opens it, on hover or tap, and links to the first action: Join for a
+ * signed-in explorer ("Opens when you're a joining member · Start joining"), Create account for a visitor
+ * (Sonia, design/decisions.md #27: a visitor's first action is Create account everywhere).
+ */
+function LockedItem({ item, onClose, collapsed, signedIn }: { item: MenuItem; onClose?: () => void; collapsed: boolean; signedIn: boolean }) {
+  const [open, setOpen] = useState(false)
+  const act = signedIn ? { label: 'Start joining', href: '/join' } : { label: 'Create account', href: '/auth/signup' }
+  if (collapsed) {
+    return (
+      <Link href={act.href} onClick={onClose} className="mv4-item locked" data-tip={`${item.name} · ${LOCK_WHY}`} aria-label={`${item.name}: ${LOCK_WHY}. ${act.label}`}>
+        <span className="mv4-ic"><Icon name={item.icon} /></span>
+      </Link>
+    )
+  }
+  return (
+    <div className={`mv4-lock${open ? ' open' : ''}`}>
+      <button type="button" className="mv4-item locked" aria-expanded={open} title={`${LOCK_WHY}. Tap to see how`} onClick={() => setOpen(o => !o)}>
+        <span className="mv4-ic"><Icon name={item.icon} /></span>
+        <span className="mv4-name">{item.name}</span>
+        <span className="mv4-note"><Icon name="lock" size={13} /></span>
+      </button>
+      <span className="mv4-lockwhy">
+        {LOCK_WHY} · <Link href={act.href} onClick={onClose}>{act.label}</Link>
+      </span>
+    </div>
+  )
+}
+
+function Item({ item, active, locked, count, onClose, collapsed, signedIn = true, inTabs = false }: {
+  item: MenuItem; active: boolean; locked: boolean; count?: number; onClose?: () => void; collapsed: boolean; signedIn?: boolean
+  /** Also a tab in the phone tab bar: the phone's menu sheet leaves it out (design review, decision #84) */
+  inTabs?: boolean
 }) {
-  const cls = `mv4-item${active ? ' on' : ''}${locked ? ' locked' : ''}`
+  const cls = `mv4-item${active ? ' on' : ''}${locked ? ' locked' : ''}${inTabs ? ' mv4-in-tabs' : ''}`
+  if (locked && DESIGN_REVIEW) return <LockedItem item={item} onClose={onClose} collapsed={collapsed} signedIn={signedIn} />
   if (locked) {
     // Locked items say why (O5); they aren't links, since the page would turn the person away
     const why = 'Opens when you’re a joining member'
@@ -102,6 +145,14 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
   const joined = isLoggedIn && isJoiningOrAbove(role)
   // Explorers, joining members and visitors get a line under each group (O7)
   const newcomer = state.journey !== 2
+  // A newcomer's next step moves as they sign values or fill their profile, but the layout loads it once.
+  // Reload it on each new page for newcomers only (members' next step changes rarely).
+  const router = useRouter()
+  const firstPage = useRef(true)
+  useEffect(() => {
+    if (firstPage.current) { firstPage.current = false; return }
+    if (isLoggedIn && newcomer) router.refresh()
+  }, [pathname, isLoggedIn, newcomer, router])
   // On a phone the menu opens full, whatever the desktop setting
   const rail = collapsed && !mobileOpen
 
@@ -111,7 +162,17 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
   const navRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   // On a phone, the opened drawer takes the keyboard focus, so Tab and screen readers start in it
-  useEffect(() => { if (mobileOpen) closeRef.current?.focus({ preventScroll: true }) }, [mobileOpen])
+  // (Design review: the phone menu is a sheet with no ×, so the sheet itself takes the focus)
+  useEffect(() => { if (mobileOpen) (DESIGN_REVIEW ? navRef.current : closeRef.current)?.focus({ preventScroll: true }) }, [mobileOpen])
+  // Design review: the phone's menu sheet closes when you pull it down from its top
+  const pull = useRef<number | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => { pull.current = DESIGN_REVIEW && mobileOpen && (navRef.current?.scrollTop ?? 0) <= 0 ? e.touches[0].clientY : null }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (pull.current !== null && e.changedTouches[0].clientY - pull.current > 70) onClose?.()
+    pull.current = null
+  }
+  // Pages that are tabs in the phone tab bar (TabBarV4)
+  const tabs = DESIGN_REVIEW ? new Set(tabKeys(newcomer)) : new Set<string>()
   const showTip = (e: React.SyntheticEvent) => {
     if (!rail) return
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-tip]')
@@ -136,10 +197,12 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
   }
 
   return (
-    <nav ref={navRef} id="app-menu" aria-label="Menu" className={`app-shell-sidenav menu-v4${mobileOpen ? ' mobile-open' : ''}${rail ? ' mv4--rail' : ''}`}
+    <nav ref={navRef} id="app-menu" aria-label="Menu" tabIndex={DESIGN_REVIEW ? -1 : undefined} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={`app-shell-sidenav menu-v4${mobileOpen ? ' mobile-open' : ''}${rail ? ' mv4--rail' : ''}`}
       onMouseOver={showTip} onFocus={showTip} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)} onScroll={() => setTip(null)}>
+      {DESIGN_REVIEW && <div className="mv4-handle" aria-hidden="true" />}
       <div className="mv4-top">
-        <Link href="/home" className="mv4-brand" title={rail ? undefined : COMMUNITY_NAME} data-tip={rail ? COMMUNITY_NAME : undefined} aria-label={rail ? COMMUNITY_NAME : undefined} onClick={onClose}>
+        {/* One home per role (design review): About for a visitor, My dashboard once signed in */}
+        <Link href={DESIGN_REVIEW ? (isLoggedIn ? '/dashboard' : '/about') : '/home'} className="mv4-brand" title={rail ? undefined : COMMUNITY_NAME} data-tip={rail ? COMMUNITY_NAME : undefined} aria-label={rail ? COMMUNITY_NAME : undefined} onClick={onClose}>
           {BRAND_MARK
             ? <img className="mv4-mark mv4-mark--img" src={BRAND_MARK} alt="" aria-hidden="true" />
             : <span className="mv4-mark" aria-hidden="true">{COMMUNITY_NAME.slice(0, 1).toUpperCase()}</span>}
@@ -154,15 +217,16 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
 
       <div className="mv4-groups">
         {menuGroups(COMMUNITY_NAME).map(g => {
-          const items = g.items.filter(i => !i.admin || isCircleAdmin(role))
+          // Design review: a visitor's home is About, so My dashboard (which would send them there) isn't listed
+          const items = g.items.filter(i => (!i.admin || isCircleAdmin(role)) && !(DESIGN_REVIEW && !isLoggedIn && i.key === 'dashboard'))
           if (!items.length) return null
           return (
             <div key={g.label} role="group" aria-label={g.label} className="mv4-group">
               <div className="mv4-label">{g.label}</div>
               {newcomer && g.line && !rail && <div className="mv4-line">{g.line}</div>}
               {items.map(i => (
-                <Item key={i.key} item={i} active={isMenuActive(i.href, pathname)} locked={!!i.joiningUp && !joined}
-                  count={countFor(i.key)} onClose={onClose} collapsed={rail} />
+                <Item key={i.key} item={i} active={isMenuActive(i.href, pathname)} locked={!!i.joiningUp && !joined} signedIn={isLoggedIn}
+                  count={countFor(i.key)} onClose={onClose} collapsed={rail} inTabs={tabs.has(i.key)} />
               ))}
             </div>
           )

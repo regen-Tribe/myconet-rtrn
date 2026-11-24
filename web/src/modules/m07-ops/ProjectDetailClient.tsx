@@ -8,10 +8,15 @@ import { fmtTaskWhen, isTaskOverdue } from '@/core/lib/tasks'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { DESIGN } from '@/core/lib/instance'
-import { Icon as V4Icon, StatusPill as V4Pill, Tag as V4Tag, statusFromDb, InlineIcon } from '@/core/components/v4'
+import { DESIGN, DESIGN_REVIEW, COMMUNITY_NAME } from '@/core/lib/instance'
+import { Icon as V4Icon, StatusPill as V4Pill, Tag as V4Tag, Result as V4Result, type Tone, statusFromDb, InlineIcon } from '@/core/components/v4'
+import './ops-v4.css'
 
 const V4 = (DESIGN as string) === 'v4'
+// The design review (decisions #55–#58): same information and flows, only the look and the phone layout
+const RV = DESIGN_REVIEW
+/** With the review on, a class (styled in ops-v4.css); without it, the old inline style */
+const rv = (className: string, legacy?: React.CSSProperties) => (RV ? { className } : { style: legacy })
 import type { Project, Deliverable, ProjectUpdate, CollaborationAgreement, MyProposal, SubscriberProfile } from './types'
 import { useCircles } from '@/core/components/CirclesProvider'
 import type { CircleSlug } from '@/core/lib/circles'
@@ -37,6 +42,14 @@ const PROPOSAL_STATUS_INFO: Record<string, { label: string; color: string; note:
   active:    { label: 'Active',         color: '#3b82f6', note: 'Your collaboration is underway.' },
   completed: { label: 'Completed',      color: '#94a3b8', note: 'This collaboration has been marked complete.' },
   rejected:  { label: 'Not accepted',   color: '#ef4444', note: 'Your last offer to help wasn’t accepted. You can send a new one.' },
+}
+// The review shows an offer's state as a Result badge (square, an icon), never a status colour; words as in LEXICON.md
+const PROPOSAL_RESULT: Record<string, { label: string; tone: Tone }> = {
+  pending:   { label: 'Waiting',   tone: 'attention' },
+  accepted:  { label: 'Accepted',             tone: 'good' },
+  active:    { label: 'Under way',            tone: 'neutral' },
+  completed: { label: 'Completed',            tone: 'neutral' },
+  rejected:  { label: 'Declined',             tone: 'bad' },
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -82,7 +95,10 @@ export default function ProjectDetailClient({
   // Settings write to `projects`, whose RLS is stricter than canManage
   const settingsBlock = projectEditBlock(project, userId, userRole, leadCircles, circles)
   const [notice, setNotice] = useState<PermissionNotice | null>(null)
-  const canPropose = !canManage && project.open_for_collaborators && isOpenForProposals(project.status)
+  // Offering help (an agreement) opens at joining member; the database refuses it before (decision #73)
+  const openToHelp = !canManage && project.open_for_collaborators && isOpenForProposals(project.status)
+  // (a visitor's button still leads to Create account outside the design review)
+  const canPropose = openToHelp && (userId ? isJoiningOrAbove(userRole) : !DESIGN_REVIEW)
 
   // ── Kanban state ─────────────────────────────────────────────────────────
   const [deliverables, setDeliverables] = useState<Deliverable[]>(initialDeliverables)
@@ -352,7 +368,23 @@ export default function ProjectDetailClient({
     <div className={V4 ? 'ops-detail-root v4-page pj4' : 'ops-detail-root'} style={V4 ? { maxWidth: 1040 } : { maxWidth: 920, margin: '0 auto', padding: '48px 20px 80px' }}>
 
       {/* Back */}
-      {V4 ? (
+      {V4 && RV ? (
+        // Review: the top bar already has ‹ Operations (#41), and the circle shows as its seal, not a coloured
+        // banner (#7). The banner's circle, lead and calendar stay, in one quiet row with Watch (#55).
+        <div className="pj5-top">
+          {circles.has(project.circle) && (
+            <V4Tag seal={<CircleSeal slug={project.circle} size={16} />}>{circles.meta(project.circle).label} circle{teams.find(t => t.id === project.team_id) ? ` · ${teams.find(t => t.id === project.team_id)!.name}` : ''}</V4Tag>
+          )}
+          <span className="pj5-round">
+            <button type="button" onClick={toggleProjectSubscription} disabled={togglingProjectSub} aria-pressed={subscribedToProject}
+              title={subscribedToProject ? 'Stop watching this task' : 'Watch this task'} className={`pj5-watch${subscribedToProject ? ' on' : ''}`}>
+              <V4Icon name="bell" size={16} />{subscribedToProject ? 'Watching' : 'Watch'}
+            </button>
+            {leadProfile?.username && <Link href={`/u/${leadProfile.username}`} aria-label="The task lead" title="The task lead" className="pj5-rbtn"><V4Icon name="user" /></Link>}
+            <Link href="/calendar" aria-label="Calendar" title="Calendar" className="pj5-rbtn"><V4Icon name="calendar" /></Link>
+          </span>
+        </div>
+      ) : V4 ? (
         <>
           <Link href="/operations" className="v4-back"><V4Icon name="left" size={14} />Operations</Link>
           {/* The prototype's project hero: the circle's colour, its name, the lead and the calendar at hand */}
@@ -386,7 +418,10 @@ export default function ProjectDetailClient({
                   {creatorProfile && creatorProfile.username !== leadProfile?.username && <V4Tag>Proposed by {creatorProfile.first_name ?? creatorProfile.username ?? 'Unknown'}</V4Tag>}
                   <V4Tag>{deliverables.length} {deliverables.length === 1 ? 'subtask' : 'subtasks'}</V4Tag>
                   {project.deadline && (!['done', 'review'].includes(project.status) && isTaskOverdue(project.deadline, null, project.status)
-                    ? <V4Pill status="no" label={`Overdue · was due ${fmtTaskWhen(project.deadline)}`} />
+                    ? (RV
+                      // Late needs attention (yellow, as "31 late" on the board); red only means Declined (#34)
+                      ? <V4Result tone="attention">Late · was due {fmtTaskWhen(project.deadline)}</V4Result>
+                      : <V4Pill status="no" label={`Overdue · was due ${fmtTaskWhen(project.deadline)}`} />)
                     : <V4Tag icon="calendar">Due {fmtTaskWhen(project.deadline)}</V4Tag>)}
                 </div>
               </>
@@ -463,8 +498,8 @@ export default function ProjectDetailClient({
             )}
           </div>
 
-          {/* Subscribe button */}
-          <button
+          {/* Subscribe button (with the review on, Watch sits in the top row) */}
+          {!(V4 && RV) && <button
             onClick={toggleProjectSubscription}
             disabled={togglingProjectSub}
             title={subscribedToProject ? 'Stop watching this task' : 'Watch this task'}
@@ -481,19 +516,26 @@ export default function ProjectDetailClient({
           >
             <BellIcon filled={subscribedToProject} />
             {subscribedToProject ? 'Subscribed' : 'Subscribe'}
-          </button>
+          </button>}
         </div>
 
         {/* Project subscribers */}
         {projectSubsList.length > 0 && (
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginBottom: 5 }}>
-              {projectSubsList.length} subscriber{projectSubsList.length !== 1 ? 's' : ''}
+            <div {...rv('pj5-label', { fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginBottom: 5 })}>
+              {RV ? `${projectSubsList.length} watching` : `${projectSubsList.length} subscriber${projectSubsList.length !== 1 ? 's' : ''}`}
             </div>
             <SubscriberNames subs={projectSubsList} />
           </div>
         )}
 
+        {openToHelp && !canPropose && (DESIGN_REVIEW || !!userId) && (
+          <p className="v4-hint">
+            {userId
+              ? <>Offer help once you’ve joined {COMMUNITY_NAME}. <Link href="/join">Start joining</Link></>
+              : <>Offer help once you’ve joined {COMMUNITY_NAME}. <Link href="/auth/signup">Create account</Link></>}
+          </p>
+        )}
         {canPropose && !hasBlockingProposal && V4 && (
           <button type="button" className={`v4-btn ${showProposalForm ? 'v4-btn--secondary' : 'v4-btn--next'} pj4-offer`} onClick={() => setShowProposalForm(v => !v)}>
             <span>{showProposalForm ? 'Cancel' : 'Offer to help · start an agreement'}</span>
@@ -510,6 +552,13 @@ export default function ProjectDetailClient({
         )}
         {canPropose && hasBlockingProposal && myProposal && (() => {
           const info = PROPOSAL_STATUS_INFO[myProposal.status]
+          const result = PROPOSAL_RESULT[myProposal.status]
+          if (RV && result) return (
+            <div className="pj5-offerstate">
+              <V4Result tone={result.tone}>{result.label}</V4Result>
+              <span>{info.note}</span>
+            </div>
+          )
           return (
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 4, background: `${info.color}12`, border: `1px solid ${info.color}40`, borderRadius: 'var(--radius)', padding: '8px 14px' }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: info.color }}>{info.label}</span>
@@ -521,37 +570,37 @@ export default function ProjectDetailClient({
 
       {/* ── Inline proposal form ─────────────────────────────────────────────── */}
       {showProposalForm && canPropose && (
-        <div style={{
+        <div {...rv('pj5-panel pj5-offerform', {
           background: 'color-mix(in srgb, #3b82f6 5%, var(--surface))',
           border: '1px solid color-mix(in srgb, #3b82f6 30%, var(--rule))',
           borderRadius: 12, padding: '22px 24px', marginBottom: 32,
-        }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3b82f6', marginBottom: 18 }}>
+        })}>
+          <div {...rv('pj5-label', { fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3b82f6', marginBottom: 18 })}>
             Offer to help
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
-                What will you contribute? <span style={{ color: '#ef4444' }}>*</span>
+                What will you contribute? <span {...rv('pj5-req', { color: '#ef4444' })}>*</span>
               </label>
               <textarea
                 value={workDesc}
                 onChange={e => setWorkDesc(e.target.value)}
                 placeholder="Describe what you'll do, deliver, or create for this task…"
                 rows={3}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' }}
+                {...rv('v4-input pj5-field', { width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' })}
               />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
-                What do you expect in return? <span style={{ color: '#ef4444' }}>*</span>
+                What do you expect in return? <span {...rv('pj5-req', { color: '#ef4444' })}>*</span>
               </label>
               <textarea
                 value={reward}
                 onChange={e => setReward(e.target.value)}
                 placeholder="Mentorship, credits, revenue share, recognition…"
                 rows={2}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' }}
+                {...rv('v4-input pj5-field', { width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' })}
               />
             </div>
             <div>
@@ -563,23 +612,23 @@ export default function ProjectDetailClient({
                 onChange={e => setConditions(e.target.value)}
                 placeholder="Timing constraints, availability, dependencies…"
                 rows={2}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' }}
+                {...rv('v4-input pj5-field', { width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' })}
               />
             </div>
             {submitError && (
-              <p style={{ fontSize: 12, color: '#ef4444', margin: 0 }}>{submitError}</p>
+              <p {...rv('pj5-error', { fontSize: 12, color: '#ef4444', margin: 0 })}>{submitError}</p>
             )}
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <button
                 onClick={submitProposal}
                 disabled={submitting || !workDesc.trim() || !reward.trim()}
-                style={{ background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 22px', borderRadius: 'var(--radius)', border: 'none', cursor: submitting || !workDesc.trim() || !reward.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !workDesc.trim() || !reward.trim() ? 0.6 : 1 }}
+                {...rv('v4-btn v4-btn--primary', { background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 22px', borderRadius: 'var(--radius)', border: 'none', cursor: submitting || !workDesc.trim() || !reward.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !workDesc.trim() || !reward.trim() ? 0.6 : 1 })}
               >
                 {submitting ? 'Sending…' : 'Send offer to help'}
               </button>
               <button
                 onClick={() => setShowProposalForm(false)}
-                style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-4)', cursor: 'pointer', padding: '9px 4px' }}
+                {...rv('v4-btn v4-btn--secondary', { background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-4)', cursor: 'pointer', padding: '9px 4px' })}
               >
                 Cancel
               </button>
@@ -603,15 +652,17 @@ export default function ProjectDetailClient({
             </div>
 
             {canManage && (
-              <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
-                <div className="ops-subtask-form" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div {...rv('pj5-add', { background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 10, padding: '14px 16px', marginBottom: 14 })}>
+                {/* Review: one row on phones too (#38: controls in one row), so the subtasks start higher */}
+                <div {...(RV ? { className: 'pj5-addrow' } : { className: 'ops-subtask-form', style: { display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' } })}>
                   <input
                     type="text"
                     value={newTaskTitle}
                     onChange={e => setNewTaskTitle(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addSubtask()}
                     placeholder="New subtask…"
-                    style={{ ...inputStyle, flex: '1 1 200px', padding: '8px 12px', fontSize: 13 }}
+                    aria-label="New subtask"
+                    {...rv('v4-input pj5-field pj5-addtitle', { ...inputStyle, flex: '1 1 200px', padding: '8px 12px', fontSize: 13 })}
                   />
                   <div style={{ flexShrink: 0 }}>
                     <CalendarPicker
@@ -628,28 +679,28 @@ export default function ProjectDetailClient({
                       onChange={e => setNewTaskTime(e.target.value)}
                       aria-label="Time (optional)"
                       title="Time (optional)"
-                      style={{ ...inputStyle, width: 120, flexShrink: 0, padding: '8px 10px', fontSize: 13 }}
+                      {...rv('v4-input pj5-field pj5-time', { ...inputStyle, width: 120, flexShrink: 0, padding: '8px 10px', fontSize: 13 })}
                     />
                   )}
                   <button
                     onClick={addSubtask}
                     disabled={addingTask || !newTaskTitle.trim()}
-                    style={{
+                    {...rv('v4-btn v4-btn--primary pj5-addbtn', {
                       background: 'var(--m7)', color: '#fff', fontSize: 13, fontWeight: 600,
                       padding: '8px 18px', borderRadius: 8, border: 'none', whiteSpace: 'nowrap',
                       cursor: addingTask || !newTaskTitle.trim() ? 'not-allowed' : 'pointer',
                       opacity: addingTask || !newTaskTitle.trim() ? 0.55 : 1,
                       flexShrink: 0,
-                    }}
+                    })}
                   >
-                    {addingTask ? 'Adding…' : '+ Add'}
+                    {RV ? <><V4Icon name="plus" size={16} />{addingTask ? 'Adding…' : 'Add'}</> : addingTask ? 'Adding…' : '+ Add'}
                   </button>
                 </div>
-                {taskError && <p style={{ fontSize: 12, color: '#ef4444', marginTop: 8, marginBottom: 0 }}>{taskError}</p>}
+                {taskError && <p {...rv('pj5-error', { fontSize: 12, color: '#ef4444', marginTop: 8, marginBottom: 0 })}>{taskError}</p>}
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+            <div {...rv('pj5-board', { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 })}>
               {PROJECT_KANBAN_COLUMNS.map(col => {
                 const isTarget = dropTarget === col.key
                 // Ideas also holds proposals waiting for a lead; subtasks can be Ideas or Later too (v4.122/v4.123)
@@ -673,8 +724,8 @@ export default function ProjectDetailClient({
                       e.preventDefault()
                       handleDrop(col.key)
                     }}
-                    className="ops-col"
-                    style={{
+                    className={RV ? `ops-col pj5-col${isTarget ? ' is-target' : ''}${cards.length === 0 && deliverables.length + (canManage ? pendingProposals.length : 0) > 0 ? ' is-empty' : ''}` : 'ops-col'}
+                    style={RV ? undefined : {
                       background: isTarget ? `${col.color}10` : 'var(--bg-2)',
                       borderRadius: 10, padding: 8,
                       border: isTarget ? `1px dashed ${col.color}` : '1px solid transparent',
@@ -682,6 +733,13 @@ export default function ProjectDetailClient({
                       minHeight: 100,
                     }}
                   >
+                    {RV ? (
+                      // Review: the column is its status pill, the only place a subtask's status colour shows (#34)
+                      <div className="pj5-colhead">
+                        <V4Pill status={statusFromDb(col.key)} label={col.label} />
+                        <span className="pj5-colcount">{cards.length}</span>
+                      </div>
+                    ) : (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>{col.label}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -689,9 +747,10 @@ export default function ProjectDetailClient({
                         <div style={{ width: 5, height: 5, borderRadius: '50%', background: col.color }} />
                       </div>
                     </div>
+                    )}
 
                     {cards.length === 0 ? (
-                      <div style={{ fontSize: 11, color: 'var(--ink-4)', padding: '8px 4px', textAlign: 'center' }}>
+                      <div {...rv('pj5-empty', { fontSize: 11, color: 'var(--ink-4)', padding: '8px 4px', textAlign: 'center' })}>
                         {col.key === 'pending' && !canManage ? '—' : 'Empty'}
                       </div>
                     ) : col.key === 'pending' ? (
@@ -701,7 +760,6 @@ export default function ProjectDetailClient({
                         return (
                           <div
                             key={proposal.id}
-                            className="ops-card"
                             draggable={canManage}
                             onDragStart={(e) => {
                               if (!canManage) return
@@ -710,27 +768,27 @@ export default function ProjectDetailClient({
                               setDragging({ kind: 'proposal', id: proposal.id })
                             }}
                             onDragEnd={() => { setDragging(null); setDropTarget(null) }}
-                            style={{
+                            {...(RV ? { className: `ops-card pj5-card${canManage ? ' can-move' : ''}${dragging?.id === proposal.id ? ' is-dragging' : ''}` } : { className: 'ops-card', style: {
                               background: 'var(--surface)', border: '1px solid var(--rule)',
                               borderLeft: '3px solid #3b82f6',
                               borderRadius: 8, padding: '10px 12px', marginBottom: 6,
                               cursor: canManage ? 'grab' : 'default',
                               opacity: dragging?.id === proposal.id ? 0.5 : 1,
-                            }}
+                            } })}
                           >
-                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--ink-2)', lineHeight: 1.45, marginBottom: 4 }}>
+                            <div {...rv('pj5-cardtitle', { fontSize: 12, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 })}>{name}</div>
+                            <div {...rv('pj5-offerline', { fontSize: 11, color: 'var(--ink-2)', lineHeight: 1.45, marginBottom: 4 })}>
                               <span style={{ color: 'var(--ink-3)' }}>Offers: </span>{proposal.work_description}
                             </div>
-                            <div style={{ fontSize: 11, color: 'var(--ink-2)', lineHeight: 1.45, marginBottom: 8 }}>
+                            <div {...rv('pj5-offerline', { fontSize: 11, color: 'var(--ink-2)', lineHeight: 1.45, marginBottom: 8 })}>
                               <span style={{ color: 'var(--ink-3)' }}>Wants: </span>{proposal.expected_reward}
                             </div>
                             {canManage && (
                               <button
                                 onClick={() => acceptProposal(proposal.id, 'backlog')}
-                                style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', cursor: 'pointer' }}
+                                {...rv('v4-btn v4-btn--primary v4-btn--sm', { fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', cursor: 'pointer' })}
                               >
-                                Accept →
+                                {RV ? <><V4Icon name="check" size={14} />Accept</> : 'Accept →'}
                               </button>
                             )}
                           </div>
@@ -748,7 +806,6 @@ export default function ProjectDetailClient({
                         return (
                           <div
                             key={d.id}
-                            className="ops-card"
                             draggable={canManage}
                             onDragStart={(e) => {
                               if (!canManage) return
@@ -761,21 +818,24 @@ export default function ProjectDetailClient({
                               if (dragging) return
                               setEditModal(d)
                             }}
-                            style={{
-                              background: 'var(--surface)', border: '1px solid var(--rule)',
-                              borderRadius: 8, padding: '8px 10px', marginBottom: 6,
-                              cursor: canManage ? 'grab' : 'pointer',
-                              opacity: dragging?.id === d.id ? 0.5 : 1,
-                              transition: 'box-shadow 120ms',
-                            }}
-                            onMouseEnter={e => { if (!canManage || !dragging) (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+                            {...(RV ? { className: `ops-card pj5-card${canManage ? ' can-move' : ''}${dragging?.id === d.id ? ' is-dragging' : ''}` } : {
+                              className: 'ops-card',
+                              style: {
+                                background: 'var(--surface)', border: '1px solid var(--rule)',
+                                borderRadius: 8, padding: '8px 10px', marginBottom: 6,
+                                cursor: canManage ? 'grab' : 'pointer',
+                                opacity: dragging?.id === d.id ? 0.5 : 1,
+                                transition: 'box-shadow 120ms',
+                              },
+                              onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => { if (!canManage || !dragging) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)' },
+                              onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = 'none' },
+                            })}
                           >
-                            <div style={{
+                            <div {...rv(`pj5-cardtitle${d.status === 'done' ? ' is-done' : ''}`, {
                               fontSize: 12, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.35, marginBottom: 6,
                               textDecoration: d.status === 'done' ? 'line-through' : 'none',
                               opacity: d.status === 'done' ? 0.6 : 1,
-                            }}>
+                            })}>
                               {d.needs_review && (
                                 <DraftSwipe
                                   taskId={d.id} canDecide={canManage}
@@ -785,6 +845,26 @@ export default function ProjectDetailClient({
                               )}
                               {d.title}
                             </div>
+                            {RV ? (
+                              // Review: who and when in body text, late as a yellow result, another circle as its seal
+                              // (#7), and the bell from the icon set; watching is filled black (#31)
+                              <div className="pj5-meta">
+                                <div className="pj5-metaitems">
+                                  {assignee && <span className="pj5-who">{assignee}</span>}
+                                  {named && <NameTag name={named} />}
+                                  <PriorityBadge priority={d.priority} />
+                                  {d.due_date && (isOverdue
+                                    ? <V4Result tone="attention">{fmtTaskWhen(d.due_date, d.due_time)}<span className="sr-only"> · late</span></V4Result>
+                                    : <span className="pj5-when">{fmtTaskWhen(d.due_date, d.due_time)}</span>)}
+                                  {otherCircle && d.circle && <span className="pj5-circ" title={otherCircle.label}><CircleSeal slug={d.circle} size={16} />{otherCircle.label}</span>}
+                                </div>
+                                <button type="button" onClick={(e) => toggleDeliverableSubscription(d.id, e)} aria-pressed={isSubbed}
+                                  title={isSubbed ? 'Stop watching' : 'Watch'} aria-label={isSubbed ? 'Stop watching this subtask' : 'Watch this subtask'}
+                                  className={`pj5-bell${isSubbed ? ' on' : ''}`}>
+                                  <V4Icon name="bell" size={16} />
+                                </button>
+                              </div>
+                            ) : (
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, flexWrap: 'wrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, flexWrap: 'wrap', fontSize: 10, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>
                                 {assignee && <span>{assignee}</span>}
@@ -812,6 +892,7 @@ export default function ProjectDetailClient({
                                 <BellIcon filled={isSubbed} />
                               </button>
                             </div>
+                            )}
                             {subsList.length > 0 && (
                               <div style={{ marginTop: 5 }}>
                                 <SubscriberNames subs={subsList} max={4} />
@@ -841,18 +922,19 @@ export default function ProjectDetailClient({
             </div>
 
             {canManage && (
-              <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px', marginBottom: 20 }}>
+              <div {...rv('pj5-panel pj5-compose', { background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px', marginBottom: 20 })}>
                 <textarea
                   value={updateText}
                   onChange={e => setUpdateText(e.target.value)}
                   placeholder="Post an update on this task…"
+                  aria-label="Update"
                   rows={3}
-                  style={{ ...inputStyle, background: 'var(--surface)', resize: 'vertical', lineHeight: 1.6, marginBottom: 10 }}
+                  {...rv('v4-input pj5-field', { ...inputStyle, background: 'var(--surface)', resize: 'vertical', lineHeight: 1.6, marginBottom: 10 })}
                 />
                 <button
                   onClick={postUpdate}
                   disabled={postingUpdate || !updateText.trim()}
-                  style={{ background: '#4338ca', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 'var(--radius)', border: 'none', cursor: postingUpdate || !updateText.trim() ? 'not-allowed' : 'pointer', opacity: postingUpdate || !updateText.trim() ? 0.65 : 1 }}
+                  {...rv('v4-btn v4-btn--primary', { background: '#4338ca', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 'var(--radius)', border: 'none', cursor: postingUpdate || !updateText.trim() ? 'not-allowed' : 'pointer', opacity: postingUpdate || !updateText.trim() ? 0.65 : 1 })}
                 >
                   {postingUpdate ? 'Posting…' : 'Post update'}
                 </button>
@@ -860,13 +942,20 @@ export default function ProjectDetailClient({
             )}
 
             {updates.length === 0 ? (
-              <div style={{ color: 'var(--ink-4)', fontSize: 13, padding: '24px 0' }}>No updates yet.</div>
+              <div {...rv('pj5-empty pj5-empty--left', { color: 'var(--ink-4)', fontSize: 13, padding: '24px 0' })}>No updates yet.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {updates.map((u, i) => {
                   const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Team'
                   const date = new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   return (
+                    RV ? (
+                      // Review: no rail line (#37); when and who in meta text, the newest marked in ink
+                      <div key={u.id} className={`pj5-update${i === 0 ? ' is-new' : ''}`}>
+                        <div className="pj5-update__when"><span>{date}</span><span className="pj5-update__who">{author}</span></div>
+                        <p>{u.content}</p>
+                      </div>
+                    ) : (
                     <div key={u.id} className="ops-update-row" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0 16px', paddingBottom: 24 }}>
                       <div style={{ paddingTop: 3 }}>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-4)' }}>{date}</div>
@@ -877,6 +966,7 @@ export default function ProjectDetailClient({
                         <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>{u.content}</p>
                       </div>
                     </div>
+                    )
                   )
                 })}
               </div>
@@ -887,13 +977,14 @@ export default function ProjectDetailClient({
         {/* ── Right column — admin panel ────────────────────────────────────── */}
         {isAdmin && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px' }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 12 }}>Task settings</div>
+            <div {...rv('pj5-panel pj5-settings', { background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px' })}>
+              <div {...rv('pj5-label', { fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 12 })}>Task settings</div>
 
               {settingsBlock && (
-                <div style={{ fontSize: 12, lineHeight: 1.5, color: '#b45309', background: 'color-mix(in srgb, #f59e0b 10%, var(--surface))', border: '1px solid #f59e0b', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
+                // Review: not waiting on anyone, so not yellow: a quiet note with the lock (#34, #36)
+                <div {...rv('pj5-lock', { fontSize: 12, lineHeight: 1.5, color: '#b45309', background: 'color-mix(in srgb, #f59e0b 10%, var(--surface))', border: '1px solid #f59e0b', borderRadius: 8, padding: '8px 10px', marginBottom: 12 })}>
                   <InlineIcon name="lock" />You can view these settings but not change them.{' '}
-                  <button type="button" onClick={() => setNotice(settingsBlock)} style={{ background: 'none', border: 'none', padding: 0, color: '#b45309', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
+                  <button type="button" onClick={() => setNotice(settingsBlock)} {...rv('pj5-why', { background: 'none', border: 'none', padding: 0, color: '#b45309', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 12 })}>
                     Why?
                   </button>
                 </div>
@@ -901,7 +992,7 @@ export default function ProjectDetailClient({
 
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>Status</label>
-                <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }}>
+                <select value={editStatus} onChange={e => setEditStatus(e.target.value)} aria-label="Status" {...rv('v4-input pj5-field', { ...inputStyle, padding: '8px 12px', fontSize: 13 })}>
                   <option value="later">Later</option>
                   <option value="pending">Idea</option>
                   <option value="backlog">To do</option>
@@ -933,15 +1024,17 @@ export default function ProjectDetailClient({
                           if (block) setNotice(block)
                           else { setEditCircle(next); if (next !== editCircle) setEditTeam('') }
                         }}
-                        style={{
+                        aria-pressed={RV ? active : undefined}
+                        // Review: a circle is its seal; the chosen one is black, like every chosen chip (#7, #31, #37)
+                        {...rv(`pj5-chip${active ? ' on' : ''}`, {
                           fontSize: 11, fontWeight: 600, padding: '4px 9px', borderRadius: 20,
                           background: active ? meta.color : 'var(--surface)',
                           color: active ? '#fff' : 'var(--ink-3)',
                           border: `1px solid ${active ? meta.color : 'var(--rule)'}`,
                           cursor: 'pointer',
-                        }}
+                        })}
                       >
-                        {meta.emoji} {meta.label}
+                        {RV ? <><CircleSeal slug={p} size={16} />{meta.label}</> : <>{meta.emoji} {meta.label}</>}
                       </button>
                     )
                   })}
@@ -956,14 +1049,14 @@ export default function ProjectDetailClient({
               )}
 
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 14 }}>
-                <input type="checkbox" checked={editOpenCollab} onChange={e => setEditOpenCollab(e.target.checked)} style={{ accentColor: '#4338ca' }} />
+                <input type="checkbox" checked={editOpenCollab} onChange={e => setEditOpenCollab(e.target.checked)} style={{ accentColor: RV ? 'var(--ink, #111317)' : '#4338ca' }} />
                 <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>Open for offers to help</span>
               </label>
 
               <button
                 onClick={saveProjectSettings}
                 disabled={savingSettings || !!settingsBlock}
-                style={{ background: '#4338ca', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 'var(--radius)', border: 'none', cursor: savingSettings || settingsBlock ? 'not-allowed' : 'pointer', opacity: savingSettings || settingsBlock ? 0.65 : 1 }}
+                {...rv('v4-btn v4-btn--primary v4-btn--sm', { background: '#4338ca', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 'var(--radius)', border: 'none', cursor: savingSettings || settingsBlock ? 'not-allowed' : 'pointer', opacity: savingSettings || settingsBlock ? 0.65 : 1 })}
               >
                 {savingSettings ? 'Saving…' : 'Save settings'}
               </button>

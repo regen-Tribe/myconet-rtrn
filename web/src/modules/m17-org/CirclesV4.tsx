@@ -1,4 +1,5 @@
 'use client'
+import { COMMUNITY_NAME, DESIGN_REVIEW } from '@/core/lib/instance'
 import { CircleSeal } from '@/core/components/v4/CircleSeal'
 
 import { useEffect, useState } from 'react'
@@ -159,7 +160,7 @@ function CircleCards(p: Props) {
       <PageHeader
         eyebrow="Community"
         title="Circles"
-        subtitle={<>A circle looks after one area of community life. Subcircles are smaller groups inside a circle.{mine.length > 0 && <> You’re in <b>{mine.map(c => circles.meta(c).label).join(', ')}</b>.</>}</>}
+        subtitle={<>A circle looks after one area of community life. Subcircles are smaller groups inside a circle.{!DESIGN_REVIEW && mine.length > 0 && <> You’re in <b>{mine.map(c => circles.meta(c).label).join(', ')}</b>.</>}</>}
         actions={p.role === 'admin' ? <AddCircleButton /> : undefined}
       />
 
@@ -221,7 +222,8 @@ function CircleCards(p: Props) {
                 {(() => {
                   const label = <><Icon name="circles" size={15} /><b>{teams.length}</b> {teams.length === 1 ? 'subcircle' : 'subcircles'}</>
                   const mayAdd = canLeadCircle(c, p.role, p.leadCircles)
-                  if (!teams.length && !mayAdd) return <span className="cv4-stat">{label}</span>
+                  // Design review: "0 subcircles" on every card says nothing; leave it out
+                  if (!teams.length && !mayAdd) return DESIGN_REVIEW ? null : <span className="cv4-stat">{label}</span>
                   // Inside the card's link: these are buttons that stop the card from opening, and go where they say
                   const goTo = (e: React.MouseEvent, href: string) => { e.preventDefault(); e.stopPropagation(); setSubsOf(null); router.push(href) }
                   const base = `/circles?c=${encodeURIComponent(c)}&tab=subcircles`
@@ -374,6 +376,8 @@ function CirclePage(p: Props & { slug: string }) {
 
   const joinAction = !p.userId ? null
     : inIt ? <Tag icon="check">You’re a member</Tag>
+    // Asking to join a circle opens at joining member (decision #77)
+    : !isJoiningOrAbove(p.role) ? <p className="v4-hint">Ask to join once you’ve joined {COMMUNITY_NAME}. <Link href="/join">Start joining</Link></p>
     : asked ? <Button variant="secondary" onClick={withdraw} disabled={busy === 'ask'}>Asked · withdraw</Button>
     : asked === false ? <Button onClick={() => setAsking(a => !a)}>Ask to join</Button>
     : null
@@ -523,8 +527,8 @@ function CirclePage(p: Props & { slug: string }) {
       {tab === 'guides' && (
         <>
           <SectionHead title="Manuals & guides" />
-          {!signedIn ? <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to read this circle’s guides.</p>
-            : !isJoiningOrAbove(p.role) ? <p className="v4-hint">Guides open once you’ve <Link href="/join">joined</Link>.</p>
+          {!signedIn ? <p className="v4-hint">{DESIGN_REVIEW ? <>Guides open once you’ve joined {COMMUNITY_NAME}. <Link href="/auth/signup">Create account</Link></> : <><Link href="/auth/login">Sign in</Link> to read this circle’s guides.</>}</p>
+            : !isJoiningOrAbove(p.role) ? <p className="v4-hint">Guides open once you’ve joined {COMMUNITY_NAME}. <Link href="/join">Start joining</Link></p>
             : p.extras?.guides == null ? <p className="v4-hint">This community hasn’t connected its second brain yet, so there are no guides to show.</p>
             : p.extras.guides.length ? (
               <>
@@ -659,8 +663,10 @@ function CirclePage(p: Props & { slug: string }) {
             {upcoming.length ? <div className="v4-list">{upcoming.slice(0, 12).map(eventRow)}</div> : <p className="v4-hint">Nothing on the calendar for this circle.</p>}
           </div>
           <div>
-            <SectionHead title={signedIn ? `Meeting notes · ${notesCount}` : 'Meeting notes'} action={p.meetingCounts ? { href: `/meetings?circle=${encodeURIComponent(c)}`, label: 'All notes →' } : undefined} />
-            {!signedIn ? <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to read meeting notes.</p>
+            <SectionHead title={signedIn && isJoiningOrAbove(p.role) ? `Meeting notes · ${notesCount}` : 'Meeting notes'} action={p.meetingCounts ? { href: `/meetings?circle=${encodeURIComponent(c)}`, label: 'All notes →' } : undefined} />
+            {/* Meetings open at joining member: say so instead of an empty list (decision #75) */}
+            {!signedIn ? <p className="v4-hint">{DESIGN_REVIEW ? <>Meeting notes open when you join {COMMUNITY_NAME}. <Link href="/auth/signup">Create account</Link></> : <><Link href="/auth/login">Sign in</Link> to read meeting notes.</>}</p>
+              : !isJoiningOrAbove(p.role) ? <p className="v4-hint">Meeting notes open when you join {COMMUNITY_NAME}. <Link href="/join">Start joining</Link></p>
               : notes.length ? (
                 <div className="v4-list">
                   {notes.slice(0, 12).map(m => (
@@ -756,7 +762,8 @@ function SubcirclePage(p: Props & { slug: string; teamId: string }) {
     const rows = [...projects.map(projectRow), ...tasks.filter(t => !t.project_id).map(taskRow)]
     return rows.length ? <div className="v4-list">{n ? rows.slice(0, n) : rows}</div> : <p className="v4-hint">No open tasks given to this subcircle.</p>
   }
-  const noteList = (n?: number) => !signedIn ? <p className="v4-hint"><Link href="/auth/login">Sign in</Link> to read meeting notes.</p>
+  const noteList = (n?: number) => !signedIn ? <p className="v4-hint">{DESIGN_REVIEW ? <>Meeting notes open when you join {COMMUNITY_NAME}. <Link href="/auth/signup">Create account</Link></> : <><Link href="/auth/login">Sign in</Link> to read meeting notes.</>}</p>
+    : !isJoiningOrAbove(p.role) ? <p className="v4-hint">Meeting notes open when you join {COMMUNITY_NAME}. <Link href="/join">Start joining</Link></p>
     : notes.length ? <div className="v4-list">{(n ? notes.slice(0, n) : notes).map(noteRow)}</div>
     : <p className="v4-hint">No meetings set to this subcircle yet. A lead sets a meeting’s subcircle on its page, under Review this meeting.</p>
 
@@ -853,7 +860,7 @@ function SubcirclePage(p: Props & { slug: string; teamId: string }) {
 
       {tab === 'meetings' && (
         <>
-          <SectionHead title={signedIn ? `Meeting notes · ${notes.length}` : 'Meeting notes'} action={p.meetingCounts ? { href: `/meetings?circle=${encodeURIComponent(c)}`, label: `All ${meta.label} notes →` } : undefined} />
+          <SectionHead title={signedIn && isJoiningOrAbove(p.role) ? `Meeting notes · ${notes.length}` : 'Meeting notes'} action={p.meetingCounts ? { href: `/meetings?circle=${encodeURIComponent(c)}`, label: `All ${meta.label} notes →` } : undefined} />
           {noteList()}
         </>
       )}

@@ -6,6 +6,11 @@
 .ops4-latechip { color: var(--red-ink, #b42318); }
 
 .ops4-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 10px; align-items: start; }
+/* Computers (v4.127.0): every column on one row, Done last on the far right; a narrow window scrolls sideways instead
+   of wrapping Done and Paused onto a second row */
+@media (min-width: 761px) {
+  .ops4-board { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); overflow-x: auto; padding-bottom: 6px; }
+}
 .ops4-colhead { padding: 2px 4px; }
 .ops4-colnote { font-weight: 500; color: var(--ink-4, #9aa0ab); font-size: 11px; }
 .ops4-empty { font-size: 12px; color: var(--ink-4, #9aa0ab); padding: 14px 4px; text-align: center; }
@@ -37,4 +42,172 @@
 @media (max-width: 760px) {
   .ops4-board { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; margin: 0 -16px; padding: 0 16px 6px; scroll-padding: 0 16px; }
   .ops4-board > .ops-col { flex: 0 0 82%; scroll-snap-align: start; }
+}
+
+/* Design review (html[data-review], "designReview": true): one toolbar row, quieter notes */
+.ops5-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.ops5-toolbar .v4-seg { box-shadow: none; }
+.ops5-toolbar .v4-seg button .v4-icon { flex-shrink: 0; }
+.ops5-need { height: 38px; padding: 0 6px 0 14px; border: 0; border-radius: 999px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--rule, rgba(17,19,23,.14)); font: inherit; font-size: 13px; font-weight: 500; color: var(--ink-2, #3a3f4a); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.ops5-need.on { background: var(--ink, #111317); color: #fff; box-shadow: none; }
+.ops5-need.on .v4-count { background: #fff; color: var(--ink, #111317); }
+.ops5-cards { box-shadow: none; }
+.ops5-hint { display: inline-flex; vertical-align: -2px; margin-left: 6px; color: var(--ink-4, #9aa0ad); cursor: help; }
+html[data-review] .ops4-latechip { display: inline-flex; align-items: center; gap: 5px; border-radius: 8px; background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); box-shadow: none; font-weight: 600; }
+html[data-review] .ops4-latechip.v4-chip--on { background: var(--yellow-ink, #7a5b00); color: #fff; }
+html[data-review] .ops4-kind { font-size: 11px; font-weight: 500; }
+html[data-review] .ops4-title { font-size: 15px; }
+html[data-review] .ops4-foot small { font-size: 13px; }
+html[data-review] .ops4-av { font-size: 11px; }
+@media (max-width: 640px) {
+  /* Views as icons only on phones, so the row fits one line; the names stay for screen readers */
+  .ops5-toolbar .v4-seg button { padding: 0 10px; }
+  .ops5-toolbar > .v4-seg button:not(.on) { font-size: 0; gap: 0; }
+  .ops5-toolbar > .v4-seg button:not(.on) .v4-icon { font-size: 13px; }
+  .ops5-toolbar .ops4-spacer { display: none; }
+}
+
+/* Design review, phones (decision #38): one row (views + Filter); the board's filters, Drafts and Ideas for later
+   sit in a bottom sheet. On computers the sheet is the ordinary filter row and the Filter button is hidden. */
+.ops5-filterbtn { display: none; }
+.ops5-sheet__head, .ops5-sheet__lists { display: none; }
+@media (max-width: 640px) {
+  html[data-review] .ops5-toolbar > .ops5-need { display: none; }
+  html[data-review] .ops5-filterbtn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; margin-left: auto; }
+  html[data-review] .ops5-sheet { display: none; }
+  html[data-review] .ops5-sheet.ops5-sheet--open {
+    display: flex; flex-direction: column; align-items: stretch; gap: 14px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 210; max-height: 82vh; overflow-y: auto;
+    background: var(--surface, #fff); border-radius: 20px 20px 0 0;
+    padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  html[data-review] .ops5-sheet--open .ops4-spacer { display: none; }
+  html[data-review] .ops5-sheet--open > :not(.ops5-sheet__head):not(.ops5-sheet__lists) { align-self: flex-start; }
+  html[data-review] .ops5-sheet--open .ops5-sheet__head { display: flex; align-items: center; justify-content: space-between; }
+  html[data-review] .ops5-sheet--open .ops5-sheet__head b { font-size: 18px; color: var(--ink, #111317); }
+  html[data-review] .ops5-sheet--open .ops5-sheet__lists { display: flex; flex-wrap: wrap; gap: 8px; }
+  html[data-review] .ops5-sheet--open .v4-seg { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+  html[data-review] .ops5-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(17, 19, 23, .18); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+}
+
+/* ─── Design review: one task's page (/operations/[id]) and its pop-up, decisions #55–#58 ─────────────────────
+   Same information, flows and permissions; only the look. Classes are set only with the switch on
+   (ProjectDetailClient, TaskModal, CalendarPicker: `rv()`), so everything here is scoped to html[data-review].
+   `body` raises the weight above globals.css's v4 bridge; `:not(#_)` outranks its !important field rule. */
+
+/* The quiet top row: the circle's seal, Watch, the lead and the calendar (#55: replaces the coloured banner) */
+html[data-review] .pj5-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 16px; }
+html[data-review] .pj5-top .v4-tag { height: 32px; font-size: 13px; padding-right: 12px; }
+html[data-review] .pj5-round { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+html[data-review] .pj5-rbtn { width: 38px; height: 38px; border-radius: 50%; background: var(--ctl, #e3e8f4); color: var(--ink, #111317); display: grid; place-items: center; }
+html[data-review] .pj5-rbtn:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .pj5-watch { height: 38px; padding: 0 14px 0 12px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); font: inherit; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+html[data-review] .pj5-watch:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .pj5-watch.on { background: var(--ink, #111317); color: #fff; }
+
+/* Words in the five roles: Label 11 capitals, Meta 13, Body 15, Card title 15/18 */
+html[data-review] .pj5-label { font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4, #9aa0ad); margin-bottom: 8px; }
+html[data-review] .pj5-offerstate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; font-size: 13px; color: var(--ink-3, #6b7180); }
+html[data-review] .pj5-req { color: var(--ink-4, #9aa0ad); }
+html[data-review] .pj5-error { font-size: 13px; color: var(--red-ink, #ae3a35); margin: 8px 0 0; }
+html[data-review] .pj5-empty { font-size: 13px; color: var(--ink-4, #9aa0ad); padding: 10px 4px; text-align: center; }
+html[data-review] .pj5-empty--left { text-align: left; padding: 8px 0; }
+
+/* White panels on the pale page, no frame (#37): the offer form, the update box, Task settings */
+html[data-review] .pj5-panel { background: var(--surface, #fff); border-radius: 20px; padding: 16px; }
+html[data-review] .pj5-offerform { margin-bottom: 32px; padding: 20px; }
+html[data-review] .pj5-compose { margin-bottom: 20px; }
+html[data-review] .pj5-compose textarea { margin-bottom: 10px; }
+
+/* Fields: the one soft control fill, no outline; white with an ink ring while typing (#37) */
+html[data-review] body .pj5-field:is(input, select, textarea):not(#_) {
+  width: 100%; box-sizing: border-box; min-height: 0; padding: 10px 14px; font: inherit; font-size: 15px; color: var(--ink, #111317);
+  background-color: var(--ctl, #e3e8f4) !important; background-image: none !important; border: 0 !important; box-shadow: none !important; border-radius: 12px !important; outline: none;
+}
+html[data-review] body .pj5-field:is(input, select, textarea):not(#_):focus { background-color: var(--surface, #fff) !important; box-shadow: inset 0 0 0 2px var(--ink, #111317) !important; }
+html[data-review] body .pj5-field.pj5-time:not(#_) { width: 130px; flex: 0 0 auto; }
+html[data-review] body select.pj5-field + input.pj5-field:not(#_) { margin-top: 6px; }
+html[data-review] body textarea.pj5-field:not(#_) { resize: vertical; line-height: 1.55; }
+
+/* The date button (CalendarPicker): a soft control with the v4 calendar icon */
+html[data-review] .pj5-date { height: 42px; padding: 0 14px 0 12px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink-3, #6b7180); font: inherit; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+html[data-review] .pj5-date:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .pj5-date.has-value { color: var(--ink, #111317); }
+html[data-review] .pj5-date.is-open { box-shadow: inset 0 0 0 2px var(--ink, #111317); }
+
+/* Add a subtask: one row, a field, the date and the dark green Add (#30), on phones too (#38) */
+html[data-review] .pj5-add { margin-bottom: 14px; }
+html[data-review] .pj5-addrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+html[data-review] body .pj5-field.pj5-addtitle:not(#_) { flex: 1 1 140px; width: auto; min-width: 0; height: 42px; padding: 0 16px; border-radius: 999px !important; }
+html[data-review] .pj5-addbtn { flex-shrink: 0; }
+
+/* The subtask board: each column is its status pill and a count (#34: status colours on subtasks only) */
+html[data-review] .pj5-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; align-items: start; }
+html[data-review] body .pj5-col { min-height: 100px; transition: background 120ms; }
+html[data-review] body .pj5-col.is-target { background: var(--ctl, #e3e8f4) !important; }
+html[data-review] .pj5-colhead { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 2px 2px 10px; }
+html[data-review] .pj5-colcount { font-size: 13px; font-weight: 600; color: var(--ink-3, #6b7180); }
+html[data-review] .pj5-card { padding: 12px; margin-bottom: 8px; cursor: pointer; }
+html[data-review] .pj5-card.can-move { cursor: grab; }
+html[data-review] .pj5-card.is-dragging { opacity: .5; }
+html[data-review] .pj5-cardtitle { font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--ink, #111317); margin-bottom: 8px; }
+html[data-review] .pj5-cardtitle.is-done { text-decoration: line-through; color: var(--ink-3, #6b7180); font-weight: 500; }
+html[data-review] .pj5-offerline { font-size: 13px; color: var(--ink-2, #3a3f4a); line-height: 1.45; margin-bottom: 4px; }
+html[data-review] .pj5-offerline:last-of-type { margin-bottom: 10px; }
+html[data-review] .pj5-meta { display: flex; align-items: center; gap: 6px; }
+html[data-review] .pj5-metaitems { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; flex: 1; min-width: 0; font-size: 13px; color: var(--ink-3, #6b7180); }
+html[data-review] .pj5-who { color: var(--ink-2, #3a3f4a); font-weight: 500; }
+html[data-review] .pj5-circ { display: inline-flex; align-items: center; gap: 5px; }
+html[data-review] .pj5-bell { width: 30px; height: 30px; flex-shrink: 0; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-4, #9aa0ad); display: grid; place-items: center; cursor: pointer; }
+html[data-review] .pj5-bell:hover { background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); }
+html[data-review] .pj5-bell.on { background: var(--ink, #111317); color: #fff; }
+
+/* Who watches: grey chips, never a colour per person (#46) */
+html[data-review] .pj5-people { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 6px; }
+html[data-review] .pj5-person { font-size: 11px; font-weight: 500; color: var(--ink-2, #3a3f4a); background: var(--ctl, #e3e8f4); padding: 2px 8px; border-radius: 999px; }
+html[data-review] .pj5-more { font-size: 11px; color: var(--ink-4, #9aa0ad); }
+
+/* Updates: no rail line (#37); the newest one's dot is ink */
+html[data-review] .pj5-update { display: grid; grid-template-columns: 88px 1fr; gap: 0 16px; padding-bottom: 20px; }
+html[data-review] .pj5-update__when { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--ink-4, #9aa0ad); padding-top: 2px; }
+html[data-review] .pj5-update__who { color: var(--ink-2, #3a3f4a); font-weight: 500; }
+html[data-review] .pj5-update p { position: relative; margin: 0; padding-left: 16px; font-size: 15px; line-height: 1.6; color: var(--ink-2, #3a3f4a); white-space: pre-wrap; }
+html[data-review] .pj5-update p::before { content: ''; position: absolute; left: 0; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--ctl-hover, #d8deee); }
+html[data-review] .pj5-update.is-new p::before { background: var(--ink, #111317); }
+
+/* Task settings: the lock note is quiet (nobody's answer is awaited); circles are seal chips, the chosen one black */
+html[data-review] .pj5-lock { font-size: 13px; line-height: 1.5; color: var(--ink-2, #3a3f4a); background: var(--ctl, #e3e8f4); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
+html[data-review] .pj5-why { all: unset; color: var(--ink, #111317); font-weight: 600; text-decoration: underline; cursor: pointer; }
+html[data-review] .pj5-chip { height: 30px; padding: 0 10px 0 4px; border: 0; border-radius: 999px; background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); font: inherit; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+html[data-review] .pj5-chip:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .pj5-chip.on { background: var(--ink, #111317); color: #fff; }
+
+/* The task pop-up (TaskModal, also opened from the board): white, no frame, a bottom sheet on phones */
+html[data-review] .tm5-back { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(17, 19, 23, .18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+html[data-review] .tm5-dialog { width: 100%; max-width: 480px; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; background: var(--surface, #fff); border-radius: 24px; box-shadow: 0 30px 80px -20px rgba(30, 35, 60, .35); animation: calFadeIn 160ms ease; }
+html[data-review] .tm5-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 6px 20px; background: var(--surface, #fff); }
+html[data-review] .tm5-head .pj5-label { margin: 0; }
+html[data-review] .tm5-close { width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); display: grid; place-items: center; cursor: pointer; }
+html[data-review] .tm5-close:hover { background: var(--ctl-hover, #d8deee); }
+html[data-review] .tm5-foot { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--surface, #fff); }
+html[data-review] .tm5-foot--end { justify-content: flex-end; }
+html[data-review] body .tm5-delete { color: var(--red-ink, #ae3a35); }
+html[data-review] .tm5-draft { font-size: 13px; color: var(--yellow-ink, #7a5b00); background: var(--yellow, #fff0b3); border-radius: 12px; padding: 8px 12px; margin-bottom: 16px; }
+html[data-review] .tm5-error { padding: 0 20px 10px; margin: 0; }
+html[data-review] .tm5-circ { display: inline-flex; align-items: center; gap: 6px; }
+/* The priority slider is a control, not a field: no box; ink like every chosen control */
+html[data-review] body .tm5-dialog input[type="range"]:not(#_) { min-height: 0; padding: 0; background: none !important; box-shadow: none !important; border: 0 !important; accent-color: var(--ink, #111317) !important; }
+
+@media (max-width: 640px) {
+  /* First third of a phone: the date button is its icon until a date is picked; an empty column is narrow (it
+     stays a drop target), so the first subtasks show beside it instead of a whole screen of "Empty" */
+  html[data-review] .pj5-addrow .pj5-date:not(.has-value) { width: 42px; padding: 0; justify-content: center; }
+  html[data-review] .pj5-addrow .pj5-date:not(.has-value) .pj5-date__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  html[data-review] body .pj5-board { grid-auto-columns: auto; }
+  html[data-review] body .pj5-col { width: calc(100vw - 64px); }
+  html[data-review] body .pj5-col.is-empty { width: 128px; }
+  html[data-review] .pj5-update { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  html[data-review] .pj5-update__when { flex-direction: row; gap: 8px; }
+  html[data-review] .tm5-back { align-items: flex-end; padding: 0; }
+  html[data-review] .tm5-dialog { max-width: 100%; max-height: 88dvh; border-radius: 24px 24px 0 0; }
 }

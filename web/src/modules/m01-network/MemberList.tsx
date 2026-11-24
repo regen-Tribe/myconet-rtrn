@@ -2,6 +2,7 @@
 import { Icon } from '@/core/components/v4'
 import { useState } from 'react'
 import Link from 'next/link'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 
 type Member = {
   id: string
@@ -73,7 +74,7 @@ export default function MemberList({ members, matchScores = {} }: { members: Mem
                 color: view === 'list' ? 'var(--ink)' : 'var(--ink-4)',
               }}
             >
-              <Icon name="menu" size={14} label="List" />
+              <Icon name={DESIGN_REVIEW ? 'list' : 'menu'} size={14} label="List" />
             </button>
           </div>
           <Link href="/members/discover" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>

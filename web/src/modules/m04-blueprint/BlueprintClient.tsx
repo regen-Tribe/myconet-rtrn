@@ -572,17 +572,17 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
                 {scope?.circles ? '' : ` · ${foundList.length} CIRCLE${foundList.length === 1 ? '' : 'S'} FOUND`} · REVIEW BELOW
               </div>
               {fromSite && siteCapped && (
-                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                <div style={{ marginTop: 10, fontSize: 12, color: 'var(--rv-neutral, #f59e0b)', background: 'var(--rv-neutral-bg, #f59e0b15)', border: '1px solid var(--rv-neutral-line, #f59e0b40)', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
                   <InlineIcon name="alert" />Big site: we read {pageUrls.length} pages (the most useful first) and stopped there, to keep the scan to a few minutes. Import a document for anything it missed.
                 </div>
               )}
               {wasTruncated && (
-                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                <div style={{ marginTop: 10, fontSize: 12, color: 'var(--rv-neutral, #f59e0b)', background: 'var(--rv-neutral-bg, #f59e0b15)', border: '1px solid var(--rv-neutral-line, #f59e0b40)', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
                   <InlineIcon name="alert" />Large document — read the first 1,200,000 characters (about 400 pages). If key content comes later, import the rest separately.
                 </div>
               )}
               {failedParts > 0 && (
-                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                <div style={{ marginTop: 10, fontSize: 12, color: 'var(--rv-neutral, #f59e0b)', background: 'var(--rv-neutral-bg, #f59e0b15)', border: '1px solid var(--rv-neutral-line, #f59e0b40)', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
                   <InlineIcon name="alert" />{failedParts} part{failedParts === 1 ? '' : 's'} of the scan didn&rsquo;t come back, so some answers may be missing. You can run the import again later; it only proposes, nothing is overwritten.
                 </div>
               )}
@@ -734,7 +734,7 @@ function ImportModal({ onClose, onApply, currentValues, scope, canSetBranding = 
             </>}
 
             {applyError && (
-              <div style={{ fontSize: 13, color: '#b91c1c', background: '#b91c1c12', border: '1px solid #b91c1c40', borderRadius: 'var(--radius)', padding: '8px 12px', marginBottom: 12 }}>{applyError}</div>
+              <div style={{ fontSize: 13, color: 'var(--rv-bad, #b91c1c)', background: 'var(--rv-bad-bg, #b91c1c12)', border: '1px solid var(--rv-bad-line, #b91c1c40)', borderRadius: 'var(--radius)', padding: '8px 12px', marginBottom: 12 }}>{applyError}</div>
             )}
 
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
@@ -2025,7 +2025,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>MyCoNet</span>
-                <span className="mod-num" style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: '#92640a', padding: '1px 7px', borderRadius: 20, letterSpacing: '0.06em' }}>M04</span>
+                <span className="mod-num" style={{ fontSize: 9, fontWeight: 700, color: 'var(--rv-neutral, #fff)', background: 'var(--rv-neutral-bg, #92640a)', padding: '1px 7px', borderRadius: 20, letterSpacing: '0.06em' }}>M04</span>
               </div>
               <div className="brand-name">Blueprint</div>
               <div className="brand-sub">Regen Neighborhood Framework</div>

@@ -10,7 +10,8 @@ import {
   CATEGORY_META, canBook, fmtBookingRange, isHolding,
   localDateInput, localDateTimeInput, overlaps, personName,
 } from './lib/inventory'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { tagLabel } from './lib/tag-labels'
 import { Button, Icon, IconTile, InlineIcon, StatusPill, Tag } from '@/core/components/v4'
 import { CATEGORY_ICON } from './BookingsV4'
 import { PhotoStrip } from '@/core/components/PhotoStrip'
@@ -97,7 +98,7 @@ export function ItemModal({
           <div className="v4-tags">
             <Tag>{meta.label}</Tag>
             {circles.has(item.circle) && <Tag><span className="v4-dot" style={{ background: circles.meta(item.circle).color }} />{circles.meta(item.circle).label}</Tag>}
-            {item.tags.map(t => <Tag key={t}>{t}</Tag>)}
+            {item.tags.map(t => <Tag key={t}>{DESIGN_REVIEW ? tagLabel(t) : t}</Tag>)}
             {!item.is_active && <StatusPill status="paused" label="Archived" />}
           </div>
 

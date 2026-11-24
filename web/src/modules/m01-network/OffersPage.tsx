@@ -17,7 +17,8 @@ import {
 } from '@/core/components/ui/select'
 import { Plus, Gift, Pencil, Trash2, Loader2 } from '@/core/components/v4/lucide-compat'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import MembersViews from './MembersViews'
 import { Button as V4Button, Icon as V4Icon, IconTile, PageHeader, Tag } from '@/core/components/v4'
 import './members-v4.css'
 
@@ -165,6 +166,7 @@ export default function OffersPage() {
       <PageHeader eyebrow="Members" title="My offers"
         subtitle={offers.length ? <><b>{offers.length} {offers.length === 1 ? 'offer' : 'offers'}</b> on your profile: skills, services and things you can share.</> : 'Skills, services and things you can share with the community.'}
         actions={offers.length > 0 && <V4Button icon="plus" onClick={openNew}>Add offer</V4Button>} />
+      {DESIGN_REVIEW && <MembersViews signedIn={true} className="mbv--page" />}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>{form}</Dialog>
       {offers.length === 0 ? (
         <div className="v4-empty">

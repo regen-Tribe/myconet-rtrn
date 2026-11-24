@@ -10,6 +10,7 @@ import {
 import { AvatarCropper } from '@/core/components/AvatarCropper'
 import { uploadAvatarBlob } from '@/core/lib/avatar'
 import { modLabel } from '@/core/lib/module-label'
+import { SIGNED_IN_PROFILE_COLUMNS, profileDetailsOf } from '@/core/lib/public-profile'
 
 const OCEAN_LABELS = [
   { key: 'openness',          label: 'Openness' },
@@ -57,7 +58,7 @@ function SectionCard({ stripe, children, style }: { stripe?: string; children: R
 function SectionTitle({ icon: Icon, children }: { icon?: any; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-      {Icon && <Icon style={{ width: 15, height: 15, color: 'var(--m1)', flexShrink: 0 }} />}
+      {Icon && <Icon style={{ width: 15, height: 15, color: 'var(--rv-icon, var(--m1))', flexShrink: 0 }} />}
       <span style={{ fontFamily: 'var(--display)', fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{children}</span>
     </div>
   )
@@ -106,13 +107,13 @@ export default function NetworkProfilePage() {
       if (!user) { router.push('/auth/login'); return }
 
       const [p, b, o, s] = await Promise.all([
-        supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+        supabase.from('user_profiles').select(SIGNED_IN_PROFILE_COLUMNS).eq('id', user.id).single(),
         supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('user_offers').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('user_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
 
-      setProfile(p.data)
+      setProfile(p.data ? { ...(p.data as Record<string, any>), ...(await profileDetailsOf(supabase, user.id)) } as any : null)
       setAvatarUrl(p.data?.avatar_url ?? null)
       setBio(b.data)
       setOffers(o.data ?? [])
@@ -497,7 +498,7 @@ export default function NetworkProfilePage() {
                     background: 'color-mix(in srgb, var(--m1) 12%, var(--surface))',
                     display: 'grid', placeItems: 'center',
                   }}>
-                    <MapPin style={{ width: 18, height: 18, color: 'var(--m1)' }} />
+                    <MapPin style={{ width: 18, height: 18, color: 'var(--rv-icon, var(--m1))' }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--display)', fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>{t.location}</div>

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import MeetingDetail from '@/modules/m18-meetings/MeetingDetail'
-import { requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
+import { MeetingsLocked, requireMeetingsAccess } from '@/modules/m18-meetings/lib/access'
 import { isOpsAdmin } from '@/core/lib/roles'
 import { notesEmailOn } from '@/modules/m18-meetings/lib/notes-email'
 import { readNote, secondBrainOn } from '@/modules/m18-meetings/lib/second-brain'
@@ -10,7 +10,9 @@ import { loadTaskOptions } from '@/modules/m07-ops/lib/task-options'
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { supabase, user } = await requireMeetingsAccess()
+  const access = await requireMeetingsAccess()
+  if (access.locked) return <MeetingsLocked signedIn={access.signedIn} />
+  const { supabase, user } = access
   const [{ data }, { data: profile }] = await Promise.all([
     supabase.from('meeting_transcripts')
       .select('id, title, original_title, meeting_date, attendees, status, summary, action_items, transcript, error, source, needs_review, circle, visibility, created_by, created_at, processed_at, circle_source, agent_note, processing_started_at, processing_error, tasks_drafted, notes_path, notes_url, fireflies_notes, notes_emailed_at, notes_email_count, notes_email_error')

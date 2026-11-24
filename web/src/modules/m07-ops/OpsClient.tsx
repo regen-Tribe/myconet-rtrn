@@ -10,9 +10,12 @@ import { PROJECT_KANBAN_COLUMNS } from '@/core/lib/project-status'
 
 // The main board's columns: the Kanban ones, then Paused (v4.33.6), so paused and merged projects can be seen and
 // dragged back. Projects only: a task can't be paused, so tasks can't be dropped there.
+// Done stays the last column, on the far right (v4.127.0: Oscar, "we should be able to see the done column on the far
+// right of the ops board"), so Paused sits just before it.
 const BOARD_COLUMNS: { key: string; label: string; color: string }[] = [
-  ...PROJECT_KANBAN_COLUMNS,
+  ...PROJECT_KANBAN_COLUMNS.filter(c => c.key !== 'done'),
   { key: 'paused', label: 'Paused', color: '#a1a1aa' },
+  ...PROJECT_KANBAN_COLUMNS.filter(c => c.key === 'done'),
 ]
 import { canMoveProject, projectEditBlock, type CircleDirectory, type PermissionNotice } from '@/core/lib/ops-permissions'
 import { DeliverablesTab } from './DeliverablesTab'
@@ -29,8 +32,8 @@ import { NameTag } from './NameTag'
 import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
 import { PriorityBadge } from './Priority'
 import { modLabel } from '@/core/lib/module-label'
-import { DESIGN } from '@/core/lib/instance'
-import { Button, Chip, ChipRow, PageHeader, InlineIcon } from '@/core/components/v4'
+import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
+import { Button, Chip, ChipRow, Count, PageHeader, InlineIcon, Icon } from '@/core/components/v4'
 import { CircleFilter, parseCircleParam, setCircleParam } from '@/core/components/v4/CircleFilter'
 import './ops-v4.css'
 
@@ -408,13 +411,21 @@ export default function OpsClient({
   const circles = useCircles()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<OpsTab>(initialTab)
+  // Phones opening on the List (design review) waits on Oscar (handoff note, 2026-11-22); the board stays the default.
   const [notice, setNotice] = useState<PermissionNotice | null>(null)
   const [boardProjects, setBoardProjects] = useState<Project[]>(projects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   // The circle filter: several circles at once ([] = all), kept in the address as ?circle=a,b (v4.68.0)
   const [selectedCircles, setSelectedCircles] = useState<string[]>(() => parseCircleParam(initialCircle, s => circles.has(s)))
-  function pickCircles(next: string[]) { setSelectedCircles(next); setCircleParam(next) }
+  // The subcircle filter (v4.127.0: Oscar, "to operations page plz add a subcircle filter"): '' is every subcircle.
+  // Changing circles drops a subcircle that isn't in them.
+  const [selectedTeam, setSelectedTeam] = useState('')
+  function pickCircles(next: string[]) {
+    setSelectedCircles(next); setCircleParam(next)
+    if (selectedTeam && next.length && !next.includes(teams.find(x => x.id === selectedTeam)?.circle ?? '')) setSelectedTeam('')
+  }
+  const teamChoices = teams.filter(x => !selectedCircles.length || selectedCircles.includes(x.circle))
   // One circle chosen: new tasks start in it, and the project manager panel shows it (as with the old single filter)
   const selectedCircle = selectedCircles.length === 1 ? selectedCircles[0] : null
   // Who decides the project manager's suggestions for a circle: admins and that circle's leads
@@ -423,6 +434,8 @@ export default function OpsClient({
   for (const sg of pmSuggestions) if (canDecide(sg.circle)) pmCounts[sg.circle] = (pmCounts[sg.circle] ?? 0) + 1
   const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>('all')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  // Design review, phones: the board's filters live in one sheet behind a Filter button (Sonia, 23 Nov)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   // The board shows projects (with the tasks that have no project), or every task on its own (v4.38.0, ?view=tasks)
   const [view, setView] = useState<'projects' | 'tasks'>(initialView)
   function pickView(v: 'projects' | 'tasks') {
@@ -529,6 +542,7 @@ export default function OpsClient({
     if (view === 'tasks' || p.is_chores) return false
     if (overdueOnly && !overdueProjectIds.has(p.id)) return false
     if (selectedCircles.length && !(p.circle && selectedCircles.includes(p.circle))) return false
+    if (selectedTeam && p.team_id !== selectedTeam) return false
     if (myRole === 'lead') return p.lead_user_id === userId || p.created_by === userId
     if (myRole === 'member') return myAssignedProjectIds.has(p.id)
     if (myRole === 'subscriber') return mySubscribedProjectIds.has(p.id)
@@ -550,6 +564,8 @@ export default function OpsClient({
     const circle = t.circle ?? p?.circle ?? null
     if (overdueOnly && !isTaskOverdue(t.due_date, t.due_time, t.status)) return false
     if (selectedCircles.length && !(circle && selectedCircles.includes(circle))) return false
+    // A subtask counts for the subcircle it's given to, or its task's
+    if (selectedTeam && (t.team_id ?? p?.team_id ?? null) !== selectedTeam) return false
     if (myRole === 'lead') return (!!circle && leadCircles.includes(circle)) || (!!p && (p.lead_user_id === userId || p.created_by === userId))
     if (myRole === 'member') return t.assignee_id === userId
     if (myRole === 'subscriber') return !!p && mySubscribedProjectIds.has(p.id)
@@ -580,12 +596,14 @@ export default function OpsClient({
     <div className={DESIGN === 'v4' ? 'v4-page v4-page--wide v4-ops' : undefined} style={DESIGN === 'v4' ? undefined : { padding: '26px 32px 60px' }}>
 
 {DESIGN === 'v4' ? (
-        <PageHeader eyebrow={sprintName ? `Working together · ${sprintName}` : 'Working together'} title="Task board"
+        <PageHeader eyebrow={sprintName ? `Working together · ${sprintName}` : 'Working together'} title={DESIGN_REVIEW ? 'Operations' : 'Task board'}
           subtitle={<><b>{activeCount} task{activeCount !== 1 ? 's' : ''} on the go</b> · {deliverableCount - doneCount} open subtask{deliverableCount - doneCount !== 1 ? 's' : ''} · {doneCount} done</>}
           actions={<>
             {isAdmin && <Button variant="secondary" icon="plus" onClick={() => setNewTask(true)}>Task of its own</Button>}
-            {isAdmin && <Button variant="next" href="/operations/new">New task</Button>}
-            {canPropose && !isAdmin && <Button variant="next" href="/operations/new">Suggest a task</Button>}
+            {isAdmin && <Button variant={DESIGN_REVIEW ? 'primary' : 'next'} href="/operations/new">New task</Button>}
+            {canPropose && !isAdmin && <Button variant={DESIGN_REVIEW ? 'primary' : 'next'} href="/operations/new">Suggest a task</Button>}
+            {/* Read-only before joining, and saying how that changes (decisions #73, #79) */}
+            {DESIGN_REVIEW && !canPropose && !isAdmin && <Button variant="quiet" href={userId ? '/join' : '/auth/signup'}>{userId ? 'Suggest tasks once you’ve joined · Start joining' : 'Create account to help'}</Button>}
           </>} />
 ) : (<>
       {/* ── Page Head ─────────────────────────────────────────────────── */}
@@ -660,7 +678,26 @@ export default function OpsClient({
         )}
       </div>}
 
-{DESIGN === 'v4' ? (
+{DESIGN_REVIEW ? (
+        <div className="ops5-toolbar">
+          {/* Design review: one row. What the page shows (views) on the left; the lists that need someone on the right */}
+          <span className="v4-seg" role="group" aria-label="View">
+            <button type="button" aria-pressed={activeTab === 'board'} className={activeTab === 'board' ? 'on' : ''} onClick={() => setActiveTab('board')}><Icon name="board" size={16} />Board</button>
+            <button type="button" aria-pressed={activeTab === 'tasks' && !draftsOnly} className={activeTab === 'tasks' && !draftsOnly ? 'on' : ''} onClick={() => { setDraftsOnly(false); setActiveTab('tasks') }}><Icon name="tasks" size={16} />List</button>
+            <button type="button" aria-pressed={activeTab === 'updates'} className={activeTab === 'updates' ? 'on' : ''} onClick={() => setActiveTab('updates')}><Icon name="chat" size={16} />Updates</button>
+            <button type="button" aria-pressed={activeTab === 'circles'} className={activeTab === 'circles' ? 'on' : ''} onClick={() => setActiveTab('circles')}><Icon name="circles" size={16} />Circles</button>
+          </span>
+          <span className="ops4-spacer" />
+          {activeTab === 'board' && (
+            <button type="button" className="ops5-filterbtn" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+              <Icon name="filter" size={16} />Filter
+              {(() => { const n = (view === 'tasks' ? 1 : 0) + (selectedCircles.length ? 1 : 0) + (selectedTeam ? 1 : 0) + (overdueOnly ? 1 : 0) + (myRole !== 'all' ? 1 : 0); return n > 0 ? <Count n={n} label={`${n} filters on`} /> : null })()}
+            </button>
+          )}
+          {/* Drafts to confirm lives in one place, the yellow panel below the toolbar (decision #48) */}
+          {/* Later is a board column since v4.123.0 (Oscar), so no Ideas for later button here */}
+        </div>
+) : DESIGN === 'v4' ? (
         <ChipRow>
           {/* One row for what the page shows: the board of tasks, the board of every subtask, the list, … */}
           <Chip on={activeTab === 'board' && view === 'projects'} onClick={() => { setActiveTab('board'); pickView('projects') }}>Tasks</Chip>
@@ -703,18 +740,40 @@ export default function OpsClient({
             </div>
           )}
 {DESIGN === 'v4' ? (
-          <div className="v4-opsfilters ops4-filters">
+          <>
+          {DESIGN_REVIEW && filtersOpen && <div className="ops5-backdrop" onClick={() => setFiltersOpen(false)} aria-hidden="true" />}
+          <div className={`v4-opsfilters ops4-filters${DESIGN_REVIEW ? ' ops5-sheet' : ''}${filtersOpen ? ' ops5-sheet--open' : ''}`} role={DESIGN_REVIEW && filtersOpen ? 'dialog' : undefined} aria-label={DESIGN_REVIEW ? 'Filter the board' : undefined}>
+            {DESIGN_REVIEW && <div className="ops5-sheet__head"><b>Filter the board</b><button type="button" className="v4-btn v4-btn--primary v4-btn--sm" onClick={() => setFiltersOpen(false)}>Done</button></div>}
+            {DESIGN_REVIEW && (
+              <span className="v4-seg ops5-cards" role="group" aria-label="Cards on the board">
+                <button type="button" aria-pressed={view === 'projects'} className={view === 'projects' ? 'on' : ''} onClick={() => pickView('projects')}>Tasks</button>
+                <button type="button" aria-pressed={view === 'tasks'} className={view === 'tasks' ? 'on' : ''} onClick={() => pickView('tasks')}>All subtasks</button>
+              </span>
+            )}
             <CircleFilter
               options={circles.slugs.map(c => ({ slug: c, label: circles.meta(c).label, color: circles.meta(c).color, count: circleCount(c) }))}
               value={selectedCircles} onChange={pickCircles} mine={myCircles}
             />
+            {teamChoices.length > 0 && (
+              <select className="v4-select ops4-teamfilter" value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)} aria-label="Subcircle">
+                <option value="">All subcircles</option>
+                {selectedCircles.length === 1
+                  ? teamChoices.map(x => <option key={x.id} value={x.id}>{x.name}</option>)
+                  : circles.slugs.filter(c => teamChoices.some(x => x.circle === c)).map(c => (
+                    <optgroup key={c} label={circles.meta(c).label}>
+                      {teamChoices.filter(x => x.circle === c).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                    </optgroup>
+                  ))}
+              </select>
+            )}
             {atRiskCount > 0 && (
               <button type="button" aria-pressed={overdueOnly} className={`v4-chip ops4-latechip${overdueOnly ? ' v4-chip--on' : ''}`} onClick={() => setOverdueOnly(v => !v)}>
-                {atRiskCount} late{overdueOnly && <> <InlineIcon name="x" label="Clear" /></>}
+                {DESIGN_REVIEW && <Icon name="alert" size={14} />}{atRiskCount} late{overdueOnly && <> <InlineIcon name="x" label="Clear" /></>}
               </button>
             )}
             <span className="ops4-spacer" />
-            {userId && (
+            {/* Everything · I lead · I'm in · I watch: from joining member (decision #73) */}
+            {userId && (!DESIGN_REVIEW || canPropose) && (
               <span className="v4-seg" role="group" aria-label="My role">
                 {(['all', 'lead', 'member', 'subscriber'] as const).map(r => (
                   <button key={r} type="button" aria-pressed={myRole === r} className={myRole === r ? 'on' : ''} onClick={() => setMyRole(r)}>
@@ -724,6 +783,7 @@ export default function OpsClient({
               </span>
             )}
           </div>
+          </>
 ) : (<>
           {/* Filters */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -791,7 +851,9 @@ export default function OpsClient({
           </div>
 </>)}
 
-        <ToDecidePanel rows={decisions} actions={pmActions} options={{ people, projectOptions, teams }} canDecide={canDecide} circle={selectedCircles} />
+        {(!DESIGN_REVIEW || decisions.some(r => r.can_decide || r.can_edit) || pmActions.some(a => canDecide(a.circle))) && (
+          <ToDecidePanel rows={decisions} actions={pmActions} options={{ people, projectOptions, teams }} canDecide={canDecide} circle={selectedCircles} />
+        )}
         <div className={DESIGN === 'v4' ? 'ops4-board' : undefined} style={DESIGN === 'v4' ? undefined : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {columns.map(col => {
             const cards = grouped[col.key] ?? []
@@ -824,7 +886,7 @@ export default function OpsClient({
                 }}
               >
                 <div className="ops4-colhead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{col.label}{DESIGN === 'v4' && col.key === 'paused' && <small className="ops4-colnote"> · not for a task of its own</small>}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{col.label}{DESIGN === 'v4' && !DESIGN_REVIEW && col.key === 'paused' && <small className="ops4-colnote"> · not for a task of its own</small>}{DESIGN_REVIEW && col.key === 'paused' && <span className="ops5-hint" title="For tasks with subtasks. A task of its own can't be paused." aria-label="For tasks with subtasks. A task of its own can't be paused."><Icon name="info" size={14} /></span>}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{cards.length + taskCards.length}</span>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: col.color }} />

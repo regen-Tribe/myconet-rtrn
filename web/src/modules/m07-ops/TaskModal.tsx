@@ -1,6 +1,8 @@
 'use client'
 
-import { InlineIcon } from '@/core/components/v4'
+import { InlineIcon, Icon } from '@/core/components/v4'
+import { CircleSeal } from '@/core/components/v4/CircleSeal'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
 import { partOfChoices } from './lib/task-edit'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -19,10 +21,22 @@ export interface TaskProjectOption { id: string; title: string; circle: string |
 /** A team within a circle (org_units, kind 'team') */
 export interface TaskTeamOption { id: string; name: string; circle: string }
 
+// The design review (decisions #55–#58): same fields and flows, only the look. Classes are styled in ops-v4.css.
+const RV = DESIGN_REVIEW
+/** With the review on, a class; without it, the old inline style */
+const rv = (className: string, legacy?: React.CSSProperties) => (RV ? { className } : { style: legacy })
+
 export function SubscriberNames({ subs, max = 5 }: { subs: SubscriberProfile[]; max?: number }) {
   if (!subs.length) return null
   const show = subs.slice(0, max)
   const extra = subs.length - max
+  // Review: people are grey chips, never a colour per name (pastels mean task status, #14, #46)
+  if (RV) return (
+    <div className="pj5-people">
+      {show.map(s => <span key={s.user_id} className="pj5-person">{s.first_name ?? s.username ?? 'Member'}</span>)}
+      {extra > 0 && <span className="pj5-more">+{extra} more</span>}
+    </div>
+  )
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
       {show.map(s => {
@@ -202,39 +216,44 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
   const projectTitle = projects.find(p => p.id === task.project_id)?.title
   const teamName = teams.find(t => t.id === task.team_id)?.name
   const circleLabel = (c: string | null | undefined) => (c && circles.has(c) ? `${circles.meta(c).emoji} ${circles.meta(c).label}` : 'No circle')
+  // Review: a circle shows as its seal (#7); a plain label where only text fits (a select)
+  const circleRead = (c: string | null | undefined) => (RV && c && circles.has(c)
+    ? <span className="tm5-circ"><CircleSeal slug={c} size={16} />{circles.meta(c).label}</span>
+    : circleLabel(c))
+  const field = (legacy: React.CSSProperties) => rv('v4-input pj5-field', legacy)
 
   return (
     <div
       onClick={onClose}
-      style={{
+      {...rv('tm5-back', {
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 12,
-      }}
+      })}
     >
       {/* Never taller than the screen (web or phone): the middle scrolls, the header and the buttons stay */}
       <div
         role="dialog" aria-modal="true" aria-label={task.title}
         onClick={e => e.stopPropagation()}
-        style={{
+        {...rv('tm5-dialog', {
           background: 'var(--surface)', borderRadius: 14,
           border: '1px solid var(--rule)',
           width: '100%', maxWidth: 480,
           maxHeight: 'calc(100dvh - 24px)', overflowY: 'auto', overscrollBehavior: 'contain',
           boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
           animation: 'calFadeIn 160ms ease',
-        }}
+        })}
       >
-        <div style={{
+        <div {...rv('tm5-head', {
           padding: '16px 20px', borderBottom: '1px solid var(--rule)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '14px 14px 0 0',
-        }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
+        })}>
+          <div {...rv('pj5-label', { fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' })}>
             {task.project_id ? 'Subtask' : 'Task of its own'}
           </div>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0, display: 'flex' }}>×</button>
+          <button onClick={onClose} aria-label="Close" {...rv('tm5-close', { background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0, display: 'flex' })}>{RV ? <Icon name="x" size={20} /> : '×'}</button>
         </div>
 
         <div style={{ padding: '20px' }}>
@@ -242,7 +261,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Title</label>
             {canManage ? (
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)} style={{ ...inputStyle, fontSize: 15, fontWeight: 500 }} />
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} aria-label="Title" {...field({ ...inputStyle, fontSize: 15, fontWeight: 500 })} />
             ) : (
               <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>{task.title}</div>
             )}
@@ -253,7 +272,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             <div>
               <label style={labelStyle} htmlFor="task-status">Status</label>
               {canManage || mine ? (
-                <select id="task-status" value={status} onChange={e => setStatus(e.target.value)} style={small}>
+                <select id="task-status" value={status} onChange={e => setStatus(e.target.value)} {...field(small)}>
                   {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               ) : (
@@ -264,7 +283,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
               <label style={labelStyle} htmlFor="task-assignee">Assigned to</label>
               {canManage ? (
                 <>
-                  <select id="task-assignee" value={assignee} onChange={e => setAssignee(e.target.value)} style={small}>
+                  <select id="task-assignee" value={assignee} onChange={e => setAssignee(e.target.value)} {...field(small)}>
                     <option value="">Nobody yet</option>
                     {userId && <option value={userId}>Me</option>}
                     {people.filter(p => p.id !== userId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -272,7 +291,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
                   </select>
                   {assignee === NAME_TAG && (
                     <input autoFocus={!assigneeName} value={assigneeName} onChange={e => setAssigneeName(e.target.value)} maxLength={80}
-                      placeholder="Their name" aria-label="Name of someone not on MyCoNet yet" style={{ ...small, marginTop: 6 }} />
+                      placeholder="Their name" aria-label="Name of someone not on MyCoNet yet" {...field({ ...small, marginTop: 6 })} />
                   )}
                 </>
               ) : (
@@ -304,10 +323,10 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             {canManage ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <CalendarPicker value={due} onChange={setDue} placeholder="No due date" />
-                {due && <input type="time" value={time} onChange={e => setTime(e.target.value)} aria-label="Time (optional)" style={{ ...small, width: 130 }} />}
+                {due && <input type="time" value={time} onChange={e => setTime(e.target.value)} aria-label="Time (optional)" {...rv('v4-input pj5-field pj5-time', { ...small, width: 130 })} />}
               </div>
             ) : (
-              <div style={{ fontSize: 13, color: task.due_date ? 'var(--ink-2)' : 'var(--ink-4)', fontFamily: 'var(--mono)' }}>
+              <div style={{ fontSize: 13, color: task.due_date ? 'var(--ink-2)' : 'var(--ink-4)', fontFamily: RV ? undefined : 'var(--mono)' }}>
                 {task.due_date ? fmtTaskWhen(task.due_date, task.due_time) : 'No due date'}
               </div>
             )}
@@ -318,7 +337,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle} htmlFor="task-project">Part of task</label>
             {canManage ? (
-              <select id="task-project" value={projectId} onChange={e => pickProject(e.target.value)} style={small}>
+              <select id="task-project" value={projectId} onChange={e => pickProject(e.target.value)} {...field(small)}>
                 <option value="">None · a task of its own</option>
                 {partOfChoices({ circle: circle || null, team_id: teamId || null, project_id: projectId || null }, projects).map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
@@ -332,18 +351,18 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             <div>
               <label style={labelStyle} htmlFor="task-circle">Circle</label>
               {canManage ? (
-                <select id="task-circle" value={circle} onChange={e => pickCircle(e.target.value)} style={small}>
+                <select id="task-circle" value={circle} onChange={e => pickCircle(e.target.value)} {...field(small)}>
                   <option value="">No circle</option>
-                  {circles.slugs.map(c => <option key={c} value={c}>{circles.meta(c).emoji} {circles.meta(c).label}</option>)}
+                  {circles.slugs.map(c => <option key={c} value={c}>{RV ? circles.meta(c).label : `${circles.meta(c).emoji} ${circles.meta(c).label}`}</option>)}
                 </select>
               ) : (
-                <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{circleLabel(task.circle)}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{circleRead(task.circle)}</div>
               )}
             </div>
             <div>
               <label style={labelStyle} htmlFor="task-team">Subcircle</label>
               {canManage ? (
-                <select id="task-team" value={teamId} onChange={e => pickTeam(e.target.value)} style={small} disabled={!circleTeams.length && !teamId}>
+                <select id="task-team" value={teamId} onChange={e => pickTeam(e.target.value)} {...field(small)} disabled={!circleTeams.length && !teamId}>
                   <option value="">{circleTeams.length ? 'The whole circle' : circle ? 'No subcircles in this circle' : 'Pick a circle first'}</option>
                   {circleTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
@@ -354,7 +373,8 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           </div>
 
           {task.needs_review && (
-            <div style={{ fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
+            // A draft waits on a lead: yellow, the waiting colour (#34, #40)
+            <div {...rv('tm5-draft', { fontSize: 12, color: '#92400e', background: '#fef3c7', borderRadius: 8, padding: '8px 12px', marginBottom: 16 })}>
               {task.source === 'meeting' ? 'Drafted by the assistant from a meeting.' : 'A draft.'} Check it{canManage ? ' and save to confirm' : ''}.
             </div>
           )}
@@ -370,7 +390,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             <label style={labelStyle} htmlFor="task-notes">Notes</label>
             {canManage || mine ? (
               <textarea id="task-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={5000}
-                placeholder="What's been done, what's needed, links…" style={{ ...inputStyle, fontSize: 13, resize: 'vertical', lineHeight: 1.5 }} />
+                placeholder="What's been done, what's needed, links…" {...field({ ...inputStyle, fontSize: 13, resize: 'vertical', lineHeight: 1.5 })} />
             ) : (
               <div style={{ fontSize: 13, color: task.notes ? 'var(--ink-2)' : 'var(--ink-4)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{task.notes || 'No notes yet.'}</div>
             )}
@@ -378,7 +398,11 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
 
           {/* Subscribers */}
           {userId && (
-            <button
+            RV ? (
+              <button type="button" onClick={toggleSubscribe} aria-pressed={subscribed} className={`pj5-watch${subscribed ? ' on' : ''}`} style={{ marginBottom: subs.length ? 12 : 0 }}>
+                <Icon name="bell" size={16} />{subscribed ? 'Watching' : 'Watch'}
+              </button>
+            ) : <button
               onClick={toggleSubscribe}
               style={{
                 display: 'flex', alignItems: 'center', gap: 7, marginBottom: subs.length ? 12 : 0,
@@ -395,42 +419,42 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           )}
           {subs.length > 0 && (
             <div style={{ marginTop: 4 }}>
-              <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
-                {subs.length} subscriber{subs.length !== 1 ? 's' : ''}
+              <div {...rv('pj5-label', { fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginBottom: 6 })}>
+                {RV ? `${subs.length} watching` : `${subs.length} subscriber${subs.length !== 1 ? 's' : ''}`}
               </div>
               <SubscriberNames subs={subs} />
             </div>
           )}
         </div>
 
-        {error && <div style={{ fontSize: 12.5, color: '#b91c1c', padding: '0 20px 10px' }}>{error}</div>}
+        {error && <div {...rv('pj5-error tm5-error', { fontSize: 12.5, color: '#b91c1c', padding: '0 20px 10px' })}>{error}</div>}
         {/* The assignee (not a lead): status and notes only */}
         {!canManage && mine && (
-          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8, position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px' }}>
-            <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
-            <button onClick={saveMine} disabled={saving} style={{ background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: saving ? 'wait' : 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
+          <div {...rv('tm5-foot tm5-foot--end', { padding: '14px 20px', borderTop: '1px solid var(--rule)', display: 'flex', justifyContent: 'flex-end', gap: 8, position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px' })}>
+            <button onClick={onClose} {...rv('v4-btn v4-btn--secondary v4-btn--sm', { background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' })}>Cancel</button>
+            <button onClick={saveMine} disabled={saving} {...rv('v4-btn v4-btn--primary v4-btn--sm', { background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: saving ? 'wait' : 'pointer' })}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         )}
         {canManage && (
-          <div style={{
+          <div {...rv('tm5-foot', {
             padding: '14px 20px', borderTop: '1px solid var(--rule)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px',
-          }}>
-            <button onClick={remove} disabled={saving} style={{ background: 'none', border: '1px solid #fecaca', color: '#dc2626', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>
+          })}>
+            <button onClick={remove} disabled={saving} {...rv('v4-btn v4-btn--secondary v4-btn--sm tm5-delete', { background: 'none', border: '1px solid #fecaca', color: '#dc2626', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' })}>
               Delete task
             </button>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={onClose} {...rv('v4-btn v4-btn--secondary v4-btn--sm', { background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' })}>Cancel</button>
               <button
                 onClick={save}
                 disabled={saving || !title.trim()}
-                style={{
+                {...rv('v4-btn v4-btn--primary v4-btn--sm', {
                   background: 'var(--m7)', color: '#fff', fontSize: 12, fontWeight: 600,
                   padding: '7px 18px', borderRadius: 8, border: 'none',
                   cursor: saving || !title.trim() ? 'not-allowed' : 'pointer',
                   opacity: saving || !title.trim() ? 0.65 : 1,
-                }}
+                })}
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
