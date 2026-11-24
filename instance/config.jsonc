@@ -8,6 +8,9 @@
 
   // The look: "v4" = Sonia's redesign (DESIGN-SYSTEM.md › v4). Turned on 2026-11-20 (Oscar: "make RTRN be fully caught up including looks").
   "design": "v4",
+  // Sonia's design review (core v4.124+): Operations "Drafts to confirm", one view switch, calmer pills, phone filter sheet.
+  // On for RTRN on Oz's OK (23 Nov), as on Protopia.
+  "designReview": true,
 
   "appUrl": "https://myconet.correa-oscar11.workers.dev",
 
