@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.129.0 — 2026-11-24 — Tasks remember when and by whom they last changed
+
+Oscar: "add tracking". Drafts he had confirmed seemed to come back, and nothing showed which tasks had changed:
+`deliverables.updated_at` was never kept current (projects' was), and no one was recorded.
+- Migration `20261226000000_change_tracking.sql`:
+  - `deliverables` and `projects` get `updated_by`.
+  - One trigger (`private.stamp_change`) stamps `updated_at` with the time and `updated_by` with the signed-in person
+    on every change. Null means the assistant or a background job.
+  - It replaces projects' own `set_projects_updated_at`.
+- Nothing changes on screen yet. It makes a task's history traceable.
+
 ## v4.128.0 — 2026-11-24 — Each suggestion says what it's based on
 
 Oscar: "when I'm reading suggestions in the drafts to confirm section… I'd like to be able to see why it's suggesting

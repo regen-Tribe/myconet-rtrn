@@ -3,6 +3,12 @@ import Link from 'next/link'
 // MyCoNet core release notes. A community's own history before v4.0.0 is in its instance/log.md.
 const ENTRIES = [
   {
+    version: 'v4.129.0',
+    date: '2026-11-24',
+    title: 'Tasks remember who changed them',
+    items: ['Behind the scenes, every task and project now records when it last changed and who changed it, so questions like “why is this a draft again?” can be answered.'],
+  },
+  {
     version: 'v4.128.0',
     date: '2026-11-24',
     title: 'See what a suggestion is based on',
