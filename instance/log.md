@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-24 — Core v4.128.0 via PR #92 (deployed, 7b7a7cf0): each suggestion says what it's based on
+- No migration.
+
 ## 2026-11-24 — Core v4.127.0 via PR #91 (deployed, a6abd181): Done on the far right, a subcircle filter, new subcircles from a task; Sonia's v4.124/v4.126 (design review, off here)
 - No migration. `designReview` is still off for RTRN (Oz OK'd turning it on later).
 
