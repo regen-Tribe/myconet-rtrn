@@ -980,7 +980,6 @@ export default function OpsClient({
           canDecide={canEditTask}
           onOpen={setOpenTask}
           projectOptions={projectOptions} teams={teams}
-          onDecided={() => router.refresh()}
         />
       )}
       {activeTab === 'updates' && (
