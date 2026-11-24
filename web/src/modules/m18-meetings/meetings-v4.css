@@ -277,3 +277,13 @@ html[data-review] .mt4-brain:hover { background: var(--ctl-hover, #d8deee); }
 /* The summary's topics sit in the Summary card: no frame of their own, so they line up with its heading */
 html[data-review] .mt4-sumcard .mt4-topic { padding: 6px 0 !important; border: 0 !important; background: none !important; }
 html[data-review] .mt4-sumcard { padding: 20px; }
+
+/* What a suggestion is based on (v4.128.0): its tasks' meetings, the line said, who said it */
+.dl4-basis { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--rule, rgba(17,19,23,.14)); display: flex; flex-direction: column; gap: 6px; }
+.dl4-basis__title { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3, #6b7180); }
+.dl4-basis__row { display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; }
+.dl4-basis__row b { font-weight: 600; color: var(--ink, #111317); }
+.dl4-basis__src { color: var(--ink-3, #6b7180); }
+.dl4-basis__link { color: var(--m7, #4338ca); font-weight: 600; text-decoration: none; }
+.dl4-basis__link:hover { text-decoration: underline; }
+.dl4-basis__said { color: var(--ink-2, #3a3f4a); font-style: normal; }

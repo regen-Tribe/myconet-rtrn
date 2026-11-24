@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.128.0 — 2026-11-24 — Each suggestion says what it's based on
+
+Oscar: "when I'm reading suggestions in the drafts to confirm section… I'd like to be able to see why it's suggesting
+this, and click a link to meeting notes explaining why". Under each project manager suggestion in Drafts to confirm /
+To decide (and on a meeting's page), below its **Why**, there's now **Based on**. For each task it's about:
+- the meeting it came from, as a link to that meeting's notes, with its date;
+- the line that was said, and who said it;
+- or, for a task added by hand, who added it and when.
+
+A meeting the viewer may not open shows without its name. No migration.
+
 ## v4.127.0 — 2026-11-24 — Done on the far right, a subcircle filter, and new subcircles from a task
 
 Three Operations changes (M07, v4 look), from Oscar:
