@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-25 — Core v4.137.0 (PR #100; deployed 53f6422f)
+- v4.137.0: a Why? pop-up on a draft in Drafts to confirm: what was said, the meeting and its summary (core #165, Oscar). No migration.
+
 ## 2026-11-25 — Core v4.134.0 + v4.135.0 + v4.136.0 (PR #99; deployed 1f34ca0b)
 - v4.134.0: stewards see what the applicant told us (core #162).
 - v4.135.0: before joining, the Dashboard shows only the way in; a friendlier skills and interests picker (core #163).
