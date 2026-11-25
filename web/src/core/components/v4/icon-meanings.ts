@@ -24,6 +24,7 @@ export const ICON_MEANING: Record<IconName, { means: string; verdict: 'keep' | '
   "inbox": { means: "Applications waiting (admin)", verdict: 'keep' },
   "box": { means: "Bookings / an item to book (admin)", verdict: 'keep' },
   "shield": { means: "Permissions, who may manage", verdict: 'keep' },
+  "flame": { means: "Popular here (many people picked it)", verdict: 'keep' },
   "spark": { means: "The assistant (AI)", verdict: 'move a use' },
   "mail": { means: "Email", verdict: 'keep' },
   "check": { means: "Done, yes, saved", verdict: 'keep' },

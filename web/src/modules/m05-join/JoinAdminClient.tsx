@@ -1,8 +1,11 @@
 'use client'
-import { InlineIcon } from '@/core/components/v4'
+import { Chip, InlineIcon } from '@/core/components/v4'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { modLabel } from '@/core/lib/module-label'
+import Link from 'next/link'
+import { valueList } from '@/core/lib/skills-interests'
+import type { ApplicantProfile } from './applications-server'
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   pending:   { label: 'Pending',    color: '#f59e0b' },
@@ -20,6 +23,41 @@ interface Application {
   created_at: string
   first_name: string | null
   username: string | null
+  profile?: ApplicantProfile | null
+}
+
+/** What the applicant told us in About you (#90): with no Blueprint questions this is the whole application (#93) */
+function ApplicantSummary({ p, username }: { p: ApplicantProfile; username: string | null }) {
+  const values = valueList(p.values)
+  const rows: [string, string][] = ([
+    ['What best describes them', p.describes.join(', ')],
+    ['Based in', p.place ?? ''],
+    ['Good at', p.skills.join(', ')],
+    ['Curious about', p.interests.join(', ')],
+    ['Values', values ? values.join(', ') : (p.values ?? '')],
+    ['Offers', p.offers.join(', ')],
+    ['Would like to receive', p.requests.join(' · ')],
+  ] as [string, string][]).filter(([, v]) => v.trim())
+  const label = { fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 2 } as const
+  const text = { fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55, whiteSpace: 'pre-wrap' } as const
+  return (
+    <div style={{ display: 'grid', gap: 12, marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        {p.avatar_url && <img src={p.avatar_url} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
+        <div style={{ minWidth: 0 }}>
+          {p.headline && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>{p.headline}</div>}
+          {username && <Link href={`/u/${username}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', textDecoration: 'underline' }}>Open their profile →</Link>}
+        </div>
+      </div>
+      {p.about && <div><div style={label}>What they’re up to</div><div style={text}>{p.about}</div></div>}
+      {rows.length > 0 && (
+        <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          {rows.map(([k, v]) => <div key={k}><div style={label}>{k}</div><div style={text}>{v}</div></div>)}
+        </div>
+      )}
+      {!p.headline && !p.about && rows.length === 0 && <div style={{ ...text, fontStyle: 'italic' }}>They skipped About you.</div>}
+    </div>
+  )
 }
 
 interface Props {
@@ -101,17 +139,12 @@ export default function JoinAdminClient({ applications: initial, questions, canD
         </p>
       </div>
 
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
+      {/* Filter chips: the chosen one is black (decision #31), the count beside it */}
+      <div className="v4-chiprow" style={{ marginBottom: 24 }}>
         {(['pending', 'reviewing', 'accepted', 'rejected', 'all'] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{
-            fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 20,
-            border: '1px solid var(--rule)', cursor: 'pointer', transition: 'all 120ms',
-            background: filter === f ? 'var(--ink)' : 'var(--surface)',
-            color: filter === f ? 'var(--bg)' : 'var(--ink-3)',
-          }}>
-            {f.charAt(0).toUpperCase() + f.slice(1)} ({counts[f]})
-          </button>
+          <Chip key={f} on={filter === f} onClick={() => setFilter(f)} count={counts[f]}>
+            {f === 'rejected' ? 'Declined' : f.charAt(0).toUpperCase() + f.slice(1)}
+          </Chip>
         ))}
       </div>
 
@@ -162,6 +195,7 @@ export default function JoinAdminClient({ applications: initial, questions, canD
                 {/* Expanded answers + actions */}
                 {isOpen && (
                   <div style={{ borderTop: '1px solid var(--rule)', padding: '18px 20px' }}>
+                    {app.profile && <ApplicantSummary p={app.profile} username={app.username} />}
                     {/* Answers */}
                     <div style={{ marginBottom: 20 }}>
                       {/* The wording the applicant saw, if saved; otherwise today's questions */}

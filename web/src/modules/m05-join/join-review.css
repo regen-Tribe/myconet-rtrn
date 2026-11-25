@@ -175,3 +175,4 @@ html[data-review] .jf-x { width: 36px; height: 36px; flex-shrink: 0; border: 0; 
 html[data-review] .jf-x:hover { background: var(--ctl, #e3e8f4); }
 html[data-review] .jf-add { font-size: 15px; }
 html[data-review] .jf-step .pp-own input { height: 40px !important; border-radius: 999px !important; }
+html[data-review] .nc-only { max-width: 640px; }

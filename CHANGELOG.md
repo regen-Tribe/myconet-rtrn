@@ -5,6 +5,36 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.136.0 — 2026-11-25 — A task opens over the list you're on
+
+Oscar: "when I click on a task in the drafts to confirm section, id like the pop up to happen with the existing screen in
+the background. Currently its taking me to another page". `DecisionList` (M07) catches a plain click on a row's title,
+loads the task (the board's select) and opens `TaskModal` in a portal over the page. Cmd/Ctrl/Shift-click and middle-click
+still follow the link. Saving updates the row and remounts its Edit fields; saving a draft in the window confirms it, so
+its pill reads Approved and the Drafts to confirm count drops, as with a slide right. Deleting the task removes the row
+and takes it out of the counts. No migration.
+
+## v4.135.0 — 2026-11-25 — Before joining, the Dashboard shows only the way in; A friendlier skills and interests picker, in pastels
+
+**Before joining, the Dashboard shows only the way in.** Sonia's phone test of the two-step join (decision #94). `DashboardV4`: with the joining checklist or the "With the stewards"
+card, no featured task, next event, proposals or circles column (`.nc-only`). `DESCRIBES` in `core/lib/skills-interests.ts`
+is the earlier "Who are you in this network?" list, flattened, with the same stored values (`label` added). Start joining and
+Edit profile ask "Where do you call home?". No migration.
+
+**A friendlier skills and interests picker, in pastels.** Sonia, 25 Nov: "take it as Spotka has it", "popular here should just have a fire emoji", "more pastel colours" (decision
+#95). `PillPicker` rebuilt after Spotka's full-size picker (sponic repo, `apps/garden/app/app.js`): Your picks · N with
+Review, Search all, one pastel card per group (name, one line, N picked, chevron), one open at a time, a dashed Something
+else? Each group has `desc`, `bg` and `line` in `core/lib/skills-interests.ts`; `pastel(i)` tints the describes-you cards.
+A `flame` icon (no emoji on screens) marks pills 3+ people have. On `/design`. No migration.
+
+## v4.134.0 — 2026-11-25 — Stewards see what the applicant told us
+
+Found in Sonia's live test of the two-step join (decision #93): with no Blueprint questions, an application showed only a
+name. `applications-server.ts` now loads each applicant's line, About, photo, place, what best describes them, skills,
+interests, values, offers and requests (`profile_details()` for place and kinds, as #71 allows stewards); `JoinAdminClient`
+shows them above any written answers, with "Open their profile →". The filter row uses the shared `Chip` (the chosen one
+was white on pale). `FocusShell` says "Back to Dashboard" once every join step is done. No migration.
+
 ## v4.133.0 — 2026-11-25 — A note on a task, right where you edit it
 
 Oscar: "I would also like to be able to add a note in the area where I can update the fields for suggested tasks".

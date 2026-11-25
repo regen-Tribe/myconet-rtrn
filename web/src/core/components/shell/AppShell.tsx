@@ -58,7 +58,9 @@ export default function AppShell({ children, role, isLoggedIn = false, menu = nu
   // Start joining is one focused flow (Sonia, 24 Nov: "isolate more while providing links to read more"): no menu,
   // tab bar or assistant around it, only the community's mark and a way out
   if (DESIGN_REVIEW && pathname === '/join') {
-    return <FocusShell isLoggedIn={isLoggedIn} joined={isLoggedIn && isJoiningOrAbove(role)}>{children}</FocusShell>
+    // Joined, or every join step done (the application is sent): "Back to Dashboard" instead of "Continue later"
+    const done = isLoggedIn && (isJoiningOrAbove(role) || (!!menu?.progress?.length && menu.progress.every(p => p.done)))
+    return <FocusShell isLoggedIn={isLoggedIn} joined={done}>{children}</FocusShell>
   }
 
   return (

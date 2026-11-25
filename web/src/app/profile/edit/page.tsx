@@ -25,7 +25,7 @@ import {
 } from '@/core/components/v4/lucide-compat'
 import { SIGNED_IN_PROFILE_COLUMNS, profileDetailsOf } from '@/core/lib/public-profile'
 import { PillPicker } from '@/core/components/v4/PillPicker'
-import { DESCRIBES, PILL_GROUPS, groupOfPill, pillStats, valueList, type PillStats } from '@/core/lib/skills-interests'
+import { DESCRIBES, PILL_GROUPS, groupOfPill, pastel, pillStats, valueList, type PillStats } from '@/core/lib/skills-interests'
 import { Globe } from '@/core/components/v4/lucide-compat'
 
 /** The design review layer (decisions #60–#64) */
@@ -788,7 +788,7 @@ export default function ProfileWizard() {
           )}
           {on('place') && (
             <>
-              {RV && <div className="space-y-1"><Label>Where are you based? Where do you call home?</Label><p className="text-xs text-muted-foreground">Where you live now. If home is somewhere else, add it too: Lisbon, home in Porto.</p></div>}
+              {RV && <Label>Where do you call home?</Label>}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Country</Label>
@@ -806,10 +806,10 @@ export default function ProfileWizard() {
               <Label>What best describes you?</Label>
               <p className="text-xs text-muted-foreground">Choose all that apply.</p>
               <div className="pp-describes">
-                {[...DESCRIBES.map(d => ({ id: d.id, hint: d.hint })), ...form.user_types.filter(t => !DESCRIBES.some(d => d.id === t)).map(t => ({ id: t, hint: 'From the earlier list' }))].map(d => (
-                  <button key={d.id} type="button" className="pp-pick" aria-pressed={form.user_types.includes(d.id)}
+                {[...DESCRIBES, ...form.user_types.filter(t => t !== 'Community Member' && !DESCRIBES.some(d => d.id === t)).map(t => ({ id: t, label: t, hint: 'Picked earlier' }))].map((d, i) => (
+                  <button key={d.id} type="button" style={pastel(i) as React.CSSProperties} className="pp-pick" aria-pressed={form.user_types.includes(d.id)}
                     onClick={() => update('user_types', form.user_types.includes(d.id) ? form.user_types.filter(x => x !== d.id) : [...form.user_types, d.id])}>
-                    <b>{d.id}</b><small>{d.hint}</small>
+                    <b>{d.label}</b><small>{d.hint}</small>
                   </button>
                 ))}
               </div>
