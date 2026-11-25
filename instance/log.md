@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-25 — Core v4.134.0 + v4.135.0 + v4.136.0 (PR #99; deployed 1f34ca0b)
+- v4.134.0: stewards see what the applicant told us (core #162).
+- v4.135.0: before joining, the Dashboard shows only the way in; a friendlier skills and interests picker (core #163).
+- v4.136.0: a task in Drafts to confirm opens over the list you're on (core #164, Oscar). No migrations.
+
 ## 2026-11-25 — Core v4.133.0 (PR #98; deployed fb728c53)
 - v4.133.0: a Note box in a task's Edit fields (Drafts to confirm, a meeting's action items), saved to the task's notes (core #161, Oscar). No migration.
 
