@@ -11,6 +11,7 @@ import { fmtTaskWhen } from '@/core/lib/tasks'
 import { Icon, InlineIcon, StatusPill } from '@/core/components/v4'
 import { DraftSwipe } from './DraftSwipe'
 import { TaskQuickEdit } from './TaskQuickEdit'
+import { ModalShell } from '@/core/components/ModalShell'
 import { DONE, KIND, explain } from './suggestion-text'
 import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
 import type { AgentSuggestion, Deliverable, PmAction } from './types'
@@ -154,6 +155,61 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
     setRemoved(prev => new Set(prev).add(id))
     setOpenTask(null)
   }
+  const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null)
+  // Why it's suggested, in a small pop-up over the page (Oscar: "see a simple pop up that shows why this is being
+  // suggested with out taking me to another page"): what was said and by whom, the meeting, what it was about, and the
+  // project manager's reasons. The meeting's summary is read when the pop-up opens.
+  const [why, setWhy] = useState<{ id: string; summary: string | null; loading: boolean } | null>(null)
+  async function openWhy(t: DecisionRow) {
+    setWhy({ id: t.deliverable_id, summary: null, loading: !!t.meeting?.title })
+    if (!t.meeting?.title) return
+    const { data } = await createClient().from('meeting_transcripts').select('summary').eq('id', t.meeting.id).maybeSingle()
+    setWhy(prev => (prev?.id === t.deliverable_id ? { ...prev, summary: (data?.summary as string | null) ?? null, loading: false } : prev))
+  }
+  const whyRow = why ? rows.find(r => r.deliverable_id === why.id) : null
+  const whyLabel: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }
+  const whyWindow = why && whyRow && typeof document !== 'undefined' ? createPortal(
+    <ModalShell title="Why this draft" onClose={() => setWhy(null)} maxWidth={480}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>
+        <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{whyRow.title}</div>
+        {whyRow.item_text && (
+          <div>
+            <div style={whyLabel}>What was said</div>
+            “{whyRow.item_text}”{whyRow.said_by && <span style={{ color: 'var(--ink-3)' }}> · {whyRow.said_by}</span>}
+          </div>
+        )}
+        {whyRow.meeting && (
+          <div>
+            <div style={whyLabel}>Where</div>
+            {whyRow.meeting.title ?? <em>A meeting you can’t open</em>}
+            {whyRow.meeting.date && <span suppressHydrationWarning style={{ color: 'var(--ink-3)' }}> · {day(whyRow.meeting.date)}</span>}
+          </div>
+        )}
+        {whyRow.meeting?.title && (
+          <div>
+            <div style={whyLabel}>What the meeting was about</div>
+            {why.loading ? <span style={{ color: 'var(--ink-4)' }}>Loading…</span>
+              : why.summary ? <div style={{ whiteSpace: 'pre-line', maxHeight: 220, overflowY: 'auto' }}>{why.summary.length > 900 ? `${why.summary.slice(0, 900).trimEnd()}…` : why.summary}</div>
+              : <span style={{ color: 'var(--ink-4)' }}>No summary for this meeting yet.</span>}
+          </div>
+        )}
+        {whyRow.suggestions.some(x => x.reason) && (
+          <div>
+            <div style={whyLabel}>The project manager’s reasons</div>
+            {whyRow.suggestions.filter(x => x.reason).map(x => <div key={x.id}>{x.reason}</div>)}
+          </div>
+        )}
+        {!whyRow.item_text && !whyRow.meeting && !whyRow.suggestions.some(x => x.reason) && (
+          <div style={{ color: 'var(--ink-3)' }}>This draft wasn’t made from a meeting, so there’s no line or meeting behind it.</div>
+        )}
+        {whyRow.meeting?.title && (
+          <Link href={`/meetings/${whyRow.meeting.id}`} className="dl4-basis__link" style={{ fontSize: 12.5 }}>Open the meeting’s notes →</Link>
+        )}
+      </div>
+    </ModalShell>,
+    document.body,
+  ) : null
+
   const taskWindow = openTask && options && typeof document !== 'undefined' ? createPortal(
     <TaskModal task={openTask.task} canManage={openTask.canManage} userId={openTask.userId}
       people={options.people} projects={options.projectOptions} teams={opts!.teams}
@@ -164,7 +220,6 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
   // What the suggestion is based on (v4.128.0: Oscar, "see why it's suggesting this, and click a link to meeting notes
   // explaining why"): each of its tasks, the meeting it came from (a link to its notes), the line that was said and who
   // said it; or who added it by hand
-  const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null)
   const basedOn = (s: AgentSuggestion) => {
     const list = s.sources ?? []
     if (!list.length) return null
@@ -268,6 +323,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
               : <em>a meeting you can’t open</em>}
             {t.meeting.date && <span suppressHydrationWarning> · {day(t.meeting.date)}</span>}
             {t.said_by && <> · said by <b>{t.said_by}</b></>}
+            {' · '}<button type="button" className="dl4-link" onClick={() => openWhy(t)} aria-haspopup="dialog">Why?</button>
           </div>
         )}
         {msg?.id === t.deliverable_id && <div className="mt4-taskedit dl4-err">{msg.text}</div>}
@@ -292,7 +348,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
     )
   }
 
-  if (!grouped) return <div className="v4-list">{rows.map(row)}{taskWindow}</div>
+  if (!grouped) return <div className="v4-list">{rows.map(row)}{taskWindow}{whyWindow}</div>
 
   // The board: by meeting, newest first; tasks not from a meeting last. A group's rows are drawn once it's opened.
   const groups = [...rows.reduce((m, t) => {
@@ -327,7 +383,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           </div>
         )
       })}
-      {taskWindow}
+      {taskWindow}{whyWindow}
     </div>
   )
 }

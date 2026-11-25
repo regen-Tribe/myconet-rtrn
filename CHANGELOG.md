@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.137.0 — 2026-11-25 — Why a draft is suggested, in a small pop-up
+
+Oscar: "on the drafts to confirm section, on the operations page - when im looking at a draft - id like to be able to
+see a simple pop up that shows why this is being suggested with out taking me to another page". `DecisionList` (M07):
+a **Why?** button on a row's source line opens `ModalShell` in a portal with the task, the action item's text and its
+speaker, the meeting (title and date), the meeting's `summary` (read from `meeting_transcripts` when the pop-up opens,
+cut at 900 characters) and the reasons of any suggestion on the task. A link to the meeting's notes stays at the bottom
+for whoever wants it. No migration.
+
 ## v4.136.0 — 2026-11-25 — A task opens over the list you're on
 
 Oscar: "when I click on a task in the drafts to confirm section, id like the pop up to happen with the existing screen in
