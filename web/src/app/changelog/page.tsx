@@ -4,6 +4,12 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.130.2',
+    date: '2026-11-25',
+    title: 'A decided draft stays decided when you fold its meeting',
+    items: ['When you fold a meeting\'s drafts and open them again, the ones you approved or declined still say so, with Undo.'],
+  },
+  {
     version: 'v4.130.1',
     date: '2026-11-24',
     title: 'Working at the same time without clashing',
