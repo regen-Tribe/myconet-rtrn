@@ -75,12 +75,12 @@ export default function CommunityValuesEditor({ canEdit }: { canEdit: boolean })
 
   const form = edit && (
     <div style={{ padding: 14, marginBottom: 8, border: '1px solid var(--accent)', borderRadius: 6, background: 'var(--bg-2)' }}>
-      <div style={label}>Value</div>
-      <input className="input" value={edit.title} maxLength={120} placeholder="Care for the land before yield."
+      <div style={label}>Name</div>
+      <input className="input" value={edit.title} maxLength={60} placeholder="A word or three, e.g. Sincere Irony"
         onChange={e => setEdit({ ...edit, title: e.target.value })} style={{ marginBottom: 10 }} />
-      <div style={label}>What it means in practice (optional)</div>
-      <textarea className="textarea" rows={2} value={edit.description}
-        placeholder="Decisions are tested against ecological impact first, profit second."
+      <div style={label}>What it means</div>
+      <textarea className="textarea" rows={3} value={edit.description}
+        placeholder="Two or three sentences in the “we” voice, e.g. We think about how we think, and keep moving."
         onChange={e => setEdit({ ...edit, description: e.target.value })} />
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
         <button className="btn btn-ghost" onClick={() => setEdit(null)} disabled={busy}>Cancel</button>

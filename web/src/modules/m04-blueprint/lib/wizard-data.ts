@@ -171,8 +171,9 @@ export const FW_DATA: FWData = {
               guide: { title: 'Why now, why here', source: 'Alchemy §1',
                 body: ['Communities that succeed usually have a specific window: a piece of land coming available, a generation of founders ready, a regulatory opening, a cultural moment. Name yours.',
                   'If you can\'t name a why-now, the project may need to wait — or you may need to manufacture momentum (a pilot event, a residency) before committing capital.'] } },
-            { id: 'values', label: 'Your ethos: 3–5 core values', kind: 'textarea',
-              help: 'Not aspirations. Behaviors you will hold each other to.',
+            { id: 'values', label: 'Your values: one per line, a name and what it means', kind: 'textarea',
+              // The shape About shows (decision #92): a name, then what it means in the "we" voice
+              help: 'Three to twelve values, each on its own line: a name of one to three words, a dash, then two or three sentences in the "we" voice. Not aspirations: what you hold each other to. For example: Reflective Momentum — We think about how we think. The systems we build, the decisions we make, the assumptions we carry: we keep turning them over. Not to get stuck in analysis, but to keep moving.',
               guide: { title: 'Values vs. aspirations', source: 'Alchemy §1.3',
                 body: ['List values you want to uphold. Diana Leafe Christian: a community\'s ideals usually arise from something members see as lacking in the wider culture.',
                   'Test: would you offboard a member who repeatedly violated this value? If not, it\'s an aspiration, not a value. Both are useful — label them honestly.'] } },

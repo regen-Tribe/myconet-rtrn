@@ -32,11 +32,13 @@ const atPm = () => window.location.hash === '#pm'
  * A row with a suggestion but no draft has no pill. Rows stay, with what was decided, until the page is reloaded.
  * The board shows it grouped by meeting (`grouped`); a meeting's page shows its own action items.
  */
-export function DecisionList({ rows: loaded, options, canDecide, grouped = false }: {
+export function DecisionList({ rows: loaded, options, canDecide, grouped = false, onPill }: {
   rows: DecisionRow[]
   options: DecisionOptions | null
   canDecide: (circle: string) => boolean
   grouped?: boolean
+  // Told when a pill is approved / declined / undone, so the panel's counts follow
+  onPill?: (id: string, d: { kind: 'approved' } | { kind: 'declined'; log: string | null } | null) => void
 }) {
   const circles = useCircles()
   const [patch, setPatch] = useState<Record<string, Partial<DecisionRow>>>({})
@@ -52,8 +54,10 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
   // Swiped here (v4.130.0; kept across collapsing a group since v4.130.2): what each pill decided, so it reads
   // Approved / Declined with Undo until the page is reloaded
   const [decidedPills, setDecidedPills] = useState<Record<string, { kind: 'approved' } | { kind: 'declined'; log: string | null }>>({})
-  const rememberPill = (id: string, d: { kind: 'approved' } | { kind: 'declined'; log: string | null } | null) =>
+  const rememberPill = (id: string, d: { kind: 'approved' } | { kind: 'declined'; log: string | null } | null) => {
     setDecidedPills(prev => { const n = { ...prev }; if (d) n[id] = d; else delete n[id]; return n })
+    onPill?.(id, d)
+  }
   // Subcircles made from a row's Subcircle picker (v4.127.0): every row offers them straight away
   const [madeTeams, setMadeTeams] = useState<DecisionOptions['teams']>([])
   const opts = options ? { ...options, teams: [...options.teams, ...madeTeams] } : null
@@ -252,7 +256,8 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
     <div className="pm4-drafts">
       {groups.map(g => {
         const isOpen = openGroups.has(g.id)
-        const drafts = g.list.filter(t => t.needs_review).length
+        // A declined draft keeps its pill (Declined · Undo) but no longer counts (Oscar)
+        const drafts = g.list.filter(t => t.needs_review && decidedPills[t.deliverable_id]?.kind !== 'declined').length
         const sugs = g.list.filter(t => t.suggestions.some(s => !decided[s.id])).length
         return (
           <div key={g.id} className="v4-card pm4-meeting">
@@ -295,6 +300,9 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
   const open = toggled ?? linkedHere
   const [undone, setUndone] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState<string | null>(null)
+  // Pills slid in the list below (Oscar, "when I decline … the count on the top row should decrease")
+  const [pilled, setPilled] = useState<Set<string>>(() => new Set())
+  const onPill = (id: string, d: unknown) => setPilled(prev => { const n = new Set(prev); if (d) n.add(id); else n.delete(id); return n })
   const inFilter = (c: string | null | undefined) => !circle || circle.length === 0 || (Array.isArray(circle) ? !!c && circle.includes(c) : c === circle)
   const shown = rows.filter(r => inFilter(r.circle))
   const done = actions.filter(a => inFilter(a.circle) && !undone.has(a.id))
@@ -325,7 +333,7 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
     setToggled(true)
     router.refresh()
   }
-  const drafts = shown.filter(r => r.needs_review).length
+  const drafts = shown.filter(r => r.needs_review && !pilled.has(r.deliverable_id)).length
   const sugs = shown.filter(r => r.suggestions.length).length
 
   async function undo(a: PmAction) {
@@ -358,7 +366,7 @@ export function ToDecidePanel({ rows, actions, options, canDecide, circle }: {
       )}
       {open && (
         <>
-          {shown.length > 0 && <DecisionList rows={shown} options={options} canDecide={canDecide} grouped />}
+          {shown.length > 0 && <DecisionList rows={shown} options={options} canDecide={canDecide} grouped onPill={onPill} />}
           {done.length > 0 && (
             <div className="dl4-done">
               <div className="dl4-done__title">Done by the assistant (last 2 weeks)</div>

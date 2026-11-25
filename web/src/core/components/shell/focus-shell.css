@@ -1,0 +1,11 @@
+/* FocusShell: a page on its own (Start joining). Design review only. Text sizes 11/13/15/18/24/40; breakpoints 640/960/1280. */
+html[data-review] .fx { min-height: 100dvh; background: var(--bg, #f1f4fc); display: flex; flex-direction: column; }
+html[data-review] .fx-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 64px; padding: 0 16px; background: color-mix(in srgb, var(--bg, #f1f4fc) 88%, transparent); backdrop-filter: blur(10px); }
+@media (min-width: 960px) { html[data-review] .fx-top { padding: 0 32px; } }
+html[data-review] .fx-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink, #111317); text-decoration: none; }
+html[data-review] .fx-brand img { width: 32px; height: 32px; object-fit: contain; }
+html[data-review] .fx-brand b { font-size: 15px; font-weight: 600; }
+html[data-review] .fx-exit { font-size: 15px; font-weight: 600; color: var(--ink-2, #3a3f4a); text-decoration: none; padding: 8px 14px; border-radius: 999px; }
+html[data-review] .fx-exit:hover { background: var(--ctl, #e3e8f4); }
+html[data-review] .fx-exit--x { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; }
+html[data-review] .fx-main { flex: 1; width: 100%; max-width: 680px; margin: 0 auto; padding: 8px 16px 48px; box-sizing: border-box; }

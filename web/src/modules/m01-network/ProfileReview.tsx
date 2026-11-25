@@ -4,13 +4,14 @@
  *
  * What matters first on a phone sits in the first third: the photo (or an initial on grey), the name as the
  * page's own title (the top bar says ‹ Members, #41), the headline, their circles as seals and who they are
- * here; then what they offer and what they're looking for. Long text (values, goals, personality, travel)
- * comes after. No tabs: one page you scroll. Empty values are hidden (#9); your own profile shows one next step
- * with what's still missing, each linked to its field on Edit profile.
+ * here. Then seven tabs, the same as Edit profile and Start joining's questions (Sonia, 25 Nov; decision #91,
+ * replacing #60's "no tabs"): About · Skills and interests · Offers and requests · Personality and signs · Growth ·
+ * Travel · Links. Empty tabs are hidden (#9), except on your own profile, where each says what to add.
  *
  * The classic and plain-v4 profile stay in UserProfileClient.
  */
 import Link from 'next/link'
+import { useState, useSyncExternalStore } from 'react'
 import { Button, Icon, NextStep, Result, Tag } from '@/core/components/v4'
 import { CircleSeal } from '@/core/components/v4/CircleSeal'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -18,6 +19,7 @@ import { socialLinks } from '@/core/lib/public-profile'
 import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { MyCircles } from '@/modules/m17-org/MyCircles'
 import { factsFromRows, missingWords, profileMissing } from './lib/profile-missing'
+import { valueList } from '@/core/lib/skills-interests'
 import './profile-review.css'
 
 type Ocean = { openness?: number; conscientiousness?: number; extraversion?: number; agreeableness?: number; neuroticism?: number }
@@ -92,9 +94,7 @@ export default function ProfileReview({ profile: p, bio, offers, requests, isOwn
   const astro = [['Sun', arc?.astrology?.sun], ['Moon', arc?.astrology?.moon], ['Rising', arc?.astrology?.rising]].filter(([, v]) => !!v) as [string, string][]
   const otherArc = [['Human Design', arc?.humanDesign], ['Gene Key', arc?.geneKey], ['Mayan sign', arc?.mayan]].filter(([, v]) => !!v) as [string, string][]
   const travels = (bio?.places_traveling ?? []).filter(t => t.location?.trim())
-  const longText = [
-    ['About', p.public_bio], ['Values', bio?.values_principles], ['Creating', bio?.what_creating], ['Goals', bio?.goals],
-  ].filter(([, v]) => !!v?.trim()) as [string, string][]
+  const values = valueList(bio?.values_principles)
   const done = isOwn ? profileMissing(factsFromRows(p, bio, offers.length, requests.length)) : null
 
   const head = (
@@ -207,6 +207,19 @@ export default function ProfileReview({ profile: p, bio, offers, requests, isOwn
     </section>
   )
 
+  const hasPersonality = !!(pd?.myersBriggs || ocean || astro.length > 0 || otherArc.length > 0)
+  const hasGrowth = !!(bio?.goals?.trim() || growth?.fears || growth?.traumas)
+  const tabs: { key: TabKey; label: string; has: boolean; add?: { href: string; label: string } }[] = [
+    { key: 'about', label: 'About', has: !!(p.public_bio?.trim() || bio?.values_principles?.trim() || bio?.what_creating?.trim()), add: { href: '/profile/edit?tab=about', label: 'Say what you’re up to' } },
+    { key: 'skills', label: 'Skills and interests', has: skills.length + interests.length > 0, add: { href: '/profile/edit?add=skills', label: 'Pick what you’re good at' } },
+    { key: 'offers', label: 'Offers and requests', has: offers.length + requests.length > 0, add: { href: '/profile/edit?add=offer', label: 'Add an offer' } },
+    { key: 'personality', label: 'Personality and signs', has: hasPersonality, add: { href: '/profile/edit?tab=personality', label: 'Add your type or signs' } },
+    { key: 'growth', label: 'Growth', has: hasGrowth, add: { href: '/profile/edit?add=goals', label: 'Add your goals' } },
+    { key: 'travel', label: 'Travel', has: travels.length > 0, add: { href: '/profile/edit?add=travel', label: 'Add a trip' } },
+    { key: 'links', label: 'Links', has: links.length > 0, add: { href: '/profile/edit?tab=links', label: 'Add your links' } },
+  ]
+  const shown = tabs.filter(t => t.has || isOwn)
+
   return (
     <div className="v4-page v4-page--wide pfr">
       {head}
@@ -214,78 +227,79 @@ export default function ProfileReview({ profile: p, bio, offers, requests, isOwn
       {next}
       <div className="pfr-split">
         <div className="pfr-main">
-          {offersBlock}
-          {requestsBlock}
-
-          {(skills.length > 0 || interests.length > 0) && (
-            <section className="pfr-sec">
-              {skills.length > 0 && <><div className="pfr-label">Skills</div><div className="v4-tags">{skills.map(s => <Tag key={s}>{s}</Tag>)}</div></>}
-              {interests.length > 0 && <><div className="pfr-label">Interests</div><div className="v4-tags">{interests.map(s => <Tag key={s}>{s}</Tag>)}</div></>}
-            </section>
-          )}
-
-          {(longText.length > 0 || links.length > 0) && (
-            <section className="v4-card pfr-card">
-              {longText.map(([k, v]) => (
-                <div key={k} className="pfr-text">
-                  <h3 className="pfr-card__title">{k}</h3>
-                  <p className="pfr-prose">{v}</p>
-                </div>
-              ))}
-              {links.length > 0 && <Links links={links} />}
-            </section>
-          )}
-
-          {growth && (growth.fears || growth.traumas) && (
-            <section className="v4-card pfr-card">
-              {growth.fears && <div className="pfr-text"><h3 className="pfr-card__title">Fears & challenges</h3><p className="pfr-prose">{growth.fears}</p></div>}
-              {growth.traumas && <div className="pfr-text"><h3 className="pfr-card__title">Healing journey</h3><p className="pfr-prose">{growth.traumas}</p></div>}
-              {isOwn && <p className="pfr-small"><Icon name="eye" size={16} />{GROWTH_AUDIENCE[growth.visibility] ?? growth.visibility} · <Link href="/profile/edit?add=growth">change</Link></p>}
-            </section>
-          )}
-
-          {(pd?.myersBriggs || ocean || astro.length > 0 || otherArc.length > 0) && (
-            <section className="v4-card pfr-card">
-              <h3 className="pfr-card__title">Personality</h3>
-              {pd?.myersBriggs && <p className="pfr-mbti">{pd.myersBriggs}</p>}
-              {ocean && (
-                <div className="pfr-ocean">
-                  {OCEAN.map(({ key, label }) => {
-                    const v = ocean[key] ?? 50
-                    return (
-                      <div key={key} className="pfr-ocean__row">
-                        <span>{label}</span><span className="pfr-ocean__n">{v}%</span>
-                        <i className="pfr-ocean__bar" aria-hidden><i style={{ width: `${v}%` }} /></i>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              {(astro.length > 0 || otherArc.length > 0) && (
-                <dl className="pfr-facts">
-                  {[...astro, ...otherArc].map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-                </dl>
-              )}
-            </section>
-          )}
-
-          {travels.length > 0 && (
-            <section className="pfr-sec">
-              <div className="v4-sec"><h2>Travel</h2></div>
-              <div className="v4-list">
-                {travels.map((t, i) => (
-                  <div key={i} className="v4-row pfr-row">
-                    <span className="v4-row__lead"><Icon name="plane" size={20} /></span>
-                    <span className="v4-row__main">
-                      <b>{t.location}</b>
-                      {(t.startDate || t.endDate) && <small>{[monthYear(t.startDate), monthYear(t.endDate)].filter(Boolean).join(' – ')}</small>}
-                      {t.notes && <span className="pfr-row__text">{t.notes}</span>}
-                    </span>
+          {shown.length > 0 && <ProfileTabs tabs={shown}>{key => {
+            const t = tabs.find(x => x.key === key)!
+            const empty = !t.has && t.add && (
+              <div className="pfr-empty"><span>Nothing here yet.</span><Link href={t.add.href}>{t.add.label} →</Link></div>
+            )
+            if (key === 'about') return empty || (
+              <section className="v4-card pfr-card">
+                {p.public_bio?.trim() && <div className="pfr-text"><h3 className="pfr-card__title">{isOwn ? 'What I’m up to' : p.first_name ? `What ${p.first_name}’s up to` : 'What they’re up to'}</h3><p className="pfr-prose">{p.public_bio}</p></div>}
+                {bio?.values_principles?.trim() && (
+                  <div className="pfr-text"><h3 className="pfr-card__title">Values</h3>
+                    {values ? <div className="v4-tags">{values.map(v => <Tag key={v}>{v}</Tag>)}</div> : <p className="pfr-prose">{bio.values_principles}</p>}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                )}
+                {bio?.what_creating?.trim() && <div className="pfr-text"><h3 className="pfr-card__title">Creating</h3><p className="pfr-prose">{bio.what_creating}</p></div>}
+              </section>
+            )
+            if (key === 'skills') return empty || (
+              <section className="pfr-sec">
+                {skills.length > 0 && <><div className="pfr-label">Good at</div><div className="v4-tags">{skills.map(s => <Tag key={s}>{s}</Tag>)}</div></>}
+                {interests.length > 0 && <><div className="pfr-label">Curious about</div><div className="v4-tags">{interests.map(s => <Tag key={s}>{s}</Tag>)}</div></>}
+                {isOwn && <Link className="pfr-small pfr-edit" href="/profile/edit?add=skills">Change</Link>}
+              </section>
+            )
+            if (key === 'offers') return <>{offersBlock}{requestsBlock}</>
+            if (key === 'personality') return empty || (
+              <section className="v4-card pfr-card">
+                {pd?.myersBriggs && <p className="pfr-mbti">{pd.myersBriggs}</p>}
+                {ocean && (
+                  <div className="pfr-ocean">
+                    {OCEAN.map(({ key: k, label }) => {
+                      const v = ocean[k] ?? 50
+                      return (
+                        <div key={k} className="pfr-ocean__row">
+                          <span>{label}</span><span className="pfr-ocean__n">{v}%</span>
+                          <i className="pfr-ocean__bar" aria-hidden><i style={{ width: `${v}%` }} /></i>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {(astro.length > 0 || otherArc.length > 0) && (
+                  <dl className="pfr-facts">
+                    {[...astro, ...otherArc].map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+                  </dl>
+                )}
+              </section>
+            )
+            if (key === 'growth') return empty || (
+              <section className="v4-card pfr-card">
+                {bio?.goals?.trim() && <div className="pfr-text"><h3 className="pfr-card__title">Goals</h3><p className="pfr-prose">{bio.goals}</p></div>}
+                {growth?.fears && <div className="pfr-text"><h3 className="pfr-card__title">Fears & challenges</h3><p className="pfr-prose">{growth.fears}</p></div>}
+                {growth?.traumas && <div className="pfr-text"><h3 className="pfr-card__title">Healing journey</h3><p className="pfr-prose">{growth.traumas}</p></div>}
+                {isOwn && growth && (growth.fears || growth.traumas) && <p className="pfr-small"><Icon name="eye" size={16} />{GROWTH_AUDIENCE[growth.visibility] ?? growth.visibility} · <Link href="/profile/edit?add=growth">change</Link></p>}
+              </section>
+            )
+            if (key === 'travel') return empty || (
+              <section className="pfr-sec">
+                <div className="v4-list">
+                  {travels.map((t, i) => (
+                    <div key={i} className="v4-row pfr-row">
+                      <span className="v4-row__lead"><Icon name="plane" size={20} /></span>
+                      <span className="v4-row__main">
+                        <b>{t.location}</b>
+                        {(t.startDate || t.endDate) && <small>{[monthYear(t.startDate), monthYear(t.endDate)].filter(Boolean).join(' – ')}</small>}
+                        {t.notes && <span className="pfr-row__text">{t.notes}</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+            return empty || <section className="pfr-sec"><Links links={links} /></section>
+          }}</ProfileTabs>}
         </div>
 
         <aside className="pfr-side">
@@ -307,6 +321,31 @@ export default function ProfileReview({ profile: p, bio, offers, requests, isOwn
         </aside>
       </div>
     </div>
+  )
+}
+
+const onHash = (cb: () => void) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb) }
+
+type TabKey = 'about' | 'skills' | 'offers' | 'personality' | 'growth' | 'travel' | 'links'
+
+/** The profile's tabs: a row of chips that scrolls sideways on a phone; the open tab is in the address (#tab) */
+function ProfileTabs({ tabs, children }: { tabs: { key: TabKey; label: string }[]; children: (key: TabKey) => React.ReactNode }) {
+  // The address's #tab opens that tab (read after load; the server has no address hash)
+  const hash = useSyncExternalStore(onHash, () => window.location.hash.slice(1), () => '') as TabKey
+  const [picked, setPicked] = useState<TabKey | null>(null)
+  const pick = (k: TabKey) => { setPicked(k); window.history.replaceState(null, '', `#${k}`) }
+  const want = picked ?? hash
+  const current = tabs.some(t => t.key === want) ? want : tabs[0].key
+  return (
+    <>
+      <div className="v4-chiprow pfr-tabs" role="tablist" aria-label="Profile">
+        {tabs.map(t => (
+          <button key={t.key} type="button" role="tab" id={`pfr-tab-${t.key}`} aria-selected={t.key === current} aria-controls="pfr-panel"
+            className={`v4-chip${t.key === current ? ' v4-chip--on' : ''}`} onClick={() => pick(t.key)}>{t.label}</button>
+        ))}
+      </div>
+      <div className="pfr-panel" id="pfr-panel" role="tabpanel" aria-labelledby={`pfr-tab-${current}`}>{children(current)}</div>
+    </>
   )
 }
 

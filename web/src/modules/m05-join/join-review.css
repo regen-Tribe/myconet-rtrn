@@ -9,7 +9,7 @@ html[data-review] .jr-hint { font-size: 13px; color: var(--ink-3, #6b7180); marg
 html[data-review] .jr-link { border: 0; background: none; padding: 0; font: inherit; color: var(--ink, #111317); font-weight: 600; text-decoration: underline; cursor: pointer; }
 
 /* The track: three marks joined by a line; done = filled ink with a check, now = ink ring */
-html[data-review] .jr-path { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); }
+html[data-review] .jr-path { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 html[data-review] .jr-path li { position: relative; display: grid; justify-items: center; }
 html[data-review] .jr-path li + li::before { content: ''; position: absolute; top: 15px; right: 50%; width: 100%; height: 2px; background: var(--rule, #e3e6ec); z-index: 0; }
 html[data-review] .jr-path li.done + li::before { background: var(--ink, #111317); }
@@ -109,4 +109,69 @@ html[data-review] .nc-in p { margin: 0; font-size: 15px; color: var(--ink-2, #3a
 html[data-review] .nc-open { margin-top: 0; }
 /* globals.css (v4) gives every field its own box with !important; here fields are the soft control fill, no outline (#37) */
 html[data-review] .jr-field :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea) { border: 0 !important; background: var(--ctl, #e3e8f4) !important; box-shadow: none !important; }
-html[data-review] .jr-field :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea):focus { background: var(--surface, #fff) !important; box-shadow: inset 0 0 0 2px var(--ink, #111317) !important; }
+html[data-review] .jr-field :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea):focus { background: var(--surface, #fff) !important; box-shadow: inset 0 0 0 1.5px var(--ink-3, #6b7180) !important; }
+
+/* Start joining as one focused flow (FocusShell; Sonia, 24 Nov): heading, track, one step per card, Back · Continue */
+html[data-review] .jf { display: grid; gap: 20px; }
+html[data-review] .jf-head { display: grid; gap: 6px; padding-top: 8px; }
+html[data-review] .jf-head h1 { font-family: var(--display); font-size: 40px; font-weight: 400; letter-spacing: -.04em; line-height: 1.05; margin: 0; color: var(--ink, #111317); }
+@media (max-width: 639px) { html[data-review] .jf-head h1 { font-size: 24px; letter-spacing: -.03em; } }
+html[data-review] .jf-head p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-2, #3a3f4a); }
+html[data-review] .jf .jr-path { padding: 4px 0; }
+html[data-review] .jf-card { padding: 24px; }
+@media (max-width: 639px) { html[data-review] .jf-card { padding: 20px 16px; } }
+html[data-review] .jf-step { display: grid; gap: 16px; }
+html[data-review] .jf-step h2 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; margin: 0; color: var(--ink, #111317); }
+html[data-review] .jf-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3, #6b7180); margin-bottom: -10px; }
+html[data-review] .jf-text { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-2, #3a3f4a); }
+html[data-review] .jf-values { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+html[data-review] .jf-values li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 0; }
+html[data-review] .jf-values li + li { border-top: 1px solid var(--bg-3, #e8ecf5); }
+html[data-review] .jf-values b { display: block; font-size: 15px; font-weight: 600; color: var(--ink, #111317); }
+html[data-review] .jf-values p { margin: 2px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink-3, #6b7180); }
+html[data-review] .jf-n { width: 28px; height: 28px; border-radius: 999px; display: inline-grid; place-items: center; flex-shrink: 0; font-size: 13px; font-weight: 600; background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); }
+html[data-review] .jf-more { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 15px; font-weight: 600; color: var(--ink, #111317); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+html[data-review] .jf-ok { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--green-ink, #2f6b48); }
+html[data-review] .jf-warn { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--yellow, #fff0b3); color: var(--yellow-ink, #7a5b00); font-size: 13px; line-height: 1.5; }
+html[data-review] .jf-warn .jr-link { color: inherit; }
+html[data-review] .jf-q { display: grid; gap: 8px; }
+html[data-review] .jf-q label { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; line-height: 1.5; color: var(--ink, #111317); }
+html[data-review] .jf-q label small { font-size: 13px; color: var(--ink-4, #9aa0ad); }
+html[data-review] .jf-q .jr-field { display: block; }
+/* The bar under every step: Back on the left, the way forward on the right */
+html[data-review] .jf-nav { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--bg-3, #e8ecf5); }
+html[data-review] .jf-nav--end { justify-content: flex-end; }
+html[data-review] .jf-nav--center { justify-content: center; border-top: 0; padding-top: 4px; }
+html[data-review] .jf-nav__end { display: inline-flex; gap: 10px; align-items: center; margin-left: auto; }
+html[data-review] .jf-done { justify-items: center; text-align: center; padding: 12px 0; }
+html[data-review] .jf-done__mark { width: 56px; height: 56px; border-radius: 999px; display: grid; place-items: center; background: var(--green, #dcefe2); color: var(--green-ink, #2f6b48); }
+/* Under the card: read more, and what joining opens (folded) */
+html[data-review] .jf-foot { display: grid; gap: 12px; justify-items: start; }
+html[data-review] .jf-opens { width: 100%; }
+html[data-review] .jf-opens summary { cursor: pointer; font-size: 15px; font-weight: 600; color: var(--ink-2, #3a3f4a); width: fit-content; }
+html[data-review] .jf-opens ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+html[data-review] .jf-opens li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--surface, #fff); }
+html[data-review] .jf-opens li.here { box-shadow: inset 0 0 0 1.5px var(--ink, #111317); }
+html[data-review] .jf-opens li b { display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; }
+html[data-review] .jf-opens li small { font-size: 13px; color: var(--ink-3, #6b7180); }
+html[data-review] .jf-opens li span { font-size: 13px; color: var(--ink-2, #3a3f4a); }
+html[data-review] .jf-you { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+html[data-review] .jf-opens p { margin: 8px 0 0; font-size: 13px; color: var(--ink-4, #9aa0ad); }
+
+/* About you as three short screens (decisions #89, #90): a three-dash progress, then one screen at a time */
+html[data-review] .jf-parts { list-style: none; margin: -6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 240px; }
+html[data-review] .jf-parts li { height: 4px; border-radius: 999px; background: var(--ctl-hover, #d8deee); }
+html[data-review] .jf-parts li.done, html[data-review] .jf-parts li.now { background: var(--ink, #111317); }
+html[data-review] .jf-step fieldset.jr-field { border: 0; padding: 0; margin: 0; min-width: 0; }
+html[data-review] .jf-step fieldset.jr-field > legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink, #111317); }
+html[data-review] .jf-help { display: block; font-size: 13px !important; font-weight: 400; color: var(--ink-3, #6b7180) !important; margin-top: 2px; }
+html[data-review] .jf-two { display: grid; gap: 10px; }
+@media (min-width: 640px) { html[data-review] .jf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+html[data-review] .jf-two small { font-size: 13px; color: var(--ink-3, #6b7180); }
+html[data-review] .jf-asks { display: grid; gap: 8px; justify-items: start; }
+html[data-review] .jf-ask { display: flex; gap: 6px; align-items: center; width: 100%; }
+html[data-review] .jf-ask input { flex: 1 1 auto; min-width: 0; }
+html[data-review] .jf-x { width: 36px; height: 36px; flex-shrink: 0; border: 0; border-radius: 999px; background: transparent; color: var(--ink-3, #6b7180); display: grid; place-items: center; cursor: pointer; }
+html[data-review] .jf-x:hover { background: var(--ctl, #e3e8f4); }
+html[data-review] .jf-add { font-size: 15px; }
+html[data-review] .jf-step .pp-own input { height: 40px !important; border-radius: 999px !important; }

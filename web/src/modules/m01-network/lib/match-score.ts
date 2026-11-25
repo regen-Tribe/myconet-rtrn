@@ -1,4 +1,5 @@
 // Pure match-scoring logic. No DB calls.
+import { PILL_GROUPS, groupOfPill } from '@/core/lib/skills-interests'
 // `city` and `country` come from user_profiles; callers merge them onto Bio before passing in.
 
 export type Bio = {
@@ -97,6 +98,8 @@ function mbtiCompat(a?: string | null, b?: string | null): { points: number; lab
 // Score breakdown (max 100):
 //   Skills shared (fuzzy)   → up to 25
 //   Interests shared (fuzzy)→ up to 15
+//   Skill meets curiosity   → up to 10
+//   Same group of pills     → up to  3
 //   OCEAN similarity        → up to 20
 //   MBTI compatibility      → up to 20
 //   Location proximity      → up to  5
@@ -129,6 +132,27 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
     reasons.push(sharedInterests.length === 1
       ? `Shared interest: ${sharedInterests[0]}`
       : `${sharedInterests.length} shared interests (${list}${sharedInterests.length > 2 ? '...' : ''})`)
+  }
+
+  // A skill meets a curiosity — 10 max (decision #89): one's "good at" is the other's "curious about". Said first,
+  // since it's the most useful reason to meet
+  const teaches = (theirs.skills ?? []).filter(s => myInterests.some(i => fuzzyMatch(s, i)))
+  const learns = (mine.skills ?? []).filter(s => theirInterests.some(i => fuzzyMatch(s, i)))
+  if (teaches.length || learns.length) {
+    score += Math.min((teaches.length + learns.length) * 4, 10)
+    const words: string[] = []
+    if (teaches.length) words.push(`Good at ${teaches.slice(0, 2).join(', ')}, which you're curious about`)
+    if (learns.length) words.push(`Curious about ${learns.slice(0, 2).join(', ')}, which you're good at`)
+    reasons.unshift(...words)
+  }
+
+  // The same group, different pills — 3 max: "Both into Land and food"
+  const groupsOf = (b: NonNullable<Bio>) => new Set([...(b.skills ?? []), ...(b.interests ?? [])].map(groupOfPill).filter(g => g >= 0))
+  const sameGroups = [...groupsOf(mine)].filter(g => groupsOf(theirs).has(g))
+    .filter(g => ![...sharedSkills, ...sharedInterests, ...teaches, ...learns].some(p => groupOfPill(p) === g))
+  if (sameGroups.length) {
+    score += Math.min(sameGroups.length, 3)
+    reasons.push(`Both into ${sameGroups.slice(0, 2).map(g => PILL_GROUPS[g].name).join(' and ')}`)
   }
 
   // OCEAN similarity — 20 max

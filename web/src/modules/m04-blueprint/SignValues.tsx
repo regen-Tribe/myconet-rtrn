@@ -29,7 +29,7 @@ export default function SignValues({ userId, valueIds, initialSigned }: { userId
   return (
     <div className={`ab-sign${signed ? ' ab-sign--done' : ''}`} aria-live="polite">
       <div className="ab-sign__text">
-        <small>Step 1 of 3 · Get to know us</small>
+        <small>Step 1 of 2 · Get to know us</small>
         {signed
           ? <><b><Icon name="check-circle" size={18} />You share our values</b><span>Step 1 is done. Next, tell us a little about you.</span></>
           : <><b>I share these values</b><span>Sign to finish step 1. You can keep reading afterwards.</span></>}

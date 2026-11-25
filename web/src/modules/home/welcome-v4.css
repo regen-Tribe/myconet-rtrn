@@ -1,0 +1,26 @@
+/* WelcomeV4: a visitor's first page (design review). Text sizes 11/13/15/18/24/40; radii pill/20/12; breakpoints 640/960/1280. */
+html[data-review] .wl { max-width: 880px; display: grid; gap: 20px; }
+html[data-review] .wl-hero { container-type: inline-size; position: relative; overflow: hidden; display: flex; align-items: flex-end; min-height: 320px; border-radius: 20px; background: var(--cobalt, #1f3fb8) center 42% / cover no-repeat; }
+html[data-review] .wl-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,16,14,0) 25%, rgba(12,16,14,.7) 100%); }
+@media (min-width: 960px) { html[data-review] .wl-hero { min-height: 400px; } }
+html[data-review] .wl-hero-in { position: relative; display: grid; gap: 8px; padding: 24px; color: #fff; max-width: 560px; }
+html[data-review] .wl-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; opacity: .9; }
+html[data-review] .wl-hero h1 { font-family: var(--display); font-size: 40px; font-weight: 500; letter-spacing: -.045em; line-height: 1; margin: 0; color: #fff; }
+html[data-review] .wl-hero p { margin: 0; font-size: 18px; line-height: 1.35; text-wrap: balance; }
+@media (max-width: 639px) { html[data-review] .wl-hero p { font-size: 15px; } }
+html[data-review] .wl-hero, html[data-review] .wl-hero * { text-shadow: 0 1px 12px rgba(0,0,0,.3); }
+html[data-review] .wl-hero .v4-btn, html[data-review] .wl-hero .v4-btn * { text-shadow: none; }
+html[data-review] .wl-acts { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+html[data-review] .wl-acts--card { margin-top: 0; }
+html[data-review] .wl-signin { color: #fff; font-size: 15px; font-weight: 600; padding: 0 8px; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+html[data-review] .wl-card { padding: 24px; display: grid; gap: 14px; }
+@media (max-width: 639px) { html[data-review] .wl-card { padding: 20px 16px; } }
+html[data-review] .wl-card h2 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; margin: 0; }
+html[data-review] .wl-text { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-2, #3a3f4a); }
+html[data-review] .wl-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 640px) { html[data-review] .wl-steps { grid-template-columns: repeat(3, 1fr); } }
+html[data-review] .wl-steps li { display: flex; gap: 12px; align-items: flex-start; }
+html[data-review] .wl-steps b { display: block; font-size: 15px; font-weight: 600; }
+html[data-review] .wl-steps small { display: block; font-size: 13px; line-height: 1.45; color: var(--ink-3, #6b7180); margin-top: 2px; }
+html[data-review] .wl-n { width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center; flex-shrink: 0; font-size: 13px; font-weight: 600; background: var(--ctl, #e3e8f4); color: var(--ink-2, #3a3f4a); }
+html[data-review] .wl-more { font-size: 15px; font-weight: 600; color: var(--ink, #111317); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }

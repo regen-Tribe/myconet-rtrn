@@ -144,22 +144,23 @@ async function reviewMenuState(supabase: SupabaseClient, userId: string, role: s
   ])
   const counts = { tasks: tasksRes.count ?? 0, applications: appsRes.count ?? 0, bookings: bookingsRes.count ?? 0 }
 
-  // Explorer: the three join steps. With the design review, step 1 is read on About and step 2 is a short form
-  // inside Start joining (#80, #81); without it, the values are signed on Join and the profile in Edit profile
+  // Explorer: the three join steps. With the design review every step happens inside Start joining, one focused
+  // flow (Sonia, 24 Nov; About opens in a new tab from there); without it, the profile is in Edit profile
   const stepHref = (key: string) => DESIGN_REVIEW
-    ? (key === 'values' ? '/about#values' : `/join?step=${key}`)
+    ? `/join?step=${key}`
     : (key === 'profile' ? '/profile/edit' : `/join?step=${key}`)
   if (!isJoiningOrAbove(role)) {
     const path = await loadJoinPath(supabase, userId, role)
     const progress = path.steps.map(x => ({ label: x.label, done: x.done }))
     const waiting = path.application === 'pending' || path.application === 'reviewing'
     if (waiting) return { next: { title: 'Your application is in', line: `${cap(JOIN_REVIEWER)} answers within a week.`, href: '/join' }, journey: 0, progress, counts }
-    if (!path.next) return { next: { title: 'Start joining', line: 'Three short steps.', href: '/join' }, journey: 0, progress, counts }
+    const short = path.steps.length === 2 ? 'Two short steps.' : 'Three short steps.'
+    if (!path.next) return { next: { title: 'Start joining', line: short, href: '/join' }, journey: 0, progress, counts }
     const at = path.steps.indexOf(path.next)
     return {
       next: path.doneCount === 0 && path.application !== 'rejected'
-        ? { title: 'Start joining', line: 'Three short steps.', href: '/join' }
-        : { title: path.next.title, line: `Start joining · step ${at + 1} of 3`, href: stepHref(path.next.key) },
+        ? { title: 'Start joining', line: short, href: '/join' }
+        : { title: path.next.title, line: `Start joining · step ${at + 1} of ${path.steps.length}`, href: stepHref(path.next.key) },
       journey: 0, progress, counts,
     }
   }

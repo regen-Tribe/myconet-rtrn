@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   // One home per role (design review): a visitor's home is About
-  if (DESIGN_REVIEW && !user) redirect('/about')
+  if (DESIGN_REVIEW && !user) redirect('/')
 
   const publicFetches = await Promise.all([
     supabase.from('blueprints').select('answers, flags, updated_at').eq('is_community', true).maybeSingle(),

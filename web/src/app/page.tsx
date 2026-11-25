@@ -1,6 +1,7 @@
 import { createClient } from '@/core/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import LandingClient from './LandingClient'
+import WelcomeV4 from '@/modules/home/WelcomeV4'
 import { EVENT_SELECT, toEvent } from '@/modules/m14-events/lib/queries'
 import { ACTIVE_PROJECT_STATUSES } from '@/core/lib/project-status'
 import { buildGlanceTiles } from '@/modules/home/lib/at-a-glance'
@@ -11,8 +12,12 @@ export default async function LandingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // One home per role (design review): a visitor's home is About, a signed-in person's is My dashboard
-  if (DESIGN_REVIEW) redirect(user ? '/dashboard' : '/about')
+  // One home per role (design review): a visitor gets the Welcome (what the portal is for, Create account;
+  // Sonia, 24 Nov), a signed-in person the Dashboard
+  if (DESIGN_REVIEW) {
+    if (user) redirect('/dashboard')
+    return <WelcomeV4 />
+  }
   if (user) redirect('/home')
 
   const { data: bp } = await supabase

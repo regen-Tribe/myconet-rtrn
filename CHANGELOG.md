@@ -5,6 +5,44 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.132.1 — 2026-11-25 — Declining a draft lowers the count
+
+Oscar: "when I decline something by sliding the pill left, on drafts to confirm, the count on the top row holding
+the suggestions should decrease". The panel head (`ToDecidePanel`, M07 `DecisionList.tsx`) counted drafts from the
+rows it was loaded with, so a pill slid in the list below never reached it. `DecisionList` now takes `onPill` and
+tells the panel when a pill is approved, declined or undone; the head leaves those out of its count. Each meeting
+group's own count also leaves out declined drafts (approved ones already dropped). No migration.
+
+## v4.132.0 — 2026-11-25 — Joining in two steps: Send at the end of About you
+
+Sonia, 25 Nov: "'Anything else?' why would we ask that?" The website form and About you already ask everything, so
+the Apply step goes (decision #93, option B). With the design review: `join-path.ts` gives two steps; About you's last
+screen ends with Send application, shows the Blueprint's own questions if a community has any, and waits for the values
+with a link to step 1. Old `?step=application` links open that screen. The menu, Dashboard, Welcome and About's
+"Step 1 of 2" say two steps. Without the design review, three steps as before. No migration.
+
+## v4.131.0 — 2026-11-25 — Good at, curious about: one picker, and a profile in seven tabs; A Welcome for visitors, and Start joining as one focused flow
+
+**Good at, curious about: one picker, and a profile in seven tabs.** Sonia, 25 Nov (Protopia join questions): people reach MyCoNet after the community's own website form, so
+joining asks only about you, each thing once. Design review only (`designReview`); communities without it keep
+the old pages. Decisions #89–#92 in `design/decisions.md`; words in `LEXICON.md`.
+
+- `core/lib/skills-interests.ts`: twelve groups of pills, shared by skills and interests; suggestions from what
+  people here pick together; "What best describes you?" words; values as names (`valueList`).
+- `core/components/v4/PillPicker.tsx` (+ `pill-picker.css`): groups first, then pills; your own; share → offers.
+- `m05-join/JoinReview.tsx`: About you as three screens (`?step=profile&part=2`), each saved on Continue.
+- `m01-network/ProfileReview.tsx` and `app/profile/edit/page.tsx`: the same seven tabs.
+- `m01-network/lib/match-score.ts`: a skill meeting a curiosity (up to 10) and the same group (up to 3).
+- Blueprint: the values prompt asks for "Name — two or three sentences" per line; Community values' fields are
+  Name and What it means; About splits a values answer on lines when it has them.
+
+No migration, no new secret. Stored as before: `user_bio.skills`, `interests`, `values_principles` (one name per
+line), `user_profiles.user_types`, `user_offers`, `user_requests`.
+
+**A Welcome for visitors, and Start joining as one focused flow.** Sonia's design review, 24 Nov: decisions #86–#88 (replace #69 and #80's "sign on About"). A Welcome at `/` for visitors;
+Start joining in a focused shell (no menu around it), step 1 shows and signs the values in place, About opens in a
+new tab, Apply says next to Send why it waits; the mark on sign-in. Design review only. No migration.
+
 ## v4.130.2 — 2026-11-25 — A decided draft stays decided when you fold its meeting
 
 Oscar: "I just declined two suggestions in Vision circle… and when I collapse the row they turn back to draft". The
