@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-25 — Core v4.133.0 (PR #98; deployed fb728c53)
+- v4.133.0: a Note box in a task's Edit fields (Drafts to confirm, a meeting's action items), saved to the task's notes (core #161, Oscar). No migration.
+
 ## 2026-11-25 — Core v4.131.0 + v4.132.0 + v4.132.1 (PR #97; deployed 53876d9e)
 - v4.131.0: Good at / curious about in one picker, a profile in seven tabs, a Welcome for visitors and one focused Start joining flow (core #152, from Protopia).
 - v4.132.0: joining in two steps, Send at the end of About you (core #160).
