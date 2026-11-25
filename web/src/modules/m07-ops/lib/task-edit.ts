@@ -18,10 +18,10 @@ export interface EditableTask {
   notes?: string | null
 }
 
-export type TaskChange = Partial<Pick<EditableTask, 'status' | 'circle' | 'team_id' | 'project_id' | 'assignee_id' | 'assignee_name' | 'priority' | 'due_date' | 'due_time' | 'notes'>>
+export type TaskChange = Partial<Pick<EditableTask, 'title' | 'status' | 'circle' | 'team_id' | 'project_id' | 'assignee_id' | 'assignee_name' | 'priority' | 'due_date' | 'due_time' | 'notes'>>
 
 /** What the database gives back after a change (the triggers may adjust circle and subcircle) */
-export const EDITABLE_SELECT = 'status, circle, team_id, project_id, assignee_id, assignee_name, priority, due_date, due_time, needs_review, notes'
+export const EDITABLE_SELECT = 'title, status, circle, team_id, project_id, assignee_id, assignee_name, priority, due_date, due_time, needs_review, notes'
 
 /**
  * The task pop-up's rules (TaskModal), for a change made in one picker: a subcircle or a task (project) brings its

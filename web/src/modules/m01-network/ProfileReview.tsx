@@ -20,6 +20,7 @@ import { COMMUNITY_NAME } from '@/core/lib/instance'
 import { MyCircles } from '@/modules/m17-org/MyCircles'
 import { factsFromRows, missingWords, profileMissing } from './lib/profile-missing'
 import { valueList } from '@/core/lib/skills-interests'
+import { homesLabel } from '@/core/lib/homes'
 import './profile-review.css'
 
 type Ocean = { openness?: number; conscientiousness?: number; extraversion?: number; agreeableness?: number; neuroticism?: number }
@@ -83,7 +84,7 @@ export default function ProfileReview({ profile: p, bio, offers, requests, isOwn
   const circleSet = useCircles()
   const displayName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
   const initial = displayName[0]?.toUpperCase() ?? '?'
-  const location = [p.city, p.country].filter(Boolean).join(', ')
+  const location = homesLabel(p.city, p.country)
   const links = socialLinks(p)
   const theirCircles = circles.filter(c => circleSet.has(c.slug)).sort((a, b) => Number(b.lead) - Number(a.lead))
   const skills = bio?.skills ?? []

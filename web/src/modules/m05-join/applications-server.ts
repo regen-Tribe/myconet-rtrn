@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadProfileDetails } from '@/core/lib/public-profile'
+import { homesLabel } from '@/core/lib/homes'
 
 /** The Blueprint's join questions, one per line. */
 export async function loadJoinQuestions(supabase: SupabaseClient): Promise<string[]> {
@@ -53,7 +54,7 @@ export async function loadApplications(supabase: SupabaseClient): Promise<Applic
     const d = details.get(uid)
     return {
       headline: p.headline ?? null, about: p.public_bio ?? null, avatar_url: p.avatar_url ?? null,
-      place: [d?.city, d?.country].filter(Boolean).join(', ') || null, describes: d?.user_types ?? [],
+      place: homesLabel(d?.city, d?.country) || null, describes: d?.user_types ?? [],
       skills: b?.skills ?? [], interests: b?.interests ?? [], values: b?.values_principles ?? null,
       offers: listOf(offers, uid, 'title'), requests: listOf(requests, uid, 'request_text'),
     }

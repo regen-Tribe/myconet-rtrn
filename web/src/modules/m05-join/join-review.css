@@ -159,7 +159,7 @@ html[data-review] .jf-you { font-size: 11px; font-weight: 600; letter-spacing: .
 html[data-review] .jf-opens p { margin: 8px 0 0; font-size: 13px; color: var(--ink-4, #9aa0ad); }
 
 /* About you as three short screens (decisions #89, #90): a three-dash progress, then one screen at a time */
-html[data-review] .jf-parts { list-style: none; margin: -6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 240px; }
+html[data-review] .jf-parts { list-style: none; margin: -6px 0 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; max-width: 280px; }
 html[data-review] .jf-parts li { height: 4px; border-radius: 999px; background: var(--ctl-hover, #d8deee); }
 html[data-review] .jf-parts li.done, html[data-review] .jf-parts li.now { background: var(--ink, #111317); }
 html[data-review] .jf-step fieldset.jr-field { border: 0; padding: 0; margin: 0; min-width: 0; }
@@ -176,3 +176,37 @@ html[data-review] .jf-x:hover { background: var(--ctl, #e3e8f4); }
 html[data-review] .jf-add { font-size: 15px; }
 html[data-review] .jf-step .pp-own input { height: 40px !important; border-radius: 999px !important; }
 html[data-review] .nc-only { max-width: 640px; }
+
+/* On a phone Start joining reads like an app (Sonia, 25 Nov; decision #96): inside a step the heading shrinks to one
+   line, the track is compact, the step fills the screen, and Back · Continue stay in a bar at the bottom */
+@media (max-width: 639px) {
+  html[data-review] .jf { gap: 12px; }
+  html[data-review] .jf--step .jf-head { padding-top: 0; }
+  html[data-review] .jf--step .jf-head h1 { font-size: 18px; letter-spacing: -.01em; font-family: inherit; font-weight: 600; }
+  html[data-review] .jf--step .jf-head p { display: none; }
+  html[data-review] .jf--step .jr-path__n { width: 24px; height: 24px; font-size: 11px; }
+  html[data-review] .jf--step .jr-path li + li::before { top: 11px; }
+  html[data-review] .jf--step .jr-path__t { font-size: 11px; }
+  html[data-review] .jf--step .jf-card { padding: 20px 16px 0; border-radius: 20px 20px 0 0; min-height: calc(100dvh - 64px - 120px); margin: 0 -16px; display: flex; flex-direction: column; }
+  /* The bar sits at the bottom of the screen even when a step is short, like an app */
+  html[data-review] .jf--step .jf-card > .jf-step { flex: 1; display: flex; flex-direction: column; }
+  html[data-review] .jf--step .jf-card > .jf-step > * + * { margin-top: 16px; }
+  html[data-review] .jf--step .jf-card > .jf-step > .jf-nav { margin-top: auto; }
+  html[data-review] .jf--step .jf-step h2 { font-size: 24px; }
+  html[data-review] .jf--step .jf-nav { position: sticky; bottom: 0; z-index: 4; margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--surface, #fff); border-top: 1px solid var(--bg-3, #e8ecf5); flex-wrap: nowrap; }
+  html[data-review] .jf--step .jf-nav .v4-btn--next { flex: 1 1 auto; justify-content: center; }
+  html[data-review] .jf--step .jf-foot { display: none; }
+}
+
+html[data-review] .jf-sub { padding: 0; margin: -8px 0 4px; font-size: 13px; color: var(--ink-3, #6b7180); }
+/* Step 1: the values as names; tap one to read what it means, so the list fits one phone screen (#100) */
+html[data-review] .jf-values--fold li { padding: 0; }
+html[data-review] .jf-values--fold details { width: 100%; }
+html[data-review] .jf-values--fold summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px; cursor: pointer; }
+html[data-review] .jf-values--fold summary::-webkit-details-marker { display: none; }
+html[data-review] .jf-values--fold summary .v4-icon { color: var(--ink-4, #9aa0ad); transition: transform .15s; flex-shrink: 0; }
+html[data-review] .jf-values--fold details[open] summary .v4-icon { transform: rotate(180deg); }
+html[data-review] .jf-values--fold li { align-items: center; }
+html[data-review] .jf-values--fold details p { margin: 0 0 10px; }
+html[data-review] .jf-values--fold .jf-n { width: 24px; height: 24px; font-size: 11px; } html[data-review] .jf-values--fold li { grid-template-columns: 24px minmax(0, 1fr); padding: 2px 0; }
+@media (max-width: 639px) { html[data-review] .jf--step .jf-card > .jf-step > h2 { margin-top: 4px; } html[data-review] .jf--step .jf-card > .jf-step > .jf-parts { margin-top: 10px; } }

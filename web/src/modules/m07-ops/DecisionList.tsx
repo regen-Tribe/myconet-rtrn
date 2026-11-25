@@ -335,6 +335,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
               {...opts!}
               onTeamAdded={x => setMadeTeams(prev => [...prev, x])}
               onSaved={x => set(t.deliverable_id, {
+                title: x.title,
                 status: x.status, circle: x.circle ?? null, team_id: x.team_id ?? null, project_id: x.project_id,
                 assignee_id: x.assignee_id, assignee_name: x.assignee_name ?? null, priority: x.priority ?? null, due_date: x.due_date, due_time: x.due_time ?? null, notes: x.notes ?? null, needs_review: false,
                 assignee: x.assignee_id ? options!.people.find(p => p.id === x.assignee_id)?.name.split(' ')[0] ?? null : null,

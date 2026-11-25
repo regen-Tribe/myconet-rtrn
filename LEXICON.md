@@ -124,6 +124,7 @@ Not "Seeks", not "Needs". A skill you tap **share** becomes an offer (#90).
 | **What best describes you?** | Choose all that apply: Exploring, Living in a community, Looking for a community, Vision holder, Service provider, Land holder, Funder (decision #94) | Who are you in this network?, user types |
 | **Personality and signs** | Myers-Briggs, Big Five, Sun, Moon and Rising, Human Design, Gene Key, Mayan sign: one profile tab (#91) | Archetypes as a tab name |
 | **Your values** | A person's values as names, a word or two each (#92) | Core Values & Principles |
+| **Where do you call home?** · **city** | The places a person calls home, picked from a list of cities or typed; several allowed (#97, #98) | town, location, based in |
 | **About · Skills and interests · Offers and requests · Personality and signs · Growth · Travel · Links** | The profile's seven tabs, the same in Edit profile (#91) | Basic Info, Values & Purpose, Goals & Growth | A booking that needs approval is a **booking request**.
 
 ## Recognition

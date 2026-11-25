@@ -5,6 +5,40 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.141.0 — 2026-11-25 — Rename a task right where you edit it
+
+Oscar: "I want to be able to edit the name of the task that is being suggested in the drafts to confirm edits".
+`TaskQuickEdit` (M07) gets a Name box above the fields. It saves `deliverables.title` on blur or Enter, if changed and
+not empty (an empty name goes back to the old one); Escape restores it. Like every field there, saving confirms a
+draft. `TaskChange` and `EDITABLE_SELECT` (`lib/task-edit.ts`) carry `title`, and the row's title follows the save. No
+migration.
+
+## v4.140.0 — 2026-11-25 — The home picker says "city"; Start joining, one question per screen
+
+**The home picker says "city".** Sonia: "call it city, not town" (decision #98). `HomePicker` placeholders: "Type a city", "Add another city". LEXICON entry for
+"Where do you call home?". No migration.
+
+**Start joining, one question per screen.** Sonia, 25 Nov (decisions #99, #100). `JoinReview`: About you is seven screens (`PARTS`, `LAST_PART`), each saving its
+own answer; the title is the question (`PillPicker hideLabel`). Step 1's values fold (`<details>`). `focus-shell.css`:
+Sponic's feel (18px cards, soft shadow, 48px buttons and fields) in MyCoNet's colours, pastel value numbers and photo
+placeholder. `join-review.css`: on a phone the step card is a flex column so the button bar sits at the bottom. No migration.
+
+## v4.139.0 — 2026-11-25 — Pick your home town from a list, and add more than one
+
+Sonia, 25 Nov (decision #97). `HomePicker` (core/components/v4) over GeoNames' cities15000 (CC BY 4.0, credited under the
+field), served from our own `/places/towns.json` (built by `scripts/build-towns.mjs`), loaded when the field is first used.
+Up to five places, kept in `user_profiles.city` / `country` paired with " · " (`core/lib/homes.ts`): no migration. Used in
+Start joining and Edit profile; profiles and Admin › Applications show "Lisbon, Portugal · Barcelona, Spain"; matching
+compares each place. Also from the screen-by-screen run: suggestions scroll above the phone's bottom bar, shorter
+placeholder and screen title.
+
+## v4.138.0 — 2026-11-25 — Start joining like a phone app, with clean pills
+
+Sonia's phone test (decision #96). `join-review.css`: under 640px, inside a step the heading is one line, the track compact,
+the card fills the screen and `.jf-nav` is a sticky bottom bar (safe-area aware). `pill-picker.css`: no borders or outlines;
+soft fills; picked = ink. "What best describes you?" uses pastel pills (`.pp-pill`) in Start joining, Edit profile and
+`/design`. Cut hints that repeat the question. No migration.
+
 ## v4.137.0 — 2026-11-25 — Why a draft is suggested, in a small pop-up
 
 Oscar: "on the drafts to confirm section, on the operations page - when im looking at a draft - id like to be able to

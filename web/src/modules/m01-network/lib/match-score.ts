@@ -1,5 +1,6 @@
 // Pure match-scoring logic. No DB calls.
 import { PILL_GROUPS, groupOfPill } from '@/core/lib/skills-interests'
+import { homesOf } from '@/core/lib/homes'
 // `city` and `country` come from user_profiles; callers merge them onto Bio before passing in.
 
 export type Bio = {
@@ -175,15 +176,17 @@ export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
   score += mbtiPts
   if (mbtiLabel) reasons.push(mbtiLabel)
 
-  // Location proximity — 5 max
-  if (mine.country && theirs.country && fuzzyMatch(mine.country, theirs.country)) {
-    if (mine.city && theirs.city && fuzzyMatch(mine.city, theirs.city)) {
-      score += 5
-      reasons.push(`Both in ${theirs.city}, ${theirs.country}`)
-    } else {
-      score += 3
-      reasons.push(`Both in ${theirs.country}`)
+  // Location proximity — 5 max. Each person may call several places home (decision #97): the best pair counts
+  {
+    const mineH = homesOf(mine.city, mine.country), theirsH = homesOf(theirs.city, theirs.country)
+    let best: { pts: number; why: string } | null = null
+    for (const a of mineH) for (const b of theirsH) {
+      if (!a.country || !b.country || !fuzzyMatch(a.country, b.country)) continue
+      const sameTown = !!a.city && !!b.city && fuzzyMatch(a.city, b.city)
+      const pick = sameTown ? { pts: 5, why: `Both in ${b.city}, ${b.country}` } : { pts: 3, why: `Both in ${b.country}` }
+      if (!best || pick.pts > best.pts) best = pick
     }
+    if (best) { score += best.pts; reasons.push(best.why) }
   }
 
   // Travel overlap with date awareness — 10 max

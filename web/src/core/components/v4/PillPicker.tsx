@@ -1,9 +1,9 @@
 'use client'
 /**
  * The interest picker, as Spotka has it (Sonia, 25 Nov 2026: "take it as Spotka has it"; decisions #89, #95):
- * "Your picks · N" with Review, a search that filters every pill in place, then one pastel card per group (name,
- * one line, "N picked", a chevron), one card open at a time, with tinted pills and a dashed "Something else?" at the
- * end that opens a box for your own words. A flame marks what's popular here. With `share`, the picked pills can be
+ * "Your picks · N" with Review, a search that filters every pill in place, then one pastel card per group (its name,
+ * a count, a chevron), one card open at a time, with soft borderless pills (#96) and "Something else" at the end that
+ * opens a box for your own words. A flame marks what's popular here. With `share`, the picked pills can be
  * marked "Sharing" (they become offers, #90). "You might also pick" follows what you picked.
  *
  * The same layout on a phone and a computer: cards are full width and pills wrap. Styles: pill-picker.css.
@@ -17,8 +17,10 @@ const norm = (s: string) => s.trim().toLowerCase()
 /** Listed by this many people here or more: the pill gets a flame */
 const POPULAR = 3
 
-export function PillPicker({ label, hint, value, onChange, stats, share, ownExample = 'Pottery' }: {
+export function PillPicker({ label, hint, hideLabel = false, value, onChange, stats, share, ownExample = 'Pottery' }: {
   label: string
+  /** The screen's title already asks it (Start joining, #100) */
+  hideLabel?: boolean
   hint?: string
   value: string[]
   onChange: (next: string[]) => void
@@ -64,25 +66,25 @@ export function PillPicker({ label, hint, value, onChange, stats, share, ownExam
     )
   }
   const somethingElse = (
-    <button type="button" className="pp-pill pp-pill--more" onClick={() => setOwnOpen(true)}><Icon name="plus" size={16} />Something else?</button>
+    <button type="button" className="pp-pill pp-pill--more" onClick={() => setOwnOpen(true)}><Icon name="plus" size={16} />Something else</button>
   )
 
   return (
     <fieldset className="pp">
-      <legend className="pp-legend"><span>{label}</span>{hint && <small>{hint}</small>}</legend>
+      <legend className={hideLabel ? 'sr-only' : 'pp-legend'}><span>{label}</span>{hint && <small>{hint}</small>}</legend>
 
       {/* Your picks · N, with Review */}
-      <div className="pp-picks">
+      {value.length > 0 && <div className="pp-picks">
         <div className="pp-picks__row">
           <span className="pp-picks__t">Your picks · {value.length}</span>
           {value.length > 0 && <button type="button" className="pp-link" aria-expanded={review} onClick={() => setReview(!review)}>{review ? 'Hide' : 'Review'}</button>}
         </div>
-        {review && value.length > 0 && <div className="pp-pills">{value.map(p => pill(p))}</div>}
-      </div>
+        {review && <div className="pp-pills">{value.map(p => pill(p))}</div>}
+      </div>}
 
       {share && value.length > 0 && (
         <div className="pp-row">
-          <span className="pp-row__t">Excited to share any of these? Tap them</span>
+          <span className="pp-row__t">Happy to share any? They show as your offers</span>
           <div className="pp-pills">
             {value.map(p => (
               <button key={p} type="button" className="pp-pill pp-pill--share" aria-pressed={sharing(p)} onClick={() => flipShare(p)}>
@@ -90,7 +92,6 @@ export function PillPicker({ label, hint, value, onChange, stats, share, ownExam
               </button>
             ))}
           </div>
-          <small className="pp-note">Each one you share shows under Offers on your profile.</small>
         </div>
       )}
 
@@ -112,8 +113,8 @@ export function PillPicker({ label, hint, value, onChange, stats, share, ownExam
             return (
               <div key={g.name} className="pp-group" style={tint(gi)} data-open={isOpen}>
                 <button type="button" className="pp-group__head" aria-expanded={isOpen} aria-controls={`${id}-g${gi}`} onClick={() => setOpen(isOpen ? null : gi)}>
-                  <span className="pp-group__text"><b>{g.name}</b><small>{g.desc}</small></span>
-                  {n > 0 && <span className="pp-group__n">{n} picked</span>}
+                  <span className="pp-group__text"><b>{g.name}</b></span>
+                  {n > 0 && <span className="pp-group__n" aria-label={`${n} picked`}>{n}</span>}
                   <Icon name="down" size={20} className="pp-group__chev" />
                 </button>
                 {isOpen && <div className="pp-pills pp-group__body" id={`${id}-g${gi}`}>{g.pills.map(p => pill(p, gi))}{somethingElse}</div>}
