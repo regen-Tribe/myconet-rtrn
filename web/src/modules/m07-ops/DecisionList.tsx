@@ -49,8 +49,11 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
   const [msg, setMsg] = useState<{ id: string; text: string } | null>(null)
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set())
   // Swiped here (v4.130.0): the pill stays, reading Approved / Declined with Undo, until the page is reloaded
-  const [swiped, setSwiped] = useState<Set<string>>(() => new Set())
-  const swipe = (id: string, on: boolean) => setSwiped(prev => { const n = new Set(prev); if (on) n.add(id); else n.delete(id); return n })
+  // Swiped here (v4.130.0; kept across collapsing a group since v4.130.2): what each pill decided, so it reads
+  // Approved / Declined with Undo until the page is reloaded
+  const [decidedPills, setDecidedPills] = useState<Record<string, { kind: 'approved' } | { kind: 'declined'; log: string | null }>>({})
+  const rememberPill = (id: string, d: { kind: 'approved' } | { kind: 'declined'; log: string | null } | null) =>
+    setDecidedPills(prev => { const n = { ...prev }; if (d) n[id] = d; else delete n[id]; return n })
   // Subcircles made from a row's Subcircle picker (v4.127.0): every row offers them straight away
   const [madeTeams, setMadeTeams] = useState<DecisionOptions['teams']>([])
   const opts = options ? { ...options, teams: [...options.teams, ...madeTeams] } : null
@@ -189,7 +192,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           <span className="v4-row__trail">
             {t.status === 'merged' ? <span className="dl4-tag dl4-tag--grey">Merged</span>
               : t.status === 'later' ? <span className="dl4-tag dl4-tag--idea"><Icon name="clock" size={12} />Later{decidable && <> · <button type="button" className="dl4-link" onClick={() => later(t, false)}>Undo</button></>}</span>
-              : t.needs_review || swiped.has(t.deliverable_id) ? <DraftSwipe keepLabel taskId={t.deliverable_id} canDecide={!!t.can_decide || swiped.has(t.deliverable_id)} onApproved={() => { swipe(t.deliverable_id, true); set(t.deliverable_id, { needs_review: false }) }} onDeclined={() => swipe(t.deliverable_id, true)} onUndone={() => { swipe(t.deliverable_id, false); set(t.deliverable_id, { needs_review: true }) }} />
+              : t.needs_review || decidedPills[t.deliverable_id] ? <DraftSwipe keepLabel taskId={t.deliverable_id} decided={decidedPills[t.deliverable_id]} canDecide={!!t.can_decide || !!decidedPills[t.deliverable_id]} onApproved={() => { rememberPill(t.deliverable_id, { kind: 'approved' }); set(t.deliverable_id, { needs_review: false }) }} onDeclined={log => rememberPill(t.deliverable_id, { kind: 'declined', log })} onUndone={() => { rememberPill(t.deliverable_id, null); set(t.deliverable_id, { needs_review: true }) }} />
               : t.suggestions.length ? null
               : <StatusPill status={t.status === 'done' ? 'done' : 'todo'} label={t.status === 'done' ? 'Done' : 'On the board'} />}
             {decidable && t.status !== 'later' && t.status !== 'merged' && (

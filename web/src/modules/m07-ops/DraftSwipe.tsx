@@ -22,21 +22,26 @@ const UNDO_MS = 5000
  * seconds, with Undo). Arrow keys do the same. Everyone else sees the plain pill. The pill keeps its pointer to
  * itself, so sliding it doesn't drag the card or open the task.
  */
-export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone, keepLabel = false }: {
+export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone, keepLabel = false, decided }: {
   taskId: string; canDecide: boolean
-  onApproved?: () => void; onDeclined?: () => void
+  onApproved?: () => void
+  /** Declined, with the log entry that Undo needs */
+  onDeclined?: (log: string | null) => void
   /** An approval undone: it's a draft again */
   onUndone?: () => void
   /** Show "Approved" / "Declined" once decided, instead of nothing (v4.114.0: the To decide list keeps its rows until a reload) */
   keepLabel?: boolean
+  /** What was decided here already, kept by the list (v4.130.2): a row redrawn after its group was collapsed and opened
+   * again shows Approved / Declined, not Draft */
+  decided?: { kind: 'approved' } | { kind: 'declined'; log: string | null }
 }) {
   const [dx, setDx] = useState(0)
   const [sliding, setSliding] = useState(false)
-  const [state, setState] = useState<'draft' | 'saving' | 'declining' | 'approved' | 'gone'>('draft')
+  const [state, setState] = useState<'draft' | 'saving' | 'declining' | 'approved' | 'gone'>(decided?.kind === 'approved' ? 'approved' : decided?.kind === 'declined' ? 'gone' : 'draft')
   const [error, setError] = useState('')
   const start = useRef<number | null>(null)
   // The decline's log entry, for an Undo that lasts until the page is reloaded (v4.130.0)
-  const [declineLog, setDeclineLog] = useState<string | null>(null)
+  const [declineLog, setDeclineLog] = useState<string | null>(decided?.kind === 'declined' ? decided.log : null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
@@ -63,7 +68,7 @@ export function DraftSwipe({ taskId, canDecide, onApproved, onDeclined, onUndone
     const r = await res.json().catch(() => ({})) as { log?: string | null; error?: string }
     if (!res.ok) { setState('draft'); setError(r.error ?? 'That didn’t work.'); return }
     setDeclineLog(r.log ?? null)
-    setState('gone'); onDeclined?.()
+    setState('gone'); onDeclined?.(r.log ?? null)
   }
   function decline() {
     setError('')
