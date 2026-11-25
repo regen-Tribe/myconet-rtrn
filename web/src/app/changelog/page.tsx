@@ -4,6 +4,30 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.141.0',
+    date: '2026-11-25',
+    title: 'Rename a task right where you edit it',
+    items: ['A task\'s Edit fields in Drafts to confirm (and a meeting\'s action items) now start with its Name, so you can reword a suggested task. It saves when you click away or press Enter; Escape puts the old name back.'],
+  },
+  {
+    version: 'v4.140.0',
+    date: '2026-11-25',
+    title: 'The home picker says "city"; Start joining, one question per screen',
+    items: ['"Where do you call home?" asks you to type a city.', 'About you asks one question per screen, so each fits your phone; Back and Continue sit at the bottom like an app.', 'Step 1 lists the values as names; tap one to read it.', 'Softer, rounder cards and buttons, with a few pastel touches.'],
+  },
+  {
+    version: 'v4.139.0',
+    date: '2026-11-25',
+    title: 'Pick your home town from a list, and add more than one',
+    items: ['"Where do you call home?" suggests towns as you type; pick one, or keep what you typed.', 'You can add more than one place.'],
+  },
+  {
+    version: 'v4.138.0',
+    date: '2026-11-25',
+    title: 'Start joining like a phone app, with clean pills',
+    items: ['On a phone, each step of Start joining fills the screen, with Back and Continue always in reach at the bottom.', 'Pills are softer and borderless; a picked one turns dark with a check.', 'Fewer words: only what helps you answer.'],
+  },
+  {
     version: 'v4.137.0',
     date: '2026-11-25',
     title: 'Why a draft is suggested, in a small pop-up',

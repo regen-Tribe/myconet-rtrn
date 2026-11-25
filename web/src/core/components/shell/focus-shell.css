@@ -9,3 +9,25 @@ html[data-review] .fx-exit { font-size: 15px; font-weight: 600; color: var(--ink
 html[data-review] .fx-exit:hover { background: var(--ctl, #e3e8f4); }
 html[data-review] .fx-exit--x { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; }
 html[data-review] .fx-main { flex: 1; width: 100%; max-width: 680px; margin: 0 auto; padding: 8px 16px 48px; box-sizing: border-box; }
+@media (max-width: 639px) { html[data-review] .fx-main:has(.jf--step) { padding-bottom: 0; } }
+
+/* Start joining with Sponic's feel in MyCoNet's own colours (Sonia, 25 Nov: "match the aesthetic but keep our
+   colours, and add some pastel colours when needed"; decision #99): rounded 18px cards with a soft shadow, taller
+   buttons, roomy steps; pastels mark numbers and the photo. Only inside this focused page. */
+html[data-review] .fx .v4-card { border-radius: 18px; box-shadow: 0 1px 2px rgba(17, 19, 23, .04), 0 12px 32px rgba(17, 19, 23, .06); }
+html[data-review] .fx .jf-card { padding: 28px; }
+html[data-review] .fx .jf-step { gap: 20px; }
+html[data-review] .fx .v4-btn { height: 48px; font-size: 15px; }
+html[data-review] .fx .v4-btn--next { padding: 0 6px 0 22px; }
+html[data-review] .fx .v4-btn--next .v4-btn__go { width: 36px; height: 36px; }
+html[data-review] .fx :is(.jr-field input, .jr-field textarea) { border-radius: 14px !important; }
+html[data-review] .fx .jr-field input { height: 48px !important; }
+/* Pastels where they help: each value's number, the photo placeholder, the done mark */
+html[data-review] .fx .jf-values li:nth-child(6n+1) .jf-n { background: #e1ead9; }
+html[data-review] .fx .jf-values li:nth-child(6n+2) .jf-n { background: #dfe3fa; }
+html[data-review] .fx .jf-values li:nth-child(6n+3) .jf-n { background: #f2dce7; }
+html[data-review] .fx .jf-values li:nth-child(6n+4) .jf-n { background: #eee3bd; }
+html[data-review] .fx .jf-values li:nth-child(6n+5) .jf-n { background: #d8ece6; }
+html[data-review] .fx .jf-values li:nth-child(6n) .jf-n { background: #e6def1; }
+html[data-review] .fx .jf-n { color: var(--ink, #111317); }
+html[data-review] .fx .jr-av { background: #e6def1; color: var(--ink-2, #3a3f4a); }

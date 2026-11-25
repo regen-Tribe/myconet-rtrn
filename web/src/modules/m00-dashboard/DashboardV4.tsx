@@ -151,7 +151,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
                         <span className="nc-n" aria-hidden="true">{st.done ? <Icon name="check" size={16} /> : i + 1}</span>
                         <span className="nc-t"><b>{st.title}</b><small>{[
                           'Who we are and the values we live by',
-                          joinPath.steps.length === 2 ? 'Three short screens, then Send application' : 'A photo, a line, what you’d like to offer',
+                          joinPath.steps.length === 2 ? 'A few short questions, then Send application' : 'A photo, a line, what you’d like to offer',
                           `${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week`,
                         ][i]}</small></span>
                         <span className="nc-min">{st.done ? 'Done' : `${st.minutes} min`}</span>

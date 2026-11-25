@@ -25,6 +25,8 @@ import {
 } from '@/core/components/v4/lucide-compat'
 import { SIGNED_IN_PROFILE_COLUMNS, profileDetailsOf } from '@/core/lib/public-profile'
 import { PillPicker } from '@/core/components/v4/PillPicker'
+import { HomePicker } from '@/core/components/v4/HomePicker'
+import { homesOf, homesToFields } from '@/core/lib/homes'
 import { DESCRIBES, PILL_GROUPS, groupOfPill, pastel, pillStats, valueList, type PillStats } from '@/core/lib/skills-interests'
 import { Globe } from '@/core/components/v4/lucide-compat'
 
@@ -786,9 +788,13 @@ export default function ProfileWizard() {
               </div>
             </>
           )}
-          {on('place') && (
+          {on('place') && RV && (
+            <div id="pe-city">
+              <HomePicker value={homesOf(form.city, form.country)} onChange={h => { const f = homesToFields(h); setForm(prev => ({ ...prev, city: f.city ?? '', country: f.country ?? '' })) }} />
+            </div>
+          )}
+          {on('place') && !RV && (
             <>
-              {RV && <Label>Where do you call home?</Label>}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Country</Label>
@@ -804,12 +810,11 @@ export default function ProfileWizard() {
           {on('types') && RV && (
             <div className="space-y-3" id="pe-types">
               <Label>What best describes you?</Label>
-              <p className="text-xs text-muted-foreground">Choose all that apply.</p>
               <div className="pp-describes">
                 {[...DESCRIBES, ...form.user_types.filter(t => t !== 'Community Member' && !DESCRIBES.some(d => d.id === t)).map(t => ({ id: t, label: t, hint: 'Picked earlier' }))].map((d, i) => (
-                  <button key={d.id} type="button" style={pastel(i) as React.CSSProperties} className="pp-pick" aria-pressed={form.user_types.includes(d.id)}
+                  <button key={d.id} type="button" style={pastel(i) as React.CSSProperties} className="pp-pill" aria-pressed={form.user_types.includes(d.id)} title={d.hint}
                     onClick={() => update('user_types', form.user_types.includes(d.id) ? form.user_types.filter(x => x !== d.id) : [...form.user_types, d.id])}>
-                    <b>{d.label}</b><small>{d.hint}</small>
+                    {form.user_types.includes(d.id) && <V4Icon name="check" size={16} />}{d.label}
                   </button>
                 ))}
               </div>

@@ -24,7 +24,7 @@ const pick: React.CSSProperties = {
  * A task's fields, changed right where it's reviewed (v4.105.0: Oscar, "edit all the fields like circle, sub circle,
  * person assigned to, priority, etc so we can edit it right away and move it along"): in the project manager panel
  * and in a meeting's action items. Circle, Subcircle, Part of, Person, Priority, Due and Status, each saved as it
- * changes, and a Note, saved when you leave the box. Saving confirms a draft. The database checks who may (RLS), so ask only those who may edit the task.
+ * changes, and a Name and a Note, saved when you leave the box. Saving confirms a draft. The database checks who may (RLS), so ask only those who may edit the task.
  */
 export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, onSaved, onTeamAdded, ask = true }: {
   task: EditableTask
@@ -45,6 +45,7 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmed, setConfirmed] = useState(false)
+  const [name, setName] = useState(task.title)
   const [note, setNote] = useState(task.notes ?? '')
   const [noteSaved, setNoteSaved] = useState(false)
   // The assistant, right here (v4.107.0: Oscar, "once the user asks for the changes, it should load into the screen right
@@ -81,10 +82,10 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
       const before = t
       const next = done.some(r => r.ok) ? await reload() : null
       if (next) {
-        const keys = ['circle', 'team_id', 'project_id', 'assignee_id', 'assignee_name', 'priority', 'due_date', 'status', 'notes'] as const
+        const keys = ['title', 'circle', 'team_id', 'project_id', 'assignee_id', 'assignee_name', 'priority', 'due_date', 'status', 'notes'] as const
         setChanged(new Set(keys.filter(k => (before[k] ?? null) !== (next[k] ?? null))))
         if (before.needs_review && !next.needs_review) setConfirmed(true)
-        setT(next); setNote(next.notes ?? ''); onSaved?.(next)
+        setT(next); setName(next.title); setNote(next.notes ?? ''); onSaved?.(next)
       }
       setOutcome({ reply: plan.reply ?? '', done: [...done, ...refused] })
       setSaid('')
@@ -103,7 +104,7 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
       if (!res.ok) { const d = await res.json().catch(() => ({})) as { error?: string }; setError(d.error ?? 'Couldn’t undo that.'); break }
     }
     const next = await reload()
-    if (next) { setT(next); setNote(next.notes ?? ''); onSaved?.(next) }
+    if (next) { setT(next); setName(next.title); setNote(next.notes ?? ''); onSaved?.(next) }
     setOutcome(null); setChanged(new Set()); setConfirmed(false); setAsking(false)
   }
   const mark = (k: string): React.CSSProperties => (changed.has(k) ? { borderColor: 'var(--m7)', boxShadow: '0 0 0 2px color-mix(in srgb, var(--m7) 22%, transparent)' } : {})
@@ -118,6 +119,13 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
     const next = { ...t, ...(data[0] as Partial<EditableTask>) }
     setT(next); onSaved?.(next)
     return true
+  }
+  // The name saves when you leave the box (Oscar: "edit the name of the task that is being suggested"); it can't be empty
+  async function saveName() {
+    const v = name.trim()
+    if (!v) { setName(t.title); return }
+    if (v === t.title) return
+    await change({ title: v.slice(0, 300) })
   }
   // The note saves when you leave the box, if it changed
   async function saveNote() {
@@ -153,6 +161,12 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
 
   return (
     <div style={{ marginTop: 8, opacity: busy ? 0.6 : 1 }}>
+      <label style={{ ...field, marginBottom: 8 }}><span style={label}>Name</span>
+        <input value={name} onChange={e => setName(e.target.value)} onBlur={saveName} maxLength={300}
+          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setName(t.title) }}
+          disabled={asking || busy} aria-label="The task's name"
+          style={{ ...pick, ...mark('title'), fontSize: 13.5, fontWeight: 600, padding: '7px 10px' }} />
+      </label>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
         <label style={field}><span style={label}>Circle</span>
           <select value={t.circle ?? ''} onChange={e => place('circle', e.target.value)} disabled={asking || busy} style={{ ...pick, ...mark('circle') }}>

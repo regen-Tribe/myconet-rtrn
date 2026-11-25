@@ -12,15 +12,15 @@ export function PillPickerDemo() {
   const stats = { count: { Nature: 7, Community: 6, Music: 5, Spirituality: 5, Permaculture: 3, Teaching: 3 }, together: {} }
   return (
     <div style={{ display: 'grid', gap: 24 }}>
-      <PillPicker label="What are you good at?" hint="Pick from the groups, then tap the ones you’re excited to share."
+      <PillPicker label="What are you good at?"
         value={good} onChange={setGood} stats={stats} share={{ value: shared, onChange: setShared }} />
       <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         <legend style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>What best describes you?</legend>
         <div className="pp-describes">
           {DESCRIBES.map((d, i) => (
-            <button key={d.id} type="button" className="pp-pick" style={pastel(i) as React.CSSProperties} aria-pressed={types.includes(d.id)}
+            <button key={d.id} type="button" className="pp-pill" style={pastel(i) as React.CSSProperties} aria-pressed={types.includes(d.id)} title={d.hint}
               onClick={() => setTypes(t => (t.includes(d.id) ? t.filter(x => x !== d.id) : [...t, d.id]))}>
-              <b>{d.label}</b><small>{d.hint}</small>
+              {d.label}
             </button>
           ))}
         </div>

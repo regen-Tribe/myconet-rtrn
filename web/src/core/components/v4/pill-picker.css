@@ -14,50 +14,57 @@ html[data-review] .pp-picks__t { font-size: 13px; font-weight: 600; color: var(-
 html[data-review] .pp-link { border: 0; background: none; padding: 4px 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink, #111317); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Search all */
-html[data-review] .pp-search { height: 44px !important; border-radius: 999px !important; padding: 0 16px !important; font-size: 15px !important; }
+html[data-review] .pp-search { height: 44px !important; border-radius: 999px !important; padding: 0 16px !important; font-size: 15px !important; border: 0 !important; box-shadow: none !important; background: var(--ctl, #e3e8f4) !important; }
 html[data-review] .pp-found { display: grid; gap: 10px; justify-items: start; }
 
-/* One pastel card per group, one open at a time */
-html[data-review] .pp-groups { display: grid; gap: 8px; }
-html[data-review] .pp-group { background: var(--pp-bg, #e1e5ed); box-shadow: inset 0 0 0 1px var(--pp-line, #a3adbf); border-radius: 20px; overflow: hidden; }
-html[data-review] .pp-group__head { width: 100%; min-height: 60px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 10px 16px; border: 0; background: none; color: var(--ink, #111317); font: inherit; text-align: left; cursor: pointer; }
-html[data-review] .pp-group__head:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: -2px; border-radius: 20px; }
+/* One pastel card per group, one open at a time: soft fills, no borders (Sonia, 25 Nov: "borders look old school") */
+html[data-review] .pp-groups { display: grid; gap: 6px; }
+html[data-review] .pp-group { background: var(--pp-bg, #e1e5ed); border-radius: 18px; overflow: hidden; }
+html[data-review] .pp-group__head { width: 100%; min-height: 52px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 16px; border: 0; background: none; color: var(--ink, #111317); font: inherit; text-align: left; cursor: pointer; }
+html[data-review] .pp-group__head:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: -2px; border-radius: 18px; }
 html[data-review] .pp-group__text { display: grid; min-width: 0; }
 html[data-review] .pp-group__text b { font-size: 15px; font-weight: 600; }
-html[data-review] .pp-group__text small { font-size: 13px; color: var(--ink-2, #3a3f4a); opacity: .8; }
-html[data-review] .pp-group__n { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(255, 255, 255, .75); color: var(--ink, #111317); white-space: nowrap; }
+html[data-review] .pp-group__n { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 11px; font-weight: 600; background: var(--ink, #111317); color: #fff; }
 html[data-review] .pp-group__chev { color: var(--ink-2, #3a3f4a); transition: transform .15s; }
 html[data-review] .pp-group[data-open='true'] .pp-group__chev { transform: rotate(180deg); }
-html[data-review] .pp-group__body { padding: 0 14px 14px; }
+html[data-review] .pp-group__body { padding: 2px 12px 14px; }
 
-/* Pills: white with the group's line inside its card, tinted elsewhere; picked = tint, ink ring, a check */
+/* Pills: a soft fill, no border; picked = ink with a check */
 html[data-review] .pp-pills { display: flex; flex-wrap: wrap; gap: 6px; }
-html[data-review] .pp-pill { min-height: 36px; padding: 6px 14px; border: 0; border-radius: 999px; background: var(--pp-bg, #e1e5ed); color: var(--ink, #111317); box-shadow: inset 0 0 0 1px var(--pp-line, #a3adbf); font: inherit; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-align: left; max-width: 100%; }
-html[data-review] .pp-group .pp-pill { background: var(--surface, #fff); }
-html[data-review] .pp-pill[aria-pressed='true'], html[data-review] .pp-group .pp-pill[aria-pressed='true'] { background: var(--pp-bg, #e1e5ed); box-shadow: inset 0 0 0 2px var(--ink, #111317); font-weight: 600; }
+html[data-review] .pp-pill { min-height: 38px; padding: 8px 14px; border: 0; border-radius: 999px; background: var(--pp-bg, var(--ctl, #e3e8f4)); color: var(--ink, #111317); font: inherit; font-size: 15px; font-weight: 500; line-height: 1.2; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-align: left; max-width: 100%; transition: background .12s, color .12s; }
+html[data-review] .pp-group .pp-pill { background: rgba(255, 255, 255, .85); }
+html[data-review] .pp-pill[aria-pressed='true'], html[data-review] .pp-group .pp-pill[aria-pressed='true'] { background: var(--ink, #111317); color: #fff; }
 html[data-review] .pp-pill:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: 2px; }
 html[data-review] .pp-pill .v4-icon { flex-shrink: 0; }
-html[data-review] .pp-hot { display: inline-flex; color: #d9480f; margin-right: -4px; }
-html[data-review] .pp-pill--more { background: transparent !important; box-shadow: none; outline: 1px dashed var(--pp-line, var(--ink-4, #9aa0ad)); outline-offset: -1px; font-weight: 600; }
-html[data-review] .pp-pill--sug { opacity: .9; }
-html[data-review] .pp-pill--share { background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--rule, #e3e6ec); }
-html[data-review] .pp-pill--share[aria-pressed='true'] { background: var(--green, #dcefe2); color: var(--green-ink, #2f6b48); box-shadow: none; }
+html[data-review] .pp-hot { display: inline-flex; color: #e8590c; margin-right: -4px; }
+html[data-review] .pp-pill[aria-pressed='true'] .pp-hot { color: #ffa94d; }
+html[data-review] .pp-pill--more { background: transparent !important; color: var(--ink-2, #3a3f4a); font-weight: 600; }
+html[data-review] .pp-pill--share { background: var(--ctl, #e3e8f4); }
+html[data-review] .pp-pill--share[aria-pressed='true'] { background: var(--green, #dcefe2); color: var(--green-ink, #2f6b48); }
 
 /* Your own words */
 html[data-review] .pp-own { display: flex; gap: 8px; align-items: center; }
-html[data-review] .pp-own input { flex: 1 1 auto; min-width: 0; max-width: 360px; height: 40px !important; border-radius: 999px !important; padding: 0 14px !important; font-size: 13px !important; }
+html[data-review] .pp-own input { flex: 1 1 auto; min-width: 0; max-width: 360px; height: 40px !important; border-radius: 999px !important; padding: 0 14px !important; font-size: 15px !important; border: 0 !important; box-shadow: none !important; background: var(--ctl, #e3e8f4) !important; }
 
 /* What you share, what to pick next */
 html[data-review] .pp-row { display: grid; gap: 8px; }
 html[data-review] .pp-row__t { font-size: 13px; font-weight: 600; color: var(--ink-3, #6b7180); }
 html[data-review] .pp-note { margin: 0; font-size: 13px; color: var(--ink-3, #6b7180); }
 
-/* Choose all that apply, as pastel cards with a hint ("What best describes you?"): 2 across on a phone, 3 from 640 */
-html[data-review] .pp-describes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-@media (min-width: 640px) { html[data-review] .pp-describes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-html[data-review] .pp-pick { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border: 0; border-radius: 12px; background: var(--pp-bg, #e3e8f4); box-shadow: inset 0 0 0 1px var(--pp-line, transparent); color: var(--ink, #111317); font: inherit; cursor: pointer; min-height: 64px; align-content: center; }
-html[data-review] .pp-pick b { font-size: 15px; font-weight: 600; }
-html[data-review] .pp-pick small { font-size: 13px; color: var(--ink-2, #3a3f4a); opacity: .8; line-height: 1.35; }
-html[data-review] .pp-pick[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--ink, #111317); }
-html[data-review] .pp-pick[aria-pressed='true'] b::before { content: '✓ '; }
-html[data-review] .pp-pick:focus-visible { outline: 2px solid var(--blue-ink, #2350b0); outline-offset: 2px; }
+/* Choose all that apply ("What best describes you?"): pills, each in its own pastel */
+html[data-review] .pp-describes { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* HomePicker: "Where do you call home?" (decision #97). Chosen places as pills, a type-ahead under the field */
+html[data-review] .hp { display: grid; gap: 10px; }
+html[data-review] .hp-label { font-size: 15px; font-weight: 600; color: var(--ink, #111317); }
+html[data-review] .hp-box { position: relative; }
+html[data-review] .hp-input { height: 48px !important; border-radius: 999px !important; padding: 0 18px !important; font-size: 16px !important; border: 0 !important; box-shadow: none !important; background: var(--ctl, #e3e8f4) !important; }
+html[data-review] .hp-input:focus { background: var(--surface, #fff) !important; box-shadow: inset 0 0 0 2px var(--ink, #111317) !important; }
+html[data-review] .hp-list { scroll-margin-bottom: 104px; list-style: none; margin: 6px 0 0; padding: 6px; border-radius: 20px; background: var(--surface, #fff); box-shadow: 0 12px 32px rgba(17, 19, 23, .12); display: grid; gap: 2px; }
+html[data-review] .hp-list button { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 0; border-radius: 14px; background: none; color: var(--ink, #111317); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+html[data-review] .hp-list li[aria-selected='true'] button, html[data-review] .hp-list button:hover { background: var(--ctl, #e3e8f4); }
+html[data-review] .hp-list b { font-weight: 600; }
+html[data-review] .hp-list small { font-size: 13px; color: var(--ink-3, #6b7180); }
+html[data-review] .hp-list .v4-icon { color: var(--ink-3, #6b7180); flex-shrink: 0; }
+html[data-review] .hp-credit { font-size: 11px; color: var(--ink-4, #9aa0ad); }
+html[data-review] .hp-credit a { color: inherit; }
