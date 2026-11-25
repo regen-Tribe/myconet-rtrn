@@ -10,7 +10,7 @@ export interface Viewer { id: string; role: string; leadCircles: string[] }
 /** said_by: who said its line in the meeting (Fireflies' speaker on that action item), v4.130.0 */
 export type DecisionRow = MeetingTask & { suggestions: AgentSuggestion[]; said_by?: string | null }
 
-const DELIVERABLE = 'id, title, status, needs_review, due_date, due_time, project_id, circle, team_id, assignee_id, assignee_name, priority, created_by, source_meeting_id, source_item, ' +
+const DELIVERABLE = 'id, title, status, needs_review, due_date, due_time, project_id, circle, team_id, assignee_id, assignee_name, priority, notes, created_by, source_meeting_id, source_item, ' +
   'projects(title, circle, created_by, lead_user_id), user_profiles!deliverables_assignee_id_fkey(first_name, username)'
 
 /** The tasks a suggestion is about */
@@ -66,7 +66,7 @@ export async function loadDecisions(supabase: SupabaseClient, me: Viewer, scope:
       title: d.title, status: d.status, needs_review: !!d.needs_review, due_date: d.due_date, due_time: d.due_time,
       person_name: l?.person_name ?? null, assignee: who?.first_name ?? who?.username ?? null, item_text: (l?.item_text ?? d.source_item ?? '') as string,
       can_decide: !!d.needs_review && may, can_edit: may,
-      circle: d.circle ?? null, team_id: d.team_id ?? null, assignee_id: d.assignee_id ?? null, assignee_name: d.assignee_name ?? null, priority: d.priority ?? null,
+      circle: d.circle ?? null, team_id: d.team_id ?? null, assignee_id: d.assignee_id ?? null, assignee_name: d.assignee_name ?? null, priority: d.priority ?? null, notes: d.notes ?? null,
       said_by: (m && l?.item_index != null && Array.isArray(m.action_items) ? (m.action_items[l.item_index]?.speaker as string | undefined)?.trim() : null) || l?.person_name || null,
       meeting: mid ? { id: mid, title: m?.title ?? null, date: m ? (m.meeting_date ?? m.created_at) : null, circle: m?.circle ?? null } : undefined,
       suggestions: pm.suggestions.filter(s => suggestionTasks(s).includes(d.id)),

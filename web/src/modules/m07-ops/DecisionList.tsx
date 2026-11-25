@@ -225,12 +225,12 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           <div className="mt4-taskedit">
             <TaskQuickEdit
               key={version[t.deliverable_id] ?? 0}
-              task={{ id: t.deliverable_id, title: t.title, status: t.status, circle: t.circle, team_id: t.team_id, project_id: t.project_id, assignee_id: t.assignee_id, assignee_name: t.assignee_name, priority: t.priority, due_date: t.due_date, due_time: t.due_time, needs_review: t.needs_review }}
+              task={{ id: t.deliverable_id, title: t.title, status: t.status, circle: t.circle, team_id: t.team_id, project_id: t.project_id, assignee_id: t.assignee_id, assignee_name: t.assignee_name, priority: t.priority, due_date: t.due_date, due_time: t.due_time, needs_review: t.needs_review, notes: t.notes ?? null }}
               {...opts!}
               onTeamAdded={x => setMadeTeams(prev => [...prev, x])}
               onSaved={x => set(t.deliverable_id, {
                 status: x.status, circle: x.circle ?? null, team_id: x.team_id ?? null, project_id: x.project_id,
-                assignee_id: x.assignee_id, assignee_name: x.assignee_name ?? null, priority: x.priority ?? null, due_date: x.due_date, due_time: x.due_time ?? null, needs_review: false,
+                assignee_id: x.assignee_id, assignee_name: x.assignee_name ?? null, priority: x.priority ?? null, due_date: x.due_date, due_time: x.due_time ?? null, notes: x.notes ?? null, needs_review: false,
                 assignee: x.assignee_id ? options!.people.find(p => p.id === x.assignee_id)?.name.split(' ')[0] ?? null : null,
                 project_title: x.project_id ? projectTitle(x.project_id) ?? t.project_title : null,
               })}

@@ -24,7 +24,7 @@ const pick: React.CSSProperties = {
  * A task's fields, changed right where it's reviewed (v4.105.0: Oscar, "edit all the fields like circle, sub circle,
  * person assigned to, priority, etc so we can edit it right away and move it along"): in the project manager panel
  * and in a meeting's action items. Circle, Subcircle, Part of, Person, Priority, Due and Status, each saved as it
- * changes. Saving confirms a draft. The database checks who may (RLS), so ask only those who may edit the task.
+ * changes, and a Note, saved when you leave the box. Saving confirms a draft. The database checks who may (RLS), so ask only those who may edit the task.
  */
 export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, onSaved, onTeamAdded, ask = true }: {
   task: EditableTask
@@ -45,6 +45,8 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmed, setConfirmed] = useState(false)
+  const [note, setNote] = useState(task.notes ?? '')
+  const [noteSaved, setNoteSaved] = useState(false)
   // The assistant, right here (v4.107.0: Oscar, "once the user asks for the changes, it should load into the screen right
   // there after the agent changes it so they can confirm - I don't like that the chat goes to the pop up"): it plans and
   // makes the change (Ask/Do's own routes, as this person), the fields reload with what changed marked, and the person
@@ -79,10 +81,10 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
       const before = t
       const next = done.some(r => r.ok) ? await reload() : null
       if (next) {
-        const keys = ['circle', 'team_id', 'project_id', 'assignee_id', 'assignee_name', 'priority', 'due_date', 'status'] as const
+        const keys = ['circle', 'team_id', 'project_id', 'assignee_id', 'assignee_name', 'priority', 'due_date', 'status', 'notes'] as const
         setChanged(new Set(keys.filter(k => (before[k] ?? null) !== (next[k] ?? null))))
         if (before.needs_review && !next.needs_review) setConfirmed(true)
-        setT(next); onSaved?.(next)
+        setT(next); setNote(next.notes ?? ''); onSaved?.(next)
       }
       setOutcome({ reply: plan.reply ?? '', done: [...done, ...refused] })
       setSaid('')
@@ -101,20 +103,27 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
       if (!res.ok) { const d = await res.json().catch(() => ({})) as { error?: string }; setError(d.error ?? 'Couldn’t undo that.'); break }
     }
     const next = await reload()
-    if (next) { setT(next); onSaved?.(next) }
+    if (next) { setT(next); setNote(next.notes ?? ''); onSaved?.(next) }
     setOutcome(null); setChanged(new Set()); setConfirmed(false); setAsking(false)
   }
   const mark = (k: string): React.CSSProperties => (changed.has(k) ? { borderColor: 'var(--m7)', boxShadow: '0 0 0 2px color-mix(in srgb, var(--m7) 22%, transparent)' } : {})
 
-  async function change(changes: TaskChange) {
-    setBusy(true); setError('')
+  async function change(changes: TaskChange): Promise<boolean> {
+    setBusy(true); setError(''); setNoteSaved(false)
     // RLS rejects silently (0 rows, no error), so ask for the row back
     const { data, error: e } = await createClient().from('deliverables').update({ ...changes, needs_review: false }).eq('id', t.id).select(EDITABLE_SELECT)
     setBusy(false)
-    if (e || !data?.length) { setError(e?.message ?? 'The database didn’t allow this change for your account.'); return }
+    if (e || !data?.length) { setError(e?.message ?? 'The database didn’t allow this change for your account.'); return false }
     if (t.needs_review) setConfirmed(true)
     const next = { ...t, ...(data[0] as Partial<EditableTask>) }
     setT(next); onSaved?.(next)
+    return true
+  }
+  // The note saves when you leave the box, if it changed
+  async function saveNote() {
+    const v = note.trim()
+    if (v === (t.notes ?? '').trim()) return
+    if (await change({ notes: v || null })) setNoteSaved(true)
   }
   const place = (f: 'circle' | 'team_id' | 'project_id', v: string, extra: TaskTeamOption[] = []) => change(placeChange(t, f, v, projectOptions, [...teams, ...extra]))
 
@@ -186,6 +195,11 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
           </select>
         </label>
       </div>
+      <label style={{ ...field, marginTop: 8 }}><span style={label}>Note</span>
+        <textarea value={note} onChange={e => { setNote(e.target.value); setNoteSaved(false) }} onBlur={saveNote} rows={2} maxLength={5000}
+          disabled={asking || busy} placeholder="Add a note: context, a link, what to watch for…" aria-label="A note on this task"
+          style={{ ...pick, ...mark('notes'), fontSize: 13, padding: '7px 10px', lineHeight: 1.45, resize: 'vertical' }} />
+      </label>
       {naming && t.circle && (
         <form onSubmit={e => { e.preventDefault(); addSubcircle() }} style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>New subcircle of {circles.has(t.circle) ? circles.meta(t.circle).label : t.circle}:</span>
@@ -223,9 +237,10 @@ export function TaskQuickEdit({ task, people, projectOptions, teams: teamsIn, on
           )}
         </div>
       )}
+      {noteSaved && !confirmed && !error && <div style={{ fontSize: 11.5, marginTop: 6, color: '#15803d', fontWeight: 600 }}>✓ Note saved</div>}
       {(confirmed || error) && (
         <div style={{ fontSize: 11.5, marginTop: 6, color: error ? '#b91c1c' : '#15803d', fontWeight: error ? 400 : 600 }}>
-          {error || '✓ Saved and confirmed: it’s no longer a draft.'}
+          {error || (noteSaved ? '✓ Note saved and confirmed: it’s no longer a draft.' : '✓ Saved and confirmed: it’s no longer a draft.')}
         </div>
       )}
     </div>

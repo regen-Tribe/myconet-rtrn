@@ -5,6 +5,15 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.133.0 — 2026-11-25 — A note on a task, right where you edit it
+
+Oscar: "I would also like to be able to add a note in the area where I can update the fields for suggested tasks".
+`TaskQuickEdit` (M07) gets a Note box under the field grid, written to the task's existing `deliverables.notes`
+(the same field as the task pop-up's Notes). It saves on blur when the text changed, and, like every other field
+there, saving it confirms a draft. `EditableTask`, `TaskChange` and `EDITABLE_SELECT` (`lib/task-edit.ts`) carry
+`notes`; the decisions loader (`lib/decisions.ts`) reads it, and `MeetingTask` has an optional `notes`. If the
+assistant changes the note, the box is marked like the other fields. No migration.
+
 ## v4.132.1 — 2026-11-25 — Declining a draft lowers the count
 
 Oscar: "when I decline something by sliding the pill left, on drafts to confirm, the count on the top row holding
