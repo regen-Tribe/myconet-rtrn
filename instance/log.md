@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-11-25 — Core v4.131.0 + v4.132.0 + v4.132.1 (PR #97; deployed 53876d9e)
+- v4.131.0: Good at / curious about in one picker, a profile in seven tabs, a Welcome for visitors and one focused Start joining flow (core #152, from Protopia).
+- v4.132.0: joining in two steps, Send at the end of About you (core #160).
+- v4.132.1: declining a draft lowers the Drafts to confirm count (core #159, Oscar). No migrations.
+
 ## 2026-11-25 — Core v4.130.1 + v4.130.2 (PRs #95, #96; deployed 5181747c, 05052ecf)
 - v4.130.1: Sonia's #116 (change notes and the `ship` release queue). Merged by hand: the update workflow couldn't push the new workflow file without a `CORE_REPO_TOKEN` with Workflows write.
 - v4.130.2: a decided draft stays decided when its meeting group is folded. No migrations.
