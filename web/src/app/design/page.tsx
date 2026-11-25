@@ -8,6 +8,7 @@ import { ICON_MEANING } from '@/core/components/v4/icon-meanings'
 import { DESIGN_REVIEW } from '@/core/lib/instance'
 import { Seal } from '@/core/components/v4/CircleSeal'
 import { GlyphPickerDemo } from './GlyphPickerDemo'
+import { PillPickerDemo } from './PillPickerDemo'
 import { CIRCLE_GLYPHS, glyphLabel, type CircleGlyph } from '@/core/components/v4/circle-glyphs'
 
 export const metadata: Metadata = { title: 'Design · MyCoNet', robots: { index: false } }
@@ -105,6 +106,12 @@ export default function DesignPage() {
           </div>
         </div>
       </Card>
+
+      <SectionHead title="Skills and interests picker" />
+      <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>
+        Start joining and Edit profile (decisions #89, #95): your picks, search, a pastel card per group, a flame on what&apos;s popular here, and the describes-you cards.
+      </p>
+      <Card><PillPickerDemo /></Card>
 
       <SectionHead title="Seal picker" />
       <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--ink-3)', maxWidth: 720 }}>

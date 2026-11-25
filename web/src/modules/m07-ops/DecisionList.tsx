@@ -2,6 +2,7 @@
 
 import { DESIGN_REVIEW } from '@/core/lib/instance'
 import { useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -11,11 +12,14 @@ import { Icon, InlineIcon, StatusPill } from '@/core/components/v4'
 import { DraftSwipe } from './DraftSwipe'
 import { TaskQuickEdit } from './TaskQuickEdit'
 import { DONE, KIND, explain } from './suggestion-text'
-import type { TaskPerson, TaskProjectOption, TaskTeamOption } from './TaskModal'
-import type { AgentSuggestion, PmAction } from './types'
+import { TaskModal, type TaskPerson, type TaskProjectOption, type TaskTeamOption } from './TaskModal'
+import type { AgentSuggestion, Deliverable, PmAction } from './types'
 import type { DecisionRow } from './lib/decisions'
 import { EDITABLE_SELECT } from './lib/task-edit'
 import '@/modules/m18-meetings/meetings-v4.css'
+
+/** What the task's window needs, as the board loads it (app/operations/page.tsx) */
+const TASK_SELECT = 'id, project_id, title, assignee_id, assignee_name, team_id, created_by, priority, due_date, due_time, circle, needs_review, status, progress, notes, source, source_meeting_id, source_item, user_profiles(username, first_name)'
 
 export type DecisionOptions = { people: TaskPerson[]; projectOptions: TaskProjectOption[]; teams: TaskTeamOption[] }
 
@@ -62,7 +66,12 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
   const [madeTeams, setMadeTeams] = useState<DecisionOptions['teams']>([])
   const opts = options ? { ...options, teams: [...options.teams, ...madeTeams] } : null
 
-  const rows = loaded.map(t => ({ ...t, ...patch[t.deliverable_id] }))
+  // The task's window over this screen (Oscar: "when I click on a task in the drafts to confirm section, id like the pop
+  // up to happen with the existing screen in the background"), instead of going to its page. Cmd/Ctrl-click still does.
+  const [openTask, setOpenTask] = useState<{ task: Deliverable; userId: string | null; canManage: boolean } | null>(null)
+  const [opening, setOpening] = useState<string | null>(null)
+  const [removed, setRemoved] = useState<Set<string>>(() => new Set())
+  const rows = loaded.filter(t => !removed.has(t.deliverable_id)).map(t => ({ ...t, ...patch[t.deliverable_id] }))
   const set = (id: string, p: Partial<DecisionRow>) => setPatch(prev => ({ ...prev, [id]: { ...prev[id], ...p } }))
   const titleOf = (id?: string) => rows.find(r => r.deliverable_id === id)?.title
   const projectTitle = (id?: string) => options?.projectOptions.find(p => p.id === id)?.title
@@ -110,6 +119,47 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
     set(t.deliverable_id, change)
     setVersion(prev => ({ ...prev, [t.deliverable_id]: (prev[t.deliverable_id] ?? 0) + 1 }))
   }
+
+  async function openHere(e: React.MouseEvent, t: DecisionRow) {
+    if (!options || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    if (opening) return
+    setOpening(t.deliverable_id); setMsg(null)
+    const supabase = createClient()
+    const [{ data }, { data: { user } }] = await Promise.all([
+      supabase.from('deliverables').select(TASK_SELECT).eq('id', t.deliverable_id).maybeSingle(),
+      supabase.auth.getUser(),
+    ])
+    setOpening(null)
+    if (!data) { setMsg({ id: t.deliverable_id, text: 'That task couldn’t be opened. It may have been removed.' }); return }
+    setOpenTask({ task: data as unknown as Deliverable, userId: user?.id ?? null, canManage: !!t.can_edit })
+  }
+  function savedInWindow(d: Deliverable) {
+    const was = rows.find(r => r.deliverable_id === d.id)
+    set(d.id, {
+      title: d.title, status: d.status, circle: d.circle ?? null, team_id: d.team_id ?? null, project_id: d.project_id,
+      assignee_id: d.assignee_id, assignee_name: d.assignee_name ?? null, priority: d.priority ?? null, due_date: d.due_date,
+      due_time: d.due_time ?? null, notes: d.notes ?? null, needs_review: !!d.needs_review,
+      assignee: d.assignee_id ? options?.people.find(p => p.id === d.assignee_id)?.name.split(' ')[0] ?? null : null,
+      project_title: d.project_id ? projectTitle(d.project_id) ?? null : null,
+    })
+    setVersion(prev => ({ ...prev, [d.id]: (prev[d.id] ?? 0) + 1 }))
+    // Saving a draft in the window confirms it: the row reads Approved, as if its pill was slid right
+    if (was?.needs_review && !d.needs_review) rememberPill(d.id, { kind: 'approved' })
+    setOpenTask(null)
+  }
+  function deletedInWindow(id: string) {
+    // Gone from the list, and out of the counts like a declined draft
+    if (rows.find(r => r.deliverable_id === id)?.needs_review) rememberPill(id, { kind: 'declined', log: null })
+    setRemoved(prev => new Set(prev).add(id))
+    setOpenTask(null)
+  }
+  const taskWindow = openTask && options && typeof document !== 'undefined' ? createPortal(
+    <TaskModal task={openTask.task} canManage={openTask.canManage} userId={openTask.userId}
+      people={options.people} projects={options.projectOptions} teams={opts!.teams}
+      onClose={() => setOpenTask(null)} onSaved={savedInWindow} onDeleted={deletedInWindow} />,
+    document.body,
+  ) : null
 
   // What the suggestion is based on (v4.128.0: Oscar, "see why it's suggesting this, and click a link to meeting notes
   // explaining why"): each of its tasks, the meeting it came from (a link to its notes), the line that was said and who
@@ -188,7 +238,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
       <div key={t.deliverable_id} className="mt4-taskwrap">
         <div className="v4-row mt4-task">
           <span className="v4-row__lead"><span className="v4-avatar">{(t.assignee ?? t.person_name ?? '?').slice(0, 1).toUpperCase()}</span></span>
-          <Link href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} className="v4-row__main mt4-tlink">
+          <Link href={t.project_id ? `/operations/${t.project_id}?task=${t.deliverable_id}` : `/operations?task=${t.deliverable_id}`} className="v4-row__main mt4-tlink" onClick={e => openHere(e, t)} aria-busy={opening === t.deliverable_id}>
             <b className={t.status === 'done' ? 'mt4-done' : undefined}>{t.title}</b>
             <small>{who}{t.due_date ? ` · ${fmtTaskWhen(t.due_date, t.due_time)}` : ''}{t.project_title ? ` · subtask of “${t.project_title}”` : ''}</small>
             {t.item_text && t.item_text !== t.title && <small className="mt4-quote">“{t.item_text.slice(0, 120)}”</small>}
@@ -242,7 +292,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
     )
   }
 
-  if (!grouped) return <div className="v4-list">{rows.map(row)}</div>
+  if (!grouped) return <div className="v4-list">{rows.map(row)}{taskWindow}</div>
 
   // The board: by meeting, newest first; tasks not from a meeting last. A group's rows are drawn once it's opened.
   const groups = [...rows.reduce((m, t) => {
@@ -277,6 +327,7 @@ export function DecisionList({ rows: loaded, options, canDecide, grouped = false
           </div>
         )
       })}
+      {taskWindow}
     </div>
   )
 }

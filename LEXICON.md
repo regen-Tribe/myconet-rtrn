@@ -121,7 +121,7 @@ Not "Seeks", not "Needs". A skill you tap **share** becomes an offer (#90).
 | Say | Means | Not |
 |---|---|---|
 | **Good at** / **Curious about** | Skills and interests, picked from one list of **groups** and **pills** (decision #89). "What are you good at?", "What are you curious about?" | Skills tags, Interests tags, categories |
-| **What best describes you?** | The role words a person picks (Builder, Grower, Healer…), choose all that apply | Who you are here, user types, archetypes (those are the signs) |
+| **What best describes you?** | Choose all that apply: Exploring, Living in a community, Looking for a community, Vision holder, Service provider, Land holder, Funder (decision #94) | Who are you in this network?, user types |
 | **Personality and signs** | Myers-Briggs, Big Five, Sun, Moon and Rising, Human Design, Gene Key, Mayan sign: one profile tab (#91) | Archetypes as a tab name |
 | **Your values** | A person's values as names, a word or two each (#92) | Core Values & Principles |
 | **About · Skills and interests · Offers and requests · Personality and signs · Growth · Travel · Links** | The profile's seven tabs, the same in Edit profile (#91) | Basic Info, Values & Purpose, Goals & Growth | A booking that needs approval is a **booking request**.

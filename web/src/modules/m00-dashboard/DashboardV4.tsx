@@ -113,6 +113,8 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
     : !isJoining && joinPath ? 'checklist'
     : isJoining && !isMember && myCircleSlugs.length === 0 ? 'welcome-in'
     : null
+  // Before joining (Sonia, 25 Nov; decision #94): only the way in, nothing of the community's work below it
+  const onlyWayIn = newcomerView === 'checklist' || newcomerView === 'waiting'
   const stepHref = (key: string) => `/join?step=${key}`
   const sentOn = application?.created_at ? new Date(application.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null
   const startHere = !isJoining && (
@@ -132,7 +134,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
         ? <PageHeader title={DESIGN_REVIEW ? 'Dashboard' : 'My dashboard'} subtitle={<>Welcome, {firstName}.{standing ? ` ${standing}` : ''}</>} />
         : <h1 className="v4-hello">Hey <em>{firstName},</em><br />welcome home</h1>}
 
-      <div className="v4-split">
+      <div className={onlyWayIn ? 'nc-only' : 'v4-split'}>
         <div>
           {newcomerView === 'checklist' && joinPath ? (
             <section className="v4-card nc-check" aria-labelledby="nc-check-h">
@@ -203,7 +205,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
             </>
           )}
 
-          {featured && (<>
+          {featured && !onlyWayIn && (<>
             {/* Design review (#47): a small label says what each card is; shown only with the switch on (rv-only) */}
             <div className="v4-eyebrow rv-only rv-cardlabel">{mineByProject.get(featured.id) ? 'Your main task' : 'In progress now'}</div>
             <Card href={`/operations/${featured.id}`}>
@@ -222,7 +224,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
             </Card>
           </>)}
 
-          {nextEvent && (<>
+          {nextEvent && !onlyWayIn && (<>
             <div className="v4-eyebrow rv-only rv-cardlabel">Next event</div>
             <Card href="/calendar" className="v4-mt">
               <div className="v4-card-head">
@@ -239,7 +241,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
           {!DESIGN_REVIEW && startHere}
         </div>
 
-        <div>
+        {!onlyWayIn && <div>
           {userId && isJoining && <YourTasks tasks={tasks} />}
 
           <SectionHead title="Open proposals" action={{ href: '/governance', label: 'Open Governance →' }} />
@@ -273,7 +275,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
               </List>
             </>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )

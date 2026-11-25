@@ -8,7 +8,7 @@ const BRAND_MARK = process.env.NEXT_PUBLIC_BRAND_MARK || ''
 /**
  * A page with nothing around it but the community's mark and a way out (design review: Start joining).
  * Signed in, "Continue later" goes to the Dashboard (everything is saved step by step; "Back to Dashboard" once
- * joined); signed out, × goes to the Welcome.
+ * the application is sent or the person has joined); signed out, × goes to the Welcome.
  */
 export default function FocusShell({ children, isLoggedIn, joined = false }: { children: React.ReactNode; isLoggedIn: boolean; joined?: boolean }) {
   return (

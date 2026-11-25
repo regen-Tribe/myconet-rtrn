@@ -1,10 +1,12 @@
 'use client'
 /**
- * Groups first, then pills (Sonia, 25 Nov 2026; design/decisions.md #89). Tap a group to open its pills, pick a few,
- * add your own. "You might also pick" follows what you picked; a small number on a pill says how many people here
- * already have it. With `share`, the picked pills can be marked "Sharing" (they become offers, #90).
+ * The interest picker, as Spotka has it (Sonia, 25 Nov 2026: "take it as Spotka has it"; decisions #89, #95):
+ * "Your picks · N" with Review, a search that filters every pill in place, then one pastel card per group (name,
+ * one line, "N picked", a chevron), one card open at a time, with tinted pills and a dashed "Something else?" at the
+ * end that opens a box for your own words. A flame marks what's popular here. With `share`, the picked pills can be
+ * marked "Sharing" (they become offers, #90). "You might also pick" follows what you picked.
  *
- * Phone: the groups are one row that scrolls sideways; from 960px they wrap. Styles: pill-picker.css (design review).
+ * The same layout on a phone and a computer: cards are full width and pills wrap. Styles: pill-picker.css.
  */
 import { useId, useMemo, useState } from 'react'
 import { Icon } from '.'
@@ -12,6 +14,8 @@ import { PILL_GROUPS, canonicalPill, groupOfPill, suggestPills, type PillStats }
 import './pill-picker.css'
 
 const norm = (s: string) => s.trim().toLowerCase()
+/** Listed by this many people here or more: the pill gets a flame */
+const POPULAR = 3
 
 export function PillPicker({ label, hint, value, onChange, stats, share, ownExample = 'Pottery' }: {
   label: string
@@ -25,11 +29,14 @@ export function PillPicker({ label, hint, value, onChange, stats, share, ownExam
 }) {
   const id = useId()
   const has = (p: string) => value.some(v => norm(v) === norm(p))
-  const firstGroup = Math.max(0, value.map(groupOfPill).find(g => g >= 0) ?? 0)
-  const [open, setOpen] = useState(firstGroup)
+  const [open, setOpen] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
+  const [review, setReview] = useState(true)
+  const [ownOpen, setOwnOpen] = useState(false)
   const [own, setOwn] = useState('')
-  const group = PILL_GROUPS[open]
-  const suggestions = useMemo(() => suggestPills(value, stats), [value, stats])
+  const suggestions = useMemo(() => (value.length ? suggestPills(value, stats) : []), [value, stats])
+  const q = norm(query)
+  const found = q ? PILL_GROUPS.flatMap((g, gi) => g.pills.filter(p => norm(p).includes(q)).map(p => ({ p, gi }))) : []
 
   const toggle = (p: string) => {
     if (has(p)) {
@@ -37,59 +44,41 @@ export function PillPicker({ label, hint, value, onChange, stats, share, ownExam
       if (share) share.onChange(share.value.filter(v => norm(v) !== norm(p)))
     } else onChange([...value, canonicalPill(p)])
   }
-  const addOwn = () => {
-    const t = own.trim()
-    if (t && !has(t)) onChange([...value, canonicalPill(t)])
-    setOwn('')
+  const addOwn = (t = own) => {
+    const w = t.trim()
+    if (w && !has(w)) onChange([...value, canonicalPill(w)])
+    setOwn(''); setQuery('')
   }
   const sharing = (p: string) => !!share?.value.some(v => norm(v) === norm(p))
   const flipShare = (p: string) => share && share.onChange(sharing(p) ? share.value.filter(v => norm(v) !== norm(p)) : [...share.value, p])
+  const tint = (gi: number) => (gi >= 0 ? { '--pp-bg': PILL_GROUPS[gi].bg, '--pp-line': PILL_GROUPS[gi].line } as React.CSSProperties : undefined)
 
-  const pill = (p: string, sug = false) => {
-    const n = stats.count[p]
+  const pill = (p: string, gi = groupOfPill(p), extra = '') => {
+    const on = has(p)
+    const hot = (stats.count[p] ?? 0) >= POPULAR
     return (
-      <button key={p} type="button" className={`pp-pill${sug ? ' pp-pill--sug' : ''}`} aria-pressed={!sug && has(p)} onClick={() => toggle(p)}>
-        {sug && <Icon name="plus" size={16} />}{p}{n ? <span className="pp-pill__n" aria-label={`${n} here`}>{n}</span> : null}
+      <button key={p} type="button" className={`pp-pill${extra}`} style={tint(gi)} aria-pressed={on} onClick={() => toggle(p)}>
+        {on && <Icon name="check" size={16} />}{p}
+        {hot && <span className="pp-hot" title="Popular here" aria-label="popular here"><Icon name="flame" size={16} /></span>}
       </button>
     )
   }
+  const somethingElse = (
+    <button type="button" className="pp-pill pp-pill--more" onClick={() => setOwnOpen(true)}><Icon name="plus" size={16} />Something else?</button>
+  )
 
   return (
     <fieldset className="pp">
       <legend className="pp-legend"><span>{label}</span>{hint && <small>{hint}</small>}</legend>
 
-      <div className="pp-groups" role="group" aria-label="Groups">
-        {PILL_GROUPS.map((g, i) => {
-          const n = g.pills.filter(has).length
-          return (
-            <button key={g.name} type="button" className={`v4-chip${i === open ? ' v4-chip--on' : ''}`} aria-pressed={i === open} aria-controls={`${id}-panel`} onClick={() => setOpen(i)}>
-              {g.name}{n > 0 && <span className="pp-count">{n}</span>}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="pp-panel" id={`${id}-panel`} role="region" aria-label={group.name}>
-        <div className="pp-pills">{group.pills.map(p => pill(p))}</div>
-        <div className="pp-own">
-          <input className="v4-input" value={own} onChange={e => setOwn(e.target.value)} placeholder={`Your own, e.g. ${ownExample}`} aria-label={`Add your own to ${label}`}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOwn() } }} />
-          <button type="button" className="v4-btn v4-btn--secondary v4-btn--sm" onClick={addOwn} disabled={!own.trim()}>Add</button>
+      {/* Your picks · N, with Review */}
+      <div className="pp-picks">
+        <div className="pp-picks__row">
+          <span className="pp-picks__t">Your picks · {value.length}</span>
+          {value.length > 0 && <button type="button" className="pp-link" aria-expanded={review} onClick={() => setReview(!review)}>{review ? 'Hide' : 'Review'}</button>}
         </div>
+        {review && value.length > 0 && <div className="pp-pills">{value.map(p => pill(p))}</div>}
       </div>
-
-      {value.length > 0 && (
-        <div className="pp-row">
-          <span className="pp-row__t">Picked · {value.length}</span>
-          <div className="pp-pills">
-            {value.map(p => (
-              <button key={p} type="button" className="pp-pill" aria-pressed="true" aria-label={`Remove ${p}`} onClick={() => toggle(p)}>
-                {p}<Icon name="x" size={16} />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {share && value.length > 0 && (
         <div className="pp-row">
@@ -105,10 +94,47 @@ export function PillPicker({ label, hint, value, onChange, stats, share, ownExam
         </div>
       )}
 
-      {suggestions.length > 0 && (
+      {/* Search all, filtering in place */}
+      <input className="v4-input pp-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search all" aria-label={`Search ${label}`} />
+
+      {q ? (
+        <div className="pp-found">
+          {found.length > 0
+            ? <div className="pp-pills">{found.map(({ p, gi }) => pill(p, gi))}</div>
+            : <p className="pp-note">Nothing matches.</p>}
+          <button type="button" className="pp-pill pp-pill--more" onClick={() => addOwn(query)}><Icon name="plus" size={16} />Add “{query.trim()}” as your own</button>
+        </div>
+      ) : (
+        <div className="pp-groups">
+          {PILL_GROUPS.map((g, gi) => {
+            const n = g.pills.filter(has).length
+            const isOpen = open === gi
+            return (
+              <div key={g.name} className="pp-group" style={tint(gi)} data-open={isOpen}>
+                <button type="button" className="pp-group__head" aria-expanded={isOpen} aria-controls={`${id}-g${gi}`} onClick={() => setOpen(isOpen ? null : gi)}>
+                  <span className="pp-group__text"><b>{g.name}</b><small>{g.desc}</small></span>
+                  {n > 0 && <span className="pp-group__n">{n} picked</span>}
+                  <Icon name="down" size={20} className="pp-group__chev" />
+                </button>
+                {isOpen && <div className="pp-pills pp-group__body" id={`${id}-g${gi}`}>{g.pills.map(p => pill(p, gi))}{somethingElse}</div>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {ownOpen && (
+        <div className="pp-own">
+          <input className="v4-input" value={own} onChange={e => setOwn(e.target.value)} placeholder={`In your own words, e.g. ${ownExample}`} aria-label={`Add your own to ${label}`} autoFocus
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOwn() } }} />
+          <button type="button" className="v4-btn v4-btn--secondary v4-btn--sm" onClick={() => addOwn()} disabled={!own.trim()}>Add</button>
+        </div>
+      )}
+
+      {suggestions.length > 0 && !q && (
         <div className="pp-row">
-          <span className="pp-row__t">{value.length ? 'You might also pick' : 'Popular here'}</span>
-          <div className="pp-pills">{suggestions.map(p => pill(p, true))}</div>
+          <span className="pp-row__t">You might also pick</span>
+          <div className="pp-pills">{suggestions.map(p => pill(p, groupOfPill(p), ' pp-pill--sug'))}</div>
         </div>
       )}
     </fieldset>

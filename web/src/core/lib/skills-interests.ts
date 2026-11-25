@@ -10,24 +10,29 @@
 
 export interface PillGroup {
   name: string
+  /** One line under the name on the group's card */
+  desc: string
   pills: string[]
   /** Where an offer made from a shared skill lands (Edit profile's offer categories) */
   offerCategory: string
+  /** The group's pastel: card and pill tint, and its border (as Spotka's picker; Sonia, 25 Nov) */
+  bg: string
+  line: string
 }
 
 export const PILL_GROUPS: PillGroup[] = [
-  { name: 'Land and food', offerCategory: 'Food', pills: ['Permaculture', 'Regenerative farming', 'Gardening', 'Food forests', 'Seed saving', 'Foraging', 'Soil and compost', 'Beekeeping', 'Fermentation', 'Cooking', 'Animal care'] },
-  { name: 'Nature and ecology', offerCategory: 'Permaculture', pills: ['Nature', 'Rewilding', 'Water and rivers', 'Ocean', 'Wildlife and birds', 'Climate', 'Biodiversity', 'Hiking', 'Animal psychology'] },
-  { name: 'Building and making', offerCategory: 'Construction', pills: ['Construction', 'Natural building', 'Architecture', 'Carpentry', 'Off-grid energy', 'Water systems', 'Repair and upcycling', 'Crafts', 'Tiny houses'] },
-  { name: 'Body and health', offerCategory: 'Healing', pills: ['Movement', 'Yoga', 'Dance', 'Breathwork', 'Herbal medicine', 'Nutrition', 'Bodywork', 'Martial arts', 'Sport'] },
-  { name: 'Mind and spirit', offerCategory: 'Healing', pills: ['Spirituality', 'Meditation', 'Psychology', 'Inner work', 'Ceremony and ritual', 'Astrology', 'Philosophy', 'Dreams'] },
-  { name: 'Arts and culture', offerCategory: 'Art', pills: ['Music', 'Art', 'Film', 'Photography', 'Writing and storytelling', 'Theatre', 'Flow arts', 'Design', 'Singing'] },
-  { name: 'Living together', offerCategory: 'Other', pills: ['Community', 'Co-living', 'Sociocracy', 'Facilitation', 'Conflict resolution', 'Nonviolent communication', 'Intergenerational living', 'Parenting'] },
-  { name: 'Learning', offerCategory: 'Education', pills: ['Education', 'Unschooling', 'Teaching', 'Languages', 'Mentoring', 'Skill sharing', 'Reading'] },
-  { name: 'Work and organising', offerCategory: 'Consulting', pills: ['Project management', 'Operations', 'Strategy', 'Leadership', 'Fundraising', 'Marketing and branding', 'Social media', 'Accounting', 'Legal', 'Translation'] },
-  { name: 'Tech and new economies', offerCategory: 'Technology', pills: ['Technology', 'Software', 'Web design', 'Digital sovereignty', 'Open source', 'AI', 'Web3 and DAOs', 'Community currencies', 'Gift economy', 'Regenerative finance', 'Network passport'] },
-  { name: 'Systems change', offerCategory: 'Consulting', pills: ['Regenerative systems change', 'Sustainability', 'Circular economy', 'Social enterprise', 'Activism', 'Policy', 'Impact investing'] },
-  { name: 'Travel and adventure', offerCategory: 'Other', pills: ['Travel', 'Nomad life', 'Sailing', 'Camping', 'Volunteering', 'Other cultures'] },
+  { name: 'Land and food', desc: 'Growing, cooking, animals', bg: '#e1ead9', line: '#aebfa5', offerCategory: 'Food', pills: ['Permaculture', 'Regenerative farming', 'Gardening', 'Food forests', 'Seed saving', 'Foraging', 'Soil and compost', 'Beekeeping', 'Fermentation', 'Cooking', 'Animal care'] },
+  { name: 'Nature and ecology', desc: 'Wild places and living systems', bg: '#d8ece6', line: '#98bbb0', offerCategory: 'Permaculture', pills: ['Nature', 'Rewilding', 'Water and rivers', 'Ocean', 'Wildlife and birds', 'Climate', 'Biodiversity', 'Hiking', 'Animal psychology'] },
+  { name: 'Building and making', desc: 'Building, energy, crafts', bg: '#eee3bd', line: '#bfad71', offerCategory: 'Construction', pills: ['Construction', 'Natural building', 'Architecture', 'Carpentry', 'Off-grid energy', 'Water systems', 'Repair and upcycling', 'Crafts', 'Tiny houses'] },
+  { name: 'Body and health', desc: 'Movement, care, healing', bg: '#dfe3fa', line: '#a0aacb', offerCategory: 'Healing', pills: ['Movement', 'Yoga', 'Dance', 'Breathwork', 'Herbal medicine', 'Nutrition', 'Bodywork', 'Martial arts', 'Sport'] },
+  { name: 'Mind and spirit', desc: 'Inner life and practice', bg: '#e6def1', line: '#b3a0ca', offerCategory: 'Healing', pills: ['Spirituality', 'Meditation', 'Psychology', 'Inner work', 'Ceremony and ritual', 'Astrology', 'Philosophy', 'Dreams'] },
+  { name: 'Arts and culture', desc: 'Music, art, stories', bg: '#f2dce7', line: '#c79daf', offerCategory: 'Art', pills: ['Music', 'Art', 'Film', 'Photography', 'Writing and storytelling', 'Theatre', 'Flow arts', 'Design', 'Singing'] },
+  { name: 'Living together', desc: 'Community, decisions, family', bg: '#f2dfd2', line: '#caa48e', offerCategory: 'Other', pills: ['Community', 'Co-living', 'Sociocracy', 'Facilitation', 'Conflict resolution', 'Nonviolent communication', 'Intergenerational living', 'Parenting'] },
+  { name: 'Learning', desc: 'Teaching and learning', bg: '#dce8f3', line: '#98b1c9', offerCategory: 'Education', pills: ['Education', 'Unschooling', 'Teaching', 'Languages', 'Mentoring', 'Skill sharing', 'Reading'] },
+  { name: 'Work and organising', desc: 'Projects, money, getting it done', bg: '#e1e5ed', line: '#a3adbf', offerCategory: 'Consulting', pills: ['Project management', 'Operations', 'Strategy', 'Leadership', 'Fundraising', 'Marketing and branding', 'Social media', 'Accounting', 'Legal', 'Translation'] },
+  { name: 'Tech and new economies', desc: 'Software, tools, new money', bg: '#d9eef2', line: '#8fbcc6', offerCategory: 'Technology', pills: ['Technology', 'Software', 'Web design', 'Digital sovereignty', 'Open source', 'AI', 'Web3 and DAOs', 'Community currencies', 'Gift economy', 'Regenerative finance', 'Network passport'] },
+  { name: 'Systems change', desc: 'The bigger picture', bg: '#e8eed5', line: '#b2bd8a', offerCategory: 'Consulting', pills: ['Regenerative systems change', 'Sustainability', 'Circular economy', 'Social enterprise', 'Activism', 'Policy', 'Impact investing'] },
+  { name: 'Travel and adventure', desc: 'On the move', bg: '#f6e4d0', line: '#d2a983', offerCategory: 'Other', pills: ['Travel', 'Nomad life', 'Sailing', 'Camping', 'Volunteering', 'Other cultures'] },
 ]
 
 /** Often picked together, as a start; once members have picked, what they pick together counts more */
@@ -106,21 +111,25 @@ export function suggestPills(picked: string[], stats: PillStats, max = 6): strin
 }
 
 /**
- * "What best describes you? Choose all that apply" (user_profiles.user_types), with the design review on. Role words
- * instead of the network-wide list (Exploring, Vision Holder…), which still shows for anyone who picked it.
+ * "What best describes you? Choose all that apply" (user_profiles.user_types). The list MyCoNet had as "Who are you in
+ * this network?" (Sonia, 25 Nov: "should be archetypes that we had before"; decision #94), flattened to one tap each.
+ * `id` is what's stored, the same as before, so earlier choices still show as chosen.
  */
-export const DESCRIBES: { id: string; hint: string }[] = [
-  { id: 'Builder', hint: 'You make things real' },
-  { id: 'Grower', hint: 'Land, food, gardens' },
-  { id: 'Healer', hint: 'Bodies, minds, hearts' },
-  { id: 'Artist', hint: 'Music, art, stories' },
-  { id: 'Teacher', hint: 'You share what you know' },
-  { id: 'Connector', hint: 'You bring people together' },
-  { id: 'Visionary', hint: 'You see where we could go' },
-  { id: 'Organiser', hint: 'Plans, money, getting it done' },
-  { id: 'Caretaker', hint: 'You look after people and places' },
-  { id: 'Explorer', hint: 'Still finding your way here' },
+export const DESCRIBES: { id: string; label: string; hint: string }[] = [
+  { id: 'Exploring', label: 'Exploring', hint: 'Curious about regenerative neighbourhoods and community life' },
+  { id: 'Community Member - Living In', label: 'Living in a community', hint: 'Already part of a regenerative community' },
+  { id: 'Community Member - Looking For', label: 'Looking for a community', hint: 'Searching for one to join' },
+  { id: 'Vision Holder', label: 'Vision holder', hint: 'Holding a vision or building a regenerative project' },
+  { id: 'Service Provider', label: 'Service provider', hint: 'Offering skills, services or expertise to communities' },
+  { id: 'Resource Holder - Land', label: 'Land holder', hint: 'Land that could support a regenerative project' },
+  { id: 'Resource Holder - Money', label: 'Funder', hint: 'Money to invest in regenerative projects' },
 ]
+
+/** A pastel for the i-th card of a list (the groups' colours in turn), as CSS variables for .pp-pick and .pp-pill */
+export function pastel(i: number): Record<string, string> {
+  const g = PILL_GROUPS[[0, 3, 5, 1, 4, 2, 6, 7, 9, 11, 10, 8][i % 12]]
+  return { '--pp-bg': g.bg, '--pp-line': g.line }
+}
 
 /** Personal values as a list: one per line ("Honesty", "Slow living"). Older free text stays one paragraph. */
 export function valueList(text: string | null | undefined): string[] | null {
