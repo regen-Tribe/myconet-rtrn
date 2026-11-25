@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-25 — Core v4.138.0 → v4.141.0 (PR #101; deployed 3b134239)
+- v4.138.0–v4.140.0 (Sonia, #166–#168): Start joining like a phone app, one question per screen; pick your home town from a list (up to five, stored in `city`/`country`, no migration); the home picker says "city".
+- v4.141.0: rename a task right where you edit it (core #170, Oscar). No migrations.
+
 ## 2026-11-25 — Core v4.137.0 (PR #100; deployed 53f6422f)
 - v4.137.0: a Why? pop-up on a draft in Drafts to confirm: what was said, the meeting and its summary (core #165, Oscar). No migration.
 
