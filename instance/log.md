@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-25 — Core v4.130.1 + v4.130.2 (PRs #95, #96; deployed 5181747c, 05052ecf)
+- v4.130.1: Sonia's #116 (change notes and the `ship` release queue). Merged by hand: the update workflow couldn't push the new workflow file without a `CORE_REPO_TOKEN` with Workflows write.
+- v4.130.2: a decided draft stays decided when its meeting group is folded. No migrations.
+
 ## 2026-11-24 — Core v4.130.0 via PR #94 (deployed, 4cd9d618) + design review on
 - v4.130.0: Undo after a decline stays until reload; each draft shows its source. No migration.
 - `designReview: true` (Sonia's design review, core v4.124+), on Oz's OK, as on Protopia. Checked: `data-review` on <html>.
