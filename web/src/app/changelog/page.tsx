@@ -4,6 +4,12 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.137.0',
+    date: '2026-11-25',
+    title: 'Why a draft is suggested, in a small pop-up',
+    items: ['A draft from a meeting has a Why? link on its "From …" line in Drafts to confirm. It opens a small window over the page with what was said and by whom, the meeting and its date, what the meeting was about, and the project manager\'s reasons, so you don\'t have to leave the page.'],
+  },
+  {
     version: 'v4.136.0',
     date: '2026-11-25',
     title: 'A task opens over the list you\'re on',
