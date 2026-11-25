@@ -135,3 +135,14 @@ html[data-review] .pe4 .pe4-add:hover { background: var(--ctl-hover); }
   html[data-review] .pe4-meter { padding: 14px 16px; }
 }
 html[data-review] .pfr-side .v4-sec:first-child { margin-top: 10px; }
+
+/* The seven tabs (decision #91): chips that scroll sideways on a phone, wrapped from 960px; one panel below */
+html[data-review] .pfr-tabs { margin: 4px 0 0; }
+@media (max-width: 639px) { html[data-review] .pfr-tabs { margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px; } }
+@media (min-width: 960px) { html[data-review] .pfr-tabs { flex-wrap: wrap; overflow: visible; } }
+html[data-review] .pfr-tabs .v4-chip { background: var(--surface, #fff); }
+html[data-review] .pfr-tabs .v4-chip--on { background: var(--ink, #111317); }
+html[data-review] .pfr-panel { display: grid; gap: 14px; min-width: 0; }
+html[data-review] .pfr-empty { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 18px 20px; border-radius: 20px; background: var(--surface, #fff); font-size: 15px; color: var(--ink-3, #6b7180); }
+html[data-review] .pfr-empty a { color: var(--ink, #111317); font-weight: 600; text-decoration: none; }
+html[data-review] .pfr-edit { width: fit-content; color: var(--ink, #111317); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }

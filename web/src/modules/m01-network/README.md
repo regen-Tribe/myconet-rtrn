@@ -34,12 +34,14 @@ Profile-based member discovery with AI-powered compatibility matching. Members p
 |---|---|---|
 | Shared skills | 25 | 5/match, fuzzy (Levenshtein ≥80%) — tolerates typos and minor wording differences |
 | Shared interests | 15 | 3/match, fuzzy |
+| Skill meets curiosity | 10 | 4 each: their skill is your interest, or yours is theirs (decision #89) |
+| Same group of pills | 3 | 1 each: different pills of one group (`core/lib/skills-interests.ts`) |
 | OCEAN similarity | 20 | Average abs-diff across 5 traits |
 | MBTI compatibility | 20 | Curated ideal-pair table + temperament fallback |
 | Location proximity | 5 | Country + city, fuzzy. City+country = 5, country only = 3 |
 | Travel overlap | 10 | Same destination with overlapping dates = 10, within 30 days = 6, same destination alone = 4 |
 | Aligned goals | 5 | Shared regenerative keywords in `goals` (`community`, `regenerative`, `sustainable`, `permaculture`, `nature`, `spiritual`) |
-| **Total** | **100** | |
+| **Total** | **100** (capped) | |
 
 Callers must merge `city` and `country` from `user_profiles` onto the bio object before calling — those fields don't live on `user_bio`. See `web/src/app/members/page.tsx` for the pattern.
 

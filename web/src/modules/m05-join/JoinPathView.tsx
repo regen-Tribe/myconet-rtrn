@@ -4,7 +4,7 @@ import type { JoinPath, JoinStepKey } from '@/core/lib/join-path'
 import './join-review.css'
 
 /**
- * The three join steps as a track (Get to know us · About you · Apply): done ones checked, the current one ringed.
+ * The join steps as a track (Get to know us · About you, #93; three with Apply without the design review): done ones checked, the current one ringed.
  * Shows progress instead of saying it. Used on Join (each step a button that opens it) and on My dashboard
  * for explorers (each step a link to it). Design review only (class names under html[data-review]).
  */

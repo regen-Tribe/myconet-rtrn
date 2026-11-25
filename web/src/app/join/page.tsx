@@ -7,8 +7,9 @@ import { DESIGN, DESIGN_REVIEW } from '@/core/lib/instance'
 import JoinReview from '@/modules/m05-join/JoinReview'
 import type { JoinStepKey } from '@/core/lib/join-path'
 import { loadApplications, loadJoinQuestions } from '@/modules/m05-join/applications-server'
+import { pillStats } from '@/core/lib/skills-interests'
 
-export default async function JoinPage(props: { searchParams?: Promise<{ step?: string }> }) {
+export default async function JoinPage(props: { searchParams?: Promise<{ step?: string; part?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -85,13 +86,29 @@ export default async function JoinPage(props: { searchParams?: Promise<{ step?: 
 
   // The design review's Join: three steps (Get to know us · About you · Apply, #80 #81), the same as the menu's next step
   if (DESIGN_REVIEW) {
-    const step = (await props.searchParams)?.step
-    // Step 2 shows what the person already offers as chosen (#81)
-    const { data: offerRows } = user ? await supabase.from('user_offers').select('title').eq('user_id', user.id) : { data: null }
+    const params = await props.searchParams
+    const step = params?.step
+    // Step 2 starts from what the person already has: offers, skills, interests, values, requests (#81, #89, #90), and
+    // how many people here list each pill, for "Popular here" and "You might also pick" (counts only, no names)
+    const [offerRes, bioRes, requestRes, everyoneRes] = user
+      ? await Promise.all([
+          supabase.from('user_offers').select('title').eq('user_id', user.id),
+          supabase.from('user_bio').select('skills, interests, values_principles').eq('user_id', user.id).maybeSingle(),
+          supabase.from('user_requests').select('id, request_text').eq('user_id', user.id).order('created_at'),
+          supabase.from('user_bio').select('skills, interests'),
+        ])
+      : [{ data: null }, { data: null }, { data: null }, { data: null }]
+    const everyone = (everyoneRes.data ?? []) as { skills: string[] | null; interests: string[] | null }[]
+    const b = bioRes.data as { skills: string[] | null; interests: string[] | null; values_principles: string | null } | null
     return (
       <JoinReview userId={user?.id ?? null} role={role} values={communityValues} initialSigned={signedValueIds} questions={questions}
-        profile={userProfile} offers={(offerRows ?? []).map(o => o.title as string)} application={existingApplication}
-        initialStep={(['values', 'profile', 'application'] as const).find(k => k === step) as JoinStepKey | undefined ?? null} />
+        profile={userProfile} offers={((offerRes.data ?? []) as { title: string }[]).map(o => o.title)}
+        bio={b ? { skills: b.skills ?? [], interests: b.interests ?? [], values_principles: b.values_principles } : null}
+        requests={(requestRes.data ?? []) as { id: string; request_text: string }[]}
+        pillStats={pillStats(everyone.flatMap(x => [x.skills, x.interests]))}
+        application={existingApplication}
+        initialStep={(['values', 'profile', 'application'] as const).find(k => k === step) as JoinStepKey | undefined ?? null}
+        initialPart={Math.max(0, (Number(params?.part) || 1) - 1)} />
     )
   }
 

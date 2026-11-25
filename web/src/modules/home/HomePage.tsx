@@ -15,10 +15,10 @@ import HomeV4 from './HomeV4'
 export default async function HomePage(props: { searchParams?: Promise<{ tour?: string }> }) {
   // The v4 look has a calm Home (HomeV4) for everyone (Sonia, 21 Nov); the long module-by-module tour stays at /home?tour=1
   const sp = (await props?.searchParams) ?? {}
-  // One home per role (design review): About for a visitor, My dashboard once signed in. The long tour stays.
+  // One home per role (design review): the Welcome (/) for a visitor, the Dashboard once signed in. The long tour stays.
   if (DESIGN_REVIEW && !sp.tour) {
     const { data: { user } } = await (await createClient()).auth.getUser()
-    redirect(user ? '/dashboard' : '/about')
+    redirect(user ? '/dashboard' : '/')
   }
   if (DESIGN === 'v4' && !sp.tour) return <HomeV4 />
 

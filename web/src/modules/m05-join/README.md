@@ -4,9 +4,15 @@ The community onboarding flow. Guides an `explorer` through three steps — sign
 
 ## With the design review (`"designReview": true`)
 
-`page.tsx` renders **`JoinReview.tsx`** instead of `JoinClient`: heading "Start joining", three steps
-**Get to know us · About you · Apply** (decisions #80, #81; step 1 is signed at the end of About's values, step 2 is a short form here) shown as a track (`JoinPathView.tsx`), the open step under it, then "What
-joining opens" (explorer, joining member, member). The steps come from `core/lib/join-path.ts`, which the menu's
+`page.tsx` renders **`JoinReview.tsx`** instead of `JoinClient`, as **one focused flow** (decision #87): `AppShell`
+wraps `/join` in `core/components/shell/FocusShell.tsx` (the community's mark and "Continue later", no menu, tab bar
+or assistant). Heading "Start joining", the track of two steps **Get to know us · About you** (#93; three with Apply without the design review)
+(`JoinPathView.tsx`), then one step per card with Back and Continue. Step 1 lists the values and signs them with
+"I share these values" (About's values chapter can still sign them, `m04-blueprint/SignValues.tsx`); step 2 is
+About you in three short screens (#90, `?step=profile&part=2`): about you and what best describes you; what you're
+good at and curious about (`PillPicker`, #89; shared skills become offers); what you'd like to receive and your values
+as names. Each screen saves on Continue and can be skipped; the last ends with Send application (and the Blueprint's own questions, if any) and says next to Send why it waits. About opens in a new tab. "What joining
+opens" (explorer, joining member, member) is folded under the flow. The steps come from `core/lib/join-path.ts`, which the menu's
 next step (`core/lib/menu-server.ts`) and My dashboard read too, so all three say the same thing. `?step=values |
 profile | application` opens a step. The buddy step is gone (it saved nothing). Styles: `join-review.css`, all under
 `html[data-review]`. Who answers applications is `JOIN_REVIEWER` ("a steward") in `join-path.ts` (LEXICON.md › Joining).

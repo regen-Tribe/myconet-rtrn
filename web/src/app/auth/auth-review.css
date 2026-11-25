@@ -13,6 +13,7 @@ html[data-review] .arv__col { width: 100%; max-width: 440px; display: flex; flex
 /* The community's mark and name: a link to About (a visitor's home, #25) */
 html[data-review] .arv__brand { display: inline-flex; align-items: center; gap: 12px; align-self: center; text-decoration: none; color: var(--ink, #111317); }
 html[data-review] .arv__logo { height: 40px; width: auto; max-width: 120px; object-fit: contain; border-radius: 12px; }
+html[data-review] .arv__logo--mark { width: 40px; border-radius: 0; }
 html[data-review] .arv__mark { width: 40px; height: 40px; border-radius: 12px; background: var(--ink, #111317); color: #fff; display: grid; place-items: center; }
 html[data-review] .arv__name { font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
 

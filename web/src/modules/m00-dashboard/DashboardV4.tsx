@@ -82,11 +82,11 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
 
   // The one next step, by role (the green box). Words: LEXICON.md
   let next = !userId
-    ? { title: 'Create account', text: DESIGN_REVIEW ? `Join ${communityName} in three steps.` : `Join ${communityName} by invitation.`, href: '/auth/signup' }
+    ? { title: 'Create account', text: DESIGN_REVIEW ? `Join ${communityName} in two steps.` : `Join ${communityName} by invitation.`, href: '/auth/signup' }
     : !isJoining
       ? application
         ? { title: 'Your application is being read', text: 'A circle lead answers within a week.', href: '/join' }
-        : { title: 'Start joining', text: 'Tell the community who you are. Three short steps.', href: '/join' }
+        : { title: 'Start joining', text: `Tell the community who you are. ${DESIGN_REVIEW ? 'Two' : 'Three'} short steps.`, href: '/join' }
       : !isMember
         ? { title: 'Your first agreement', text: 'One accepted agreement makes you a member.', href: '/operations' }
         : isLead && pendingApps > 0
@@ -113,7 +113,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
     : !isJoining && joinPath ? 'checklist'
     : isJoining && !isMember && myCircleSlugs.length === 0 ? 'welcome-in'
     : null
-  const stepHref = (key: string) => (key === 'values' ? '/about#values' : `/join?step=${key}`)
+  const stepHref = (key: string) => `/join?step=${key}`
   const sentOn = application?.created_at ? new Date(application.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null
   const startHere = !isJoining && (
     <>
@@ -138,8 +138,8 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
             <section className="v4-card nc-check" aria-labelledby="nc-check-h">
               <h2 id="nc-check-h" className="nc-h">{joinPath.doneCount === 0 ? `Welcome to ${communityName}` : 'Start joining'}</h2>
               <p className="nc-sub">{joinPath.doneCount === 0
-                ? `Joining takes three short steps. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week.`
-                : `${joinPath.doneCount} of 3 done. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week of your application.`}</p>
+                ? `Joining takes ${joinPath.steps.length === 2 ? 'two' : 'three'} short steps. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week.`
+                : `${joinPath.doneCount} of ${joinPath.steps.length} done. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week of your application.`}</p>
               <ol className="nc-steps">
                 {joinPath.steps.map((st, i) => {
                   const now = joinPath.next?.key === st.key
@@ -148,8 +148,8 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
                       <a href={stepHref(st.key)} aria-current={now ? 'step' : undefined}>
                         <span className="nc-n" aria-hidden="true">{st.done ? <Icon name="check" size={16} /> : i + 1}</span>
                         <span className="nc-t"><b>{st.title}</b><small>{[
-                          'Read about the land, the people and our values',
-                          'A photo, a line, what you’d like to offer',
+                          'Who we are and the values we live by',
+                          joinPath.steps.length === 2 ? 'Three short screens, then Send application' : 'A photo, a line, what you’d like to offer',
                           `${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week`,
                         ][i]}</small></span>
                         <span className="nc-min">{st.done ? 'Done' : `${st.minutes} min`}</span>

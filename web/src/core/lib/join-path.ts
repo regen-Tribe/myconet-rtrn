@@ -1,9 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { IconName } from '@/core/components/v4'
 import { isJoiningOrAbove } from './roles'
+import { DESIGN_REVIEW } from './instance'
 
 /**
- * The way in, as three steps: Get to know us · About you · Apply (design/decisions.md #80, #81; it was
+ * With the design review, the way in is two steps: Get to know us · About you, and About you ends with Send application
+ * (Sonia, 25 Nov; decision #93). Without it, three steps: Get to know us · About you · Apply (decisions #80, #81; it was
  * "Values · Profile · Application" until 23 Nov). One list,
  * read by the Join page (m05-join/JoinReview.tsx), the menu's next step and My dashboard, so all three always
  * say the same thing. Words: LEXICON.md › Joining.
@@ -41,7 +43,7 @@ export const JOIN_REVIEWER = 'a steward'
 export function joinSteps(s: { valuesSigned: number; valuesTotal: number; hasPhoto: boolean; hasHeadline: boolean; application: string | null; joined: boolean }): JoinPath {
   const sent = s.joined || (!!s.application && s.application !== 'rejected')
   const steps: JoinStep[] = [
-    // Step 1 (#80): read About; its values chapter ends with "I share these values". With no values written yet
+    // Step 1: the values, shared inside Start joining (Sonia, 24 Nov; About's values chapter can sign them too). With none written yet
     // the step can't hold anyone back
     { key: 'values', label: 'Get to know us', title: 'Get to know us', icon: 'book', minutes: 5, done: s.joined || s.valuesSigned >= s.valuesTotal },
     // Step 2 (#81): a short form inside Start joining. A line about you finishes it; the photo is asked for, not required
@@ -50,6 +52,10 @@ export function joinSteps(s: { valuesSigned: number; valuesTotal: number; hasPho
   ]
   // Once someone is in, the way in reads as done (a joining member's profile is the menu's next step instead).
   // The application is the last step even when the profile isn't finished: it can be sent without it
+  // Design review (#93): About you ends with Send application, so it's done once the application is sent
+  if (DESIGN_REVIEW) {
+    steps.splice(1, 2, { key: 'profile', label: 'About you', title: s.application === 'rejected' ? 'Send a new application' : 'Tell us about you', icon: 'user', minutes: 5, done: sent })
+  }
   const next = steps.find(x => !x.done) ?? null
   return { steps, next, doneCount: steps.filter(x => x.done).length, application: s.application, joined: s.joined }
 }

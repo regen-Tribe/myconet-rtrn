@@ -24,6 +24,9 @@ import {
   Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
 } from '@/core/components/v4/lucide-compat'
 import { SIGNED_IN_PROFILE_COLUMNS, profileDetailsOf } from '@/core/lib/public-profile'
+import { PillPicker } from '@/core/components/v4/PillPicker'
+import { DESCRIBES, PILL_GROUPS, groupOfPill, pillStats, valueList, type PillStats } from '@/core/lib/skills-interests'
+import { Globe } from '@/core/components/v4/lucide-compat'
 
 /** The design review layer (decisions #60–#64) */
 const RV = DESIGN === 'v4' && DESIGN_REVIEW
@@ -38,6 +41,29 @@ const STEPS = [
   { id: 7, title: 'Requests',          icon: HelpCircle, description: 'What you need' },
   { id: 8, title: 'Travel Plans',      icon: MapPin,     description: 'Where you\'re going' },
 ]
+
+/** With the design review: seven tabs, the same as the profile and Start joining (Sonia, 25 Nov; decision #91) */
+const TABS = [
+  { id: 1, title: 'About',                 icon: User,   description: 'Who you are, where you are, what you value' },
+  { id: 2, title: 'Skills and interests',  icon: Heart,  description: 'What you’re good at and curious about' },
+  { id: 3, title: 'Offers and requests',   icon: Gift,   description: 'What you share and what you’d like' },
+  { id: 4, title: 'Personality and signs', icon: Brain,  description: 'All optional, for those who enjoy it' },
+  { id: 5, title: 'Growth',                icon: Target, description: 'Where you’re heading' },
+  { id: 6, title: 'Travel',                icon: MapPin, description: 'Where you’re going' },
+  { id: 7, title: 'Links',                 icon: Globe,  description: 'Your website and social links' },
+]
+type Block = 'basic' | 'links' | 'place' | 'types' | 'tags' | 'values' | 'personality' | 'archetypes' | 'growth' | 'offers' | 'requests' | 'travel'
+/** Which step each part sits on: [classic eight steps, design review's seven tabs] */
+const BLOCK_STEP: Record<Block, [number, number]> = {
+  basic: [1, 1], links: [1, 7], place: [1, 1], types: [1, 1], tags: [1, 2], values: [2, 1],
+  personality: [3, 4], archetypes: [4, 4], growth: [5, 5], offers: [6, 3], requests: [7, 3], travel: [8, 6],
+}
+const FIELD_BLOCK: Record<string, Block> = {
+  'pe-photo': 'basic', 'pe-name': 'basic', 'pe-headline': 'basic', 'pe-city': 'place', 'pe-types': 'types', 'pe-skills': 'tags',
+  'pe-values': 'values', 'pe-goals': 'growth', 'pe-growth': 'growth', 'pe-offer': 'offers', 'pe-request': 'requests', 'pe-travel': 'travel',
+}
+const PILL_CATEGORY = (k: string) => { const gi = groupOfPill(k); return gi >= 0 ? PILL_GROUPS[gi].offerCategory : 'Other' }
+const TAB_PARAM: Record<string, number> = { about: 1, skills: 2, offers: 3, personality: 4, growth: 5, travel: 6, links: 7 }
 
 const MBTI_TYPES = [
   { code: 'INTJ', name: 'Architect' }, { code: 'INTP', name: 'Logician' },
@@ -261,6 +287,29 @@ function computeWizardPct(form: FormData, avatarUrl: string | null): number {
 /** Design review: where "Still to add" and ?add= send you (the eleven checks, plus who sees your growth) */
 const JUMPS: Pick<ProfileCheck, 'key' | 'step' | 'field'>[] = [...PROFILE_CHECKS, { key: 'growth' as ProfileCheck['key'], step: 5, field: 'pe-growth' }]
 
+const STEP_LIST = RV ? TABS : STEPS
+const stepOf = (b: Block) => BLOCK_STEP[b][RV ? 1 : 0]
+
+/** Values as names, one chip each (#89); stored one per line in values_principles */
+function ValueChips({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = useState('')
+  const add = () => { const t = draft.trim(); if (t && !value.some(v => v.toLowerCase() === t.toLowerCase())) onChange([...value, t]); setDraft('') }
+  return (
+    <div className="pp" style={{ gap: 10 }}>
+      {value.length > 0 && (
+        <div className="pp-pills">
+          {value.map(v => <button key={v} type="button" className="pp-pill" aria-pressed="true" aria-label={`Remove ${v}`} onClick={() => onChange(value.filter(x => x !== v))}>{v}<V4Icon name="x" size={16} /></button>)}
+        </div>
+      )}
+      <div className="pp-own">
+        <input className="v4-input" value={draft} onChange={e => setDraft(e.target.value)} maxLength={40} placeholder="e.g. Honesty" aria-label="Add a value"
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() } }} />
+        <button type="button" className="v4-btn v4-btn--secondary v4-btn--sm" onClick={add} disabled={!draft.trim()}>Add</button>
+      </div>
+    </div>
+  )
+}
+
 export default function ProfileWizard() {
   const supabase = createClient()
   const router = useRouter()
@@ -274,6 +323,9 @@ export default function ProfileWizard() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
   const [achievementEarned, setAchievementEarned] = useState(false)
+  const [stats, setStats] = useState<PillStats>({ count: {}, together: {} })
+  const [shared, setShared] = useState<string[]>([])
+  const on = (b: Block) => step === stepOf(b)
 
   useEffect(() => {
     if (loading || !userId) return
@@ -299,6 +351,11 @@ export default function ProfileWizard() {
         supabase.from('user_requests').select('*').eq('user_id', user.id).order('created_at'),
         supabase.from('user_growth').select('fears, traumas, visibility').eq('user_id', user.id).maybeSingle(),
       ])
+      // How many people list each skill and interest (counts only), for the picker's suggestions
+      if (RV) {
+        const { data: everyone } = await supabase.from('user_bio').select('skills, interests')
+        setStats(pillStats(((everyone ?? []) as { skills: string[] | null; interests: string[] | null }[]).flatMap(x => [x.skills, x.interests])))
+      }
 
       // City, country and kinds of people come from profile_details() (decision #71)
       const p = profileRes.data ? { ...(profileRes.data as Record<string, any>), ...(await profileDetailsOf(supabase, user.id)) } as any : null
@@ -353,10 +410,16 @@ export default function ProfileWizard() {
           location: t.location ?? '', startDate: t.startDate ?? '', endDate: t.endDate ?? '', notes: t.notes ?? '',
         })),
       })
+      // Skills you offer under their own name count as shared (the picker's "Sharing")
+      setShared(((b?.skills ?? []) as string[]).filter(k => (offersRes.data ?? []).some((o: any) => String(o.title).toLowerCase() === k.toLowerCase())))
       setLoading(false)
-      // Design review: /profile/edit?add=headline opens the step with that field (the profile's next step links here)
-      const add = RV ? new URLSearchParams(window.location.search).get('add') : null
+      // Design review: /profile/edit?add=headline opens the step with that field (the profile's next step links here),
+      // ?tab=links opens a tab
+      const params = RV ? new URLSearchParams(window.location.search) : null
+      const add = params?.get('add')
+      const tab = params?.get('tab')
       if (add) jump(add)
+      else if (tab && TAB_PARAM[tab]) setStep(TAB_PARAM[tab])
     }
     load()
   }, [])
@@ -370,7 +433,7 @@ export default function ProfileWizard() {
   function jump(key: string) {
     const j = JUMPS.find(x => x.key === key)
     if (!j) return
-    setStep(j.step)
+    setStep(RV && FIELD_BLOCK[j.field] ? stepOf(FIELD_BLOCK[j.field]) : j.step)
     setForm(prev => {
       if (key === 'offer' && !prev.offers.length) return { ...prev, offers: [{ title: '', description: '', category: '', compensation_model: 'Other', price: '' }] }
       if (key === 'request' && !prev.requests.length) return { ...prev, requests: [{ request_text: '', category: '', urgency: 'normal' }] }
@@ -477,11 +540,20 @@ export default function ProfileWizard() {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
 
-      // Sync offers: delete all then re-insert
+      // Sync offers: delete all then re-insert. With the design review, a shared skill is an offer too (#90)
       await supabase.from('user_offers').delete().eq('user_id', userId)
-      if (form.offers.length) {
+      let offers = form.offers
+      if (RV) {
+        const low = (t: string) => t.trim().toLowerCase()
+        const kept = offers.filter(o => !form.skills.some(k => low(k) === low(o.title)) || shared.some(k => low(k) === low(o.title)))
+        const added = shared.filter(k => form.skills.some(x => low(x) === low(k)) && !kept.some(o => low(o.title) === low(k)))
+          .map(k => ({ title: k, description: '', category: PILL_CATEGORY(k), compensation_model: 'Other', price: '' }))
+        offers = [...kept, ...added]
+        setForm(prev => ({ ...prev, offers }))
+      }
+      if (offers.length) {
         await supabase.from('user_offers').insert(
-          form.offers.filter(o => o.title.trim()).map(o => ({
+          offers.filter(o => o.title.trim()).map(o => ({
             user_id: userId,
             title: o.title,
             description: o.description || null,
@@ -513,7 +585,7 @@ export default function ProfileWizard() {
 
   async function handleNext() {
     await save()
-    if (step < STEPS.length) setStep(s => s + 1)
+    if (step < STEP_LIST.length) setStep(s => s + 1)
     else router.push('/members/profile')
   }
 
@@ -523,9 +595,9 @@ export default function ProfileWizard() {
     </div>
   )
 
-  const stepData = STEPS[step - 1]
+  const stepData = STEP_LIST[step - 1]
   const StepIcon = stepData.icon
-  const progress = (step / STEPS.length) * 100
+  const progress = (step / STEP_LIST.length) * 100
 
   const V4 = DESIGN === 'v4'
   const done = profileMissing(wizardFacts(form, avatarUrl))
@@ -594,11 +666,11 @@ export default function ProfileWizard() {
       {V4 && (
         <>
           {!RV && <PageHeader eyebrow="Your profile" title="Edit your profile"
-            subtitle={<>Step <b>{step} of {STEPS.length}</b>: {stepData.title}. Saved when you go to the next step.</>}
+            subtitle={<>Step <b>{step} of {STEP_LIST.length}</b>: {stepData.title}. Saved when you go to the next step.</>}
             actions={<V4Button variant="secondary" icon="check" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save draft'}</V4Button>} />}
           <div className="pe4-bar" aria-hidden><i style={{ width: `${progress}%` }} /></div>
           <nav className="v4-chiprow pe4-steps" aria-label="Profile steps">
-            {STEPS.map(s => (
+            {STEP_LIST.map(s => (
               <button key={s.id} type="button" onClick={() => setStep(s.id)} className={`v4-chip${s.id === step ? ' v4-chip--on' : ''}`} aria-current={s.id === step ? 'step' : undefined}>
                 {s.id < step && <V4Icon name="check" size={13} />}{s.title}
               </button>
@@ -643,8 +715,8 @@ export default function ProfileWizard() {
         </CardHeader>
         <CardContent className="space-y-6">
 
-          {/* ── Step 1: Basic Info ── */}
-          {step === 1 && (
+          {/* ── Step 1: Basic Info (design review: About) ── */}
+          {on('basic') && (
             <>
               {/* Avatar upload */}
               <div className="flex flex-col items-center gap-2 pb-2">
@@ -685,11 +757,15 @@ export default function ProfileWizard() {
                 <p className="text-xs text-muted-foreground">A short description that appears under your name</p>
               </div>
               <div className="space-y-2">
-                <Label>About you</Label>
+                <Label>{RV ? 'What are you up to in this world?' : 'About you'}</Label>
                 <Textarea value={form.public_bio} onChange={e => update('public_bio', e.target.value)} rows={3} maxLength={1000}
                   placeholder="A few sentences about you, your work and what brings you here" />
                 <p className="text-xs text-muted-foreground">Public: anyone can see your name, headline, this and your links. The rest of your profile is only for people who have signed up.</p>
               </div>
+            </>
+          )}
+          {on('links') && (
+            <>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Website</Label>
@@ -708,6 +784,11 @@ export default function ProfileWizard() {
                   <Input value={form.twitter} onChange={e => update('twitter', e.target.value)} placeholder="@yourname" />
                 </div>
               </div>
+            </>
+          )}
+          {on('place') && (
+            <>
+              {RV && <div className="space-y-1"><Label>Where are you based? Where do you call home?</Label><p className="text-xs text-muted-foreground">Where you live now. If home is somewhere else, add it too: Lisbon, home in Porto.</p></div>}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Country</Label>
@@ -718,6 +799,24 @@ export default function ProfileWizard() {
                   <Input id="pe-city" value={form.city} onChange={e => update('city', e.target.value)} placeholder="e.g., San José" />
                 </div>
               </div>
+            </>
+          )}
+          {on('types') && RV && (
+            <div className="space-y-3" id="pe-types">
+              <Label>What best describes you?</Label>
+              <p className="text-xs text-muted-foreground">Choose all that apply.</p>
+              <div className="pp-describes">
+                {[...DESCRIBES.map(d => ({ id: d.id, hint: d.hint })), ...form.user_types.filter(t => !DESCRIBES.some(d => d.id === t)).map(t => ({ id: t, hint: 'From the earlier list' }))].map(d => (
+                  <button key={d.id} type="button" className="pp-pick" aria-pressed={form.user_types.includes(d.id)}
+                    onClick={() => update('user_types', form.user_types.includes(d.id) ? form.user_types.filter(x => x !== d.id) : [...form.user_types, d.id])}>
+                    <b>{d.id}</b><small>{d.hint}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {on('types') && !RV && (
+            <>
               <div className="space-y-3" id="pe-types">
                 <Label>Who are you in this network?</Label>
                 <p className="text-xs text-muted-foreground">Select all that apply</p>
@@ -762,6 +861,18 @@ export default function ProfileWizard() {
                   })}
                 </div>
               </div>
+            </>
+          )}
+          {on('tags') && RV && (
+            <div className="grid gap-8" id="pe-skills">
+              <PillPicker label="What are you good at?" hint="Pick from the groups, then tap the ones you’re excited to share: they show under Offers."
+                value={form.skills} onChange={v => update('skills', v)} stats={stats} share={{ value: shared, onChange: setShared }} />
+              <PillPicker label="What are you curious about?" hint="The same groups. Pick what you’d love to learn or explore."
+                value={form.interests} onChange={v => update('interests', v)} stats={stats} ownExample="Mushrooms" />
+            </div>
+          )}
+          {on('tags') && !RV && (
+            <>
               <div className="space-y-2" id="pe-skills">
                 <Label>Skills</Label>
                 <TagInput value={form.skills} onChange={v => update('skills', v)}
@@ -777,16 +888,31 @@ export default function ProfileWizard() {
             </>
           )}
 
-          {/* ── Step 2: Values & Purpose ── */}
-          {step === 2 && (
+          {/* ── Step 2: Values & Purpose (design review: on About, values as names) ── */}
+          {on('values') && RV && (() => {
+            const list = valueList(form.values_principles)
+            return (
+              <div className="space-y-2" id="pe-values">
+                <Label>Your values</Label>
+                <p className="text-xs text-muted-foreground">A word or two each, the way the community names its values. Just values; your days and habits have their own place.</p>
+                {list || !form.values_principles.trim()
+                  ? <ValueChips value={list ?? []} onChange={v => update('values_principles', v.join('\n'))} />
+                  : <>
+                      <Textarea value={form.values_principles} onChange={e => update('values_principles', e.target.value)} className="min-h-[120px]" />
+                      <p className="text-xs text-muted-foreground">You wrote these as text. Put each value on its own line, a word or two each, and they show as names.</p>
+                    </>}
+              </div>
+            )
+          })()}
+          {on('values') && (
             <>
-              <div className="space-y-2">
+              {!RV && <div className="space-y-2">
                 <Label>Core Values & Principles</Label>
                 <Textarea id="pe-values" value={form.values_principles} onChange={e => update('values_principles', e.target.value)}
                   placeholder="What principles guide your life and work? What do you stand for?"
                   className="min-h-[150px]" />
                 <p className="text-xs text-muted-foreground">Share what matters most to you and what you believe in</p>
-              </div>
+              </div>}
               <div className="space-y-2">
                 <Label>What are you creating?</Label>
                 <Textarea value={form.what_creating} onChange={e => update('what_creating', e.target.value)}
@@ -797,7 +923,7 @@ export default function ProfileWizard() {
           )}
 
           {/* ── Step 3: Personality ── */}
-          {step === 3 && (
+          {on('personality') && (
             <>
               <div className="space-y-2">
                 <Label>Myers-Briggs Type</Label>
@@ -851,7 +977,7 @@ export default function ProfileWizard() {
           )}
 
           {/* ── Step 4: Archetypes ── */}
-          {step === 4 && (
+          {on('archetypes') && (
             <>
               <p className="text-muted-foreground text-sm">Share your archetypal patterns if you know them — all fields are optional.</p>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -888,7 +1014,7 @@ export default function ProfileWizard() {
           )}
 
           {/* ── Step 5: Goals & Growth ── */}
-          {step === 5 && (
+          {on('growth') && (
             <>
               <div className="space-y-2">
                 <Label>Goals & Aspirations</Label>
@@ -931,7 +1057,7 @@ export default function ProfileWizard() {
           )}
 
           {/* ── Step 6: Offers ── */}
-          {step === 6 && (
+          {on('offers') && (
             <>
               <p className="text-muted-foreground text-sm">What services, skills, or resources can you offer to the community?</p>
               <div className="space-y-4" id="pe-offer">
@@ -997,7 +1123,7 @@ export default function ProfileWizard() {
           )}
 
           {/* ── Step 7: Requests ── */}
-          {step === 7 && (
+          {on('requests') && (
             <>
               <p className="text-muted-foreground text-sm">What help, resources, or connections are you looking for?</p>
               <div className="space-y-4" id="pe-request">
@@ -1054,7 +1180,7 @@ export default function ProfileWizard() {
           )}
 
           {/* ── Step 8: Travel Plans ── */}
-          {step === 8 && (
+          {on('travel') && (
             <>
               <p className="text-muted-foreground text-sm">Where are you planning to travel? This helps connect you with communities along your path.</p>
               <div className="space-y-4" id="pe-travel">
@@ -1111,8 +1237,8 @@ export default function ProfileWizard() {
       {V4 ? (
         <div className="pe4-nav">
           <V4Button variant="secondary" icon="left" onClick={() => setStep(s => s - 1)} disabled={step === 1}>Previous</V4Button>
-          <V4Button onClick={handleNext} disabled={saving} icon={step === STEPS.length ? 'check' : undefined}>
-            {saving ? 'Saving…' : step === STEPS.length ? (RV ? 'Save' : 'Save and finish') : RV ? <>Save & continue <V4Icon name="right" size={16} /></> : <>Next: {STEPS[step]?.title} <V4Icon name="right" size={15} /></>}
+          <V4Button onClick={handleNext} disabled={saving} icon={step === STEP_LIST.length ? 'check' : undefined}>
+            {saving ? 'Saving…' : step === STEP_LIST.length ? (RV ? 'Save' : 'Save and finish') : RV ? <>Save & continue <V4Icon name="right" size={16} /></> : <>Next: {STEP_LIST[step]?.title} <V4Icon name="right" size={15} /></>}
           </V4Button>
         </div>
       ) : (

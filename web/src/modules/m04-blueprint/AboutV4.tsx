@@ -37,8 +37,13 @@ function headline(text: string | null, max = 110): [string | null, string | null
 /** A list written as lines, bullets or "a; b; c" → items. */
 function items(text: string | null): string[] {
   if (!text) return []
-  const lines = text.split(/\n+|(?:^|\s)[•·▪]\s|;\s+/).map(l => l.replace(/^\s*(?:[-*•·]|\d+[.)])\s*/, '').trim()).filter(l => l.length > 1)
-  return lines.length > 1 ? lines : []
+  const clean = (parts: string[]) => parts.map(l => l.replace(/^\s*(?:[-*•·]|\d+[.)])\s*/, '').trim()).filter(l => l.length > 1)
+  // One item per line when there are lines, so a "; " inside a value's sentences doesn't split it (#92);
+  // a single paragraph still splits at bullets and semicolons
+  const lines = clean(text.split(/\n+/))
+  if (lines.length > 1) return lines
+  const parts = clean(text.split(/(?:^|\s)[•·▪]\s|;\s+/))
+  return parts.length > 1 ? parts : []
 }
 
 /** "Care — we look after…" or "Care: we look after…" → [Care, we look after…]. */

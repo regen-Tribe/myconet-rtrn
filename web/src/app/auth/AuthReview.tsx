@@ -6,6 +6,7 @@
  * Styles: ./auth-review.css (scoped under html[data-review]).
  */
 import './auth-review.css'
+import Link from 'next/link'
 import { Icon, type IconName } from '@/core/components/v4'
 import { COMMUNITY_DESCRIPTION, COMMUNITY_NAME } from '@/core/lib/instance'
 import { useBranding } from '@/core/components/BrandingProvider'
@@ -15,18 +16,23 @@ export const ABOUT_LINE = COMMUNITY_DESCRIPTION
   ? COMMUNITY_DESCRIPTION.replace(/\s+$/, '') + (/[.!?]$/.test(COMMUNITY_DESCRIPTION.trim()) ? '' : '.')
   : ''
 
-/** The page: mark and name (to About, a visitor's home, #25), the card, then the community's sentence */
+const BRAND_MARK = process.env.NEXT_PUBLIC_BRAND_MARK || ''
+
+/** The page: mark and name (to the Welcome, a visitor's home), the card, then the community's sentence.
+ *  The mark alone, as in the menu: the full logo carries its own small words, illegible and cut at this size (Sonia, 24 Nov) */
 export function AuthFrame({ children, about = true }: { children: React.ReactNode; about?: boolean }) {
   const { logo_url } = useBranding()
   return (
     <div className="arv">
       <div className="arv__col">
-        <a href="/about" className="arv__brand">
-          {logo_url
+        <Link href="/" className="arv__brand">
+          {BRAND_MARK
+            ? <img src={BRAND_MARK} alt="" className="arv__logo arv__logo--mark" />
+            : logo_url
             ? <img src={logo_url} alt="" className="arv__logo" />
             : <span className="arv__mark"><Icon name="sprout" size={20} /></span>}
           <span className="arv__name">{COMMUNITY_NAME}</span>
-        </a>
+        </Link>
         <div className="arv__card">{children}</div>
         {about && ABOUT_LINE && <p className="arv__about">{ABOUT_LINE}</p>}
       </div>

@@ -109,14 +109,22 @@ The way in, the same words on Join, the menu's next step and My dashboard (desig
 |---|---|---|
 | **visitor** | Someone looking around who isn't signed in | guest |
 | **Start joining** | The button, and the Join page's heading | Join application, M05 |
-| **Get to know us · About you · Apply** | The three join steps (decisions #80, #81): read About and sign its values at the end of the values chapter; a short form in Start joining (a photo, a line about you, what you'd like to offer, what brings you); send your application. As titles: "Get to know us", "Tell us about you", "Send your application" | Values · Profile · Application (until 23 Nov), buddy matching (dropped) |
+| **Get to know us · About you** | The two join steps (decisions #80, #90, #93; three with **Apply** without the design review): read the values and share them; About you in three short screens (about you · what you're good at and curious about · what you'd like and what you value), the last ending with **Send application**; until 25 Nov a third step, Apply: send your application. As titles: "Get to know us", "Tell us about you", "Send your application" | Values · Profile · Application (until 23 Nov), buddy matching (dropped) |
 | **steward** | An admin who welcomes new people and reviews join applications (Sonia, 2026-11-22). Same family as **Community stewards**. Lowercase on screens: "A steward reads your application". Which admins are stewards is the community's, never named in core | the community team, the team, reviewer |
 | **Send application** / **Your application is in** | Sending it, and the state while it's read | Submit application, Under review |
 
 ## Members module
 
 **Offers** (what I can give) and **Requests** (what I'm looking for): "+ Add offer", "+ Add request".
-Not "Seeks", not "Needs". A booking that needs approval is a **booking request**.
+Not "Seeks", not "Needs". A skill you tap **share** becomes an offer (#90).
+
+| Say | Means | Not |
+|---|---|---|
+| **Good at** / **Curious about** | Skills and interests, picked from one list of **groups** and **pills** (decision #89). "What are you good at?", "What are you curious about?" | Skills tags, Interests tags, categories |
+| **What best describes you?** | The role words a person picks (Builder, Grower, Healer…), choose all that apply | Who you are here, user types, archetypes (those are the signs) |
+| **Personality and signs** | Myers-Briggs, Big Five, Sun, Moon and Rising, Human Design, Gene Key, Mayan sign: one profile tab (#91) | Archetypes as a tab name |
+| **Your values** | A person's values as names, a word or two each (#92) | Core Values & Principles |
+| **About · Skills and interests · Offers and requests · Personality and signs · Growth · Travel · Links** | The profile's seven tabs, the same in Edit profile (#91) | Basic Info, Values & Purpose, Goals & Growth | A booking that needs approval is a **booking request**.
 
 ## Recognition
 

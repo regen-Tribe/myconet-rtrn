@@ -9,6 +9,9 @@ import type { MenuState } from '@/core/lib/menu-server'
 import AppFooter from '@/core/components/shell/AppFooter'
 import { ProfileCompletionProvider } from '@/core/contexts/ProfileCompletion'
 import AssistantChat from '@/modules/assistant/AssistantChat'
+import FocusShell from '@/core/components/shell/FocusShell'
+import { DESIGN_REVIEW } from '@/core/lib/instance'
+import { isJoiningOrAbove } from '@/core/lib/roles'
 
 /** `menu` is set only for the v4 look (layout.tsx): the v4 menu and phone tab bar replace AppSideNav. */
 /** `navCollapsed` comes from the `navCollapsed` cookie (layout.tsx), so the slim menu is slim from the first paint. */
@@ -50,6 +53,12 @@ export default function AppShell({ children, role, isLoggedIn = false, menu = nu
 
   if (pathname.startsWith('/auth/')) {
     return <>{children}</>
+  }
+
+  // Start joining is one focused flow (Sonia, 24 Nov: "isolate more while providing links to read more"): no menu,
+  // tab bar or assistant around it, only the community's mark and a way out
+  if (DESIGN_REVIEW && pathname === '/join') {
+    return <FocusShell isLoggedIn={isLoggedIn} joined={isLoggedIn && isJoiningOrAbove(role)}>{children}</FocusShell>
   }
 
   return (

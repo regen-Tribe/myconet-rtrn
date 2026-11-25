@@ -55,7 +55,8 @@ function NextStepCard({ state, onClose, collapsed }: { state: MenuState; onClose
           )}
           {progress && (
             <span className="mv4-path" aria-label={`${progress.filter(p => p.done).length} of ${progress.length} done`}>
-              {progress.map(p => <span key={p.label} className={p.done ? 'on' : undefined}><i aria-hidden="true" />{p.label}</span>)}
+              {/* Bars only: the card's title and line already name the step, and three names wrapped in the narrow card */}
+              {progress.map(p => <span key={p.label} className={p.done ? 'on' : undefined} title={p.label}><i aria-hidden="true" /></span>)}
             </span>
           )}
           <span className="mv4-next__line">{n.line}</span>
@@ -202,7 +203,7 @@ export default function MenuV4({ mobileOpen, onClose, role, isLoggedIn, state, c
       {DESIGN_REVIEW && <div className="mv4-handle" aria-hidden="true" />}
       <div className="mv4-top">
         {/* One home per role (design review): About for a visitor, My dashboard once signed in */}
-        <Link href={DESIGN_REVIEW ? (isLoggedIn ? '/dashboard' : '/about') : '/home'} className="mv4-brand" title={rail ? undefined : COMMUNITY_NAME} data-tip={rail ? COMMUNITY_NAME : undefined} aria-label={rail ? COMMUNITY_NAME : undefined} onClick={onClose}>
+        <Link href={DESIGN_REVIEW ? (isLoggedIn ? '/dashboard' : '/') : '/home'} className="mv4-brand" title={rail ? undefined : COMMUNITY_NAME} data-tip={rail ? COMMUNITY_NAME : undefined} aria-label={rail ? COMMUNITY_NAME : undefined} onClick={onClose}>
           {BRAND_MARK
             ? <img className="mv4-mark mv4-mark--img" src={BRAND_MARK} alt="" aria-hidden="true" />
             : <span className="mv4-mark" aria-hidden="true">{COMMUNITY_NAME.slice(0, 1).toUpperCase()}</span>}
