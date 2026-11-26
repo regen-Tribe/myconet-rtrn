@@ -54,7 +54,7 @@ export function joinSteps(s: { valuesSigned: number; valuesTotal: number; hasPho
   // The application is the last step even when the profile isn't finished: it can be sent without it
   // Design review (#93): About you ends with Send application, so it's done once the application is sent
   if (DESIGN_REVIEW) {
-    steps.splice(1, 2, { key: 'profile', label: 'About you', title: s.application === 'rejected' ? 'Send a new application' : 'Tell us about you', icon: 'user', minutes: 5, done: sent })
+    steps.splice(1, 2, { key: 'profile', label: 'About you', title: s.application === 'rejected' ? 'Ask to join again' : 'Tell us about you', icon: 'user', minutes: 5, done: sent })
   }
   const next = steps.find(x => !x.done) ?? null
   return { steps, next, doneCount: steps.filter(x => x.done).length, application: s.application, joined: s.joined }

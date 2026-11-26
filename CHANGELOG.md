@@ -5,6 +5,26 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.141.2 — 2026-11-25 — Small touches in Start joining
+
+Sonia's phone test, 25 Nov. `join-review.css`: folded values align to the top so the number stays beside the name when
+opened. `JoinReview`: the first request's placeholder invites skill sharing ("we want to empower skill sharing"). No migration.
+
+## v4.141.1 — 2026-11-25 — I agree to honor these values; Each step of Start joining fits your phone screen; Join the community, not an application
+
+**I agree to honor these values.** Sonia (decision #101). `JoinReview` step 1 and `SignValues` (About's values chapter): "I agree to honor these values" /
+"I agree"; done: "You agreed to honor these values"; Send's hint: "first agree to honor the values". LEXICON updated.
+No migration.
+
+**Each step of Start joining fits your phone screen.** Sonia (decision #102). `join-review.css`: under 640px inside a step, `.fx` is 100dvh with no page scroll; the step's content
+scrolls inside its card between the title and the button bar; "Start joining" and the eyebrow hide; values rows shorter.
+`pill-picker.css`: groups two across on a phone. `HomePicker`: loads the list on focus and scrolls the field into view once,
+instead of on every keystroke. No migration.
+
+**Join the community, not an application.** Sonia (decision #103). Newcomer words: "Join the community" (button), "You've asked to join" (after), "A steward welcomes you
+within a week", "Ask to join again" after a decline; the Dashboard's waiting card and the menu's next step say the same.
+Admin › Applications is unchanged. LEXICON updated. No migration.
+
 ## v4.141.0 — 2026-11-25 — Rename a task right where you edit it
 
 Oscar: "I want to be able to edit the name of the task that is being suggested in the drafts to confirm edits".
