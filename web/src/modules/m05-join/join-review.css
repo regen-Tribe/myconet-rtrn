@@ -206,7 +206,28 @@ html[data-review] .jf-values--fold summary { list-style: none; display: flex; al
 html[data-review] .jf-values--fold summary::-webkit-details-marker { display: none; }
 html[data-review] .jf-values--fold summary .v4-icon { color: var(--ink-4, #9aa0ad); transition: transform .15s; flex-shrink: 0; }
 html[data-review] .jf-values--fold details[open] summary .v4-icon { transform: rotate(180deg); }
-html[data-review] .jf-values--fold li { align-items: center; }
+html[data-review] .jf-values--fold li { align-items: start; }
 html[data-review] .jf-values--fold details p { margin: 0 0 10px; }
 html[data-review] .jf-values--fold .jf-n { width: 24px; height: 24px; font-size: 11px; } html[data-review] .jf-values--fold li { grid-template-columns: 24px minmax(0, 1fr); padding: 2px 0; }
 @media (max-width: 639px) { html[data-review] .jf--step .jf-card > .jf-step > h2 { margin-top: 4px; } html[data-review] .jf--step .jf-card > .jf-step > .jf-parts { margin-top: 10px; } }
+
+/* One screen = one phone screen (Sonia, 25 Nov; decision #102): inside a step the page never scrolls. The top bar, the
+   compact track and the step's title stay; only the step's own content scrolls, between the title and the button bar */
+@media (max-width: 639px) {
+  html[data-review] .fx:has(.jf--step) { height: 100dvh; overflow: hidden; }
+  html[data-review] .fx-main:has(.jf--step) { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: 0; padding-bottom: 0; }
+  html[data-review] .jf--step { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  html[data-review] .jf--step .jf-head { display: none; }
+  html[data-review] .jf--step .jr-path { flex: none; padding-top: 2px; }
+  html[data-review] .jf--step .jf-card { flex: 1; min-height: 0; overflow: hidden; }
+  html[data-review] .jf--step .jf-card > .jf-step { min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  html[data-review] .jf--step .jf-eyebrow { display: none; }
+  html[data-review] .jf--step .jf-card > .jf-step > h2 { margin-top: 0; }
+  html[data-review] .jf--step .jf-text { font-size: 15px; }
+  /* Step 1's twelve values fit: shorter rows */
+  html[data-review] .jf--step .jf-values--fold summary { min-height: 32px; }
+}
+
+/* An opened value keeps its number beside its name, not halfway down the text (Sonia, 25 Nov) */
+html[data-review] .jf-values--fold li { align-items: start; }
+html[data-review] .jf-values--fold .jf-n { margin-top: 5px; }

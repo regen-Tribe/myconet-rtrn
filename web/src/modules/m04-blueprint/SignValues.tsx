@@ -6,7 +6,7 @@ import { createClient } from '@/core/lib/supabase/client'
 
 /**
  * Joining step 1 ends here (design/decisions.md #80): the values chapter on About closes with
- * "I share these values". Signing adds a signature for every value not yet signed, the same rows Start
+ * "I agree to honor these values" (#101). Signing adds a signature for every value not yet signed, the same rows Start
  * joining wrote before (value_signatures), so the menu's next step and My dashboard move on.
  */
 export default function SignValues({ userId, valueIds, initialSigned }: { userId: string; valueIds: string[]; initialSigned: string[] }) {
@@ -31,13 +31,13 @@ export default function SignValues({ userId, valueIds, initialSigned }: { userId
       <div className="ab-sign__text">
         <small>Step 1 of 2 · Get to know us</small>
         {signed
-          ? <><b><Icon name="check-circle" size={18} />You share our values</b><span>Step 1 is done. Next, tell us a little about you.</span></>
-          : <><b>I share these values</b><span>Sign to finish step 1. You can keep reading afterwards.</span></>}
+          ? <><b><Icon name="check-circle" size={18} />You agreed to honor our values</b><span>Step 1 is done. Next, tell us a little about you.</span></>
+          : <><b>I agree to honor these values</b><span>Agree to finish step 1. You can keep reading afterwards.</span></>}
         {error && <span className="ab-sign__error" role="alert">{error}</span>}
       </div>
       {signed
         ? <Button variant="next" href="/join?step=profile">Go to step 2</Button>
-        : <Button variant="next" onClick={sign} disabled={busy}>{busy ? 'Signing…' : 'Sign the values'}</Button>}
+        : <Button variant="next" onClick={sign} disabled={busy}>{busy ? 'Saving…' : 'I agree'}</Button>}
     </div>
   )
 }
