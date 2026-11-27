@@ -434,6 +434,9 @@ export default function OpsClient({
   for (const sg of pmSuggestions) if (canDecide(sg.circle)) pmCounts[sg.circle] = (pmCounts[sg.circle] ?? 0) + 1
   const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>('all')
   const [overdueOnly, setOverdueOnly] = useState(false)
+  // Due within (Oscar: "a button on the operations filters that says due within (drop down) days"): null is any time;
+  // 0 is today; N is today up to N days from now
+  const [dueWithin, setDueWithin] = useState<number | null>(null)
   // Design review, phones: the board's filters live in one sheet behind a Filter button (Sonia, 23 Nov)
   const [filtersOpen, setFiltersOpen] = useState(false)
   // The board shows projects (with the tasks that have no project), or every task on its own (v4.38.0, ?view=tasks)
@@ -539,9 +542,20 @@ export default function OpsClient({
     ...(userId ? boardProjects.filter(p => p.lead_user_id === userId || p.created_by === userId).map(p => p.id) : []),
   ])
 
+  // Due within: from today to the end of the last day in the range
+  const dueEnd = dueWithin === null ? null : (() => { const d = new Date(overdueToday); d.setDate(d.getDate() + dueWithin); d.setHours(23, 59, 59, 999); return d })()
+  const dueInRange = (due: string | null | undefined, time?: string | null) => {
+    if (!dueEnd || !due) return false
+    const d = taskDate(due, time)
+    return d >= overdueToday && d <= dueEnd
+  }
+  // A task card (project) counts when its own deadline or one of its open subtasks is due in the range
+  const dueProjectIds = new Set(dueEnd ? initialDeliverables.filter(d => d.project_id && d.status !== 'done' && dueInRange(d.due_date, d.due_time)).map(d => d.project_id as string) : [])
+
   const filteredProjects = boardProjects.filter(p => {
     if (view === 'tasks' || p.is_chores) return false
     if (overdueOnly && !overdueProjectIds.has(p.id)) return false
+    if (dueEnd && !dueProjectIds.has(p.id) && !dueInRange(p.deadline)) return false
     if (selectedCircles.length && !(p.circle && selectedCircles.includes(p.circle))) return false
     if (selectedTeam && p.team_id !== selectedTeam) return false
     if (myRole === 'lead') return p.lead_user_id === userId || p.created_by === userId
@@ -564,6 +578,7 @@ export default function OpsClient({
     const p = t.project_id ? projectsById.get(t.project_id) : null
     const circle = t.circle ?? p?.circle ?? null
     if (overdueOnly && !isTaskOverdue(t.due_date, t.due_time, t.status)) return false
+    if (dueEnd && !dueInRange(t.due_date, t.due_time)) return false
     if (selectedCircles.length && !(circle && selectedCircles.includes(circle))) return false
     // A subtask counts for the subcircle it's given to, or its task's
     if (selectedTeam && (t.team_id ?? p?.team_id ?? null) !== selectedTeam) return false
@@ -692,7 +707,7 @@ export default function OpsClient({
           {activeTab === 'board' && (
             <button type="button" className="ops5-filterbtn" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
               <Icon name="filter" size={16} />Filter
-              {(() => { const n = (view === 'tasks' ? 1 : 0) + (selectedCircles.length ? 1 : 0) + (selectedTeam ? 1 : 0) + (overdueOnly ? 1 : 0) + (myRole !== 'all' ? 1 : 0); return n > 0 ? <Count n={n} label={`${n} filters on`} /> : null })()}
+              {(() => { const n = (view === 'tasks' ? 1 : 0) + (selectedCircles.length ? 1 : 0) + (selectedTeam ? 1 : 0) + (dueWithin !== null ? 1 : 0) + (overdueOnly ? 1 : 0) + (myRole !== 'all' ? 1 : 0); return n > 0 ? <Count n={n} label={`${n} filters on`} /> : null })()}
             </button>
           )}
           {/* Drafts to confirm lives in one place, the yellow panel below the toolbar (decision #48) */}
@@ -767,6 +782,11 @@ export default function OpsClient({
                   ))}
               </select>
             )}
+            <select className="v4-select ops4-teamfilter" value={dueWithin ?? ''} onChange={e => setDueWithin(e.target.value === '' ? null : Number(e.target.value))} aria-label="Due within">
+              <option value="">Due: any time</option>
+              <option value="0">Due today</option>
+              {[3, 7, 14, 30, 90].map(n => <option key={n} value={n}>Due within {n} days</option>)}
+            </select>
             {atRiskCount > 0 && (
               <button type="button" aria-pressed={overdueOnly} className={`v4-chip ops4-latechip${overdueOnly ? ' v4-chip--on' : ''}`} onClick={() => setOverdueOnly(v => !v)}>
                 {DESIGN_REVIEW && <Icon name="alert" size={14} />}{atRiskCount} late{overdueOnly && <> <InlineIcon name="x" label="Clear" /></>}

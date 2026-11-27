@@ -5,6 +5,14 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.143.0 — 2026-11-27 — Filter the board by when things are due
+
+Oscar: "add a button on the operations filters that says due within (drop down) days - so user can set a range of when
+things will be done". `OpsClient` (M07): a **Due** select in the board's filter bar (and the phone's Filter sheet, where it
+counts as a filter on the Filter button): Any time · Today · within 3 / 7 / 14 / 30 / 90 days. The range runs from today
+to the end of the last day. In All subtasks a card shows when its due date is in range; in Tasks, when the task's
+deadline or one of its open subtasks is. Overdue tasks stay under the "late" chip, not in the range. No migration.
+
 ## v4.142.0 — 2026-11-27 — Any edit to a draft confirms it
 
 Oscar: "any time a task is edited, it should lose the draft pill", after "Resolve the Micronet email-link issue" showed Done
