@@ -437,6 +437,9 @@ export default function OpsClient({
   // Due within (Oscar: "a button on the operations filters that says due within (drop down) days"): null is any time;
   // 0 is today; N is today up to N days from now
   const [dueWithin, setDueWithin] = useState<number | null>(null)
+  // Whose tasks (Oscar: "only see tasks they are tagged with. They can also select another user to see the tasks that
+  // user is responsible for"): '' is everyone, otherwise a person's id; their own id reads "Me"
+  const [person, setPerson] = useState('')
   // Design review, phones: the board's filters live in one sheet behind a Filter button (Sonia, 23 Nov)
   const [filtersOpen, setFiltersOpen] = useState(false)
   // The board shows projects (with the tasks that have no project), or every task on its own (v4.38.0, ?view=tasks)
@@ -552,8 +555,12 @@ export default function OpsClient({
   // A task card (project) counts when its own deadline or one of its open subtasks is due in the range
   const dueProjectIds = new Set(dueEnd ? initialDeliverables.filter(d => d.project_id && d.status !== 'done' && dueInRange(d.due_date, d.due_time)).map(d => d.project_id as string) : [])
 
+  // A task card (project) counts for a person when they lead it or one of its subtasks is theirs
+  const personProjectIds = new Set(person ? initialDeliverables.filter(d => d.project_id && d.assignee_id === person).map(d => d.project_id as string) : [])
+
   const filteredProjects = boardProjects.filter(p => {
     if (view === 'tasks' || p.is_chores) return false
+    if (person && p.lead_user_id !== person && !personProjectIds.has(p.id)) return false
     if (overdueOnly && !overdueProjectIds.has(p.id)) return false
     if (dueEnd && !dueProjectIds.has(p.id) && !dueInRange(p.deadline)) return false
     if (selectedCircles.length && !(p.circle && selectedCircles.includes(p.circle))) return false
@@ -579,6 +586,7 @@ export default function OpsClient({
     const circle = t.circle ?? p?.circle ?? null
     if (overdueOnly && !isTaskOverdue(t.due_date, t.due_time, t.status)) return false
     if (dueEnd && !dueInRange(t.due_date, t.due_time)) return false
+    if (person && t.assignee_id !== person) return false
     if (selectedCircles.length && !(circle && selectedCircles.includes(circle))) return false
     // A subtask counts for the subcircle it's given to, or its task's
     if (selectedTeam && (t.team_id ?? p?.team_id ?? null) !== selectedTeam) return false
@@ -615,8 +623,8 @@ export default function OpsClient({
         <PageHeader eyebrow={sprintName ? `Working together · ${sprintName}` : 'Working together'} title={DESIGN_REVIEW ? 'Operations' : 'Task board'}
           subtitle={<><b>{activeCount} task{activeCount !== 1 ? 's' : ''} on the go</b> · {deliverableCount - doneCount} open subtask{deliverableCount - doneCount !== 1 ? 's' : ''} · {doneCount} done</>}
           actions={<>
-            {isAdmin && <Button variant="secondary" icon="plus" onClick={() => setNewTask(true)}>Task of its own</Button>}
-            {isAdmin && <Button variant={DESIGN_REVIEW ? 'primary' : 'next'} href="/operations/new">New task</Button>}
+            {/* One button (Oscar: "it should just be one button of new task"): the task window, empty, over the board */}
+            {isAdmin && <Button variant={DESIGN_REVIEW ? 'primary' : 'next'} icon="plus" onClick={() => setNewTask(true)}>New task</Button>}
             {canPropose && !isAdmin && <Button variant={DESIGN_REVIEW ? 'primary' : 'next'} href="/operations/new">Suggest a task</Button>}
             {/* Read-only before joining, and saying how that changes (decisions #73, #79) */}
             {DESIGN_REVIEW && !canPropose && !isAdmin && <Button variant="quiet" href={userId ? '/join' : '/auth/signup'}>{userId ? 'Suggest tasks once you’ve joined · Start joining' : 'Create account to help'}</Button>}
@@ -707,7 +715,7 @@ export default function OpsClient({
           {activeTab === 'board' && (
             <button type="button" className="ops5-filterbtn" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
               <Icon name="filter" size={16} />Filter
-              {(() => { const n = (view === 'tasks' ? 1 : 0) + (selectedCircles.length ? 1 : 0) + (selectedTeam ? 1 : 0) + (dueWithin !== null ? 1 : 0) + (overdueOnly ? 1 : 0) + (myRole !== 'all' ? 1 : 0); return n > 0 ? <Count n={n} label={`${n} filters on`} /> : null })()}
+              {(() => { const n = (view === 'tasks' ? 1 : 0) + (selectedCircles.length ? 1 : 0) + (selectedTeam ? 1 : 0) + (dueWithin !== null ? 1 : 0) + (person ? 1 : 0) + (overdueOnly ? 1 : 0) + (myRole !== 'all' ? 1 : 0); return n > 0 ? <Count n={n} label={`${n} filters on`} /> : null })()}
             </button>
           )}
           {/* Drafts to confirm lives in one place, the yellow panel below the toolbar (decision #48) */}
@@ -787,6 +795,18 @@ export default function OpsClient({
               <option value="0">Due today</option>
               {[3, 7, 14, 30, 90].map(n => <option key={n} value={n}>Due within {n} days</option>)}
             </select>
+            {/* Signed in only: visitors don't see who a task is assigned to (decision #73) */}
+            {userId && (
+              <select className="v4-select ops4-teamfilter" value={person} onChange={e => setPerson(e.target.value)} aria-label="Whose tasks">
+                <option value="">Everyone’s tasks</option>
+                <option value={userId}>My tasks</option>
+                {people.length > 0 && (
+                  <optgroup label="Someone else’s">
+                    {people.filter(x => x.id !== userId).sort((a, b) => a.name.localeCompare(b.name)).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </optgroup>
+                )}
+              </select>
+            )}
             {atRiskCount > 0 && (
               <button type="button" aria-pressed={overdueOnly} className={`v4-chip ops4-latechip${overdueOnly ? ' v4-chip--on' : ''}`} onClick={() => setOverdueOnly(v => !v)}>
                 {DESIGN_REVIEW && <Icon name="alert" size={14} />}{atRiskCount} late{overdueOnly && <> <InlineIcon name="x" label="Clear" /></>}
@@ -1025,13 +1045,29 @@ export default function OpsClient({
       )}
 
       <PermissionNoticeModal notice={notice} directory={circleDirectory} onClose={() => setNotice(null)} />
-      {newTask && (
+      {newTask && (DESIGN === 'v4' ? (
+        <TaskModal
+          task={{
+            id: '', title: '', status: 'backlog', project_id: null, assignee_id: null, due_date: null, progress: 0,
+            circle: (selectedCircle && circles.has(selectedCircle) ? selectedCircle : leadCircles[0]) ?? null,
+            team_id: selectedTeam || null, priority: 'none', notes: null,
+          }}
+          canManage
+          userId={userId}
+          people={people}
+          projects={projectOptions}
+          teams={teams}
+          onClose={() => setNewTask(false)}
+          onSaved={t => { setBoardTasks(prev => [...prev, t]); setNewTask(false); router.refresh() }}
+          onDeleted={() => setNewTask(false)}
+        />
+      ) : (
         <NewTaskModal
           defaultCircle={selectedCircle ?? leadCircles[0] ?? null}
           onClose={() => setNewTask(false)}
           onAdded={() => { setNewTask(false); router.refresh() }}
         />
-      )}
+      ))}
       {openTask && (
         <TaskModal
           task={openTask}

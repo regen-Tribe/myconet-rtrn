@@ -119,6 +119,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
 
   // The agent knows which task is open ("give this to Sonia")
   useEffect(() => {
+    if (!task.id) return
     setAgentContext('task', { task_id: task.id })
     return () => setAgentContext('task', null)
   }, [task.id])
@@ -131,6 +132,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
 
   // Who follows this task
   useEffect(() => {
+    if (!task.id) return
     let live = true
     createClient().from('deliverable_subscriptions').select('user_id, user_profiles(first_name, username)').eq('deliverable_id', task.id)
       .then(({ data }) => {
@@ -197,6 +199,16 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
       // Saving a draft (e.g. from a meeting) confirms it
       needs_review: false,
     }
+    // A new task (one "New task" button, Oscar: "it should open a pop up over the current screen with that task and all
+    // fields that can be edited for it"): the same fields, inserted
+    if (!task.id) {
+      const { data: made, error: e } = await supabase.from('deliverables').insert({ ...changes, progress: 0 }).select('id').single()
+      setSaving(false)
+      if (e || !made) { setError(e?.message ?? 'The task didn’t save.'); return }
+      const who = people.find(x => x.id === changes.assignee_id)
+      onSaved({ ...task, ...changes, id: made.id as string, progress: 0, user_profiles: who ? { first_name: who.name.split(' ')[0], username: who.username } : null } as Deliverable)
+      return
+    }
     // RLS rejects silently (0 rows, no error), so ask for the row back to tell
     const { data, error: e } = await supabase.from('deliverables').update(changes).eq('id', task.id).select('id')
     setSaving(false)
@@ -251,7 +263,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
           position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '14px 14px 0 0',
         })}>
           <div {...rv('pj5-label', { fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' })}>
-            {task.project_id ? 'Subtask' : 'Task of its own'}
+            {!task.id ? 'New task' : task.project_id ? 'Subtask' : 'Task of its own'}
           </div>
           <button onClick={onClose} aria-label="Close" {...rv('tm5-close', { background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0, display: 'flex' })}>{RV ? <Icon name="x" size={20} /> : '×'}</button>
         </div>
@@ -396,8 +408,8 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             )}
           </div>
 
-          {/* Subscribers */}
-          {userId && (
+          {/* Subscribers (once the task exists) */}
+          {userId && !!task.id && (
             RV ? (
               <button type="button" onClick={toggleSubscribe} aria-pressed={subscribed} className={`pj5-watch${subscribed ? ' on' : ''}`} style={{ marginBottom: subs.length ? 12 : 0 }}>
                 <Icon name="bell" size={16} />{subscribed ? 'Watching' : 'Watch'}
@@ -416,6 +428,12 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
               <BellIcon filled={subscribed} />
               {subscribed ? 'Subscribed' : 'Subscribe to updates'}
             </button>
+          )}
+          {!task.id && (
+            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '4px 0 0', lineHeight: 1.5 }}>
+              Leave <b>Part of</b> empty for a task on its own, or pick a task to make this one of its subtasks. Planning something bigger,
+              with a description and its own subtasks? <Link href="/operations/new" style={{ color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>Start a bigger task →</Link>
+            </p>
           )}
           {subs.length > 0 && (
             <div style={{ marginTop: 4 }}>
@@ -441,9 +459,9 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             position: 'sticky', bottom: 0, zIndex: 2, background: 'var(--surface)', borderRadius: '0 0 14px 14px',
           })}>
-            <button onClick={remove} disabled={saving} {...rv('v4-btn v4-btn--secondary v4-btn--sm tm5-delete', { background: 'none', border: '1px solid #fecaca', color: '#dc2626', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' })}>
+            {task.id ? <button onClick={remove} disabled={saving} {...rv('v4-btn v4-btn--secondary v4-btn--sm tm5-delete', { background: 'none', border: '1px solid #fecaca', color: '#dc2626', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' })}>
               Delete task
-            </button>
+            </button> : <span />}
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={onClose} {...rv('v4-btn v4-btn--secondary v4-btn--sm', { background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, cursor: 'pointer' })}>Cancel</button>
               <button
@@ -456,7 +474,7 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
                   opacity: saving || !title.trim() ? 0.65 : 1,
                 })}
               >
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? 'Saving…' : task.id ? 'Save' : 'Add task'}
               </button>
             </div>
           </div>

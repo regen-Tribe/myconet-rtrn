@@ -17,6 +17,7 @@ import type { OrgMember, OrgPerson, OrgUnit } from './types'
 import type { JoinRequest } from './JoinRequests'
 import type { CircleExtras, CircleTask } from './lib/circle-extras'
 import { AddCircleMember } from './AddCircleMember'
+import { AddCircleLead, RemoveLeadButton, useCircleLeads } from './CircleLeadsEditor'
 import { canEditUnit, canLeadCircle } from './lib/org'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { isActiveProject } from '@/core/lib/project-status'
@@ -296,6 +297,8 @@ function CirclePage(p: Props & { slug: string }) {
   const leads = ppl.filter(x => x.lead)
   const teams = f.teamsOf(c)
   const manage = canLeadCircle(c, p.role, p.leadCircles)
+  // Admins and this circle's leads edit its lead list (set_circle_lead)
+  const leadEdit = useCircleLeads(c)
   const inIt = f.inCircle(c)
   const reqs = p.requests.filter(r => r.circle === c)
   const projects = p.projects.filter(x => x.circle === c)
@@ -572,7 +575,22 @@ function CirclePage(p: Props & { slug: string }) {
 
           <div className="v4-sec"><h2>{leads.length === 1 ? 'Lead' : 'Leads'}</h2>{p.role === 'admin' && <Link href="/admin/users" className="cv4-small">Manage leads →</Link>}</div>
           <div className="cv4-leadname"><CircleLeadName slug={c} canEdit={p.role === 'admin'} color={meta.color} /></div>
-          {leads.length ? <div className="cv4-people">{leads.map(personCard)}</div> : <p className="v4-hint">No lead on MyCoNet yet.</p>}
+          {leads.length ? (
+            <div className="cv4-people">
+              {leads.map(l => manage && p.userId ? (
+                <div key={l.id} style={{ position: 'relative' }}>
+                  {personCard(l)}
+                  <RemoveLeadButton name={l.name} busy={leadEdit.busy === l.id} onRemove={() => leadEdit.setLead(l.id, false)} />
+                </div>
+              ) : personCard(l))}
+            </div>
+          ) : <p className="v4-hint">No lead on MyCoNet yet.</p>}
+          {manage && p.userId && (
+            <div className="cv4-add">
+              <AddCircleLead color={meta.color} people={p.people} existing={leads.map(l => l.id)} busy={leadEdit.busy} onAdd={x => leadEdit.setLead(x.id, true)} />
+              {leadEdit.error && <p className="v4-hint" style={{ color: '#b91c1c', marginTop: 6 }}>{leadEdit.error}</p>}
+            </div>
+          )}
 
           <SectionHead title={`Members · ${ppl.length - leads.length}`} />
           {ppl.length - leads.length > 0 ? (
