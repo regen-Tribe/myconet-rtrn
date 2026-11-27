@@ -587,7 +587,9 @@ export default function OpsClient({
     if (dueEnd && !dueProjectIds.has(p.id) && !dueInRange(p.deadline)) return false
     if (selectedCircles.length && !(p.circle && selectedCircles.includes(p.circle))) return false
     if (selectedTeam && p.team_id !== selectedTeam) return false
-    if (myRole === 'lead') return p.lead_user_id === userId || p.created_by === userId
+    // I lead means the same in both views (Oscar asked what it showed: in Tasks it skipped the circles you lead): everything
+    // in a circle you lead, and any task you lead or created; an admin leads every circle
+    if (myRole === 'lead') return userRole === 'admin' || (!!p.circle && leadCircles.includes(p.circle)) || p.lead_user_id === userId || p.created_by === userId
     if (myRole === 'member') return myAssignedProjectIds.has(p.id)
     if (myRole === 'subscriber') return mySubscribedProjectIds.has(p.id)
     return true
@@ -612,7 +614,7 @@ export default function OpsClient({
     if (selectedCircles.length && !(circle && selectedCircles.includes(circle))) return false
     // A subtask counts for the subcircle it's given to, or its task's
     if (selectedTeam && (t.team_id ?? p?.team_id ?? null) !== selectedTeam) return false
-    if (myRole === 'lead') return (!!circle && leadCircles.includes(circle)) || (!!p && (p.lead_user_id === userId || p.created_by === userId))
+    if (myRole === 'lead') return userRole === 'admin' || (!!circle && leadCircles.includes(circle)) || (!!p && (p.lead_user_id === userId || p.created_by === userId))
     if (myRole === 'member') return t.assignee_id === userId
     if (myRole === 'subscriber') return !!p && mySubscribedProjectIds.has(p.id)
     return true

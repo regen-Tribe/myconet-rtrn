@@ -4,6 +4,12 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.148.1',
+    date: '2026-11-27',
+    title: '"I lead" shows the same in both board views',
+    items: ['The board\'s "I lead" filter now shows everything in the circles you lead, plus any task you lead or created, in both Tasks and All subtasks. Before, Tasks only showed tasks you led or created yourself. Admins see everything.'],
+  },
+  {
     version: 'v4.148.0',
     date: '2026-11-27',
     title: 'Add subtasks from a task\'s window',
