@@ -4,6 +4,12 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.147.0',
+    date: '2026-11-27',
+    title: 'Operations remembers its filters when you come back',
+    items: ['Filters on Operations — circle, subcircle, Due, person, role, late, drafts to confirm — and the tab you\'re on now stay when you open a task\'s page and press Back. They\'re kept in the page\'s address, so a link you share opens the same view too.'],
+  },
+  {
     version: 'v4.146.0',
     date: '2026-11-27',
     title: 'One New task button, opening the task window over the board',

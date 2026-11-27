@@ -1,9 +1,9 @@
 'use client'
 import { CircleSeal } from '@/core/components/v4/CircleSeal'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { useCircles } from '@/core/components/CirclesProvider'
 import { PROJECT_KANBAN_COLUMNS } from '@/core/lib/project-status'
@@ -410,17 +410,24 @@ export default function OpsClient({
 }: OpsClientProps) {
   const circles = useCircles()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<OpsTab>(initialTab)
+  // The tab and filters start from the browser's address, not the server's first render: after Back, Next can reuse the
+  // page it rendered before the filters were picked, but the address (kept current below) says what was on.
+  const sp = useSearchParams()
+  const at = {
+    tab: sp.get('tab'), circle: sp.get('circle'), view: sp.get('view'), team: sp.get('team'), due: sp.get('due'),
+    who: sp.get('who'), role: sp.get('role'), late: sp.get('late') === '1', drafts: sp.get('drafts') === '1',
+  }
+  const [activeTab, setActiveTab] = useState<OpsTab>(() => (['board', 'tasks', 'updates', 'circles'] as const).find(t => t === at.tab) ?? initialTab)
   // Phones opening on the List (design review) waits on Oscar (handoff note, 2026-11-22); the board stays the default.
   const [notice, setNotice] = useState<PermissionNotice | null>(null)
   const [boardProjects, setBoardProjects] = useState<Project[]>(projects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   // The circle filter: several circles at once ([] = all), kept in the address as ?circle=a,b (v4.68.0)
-  const [selectedCircles, setSelectedCircles] = useState<string[]>(() => parseCircleParam(initialCircle, s => circles.has(s)))
+  const [selectedCircles, setSelectedCircles] = useState<string[]>(() => parseCircleParam(at.circle ?? initialCircle, s => circles.has(s)))
   // The subcircle filter (v4.127.0: Oscar, "to operations page plz add a subcircle filter"): '' is every subcircle.
   // Changing circles drops a subcircle that isn't in them.
-  const [selectedTeam, setSelectedTeam] = useState('')
+  const [selectedTeam, setSelectedTeam] = useState(() => (at.team && teams.some(x => x.id === at.team) ? at.team : ''))
   function pickCircles(next: string[]) {
     setSelectedCircles(next); setCircleParam(next)
     if (selectedTeam && next.length && !next.includes(teams.find(x => x.id === selectedTeam)?.circle ?? '')) setSelectedTeam('')
@@ -432,18 +439,18 @@ export default function OpsClient({
   const canDecide = (c: string) => userRole === 'admin' || (userRole === 'circle_lead' && leadCircles.includes(c))
   const pmCounts: Record<string, number> = {}
   for (const sg of pmSuggestions) if (canDecide(sg.circle)) pmCounts[sg.circle] = (pmCounts[sg.circle] ?? 0) + 1
-  const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>('all')
-  const [overdueOnly, setOverdueOnly] = useState(false)
+  const [myRole, setMyRole] = useState<'all' | 'lead' | 'member' | 'subscriber'>(() => (['lead', 'member', 'subscriber'] as const).find(r => r === at.role) ?? 'all')
+  const [overdueOnly, setOverdueOnly] = useState(at.late)
   // Due within (Oscar: "a button on the operations filters that says due within (drop down) days"): null is any time;
   // 0 is today; N is today up to N days from now
-  const [dueWithin, setDueWithin] = useState<number | null>(null)
+  const [dueWithin, setDueWithin] = useState<number | null>(() => { const n = Number(at.due); return at.due !== null && [0, 3, 7, 14, 30, 90].includes(n) ? n : null })
   // Whose tasks (Oscar: "only see tasks they are tagged with. They can also select another user to see the tasks that
   // user is responsible for"): '' is everyone, otherwise a person's id; their own id reads "Me"
-  const [person, setPerson] = useState('')
+  const [person, setPerson] = useState(at.who ?? '')
   // Design review, phones: the board's filters live in one sheet behind a Filter button (Sonia, 23 Nov)
   const [filtersOpen, setFiltersOpen] = useState(false)
   // The board shows projects (with the tasks that have no project), or every task on its own (v4.38.0, ?view=tasks)
-  const [view, setView] = useState<'projects' | 'tasks'>(initialView)
+  const [view, setView] = useState<'projects' | 'tasks'>(at.view === 'tasks' ? 'tasks' : at.view === null ? initialView : 'projects')
   function pickView(v: 'projects' | 'tasks') {
     setView(v)
     const url = new URL(window.location.href)
@@ -451,7 +458,22 @@ export default function OpsClient({
     window.history.replaceState(null, '', url.toString())
   }
   const [newTask, setNewTask] = useState(false)
-  const [draftsOnly, setDraftsOnly] = useState(false)
+  const [draftsOnly, setDraftsOnly] = useState(at.drafts)
+  // The tab and filters live in the address too (Oscar: "when a user filters something on operations, and then clicks into
+  // a task where a new page opens, if the user presses back, … load the page the same way it was"), as ?circle= and ?view=
+  // already did. replaceState: no new history entry per change, so Back still leaves the board.
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    const put = (k: string, v: string | null) => { if (v) url.searchParams.set(k, v); else url.searchParams.delete(k) }
+    put('tab', activeTab === 'board' ? null : activeTab)
+    put('team', selectedTeam || null)
+    put('due', dueWithin === null ? null : String(dueWithin))
+    put('who', person || null)
+    put('role', myRole === 'all' ? null : myRole)
+    put('late', overdueOnly ? '1' : null)
+    put('drafts', draftsOnly ? '1' : null)
+    if (url.toString() !== window.location.href) window.history.replaceState(window.history.state, '', url.toString())
+  }, [activeTab, selectedTeam, dueWithin, person, myRole, overdueOnly, draftsOnly])
   const [boardTasks, setBoardTasks] = useState<Deliverable[]>(initialDeliverables)
   const draftCount = initialDeliverables.filter(d => d.needs_review).length
   const projectsById = new Map(boardProjects.map(p => [p.id, p]))
@@ -466,7 +488,7 @@ export default function OpsClient({
     setOpenTask(null)
     // Leave the board's address as it was, without ?task=
     const url = new URL(window.location.href)
-    if (url.searchParams.has('task')) { url.searchParams.delete('task'); window.history.replaceState(null, '', url.toString()) }
+    if (url.searchParams.has('task')) { url.searchParams.delete('task'); window.history.replaceState(window.history.state, '', url.toString()) }
   }
 
   async function moveTask(taskId: string, newStatus: string) {

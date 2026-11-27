@@ -5,6 +5,16 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.147.0 — 2026-11-27 — Operations remembers its filters when you come back
+
+Oscar: "when a user filters something on operations, and then clicks into a task where a new page opens, if the user
+presses back, can you please load the page the same way it was (with the filter on)". `OpsClient` (M07): the tab and the
+filters (?tab= ?team= ?due= ?who= ?role= ?late=1 ?drafts=1, beside the existing ?circle= and ?view=) are written to the
+address with `history.replaceState` as they change (no extra history entries), and every one starts from
+`useSearchParams()` — the browser's current address — not the server's first render, which Next can reuse on Back from
+before the filters were picked. Closing a task keeps Next's history state. Built in a community checkout: `next build`
+passes. No migration.
+
 ## v4.146.0 — 2026-11-27 — One New task button, opening the task window over the board
 
 Oscar: "when we click add a new task button or task of its own, it should just be one button of new task and it should
