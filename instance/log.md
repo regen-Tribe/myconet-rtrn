@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-27 — Core v4.144.0 → v4.146.0 (PR #105; deployed 9cce211b)
+- v4.144.0: a person filter on the Operations board (core #174). v4.145.0: circle leads edit their circle's lead list (core #175). v4.146.0: one New task button opening the task window (core #176). All Oscar.
+- **Migration** `set_circle_lead` applied first via the Supabase MCP; checked: security definer, signed-in only.
+
 ## 2026-11-27 — Core v4.143.0 (PR #104; deployed 13c9c6bd)
 - v4.143.0: a Due filter on the Operations board — today, or within 3 / 7 / 14 / 30 / 90 days (core #173, Oscar). No migration.
 
