@@ -5,6 +5,12 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.148.1 — 2026-11-27 — "I lead" shows the same in both board views
+
+Oscar asked what "I lead" showed. In Tasks (project cards) it kept only projects with `lead_user_id` or `created_by` = you,
+skipping the circles you lead; in All subtasks it also kept your circles. `OpsClient` (M07): both now keep a card when you
+are an admin, its circle is one you lead (`lead_circles`), or you lead or created its task. No migration.
+
 ## v4.148.0 — 2026-11-27 — Add subtasks from a task's window
 
 Oscar: "when I open a task in the operations page, draft confirm section, id like to be able to add a subtask to the task
