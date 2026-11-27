@@ -5,6 +5,17 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.148.0 — 2026-11-27 — Add subtasks from a task's window
+
+Oscar: "when I open a task in the operations page, draft confirm section, id like to be able to add a subtask to the task
+pop up page that opens when I am editing a task". Only a project (a "bigger task") holds subtasks, so — Oscar's choice —
+`TaskModal` (M07) gets a **Subtasks** section for those who may edit the task. For a task of its own, the first subtask
+creates a project from it (its title, notes as description, circle, subcircle, due date as deadline, its person as lead or
+else the one adding; status backlog), files the task under it, then adds the subtask: the same shape as accepting the
+project manager's new_project suggestion. For a subtask, new ones go into its project. The window stays open (a list of
+what was added, a link to the new page, "Part of" now showing it) and the page refreshes behind it. Moving a draft
+confirms it (edit_confirms_draft). Tested on RTRN as a circle lead in a rolled-back transaction. No migration.
+
 ## v4.147.0 — 2026-11-27 — Operations remembers its filters when you come back
 
 Oscar: "when a user filters something on operations, and then clicks into a task where a new page opens, if the user

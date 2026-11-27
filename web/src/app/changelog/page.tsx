@@ -4,6 +4,12 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.148.0',
+    date: '2026-11-27',
+    title: 'Add subtasks from a task\'s window',
+    items: ['A task\'s window (from the board or Drafts to confirm) has a Subtasks box. Add a subtask, and a task on its own becomes a bigger task with its own page, holding this task and the new subtask. For a task that\'s already a subtask, new ones go beside it in its bigger task.'],
+  },
+  {
     version: 'v4.147.0',
     date: '2026-11-27',
     title: 'Operations remembers its filters when you come back',

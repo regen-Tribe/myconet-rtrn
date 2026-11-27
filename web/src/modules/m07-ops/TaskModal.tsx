@@ -6,6 +6,7 @@ import { DESIGN_REVIEW } from '@/core/lib/instance'
 import { partOfChoices } from './lib/task-edit'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { setAgentContext } from '@/core/lib/agent-context'
 import { useCircles } from '@/core/components/CirclesProvider'
@@ -86,7 +87,7 @@ const STATUS_LABEL: Record<string, string> = { later: 'Later', pending: 'Idea', 
  * edit everything; the person it's assigned to changes its status and notes (update_my_task()); everyone else
  * reads it. The parent decides who leads (canManage) and what to do after a save or a delete.
  */
-export function TaskModal({ task, canManage, userId, people, projects, teams, onClose, onSaved, onDeleted, onSubscribersChange }: {
+export function TaskModal({ task, canManage, userId, people, projects: projectsIn, teams, onClose, onSaved, onDeleted, onSubscribersChange }: {
   task: Deliverable
   canManage: boolean
   userId: string | null
@@ -105,6 +106,16 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
   const [time, setTime] = useState(toTimeInput(task.due_time))
   const [circle, setCircle] = useState(task.circle ?? '')
   const [projectId, setProjectId] = useState(task.project_id ?? '')
+  // Subtasks from here (Oscar: "add a subtask to the task pop up page that opens when I am editing a task"). A task of its
+  // own becomes a bigger task (a project with its own page) when its first subtask is added, and is filed under it as its
+  // first subtask, as accepting the project manager's "new task" suggestion does. A subtask adds beside it, in its task.
+  const router = useRouter()
+  const [made, setMade] = useState<TaskProjectOption | null>(null)
+  const projects = made && !projectsIn.some(p => p.id === made.id) ? [...projectsIn, made] : projectsIn
+  const [subTitle, setSubTitle] = useState('')
+  const [added, setAdded] = useState<{ id: string; title: string }[]>([])
+  const [adding, setAdding] = useState(false)
+  const [subError, setSubError] = useState('')
   const [teamId, setTeamId] = useState(task.team_id ?? '')
   const [status, setStatus] = useState(task.status ?? 'backlog')
   const [assignee, setAssignee] = useState(task.assignee_id ?? (task.assignee_name ? NAME_TAG : ''))
@@ -215,6 +226,36 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
     if (e || !data?.length) { setError(e?.message ?? 'The database didn’t allow this change for your account.'); return }
     const who = people.find(x => x.id === changes.assignee_id)
     onSaved({ ...task, ...changes, user_profiles: who ? { first_name: who.name.split(' ')[0], username: who.username } : null } as Deliverable)
+  }
+
+  async function addSubtask() {
+    const name = subTitle.trim()
+    if (!name || !task.id) return
+    setAdding(true); setSubError('')
+    let parent = made?.id ?? task.project_id ?? null
+    let parentCircle = made?.circle ?? projects.find(p => p.id === parent)?.circle ?? (circle || null)
+    let parentTeam = made?.team_id ?? projects.find(p => p.id === parent)?.team_id ?? (teamId || null)
+    if (!parent) {
+      const { data: proj, error: e } = await supabase.from('projects').insert({
+        title: (title.trim() || task.title).slice(0, 300), description: notes.trim() || null,
+        circle: circle || null, team_id: teamId || null, deadline: due, status: 'backlog',
+        created_by: userId, lead_user_id: assignee && assignee !== NAME_TAG ? assignee : userId,
+      }).select('id, title, circle, team_id').single()
+      if (e || !proj) { setAdding(false); setSubError(e?.message ?? 'The bigger task wasn’t made.'); return }
+      const { data: moved, error: e2 } = await supabase.from('deliverables').update({ project_id: proj.id }).eq('id', task.id).select('id')
+      if (e2 || !moved?.length) { setAdding(false); setSubError(e2?.message ?? 'This task couldn’t be filed under its new bigger task.'); return }
+      const m = proj as TaskProjectOption
+      setMade(m); setProjectId(m.id)
+      parent = m.id; parentCircle = m.circle; parentTeam = m.team_id ?? null
+    }
+    const { data: sub, error: e3 } = await supabase.from('deliverables').insert({
+      project_id: parent, title: name.slice(0, 300), circle: parentCircle, team_id: parentTeam, status: 'backlog', progress: 0,
+    }).select('id, title').single()
+    setAdding(false)
+    if (e3 || !sub) { setSubError(e3?.message ?? 'The subtask didn’t save.'); return }
+    setAdded(prev => [...prev, sub as { id: string; title: string }])
+    setSubTitle('')
+    router.refresh()
   }
 
   async function remove() {
@@ -407,6 +448,35 @@ export function TaskModal({ task, canManage, userId, people, projects, teams, on
               <div style={{ fontSize: 13, color: task.notes ? 'var(--ink-2)' : 'var(--ink-4)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{task.notes || 'No notes yet.'}</div>
             )}
           </div>
+
+          {/* Subtasks (once the task exists; leads) */}
+          {canManage && !!task.id && (() => {
+            const parentId = made?.id ?? task.project_id
+            const parentTitle = made?.title ?? projects.find(p => p.id === task.project_id)?.title
+            return (
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle} htmlFor="task-subtask">Subtasks</label>
+                {added.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                    {added.map(x => <div key={x.id} style={{ fontSize: 13, color: 'var(--ink-2)' }}>✓ {x.title}</div>)}
+                  </div>
+                )}
+                <form onSubmit={e => { e.preventDefault(); addSubtask() }} style={{ display: 'flex', gap: 6 }}>
+                  <input id="task-subtask" value={subTitle} onChange={e => setSubTitle(e.target.value)} maxLength={300} disabled={adding}
+                    placeholder={parentId ? `Add a subtask to “${parentTitle ?? 'its task'}”` : 'Add a subtask…'} {...field({ ...inputStyle, flex: 1 })} />
+                  <button type="submit" disabled={adding || !subTitle.trim()} {...rv('v4-btn v4-btn--secondary v4-btn--sm', { fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink-2)', cursor: 'pointer' })}>
+                    {adding ? '…' : 'Add'}
+                  </button>
+                </form>
+                <div style={{ fontSize: 12, color: 'var(--ink-4)', marginTop: 6, lineHeight: 1.45 }}>
+                  {made ? <>This is now a bigger task, “{made.title}”, with its own page; this task is its first subtask. <Link href={`/operations/${made.id}`} style={{ color: 'var(--m7)', fontWeight: 600, textDecoration: 'none' }}>Open it →</Link></>
+                    : parentId ? <>Subtasks go in “{parentTitle ?? 'its task'}”, beside this one.</>
+                    : <>Adding the first one makes this a bigger task with its own page, and this task its first subtask.</>}
+                </div>
+                {subError && <div style={{ fontSize: 12, color: '#b91c1c', marginTop: 6 }}>{subError}</div>}
+              </div>
+            )
+          })()}
 
           {/* Subscribers (once the task exists) */}
           {userId && !!task.id && (
