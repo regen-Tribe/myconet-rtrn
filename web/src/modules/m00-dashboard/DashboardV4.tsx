@@ -141,7 +141,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
               <h2 id="nc-check-h" className="nc-h">{joinPath.doneCount === 0 ? `Welcome to ${communityName}` : 'Start joining'}</h2>
               <p className="nc-sub">{joinPath.doneCount === 0
                 ? `Joining takes ${joinPath.steps.length === 2 ? 'two' : 'three'} short steps. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week.`
-                : `${joinPath.doneCount} of ${joinPath.steps.length} done. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week of your application.`}</p>
+                : `${joinPath.doneCount} of ${joinPath.steps.length} done. ${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} welcomes you within a week of joining.`}</p>
               <ol className="nc-steps">
                 {joinPath.steps.map((st, i) => {
                   const now = joinPath.next?.key === st.key
@@ -151,7 +151,7 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
                         <span className="nc-n" aria-hidden="true">{st.done ? <Icon name="check" size={16} /> : i + 1}</span>
                         <span className="nc-t"><b>{st.title}</b><small>{[
                           'Who we are and the values we live by',
-                          joinPath.steps.length === 2 ? 'A few short questions, then Send application' : 'A photo, a line, what you’d like to offer',
+                          joinPath.steps.length === 2 ? 'A few short questions, then Join the community' : 'A photo, a line, what you’d like to offer',
                           `${JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week`,
                         ][i]}</small></span>
                         <span className="nc-min">{st.done ? 'Done' : `${st.minutes} min`}</span>
@@ -170,9 +170,9 @@ export default async function DashboardV4({ supabase, userId, role, firstName, c
           ) : newcomerView === 'waiting' ? (
             <>
               <section className="nc-wait" aria-labelledby="nc-wait-h">
-                <small>Your application</small>
+                <small>Joining</small>
                 <h2 id="nc-wait-h">With the stewards</h2>
-                <p>{sentOn ? `Sent on ${sentOn}. ` : ''}{JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} answers within a week.</p>
+                <p>{sentOn ? `Asked on ${sentOn}. ` : ''}{JOIN_REVIEWER.charAt(0).toUpperCase() + JOIN_REVIEWER.slice(1)} welcomes you within a week.</p>
               </section>
               <div className="v4-eyebrow rv-cardlabel">Meanwhile</div>
               <List>

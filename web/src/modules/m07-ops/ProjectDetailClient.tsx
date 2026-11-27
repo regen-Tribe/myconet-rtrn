@@ -253,7 +253,8 @@ export default function ProjectDetailClient({
   }
 
   async function updateTaskStatus(taskId: string, newStatus: string) {
-    setDeliverables(prev => prev.map(d => d.id === taskId ? { ...d, status: newStatus } : d))
+    // Changing a draft confirms it (the database does it too: edit_confirms_draft)
+    setDeliverables(prev => prev.map(d => d.id === taskId ? { ...d, status: newStatus, needs_review: false } : d))
     await supabase.from('deliverables').update({ status: newStatus }).eq('id', taskId)
   }
 

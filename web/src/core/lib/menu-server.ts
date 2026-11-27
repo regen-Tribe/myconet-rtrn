@@ -153,7 +153,7 @@ async function reviewMenuState(supabase: SupabaseClient, userId: string, role: s
     const path = await loadJoinPath(supabase, userId, role)
     const progress = path.steps.map(x => ({ label: x.label, done: x.done }))
     const waiting = path.application === 'pending' || path.application === 'reviewing'
-    if (waiting) return { next: { title: 'Your application is in', line: `${cap(JOIN_REVIEWER)} answers within a week.`, href: '/join' }, journey: 0, progress, counts }
+    if (waiting) return { next: { title: DESIGN_REVIEW ? 'You’ve asked to join' : 'Your application is in', line: `${cap(JOIN_REVIEWER)} ${DESIGN_REVIEW ? 'welcomes you' : 'answers'} within a week.`, href: '/join' }, journey: 0, progress, counts }
     const short = path.steps.length === 2 ? 'Two short steps.' : 'Three short steps.'
     if (!path.next) return { next: { title: 'Start joining', line: short, href: '/join' }, journey: 0, progress, counts }
     const at = path.steps.indexOf(path.next)
