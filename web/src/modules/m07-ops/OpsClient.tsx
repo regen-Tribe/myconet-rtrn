@@ -471,11 +471,12 @@ export default function OpsClient({
     const p = taskRef(t)
     const block = projectEditBlock(p, userId, userRole, leadCircles, circles)
     if (block) { setNotice(block); return }
-    setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: newStatus } : x))
+    // Moving a draft confirms it (the database does it too: edit_confirms_draft)
+    setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: newStatus, needs_review: false } : x))
     const supabase = createClient()
     const { data, error } = await supabase.from('deliverables').update({ status: newStatus }).eq('id', taskId).select('id')
     if (error || !data?.length) {
-      setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: t.status } : x))
+      setBoardTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: t.status, needs_review: t.needs_review } : x))
       setNotice({
         title: "That move didn't save",
         message: error?.message ?? 'The database didn’t allow this change for your account. Ask a lead of this circle or an admin to move it.',

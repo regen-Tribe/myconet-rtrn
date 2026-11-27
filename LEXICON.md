@@ -109,9 +109,9 @@ The way in, the same words on Join, the menu's next step and My dashboard (desig
 |---|---|---|
 | **visitor** | Someone looking around who isn't signed in | guest |
 | **Start joining** | The button, and the Join page's heading | Join application, M05 |
-| **Get to know us · About you** | The two join steps (decisions #80, #90, #93; three with **Apply** without the design review): read the values and share them; About you in three short screens (about you · what you're good at and curious about · what you'd like and what you value), the last ending with **Send application**; until 25 Nov a third step, Apply: send your application. As titles: "Get to know us", "Tell us about you", "Send your application" | Values · Profile · Application (until 23 Nov), buddy matching (dropped) |
+| **Get to know us · About you** | The two join steps (decisions #80, #90, #93; three with **Apply** without the design review): read the values and agree to honor them (**I agree to honor these values**, #101); About you in three short screens (about you · what you're good at and curious about · what you'd like and what you value), the last ending with **Join the community** (#103); until 25 Nov a third step, Apply: send your application. As titles: "Get to know us", "Tell us about you", "Send your application" | Values · Profile · Application (until 23 Nov), buddy matching (dropped) |
 | **steward** | An admin who welcomes new people and reviews join applications (Sonia, 2026-11-22). Same family as **Community stewards**. Lowercase on screens: "A steward reads your application". Which admins are stewards is the community's, never named in core | the community team, the team, reviewer |
-| **Send application** / **Your application is in** | Sending it, and the state while it's read | Submit application, Under review |
+| **Join the community** / **You've asked to join** | The last button of About you, and the state while a steward welcomes you (decision #103). Joining means the extended community: part of it even when you're not there in person. Stewards still call it an application (Admin › Applications) | Send application, Your application is in, Submit, Under review |
 
 ## Members module
 

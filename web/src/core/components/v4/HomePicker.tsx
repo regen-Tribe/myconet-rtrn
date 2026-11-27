@@ -22,11 +22,11 @@ export function HomePicker({ value, onChange, label = 'Where do you call home?' 
   const [towns, setTowns] = useState<Town[] | null>(null)
   const [active, setActive] = useState(0)
   const input = useRef<HTMLInputElement>(null)
-  const list = useRef<HTMLUListElement>(null)
   const region = useMemo(() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }) } catch { return null } }, [])
   const countryOf = (cc: string) => region?.of(cc) ?? cc
 
   useEffect(() => { if (q && !towns) loadTowns().then(setTowns) }, [q, towns])
+  // Until the list has loaded, keep the last suggestions instead of flashing an empty list
 
   const matches = useMemo(() => {
     const f = fold(q)
@@ -41,9 +41,12 @@ export function HomePicker({ value, onChange, label = 'Where do you call home?' 
     return [...starts, ...within].slice(0, 6)
   }, [q, towns])
 
-  // On a phone the suggestions would open behind the bottom bar: bring them into view (scroll-margin in the CSS)
-  const shown = q.trim().length >= 2 ? matches.length + 1 : 0
-  useEffect(() => { if (shown) list.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, [shown])
+  // On focus: load the list right away and bring the field to the top once, so the suggestions open below it in
+  // view and nothing moves while you type (Sonia: "the city picker shouldn't flicker")
+  const onFocus = () => {
+    if (!towns) loadTowns().then(setTowns)
+    input.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }
 
   const add = (h: Home) => {
     if (!h.city.trim() || value.length >= MAX) return
@@ -68,7 +71,7 @@ export function HomePicker({ value, onChange, label = 'Where do you call home?' 
       )}
       {value.length < MAX && (
         <div className="hp-box">
-          <input ref={input} className="v4-input hp-input" value={q} onChange={e => { setQ(e.target.value); setActive(0) }}
+          <input ref={input} className="v4-input hp-input" onFocus={onFocus} value={q} onChange={e => { setQ(e.target.value); setActive(0) }}
             placeholder={value.length ? 'Add another city' : 'Type a city'} aria-labelledby="hp-label" autoComplete="off"
             role="combobox" aria-expanded={matches.length > 0} aria-controls="hp-list"
             onKeyDown={e => {
@@ -80,8 +83,8 @@ export function HomePicker({ value, onChange, label = 'Where do you call home?' 
                 add(t ? { city: t[0], country: countryOf(t[2]) } : typed())
               }
             }} />
-          {q.trim().length >= 2 && (
-            <ul ref={list} className="hp-list" id="hp-list" role="listbox">
+          {q.trim().length >= 2 && towns && (
+            <ul className="hp-list" id="hp-list" role="listbox">
               {matches.map((t, i) => (
                 <li key={`${t[0]}|${t[2]}`} role="option" aria-selected={i === active}>
                   <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => add({ city: t[0], country: countryOf(t[2]) })}>

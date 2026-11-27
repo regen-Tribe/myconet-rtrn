@@ -4,6 +4,24 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.142.0',
+    date: '2026-11-27',
+    title: 'Any edit to a draft confirms it',
+    items: ['Changing a draft anywhere (moving it on the board, changing its status on a project\'s page, or marking your own task done) now confirms it, so the Draft pill goes away. Before, some of these left it showing.'],
+  },
+  {
+    version: 'v4.141.2',
+    date: '2026-11-25',
+    title: 'Small touches in Start joining',
+    items: ['An opened value keeps its number beside its name.', '"What would you like to receive?" suggests skill sharing: "e.g. Marketing advice, a listening ear".'],
+  },
+  {
+    version: 'v4.141.1',
+    date: '2026-11-25',
+    title: 'I agree to honor these values; Each step of Start joining fits your phone screen; Join the community, not an application',
+    items: ['In Start joining and on About, the values button says "I agree to honor these values".', 'On a phone, each step of Start joining fits the screen; the page doesn\'t scroll.', 'The city picker stays still while you type.', 'The last button of Start joining says "Join the community", and explains you\'re part of the extended community even when you\'re not there in person.'],
+  },
+  {
     version: 'v4.141.0',
     date: '2026-11-25',
     title: 'Rename a task right where you edit it',
