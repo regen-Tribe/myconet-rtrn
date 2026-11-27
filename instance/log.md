@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-27 — Core v4.148.1 (PR #108; deployed e9def56f)
+- v4.148.1: "I lead" shows your circles plus tasks you lead or created, in both board views (core #179, Oscar). No migration.
+
 ## 2026-11-27 — Core v4.148.0 (PR #107; deployed 4d06ed8f)
 - v4.148.0: add subtasks from a task's window; a task of its own becomes a bigger task with its first subtask (core #178, Oscar). No migration.
 
