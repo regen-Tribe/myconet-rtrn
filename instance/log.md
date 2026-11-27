@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-27 — Core v4.148.0 (PR #107; deployed 4d06ed8f)
+- v4.148.0: add subtasks from a task's window; a task of its own becomes a bigger task with its first subtask (core #178, Oscar). No migration.
+
 ## 2026-11-27 — Core v4.147.0 (PR #106; deployed c45933b2)
 - v4.147.0: Operations keeps its tab and filters in the address, so Back returns to them (core #177, Oscar). No migration.
 
