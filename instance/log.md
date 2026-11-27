@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-27 — Core v4.143.0 (PR #104; deployed 13c9c6bd)
+- v4.143.0: a Due filter on the Operations board — today, or within 3 / 7 / 14 / 30 / 90 days (core #173, Oscar). No migration.
+
 ## 2026-11-27 — Core v4.141.1 → v4.142.0 (PR #103; deployed 9b80c947)
 - v4.141.1–v4.141.2 (Sonia): small touches in Start joining.
 - v4.142.0: any edit to a draft confirms it (core #172, Oscar). **Migration** `edit_confirms_draft` applied first via the Supabase MCP; trigger checked.
