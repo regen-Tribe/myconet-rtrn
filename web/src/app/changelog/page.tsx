@@ -4,6 +4,12 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.143.0',
+    date: '2026-11-27',
+    title: 'Filter the board by when things are due',
+    items: ['The Operations board\'s filters have a Due menu, next to Subcircle, to show only what\'s due today or within 3, 7, 14, 30 or 90 days. A task card shows when its own deadline, or one of its open subtasks, falls in that range.'],
+  },
+  {
     version: 'v4.142.0',
     date: '2026-11-27',
     title: 'Any edit to a draft confirms it',
