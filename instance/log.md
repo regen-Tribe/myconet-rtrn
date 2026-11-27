@@ -2,6 +2,9 @@
 
 ---
 
+## 2026-11-27 — Core v4.147.0 (PR #106; deployed c45933b2)
+- v4.147.0: Operations keeps its tab and filters in the address, so Back returns to them (core #177, Oscar). No migration.
+
 ## 2026-11-27 — Core v4.144.0 → v4.146.0 (PR #105; deployed 9cce211b)
 - v4.144.0: a person filter on the Operations board (core #174). v4.145.0: circle leads edit their circle's lead list (core #175). v4.146.0: one New task button opening the task window (core #176). All Oscar.
 - **Migration** `set_circle_lead` applied first via the Supabase MCP; checked: security definer, signed-in only.
