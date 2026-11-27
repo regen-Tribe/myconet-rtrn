@@ -4,6 +4,24 @@ import Link from 'next/link'
 // ENTRIES is written by the release (web/scripts/release.mjs) from the notes in changes/: don't add to it in a change.
 const ENTRIES = [
   {
+    version: 'v4.146.0',
+    date: '2026-11-27',
+    title: 'One New task button, opening the task window over the board',
+    items: ['Operations has one New task button instead of two. It opens the task window over the board with every field — name, status, person, priority, due date, circle, subcircle, part of, notes — and Add task saves it. Leave "Part of" empty for a task on its own, or pick a task to make it a subtask. A link in the window still starts a bigger task with its own page.'],
+  },
+  {
+    version: 'v4.145.0',
+    date: '2026-11-27',
+    title: 'Circle leads can change who leads their circle',
+    items: ['On a circle\'s page, admins and that circle\'s leads can now add a lead (+ Add lead) or remove one (Remove on the lead\'s card). A member made a lead becomes a circle lead; a circle always keeps at least one lead unless an admin removes it.'],
+  },
+  {
+    version: 'v4.144.0',
+    date: '2026-11-27',
+    title: 'See your own tasks, or someone else\'s, on the board',
+    items: ['The Operations board\'s filters have a person menu, next to Due. Pick My tasks to see only what\'s assigned to you, or pick someone to see what they\'re responsible for. A task card shows when that person leads it or has one of its subtasks.'],
+  },
+  {
     version: 'v4.143.0',
     date: '2026-11-27',
     title: 'Filter the board by when things are due',

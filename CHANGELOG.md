@@ -5,6 +5,36 @@ change behaviour); major = something communities must act on, with upgrade notes
 A community's history before v4.0.0 is in its own `instance/log.md`. The same notes
 are shown in the app at `/changelog` (`web/src/app/changelog/page.tsx`).
 
+## v4.146.0 — 2026-11-27 — One New task button, opening the task window over the board
+
+Oscar: "when we click add a new task button or task of its own, it should just be one button of new task and it should
+open a pop up over the current screen with that task and all fields that can be edited for it". `OpsClient` (M07): the
+v4 header's "Task of its own" and "New task" (→ /operations/new) become one **New task** that opens `TaskModal` in a new
+mode (an empty task, `id: ''`): the same fields as editing a task, starting in the board's chosen circle and subcircle;
+it inserts the task (progress 0) instead of updating, has no Delete or Watch, and saves with **Add task**. A line under
+the fields explains Part of and links "Start a bigger task →" (/operations/new) for a task with a description and its own
+page. The old look (design not v4) keeps its two buttons and `NewTaskModal`. No migration.
+
+## v4.145.0 — 2026-11-27 — Circle leads can change who leads their circle
+
+Oscar: "add the ability for admin and circle leads to edit the circle lead list". Until now only an admin could, in
+Admin › Permissions (`guard_profile_privileges` refuses role / `lead_circles` changes by anyone else).
+**Migration `20261229000000_set_circle_lead.sql`**: `public.set_circle_lead(p_user, p_circle, p_lead)`, security definer,
+for signed-in people only. The caller must be an admin or a `circle_lead` of that circle. Adding: only a `member` or
+`circle_lead` (others are changed by an admin in Permissions); a member becomes `circle_lead`. Removing: the circle comes
+off, and with none left the person goes back to `member`; a lead (not an admin) can't remove the circle's last lead. The
+existing `leads_are_members` trigger keeps circle membership in step. Tested on RTRN in a rolled-back transaction (8
+cases). UI: `CircleLeadsEditor.tsx` (M17), used in the circle page's Leads section (`CirclesV4.tsx`); the page reloads
+its lead list after a change.
+
+## v4.144.0 — 2026-11-27 — See your own tasks, or someone else's, on the board
+
+Oscar: "add a drop down on the operation board in filters so the user can only see tasks they are tagged with. They can
+also select another user to see the tasks that user is responsible for". `OpsClient` (M07): a select after Due, for
+signed-in people only (visitors don't see assignees, decision #73): Everyone's tasks · My tasks · then everyone else by
+name (the same people list as the task pickers). All subtasks: tasks assigned to that person. Tasks: cards they lead, or
+with a subtask assigned to them. It counts on the phone's Filter button. No migration.
+
 ## v4.143.0 — 2026-11-27 — Filter the board by when things are due
 
 Oscar: "add a button on the operations filters that says due within (drop down) days - so user can set a range of when
