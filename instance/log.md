@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-11-27 — Core v4.141.1 → v4.142.0 (PR #103; deployed 9b80c947)
+- v4.141.1–v4.141.2 (Sonia): small touches in Start joining.
+- v4.142.0: any edit to a draft confirms it (core #172, Oscar). **Migration** `edit_confirms_draft` applied first via the Supabase MCP; trigger checked.
+
 ## 2026-11-25 — Core v4.138.0 → v4.141.0 (PR #101; deployed 3b134239)
 - v4.138.0–v4.140.0 (Sonia, #166–#168): Start joining like a phone app, one question per screen; pick your home town from a list (up to five, stored in `city`/`country`, no migration); the home picker says "city".
 - v4.141.0: rename a task right where you edit it (core #170, Oscar). No migrations.
